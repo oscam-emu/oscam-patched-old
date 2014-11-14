@@ -1,0 +1,24 @@
+##TPLHEADER##
+##TPLMENU##
+##TPLMESSAGE##
+	<BR><BR><BR>
+	<DIV class="warning">Auto-configure GHttp?<BR>Any existing GHttp readers will be replaced.<BR>
+		3 new GHttp readers will be created (2 primary and 1 fallback).<BR>
+	</DIV>
+	<BR>
+	<form action="ghttp.html" method="post">
+		<TABLE>
+			<TR>
+				<TD>User ##USERREQ##</TD>
+				<TD>Password ##PWDREQ##</TD>
+				<TD>Name ##NAMEREQ##</TD>
+			</TR>
+			<TR>
+				<TD><input type="text" name="gacuser" value="##GACUSER##" title="User" ##USERRDONLY##></TD>
+				<TD><input type="text" name="gacpasswd" value="##GACPASSWD##" title="Password" ##PWDRDONLY##></TD>
+				<TD><input type="text" name="gacname" value="##GACNAME##" title="Name" ##NAMERDONLY##></TD>
+			</TR>
+		</TABLE><BR>
+		<input type="submit" name="action" value="Autoconf" title="Auto-configure GHttp" ##BTNDISABLED##>
+	</form>
+##TPLFOOTER##

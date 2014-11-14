@@ -1,0 +1,32 @@
+	<input name="part" type="hidden" value="dvbapi">
+	<input name="enabled" type="hidden" value="0">
+	<input name="au" type="hidden" value="0">
+	<TABLE CLASS="config">
+		<TR><TH COLSPAN="2">Edit DVB Api Config</TH></TR>
+		<TR><TD><A>Enabled:</A></TD><TD><input name="enabled" type="checkbox" value="1" ##ENABLEDCHECKED##><label></label>
+		<TR><TD><A>AU:</A></TD><TD><input name="au" type="checkbox" value="1" ##AUCHECKED##><label></label>
+		<TR><TD><A>Boxtype:</A></TD><TD><select name="boxtype">##BOXTYPE##</select></TD></TR>
+		<TR><TD><A data-p="user_2">User:</A></TD><TD><input name="user" class="longer" type="text" maxlength="63" value="##USERNAME##"></TD></TR>
+		<TR><TD><A>PMT Mode:</A></TD>
+			<TD>
+				<select name="pmt_mode">
+					<option value="0" ##PMTMODESELECTED0##>0 - use camd.socket and PMT file</option>
+					<option value="1" ##PMTMODESELECTED1##>1 - disable reading PMT file</option>
+					<option value="2" ##PMTMODESELECTED2##>2 - disable camd.socket</option>
+					<option value="3" ##PMTMODESELECTED3##>3 - read PMT file on startup only</option>
+					<option value="4" ##PMTMODESELECTED4##>4 - do not use signal handler to monitor /tmp</option>
+					<option value="5" ##PMTMODESELECTED5##>5 - do not use signal handler to monitor /tmp &amp; disable camd.socket</option>
+					<option value="6" ##PMTMODESELECTED6##>6 - use CA PMT server</option>
+				</select>
+			</TD>
+		</TR>
+		<TR><TD><A>Request Mode:</A></TD>
+			<TD>
+				<select name="request_mode">
+					<option value="0" ##REQMODESELECTED0##>0 - try all possible CAIDs one by one</option>
+					<option value="1" ##REQMODESELECTED1##>1 - try all CAIDs simultaneously</option>
+				</select>
+			</TD>
+		</TR>
+		<TR><TD><A>Listen port:</A></TD><TD><input name="listen_port" class="short" type="text" maxlength="5" value="##LISTENPORT##"> TCP port to listen instead of camd.socket</TD></TR>
+		<TR><TD><A>Delayer:</A></TD><TD><input name="delayer" class="withunit short" type="text" maxlength="4" value="##DELAYER##"> ms</TD></TR>
