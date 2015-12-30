@@ -808,8 +808,7 @@ int32_t matching_reader(ECM_REQUEST *er, struct s_reader *rdr)
 		int8_t found = 0;
 		while((item = ll_iter_next(&itr)))
 		{
-			//if (item->caid == er->caid && (!er->prid || !item->provid || item->provid == er->prid)) {     //provid check causing problems?
-			if(item->caid == er->caid || item->caid == er->ocaid)                                           //... so check at least caid only
+			if (item->caid == er->caid && (!er->prid || !item->provid || item->provid == er->prid))
 			{
 				found = 1;
 				break;
