@@ -808,11 +808,14 @@ int32_t matching_reader(ECM_REQUEST *er, struct s_reader *rdr)
 		int8_t found = 0;
 		while((item = ll_iter_next(&itr)))
 		{
-			if (item->caid == er->caid && (!er->prid || !item->provid || item->provid == er->prid))
-			{
-				found = 1;
-				break;
-			}
+			if(item->caid != er->caid) continue; // skip wrong caid!
+			if(item->type == 7) continue; // skip seca-admin type (provid 000000) since its not used for decoding!
+			if(er->prid && item->provid && er->prid != item->provid) continue; // skip non matching provid!
+			if(!er->prid && caid_is_seca(er->caid)) continue; // dont accept requests without provid for seca cas.
+			if(!er->prid && caid_is_viaccess(er->caid)) continue; // dont accept requests without provid for viaccess cas
+			if(!er->prid && caid_is_cryptoworks(er->caid)) continue; // dont accept requests without provid for cryptoworks cas
+			found =1;
+			break;
 		}
 		if(!found)
 		{
