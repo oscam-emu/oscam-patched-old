@@ -817,7 +817,7 @@ int32_t matching_reader(ECM_REQUEST *er, struct s_reader *rdr)
 			found =1;
 			break;
 		}
-		if(!found)
+		if(!found && er->ecm[0]) // ecmrequest can get corrected provid parsed from payload in ecm
 		{
 			cs_log_dbg(D_TRACE, "entitlements check failed on reader %s", rdr->label);
 			return 0;
