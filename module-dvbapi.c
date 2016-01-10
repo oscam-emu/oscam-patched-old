@@ -5227,6 +5227,7 @@ static void *dvbapi_main_local(void *cli)
 			if (unassoc_fd[i]) {
 				pfd2[pfdcount].fd = unassoc_fd[i];
 				pfd2[pfdcount].events = (POLLIN | POLLPRI);
+				client_proto_version[pfdcount] = last_client_proto_version;
 				type[pfdcount++] = 1;
 			}
 
