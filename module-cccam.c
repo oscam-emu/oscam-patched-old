@@ -1055,8 +1055,8 @@ int32_t get_UA_ofs(uint16_t caid)
 	{
 	case 0x05: //VIACCESS:
 	case 0x0D: //CRYPTOWORKS:
-		ofs = 1;
-		break;
+//		ofs = 1;
+//		break;
 	case 0x4B: //TONGFANG:
 	case 0x09: //VIDEOGUARD:
 	case 0x0B: //CONAX:
