@@ -5677,7 +5677,7 @@ void dvbapi_write_cw(int32_t demux_id, uchar *cw, int32_t pid, int32_t stream_id
 		cs_hexdump(0, demux[demux_id].lastcw[n], 8, lastcw, sizeof(lastcw));
 		cs_hexdump(0, cw + (n * 8), 8, newcw, sizeof(newcw));
 
-		if((memcmp(cw + (n * 8), demux[demux_id].lastcw[n], 8) != 0 || cwEmpty)
+		if((memcmp(cw + (n * 8), demux[demux_id].lastcw[n], 8) != 0 || cwEmpty || stream_id >1)
 				&& memcmp(cw + (n * 8), nullcw, 8) != 0) // check if already delivered and new cw part is valid!
 		{
 			ca_index_t idx = dvbapi_ca_setpid(demux_id, pid, stream_id, (algo == CA_ALGO_DES));  // prepare ca
@@ -6119,8 +6119,9 @@ void dvbapi_send_dcw(struct s_client *client, ECM_REQUEST *er)
 							cw = er->cw;
 						}
 						// Audio
-						else if(stream_type == 0x03 || stream_type == 0x04 || stream_type == 0x0F || stream_type == 0x11 
-							|| stream_type == 0x81 || (stream_type >= 0x83 && stream_type <= 0x87) || stream_type == 0x8A)
+						else if(stream_type == 0x03 || stream_type == 0x04 || stream_type == 0x06 || stream_type == 0x0F 
+							|| stream_type == 0x11 || stream_type == 0x81 || (stream_type >= 0x83 && stream_type <= 0x87) 
+							|| stream_type == 0x8A)
 						{
 							cw = er->cw_ex.audio[key_pos_a];
 							
