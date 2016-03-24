@@ -3277,7 +3277,7 @@ int32_t dvbapi_parse_capmt(unsigned char *buffer, uint32_t length, int32_t connf
 		demux[demux_id].STREAMpidsType[demux[demux_id].STREAMpidcount] = buffer[i];
 		demux[demux_id].STREAMpidcount++;
 		
-		cs_log("Demuxer %d stream %s(type: %02x pid: %04x length: %d)", demux_id, get_streamtxt(stream_type), stream_type, elementary_pid, es_info_length);
+		cs_log_dbg(D_DVBAPI,"Demuxer %d stream %s(type: %02x pid: %04x length: %d)", demux_id, get_streamtxt(stream_type), stream_type, elementary_pid, es_info_length);
 		
 		// find and register videopid
 		if(!vpid && 
@@ -3355,7 +3355,7 @@ int32_t dvbapi_parse_capmt(unsigned char *buffer, uint32_t length, int32_t connf
 		
 	char channame[CS_SERVICENAME_SIZE];
 	get_servicename(dvbapi_client, demux[demux_id].program_number, demux[demux_id].ECMpidcount > 0 ? demux[demux_id].ECMpids[0].PROVID : NO_PROVID_VALUE, demux[demux_id].ECMpidcount > 0 ? demux[demux_id].ECMpids[0].CAID : NO_CAID_VALUE, channame, sizeof(channame));
-	cs_log("Demuxer %d serving srvid %04X (%s) on adapter %04X camask %04X index %04X pmtpid %04X", demux_id, demux[demux_id].program_number, channame, adapter_index, ca_mask, demux_index, pmtpid);
+	cs_log_dbg(D_DVBAPI,"Demuxer %d serving srvid %04X (%s) on adapter %04X camask %04X index %04X pmtpid %04X", demux_id, demux[demux_id].program_number, channame, adapter_index, ca_mask, demux_index, pmtpid);
 	demux[demux_id].stopdescramble = 0; // remove deletion mark!
 
 	// remove from unassoc_fd when necessary
@@ -3820,7 +3820,7 @@ static void dvbapi_parse_sdt(int32_t demux_id, unsigned char *buffer, uint32_t l
 			if(!dvbapi_extract_sdt_string(service_name, sizeof(service_name), buffer+pos+dpos+4+provider_name_length+1, service_name_length))
 				{ break; }
 						
-			cs_log("sdt-info (provider: %s - channel: %s)", provider_name, service_name);
+			cs_log_dbg(D_DVBAPI,"sdt-info (provider: %s - channel: %s)", provider_name, service_name);
 
 			dvbapi_stop_filter(demux_id, TYPE_SDT);
 			
