@@ -100,6 +100,7 @@ static void protocol_fn(const char *token, char *value, void *setting, FILE *f)
 			{ "gbox",       R_GBOX },
 			{ "cccam",      R_CCCAM },
 			{ "cccam_ext",  R_CCCAM },
+			{ "cccam_mcs",  R_CCCAM },
 			{ "constcw",    R_CONSTCW },
 			{ "radegast",   R_RADEGAST },
 			{ "scam",       R_SCAM },

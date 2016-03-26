@@ -27,6 +27,7 @@ static inline void cccam_done_share(void) { }
 bool cccam_forward_origin_card(ECM_REQUEST *er);
 bool cccam_snprintf_cards_stat(struct s_client *cl, char *emmtext, size_t emmtext_sz);
 bool cccam_client_extended_mode(struct s_client *cl);
+bool cccam_client_multics_mode(struct s_client *cl);
 #else
 static inline bool cccam_forward_origin_card(ECM_REQUEST *UNUSED(er))
 {
@@ -37,6 +38,10 @@ static inline bool cccam_snprintf_cards_stat(struct s_client *UNUSED(cl), char *
 	return false;
 }
 static inline bool cccam_client_extended_mode(struct s_client *UNUSED(cl))
+{
+	return false;
+}
+static inline bool cccam_client_multics_mode(struct s_client *UNUSED(cl))
 {
 	return false;
 }

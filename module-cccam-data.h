@@ -226,6 +226,9 @@ struct cc_data
 	uint8_t extended_mode;
 	LLIST *extended_ecm_idx;
 
+	//multics detection
+	int8_t multics_mode;
+
 	//stats:
 	int32_t num_hop1;
 	int32_t num_hop2;
