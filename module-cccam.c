@@ -834,6 +834,14 @@ int32_t cc_send_cli_data(struct s_client *cl)
 	memcpy(buf + 29, rdr->cc_version, sizeof(rdr->cc_version)); // cccam version (ascii)
 	memcpy(buf + 61, rdr->cc_build, sizeof(rdr->cc_build)); // build number (ascii)
 
+	//multics seed already detected, now send multics 'WHO' for getting and confirming multics server
+	if (cc->multics_mode == 1)
+	{
+		memcpy(buf + 57, "W", 1);
+		memcpy(buf + 58, "H", 1);
+		memcpy(buf + 59, "O", 1);
+	}
+
 	cs_log_dbg(D_READER, "%s sending own version: %s, build: %s", getprefix(),
 				  rdr->cc_version, rdr->cc_build);
 
@@ -2357,6 +2365,13 @@ int32_t cc_parse_msg(struct s_client *cl, uint8_t *buf, int32_t l)
 			strncpy(cc->remote_version, (char *)data + 8, sizeof(cc->remote_version) - 1);
 			strncpy(cc->remote_build, (char *)data + 40, sizeof(cc->remote_build) - 1);
 			cc->remote_build_nr = atoi(cc->remote_build);
+
+			//multics server response
+			if(data[33] == 'M' && data[34] == 'C' && data[35] == 'S')
+			{
+				cc->multics_mode = 2; //multics server finaly confirmed.
+				cs_log_dbg(D_READER, "multics detected: %s!", getprefix());
+			}
 
 			cs_log_dbg(D_READER, "%s remove server %s running v%s (%s)", getprefix(), cs_hexdump(0,
 						  cc->peer_node_id, 8, tmp_dbg, sizeof(tmp_dbg)), cc->remote_version, cc->remote_build);
@@ -3915,6 +3930,16 @@ int32_t cc_cli_connect(struct s_client *cl)
 	//Create special data to detect oscam-cccam:
 	cc->is_oscam_cccam = sum == recv_sum;
 
+	//detect multics seed
+	uint8_t a = (data[0]^'M') + data[1] + data[2];
+	uint8_t b = data[4] + (data[5]^'C') + data[6];
+	uint8_t c = data[8] + data[9] + (data[10]^'S');
+	if((a == data[3]) && (b == data[7]) && (c == data[11]))
+	{
+		cc->multics_mode = 1; //detected multics seed.
+		cs_log_dbg(D_READER, "multics seed detected: %s", rdr->label);
+	}
+
 	cc_xor(data); // XOR init bytes with 'CCcam'
 
 	SHA_CTX ctx;
@@ -4209,6 +4234,11 @@ bool cccam_snprintf_cards_stat(struct s_client *cl, char *emmtext, size_t emmtex
 bool cccam_client_extended_mode(struct s_client *cl)
 {
 	return cl && cl->cc && ((struct cc_data *)cl->cc)->extended_mode;
+}
+
+bool cccam_client_multics_mode(struct s_client *cl)
+{
+	return cl && cl->cc && ((struct cc_data *)cl->cc)->multics_mode == 2;
 }
 
 void module_cccam(struct s_module *ph)
