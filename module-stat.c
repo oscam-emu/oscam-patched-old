@@ -571,6 +571,9 @@ static void add_stat(struct s_reader *rdr, ECM_REQUEST *er, int32_t ecm_time, in
 	if((uint32_t)ecm_time >= 3 * cfg.ctimeout)
 		{ return; }
 
+	if((uint32_t)ecm_time >= cfg.ctimeout)
+		{ rc = E_TIMEOUT;}
+
 	STAT_QUERY q;
 	get_stat_query(er, &q);
 	READER_STAT *s;
