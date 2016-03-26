@@ -446,6 +446,20 @@ static READER_STAT *get_add_stat(struct s_reader *rdr, STAT_QUERY *q)
 
 static void housekeeping_stat(int32_t force);
 
+void readerinfofix_get_stat_query(ECM_REQUEST *er, STAT_QUERY *q)
+{
+	get_stat_query(er, q);
+}
+
+void readerinfofix_inc_fail(READER_STAT *s)
+{
+	inc_fail(s);
+}
+
+READER_STAT *readerinfofix_get_add_stat(struct s_reader *rdr, STAT_QUERY *q)
+{
+	return get_add_stat(rdr, q);
+}
 
 static int32_t get_reopen_seconds(READER_STAT *s)
 {

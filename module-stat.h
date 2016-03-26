@@ -24,6 +24,9 @@ bool lb_check_auto_betatunnel(ECM_REQUEST *er, struct s_reader *rdr);
 void lb_set_best_reader(ECM_REQUEST *er);
 void lb_update_last(struct s_ecm_answer *ea_er, struct s_reader *reader);
 uint16_t lb_get_betatunnel_caid_to(ECM_REQUEST *er);
+void readerinfofix_get_stat_query(ECM_REQUEST *er, STAT_QUERY *q);
+void readerinfofix_inc_fail(READER_STAT *s);
+READER_STAT *readerinfofix_get_add_stat(struct s_reader *rdr, STAT_QUERY *q);
 #else
 static inline void init_stat(void) { }
 static inline void stat_finish(void) { }

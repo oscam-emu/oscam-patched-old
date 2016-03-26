@@ -1720,6 +1720,22 @@ int32_t write_ecm_answer(struct s_reader *reader, ECM_REQUEST *er, int8_t rc, ui
 			}
 		}
 
+		// this fixes big oscam mistake - wrong reader status on web info aka not counted timeouts which dispalyed reader info 100 percent OK but reader had a ton of unhandled timeouts!
+		else if(ea->rc == E_TIMEOUT)
+		{
+#ifdef WITH_LB
+			STAT_QUERY q;
+			readerinfofix_get_stat_query(er, &q);
+			READER_STAT *s;
+			s = readerinfofix_get_add_stat(reader, &q);
+			if (s)
+			{
+				cs_log_dbg(D_LB, "inc fail {client %s, caid %04X, prid %06X, srvid %04X} [write_ecm_answer] reader %s rc %d, ecm time %d ms (%d ms)", (check_client(er->client) ? er->client->account->usr : "-"), er->caid, er->prid, er->srvid, reader ? reader->label : "-", rc, ea->ecm_time, ntime);
+				readerinfofix_inc_fail(s); //now increase fail factor for unhandled timeouts
+			}
+#endif
+			reader->ecmsnok++; //now append timeouts to the readerinfo Total NOK count (aka sum of timeouts + not OK)
+		}
 		//Reader ECMs Health Try (by Pickser)
 		if(reader->ecmsok != 0 || reader->ecmsnok != 0)
 		{
