@@ -26,6 +26,7 @@
 #define MIN_ECM_LENGTH		8
 #define HELLO_KEEPALIVE_TIME	120 //send hello to peer every 2 min in case no ecm received
 #define STATS_WRITE_TIME	300 //write stats file every 5 min
+#define MAX_GBOX_CARDS 1024  //send max. 1024 to peer
 
 #define LOCAL_GBOX_MAJOR_VERSION	0x02
 
@@ -147,9 +148,9 @@ void gbox_write_peer_onl(void)
 		{
 			struct gbox_peer *peer = cl->gbox;
 			if (peer->online)
-				{ fprintf(fhandle, "1 %s  %s %04X 2.%02X\n",cl->reader->device, cs_inet_ntoa(cl->ip),peer->gbox.id, peer->gbox.minor_version); }
+				{ fprintf(fhandle, "1 %s %s %04X 2.%02X\n",cl->reader->device, cs_inet_ntoa(cl->ip),peer->gbox.id, peer->gbox.minor_version); }
 			else
-				{ fprintf(fhandle, "0 %s  %s %04X 0.00\n",cl->reader->device, cs_inet_ntoa(cl->ip),peer->gbox.id); }
+				{ fprintf(fhandle, "0 %s %s %04X 0.00\n",cl->reader->device, cs_inet_ntoa(cl->ip),peer->gbox.id); }
 		}
 	}
 	cs_readunlock(__func__, &clientlist_lock);
@@ -333,6 +334,7 @@ void gbox_send_hello(struct s_client *proxy, uint8_t hello_stat)
                 return;
         }
         uint16_t nbcards = 0;
+        uint16_t nbcards_cnt = 0;
         uint8_t packet;
         uchar buf[2048];
         packet = 0;
@@ -351,8 +353,12 @@ void gbox_send_hello(struct s_client *proxy, uint8_t hello_stat)
                 while((card = gbox_cards_iter_next(gci)))
                 {
                         //send to user only cards which matching CAID from account and lvl > 0
+                        //and cccmaxhops from account
                         //do not send peer cards back
                         if(chk_ctab(gbox_get_caid(card->caprovid), &peer->my_user->account->ctab) && (card->lvl > 0) &&
+                        #ifdef MODULE_CCCAM 
+								(card->dist <= peer->my_user->account->cccmaxhops) &&
+						#endif
                                 (!card->origin_peer || (card->origin_peer && card->origin_peer->gbox.id != peer->gbox.id)))
                         {
                                 *(++ptr) = card->caprovid >> 24;
@@ -365,6 +371,12 @@ void gbox_send_hello(struct s_client *proxy, uint8_t hello_stat)
                                 *(++ptr) = card->id.peer >> 8;
                                 *(++ptr) = card->id.peer & 0xff;
                                 nbcards++;
+                                nbcards_cnt++;
+                                if(nbcards_cnt == MAX_GBOX_CARDS ) 
+                                {
+									cs_log("max cards gbox_send_hello with peer reached");
+									break;
+								}
                                 if(nbcards == 100)    //check if 100 is good or we need more sophisticated algorithm
                                 {
                                         gbox_send_hello_packet(proxy, packet, buf, ptr, nbcards, hello_stat);
