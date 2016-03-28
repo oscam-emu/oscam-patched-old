@@ -61,7 +61,7 @@ void gbox_write_share_cards_info(void)
         {
                 if (card->type == GBOX_CARD_TYPE_GBOX)
                 {
-                        fprintf(fhandle_shared, "CardID %2d at %s Card %08X Sl:%2d Lev:%1d dist:%1d id:%04X\n",
+                        fprintf(fhandle_shared, "CardID %d at %s Card %08X Sl:%d Lev:%1d dist:%1d id:%04X\n",
                                 card_count_shared, card->origin_peer->hostname, card->caprovid,
                                 card->id.slot, card->lvl, card->dist, card->id.peer);
                         card_count_shared++;
