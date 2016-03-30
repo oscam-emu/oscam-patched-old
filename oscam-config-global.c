@@ -523,6 +523,7 @@ static const struct config_list webif_opts[] =
 	DEF_OPT_INT8("httppiconsize"            , OFS(http_picon_size),         0),
 	DEF_OPT_INT8("httpshowmeminfo"          , OFS(http_showmeminfo),        0),
 	DEF_OPT_INT8("httpshowuserinfo"         , OFS(http_showuserinfo),       0),
+	DEF_OPT_INT8("httpshowreaderinfo"       , OFS(http_showreaderinfo),     0),
 	DEF_OPT_INT8("httpshowcacheexinfo"      , OFS(http_showcacheexinfo),    0),
 	DEF_OPT_INT8("httpshowecminfo"          , OFS(http_showecminfo),        0),
 	DEF_OPT_INT8("httpshowloadinfo"         , OFS(http_showloadinfo),       0),

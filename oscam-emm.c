@@ -133,15 +133,19 @@ static void reader_log_emm(struct s_reader *reader, EMM_PACKET *ep, int32_t coun
 	{
 	case 0:
 		reader->emmerror[ep->type]++;
+		reader->webif_emmerror[ep->type]++;
 		break;
 	case 1:
 		reader->emmwritten[ep->type]++;
+		reader->webif_emmwritten[ep->type]++;
 		break;
 	case 2:
 		reader->emmskipped[ep->type]++;
+		reader->webif_emmskipped[ep->type]++;
 		break;
 	case 3:
 		reader->emmblocked[ep->type]++;
+		reader->webif_emmblocked[ep->type]++;
 		break;
 	}
 #endif

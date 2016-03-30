@@ -449,7 +449,7 @@ td.subheadline p {
 td.centered,
 td[class*='statuscol'],		/* shorthand notation td[class*='statuscol'] for  td.statuscol0 -  td.statuscol16 */
 td[class*='usercol'],		/* shorthand notation td[class*='usercol'] for  td.usercol0 -  td.usercol25 */
-td[class*='readercol'] {	/* shorthand notation td[class*='readercol'] for  td.readercol0 -  td.readercol17 */
+td[class*='readercol'] {	/* shorthand notation td[class*='readercol'] for  td.readercol0 -  td.readercol18 */
 	text-align:center
 }
 td.statuscol0 {
@@ -466,8 +466,8 @@ td.servicescol1, td.servicescol2, td.servicescol3 {
 	width:30%
 }
 /* Actionbutton readers.html */
-td.readercol13,td.readercol14,
-td.readercol15 {
+td.readercol14,td.readercol15,
+td.readercol16 {
 	min-width:22px
 }
 /* cols width info status and users.html */

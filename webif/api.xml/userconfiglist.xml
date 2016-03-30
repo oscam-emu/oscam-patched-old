@@ -15,5 +15,32 @@
         <useractive>##TOTAL_ACTIVE##</useractive>
         <userconnected>##TOTAL_CONNECTED##</userconnected>
         <useronline>##TOTAL_ONLINE##</useronline>
+        <readertotal>##TOTAL_READERS##</readertotal>
+        <readerdisabled>##TOTAL_DISABLED_READERS##</readerdisabled>
+        <readeractive>##TOTAL_ACTIVE_READERS##</readeractive>
+        <readerconnected>##TOTAL_CONNECTED_READERS##</readerconnected>
+        <cwokreaders>##TOTAL_CWOK_READERS##</cwokreaders>
+        <cwnokreaders>##TOTAL_CWNOK_READERS##</cwnokreaders>
+        <cwtimeoutreaders>##TOTAL_CWTOUT_READERS##</cwtimeoutreaders>
+	<readertotalhead>##TOTAL_ECMSFILTEREDHEAD_READERS##</readertotalhead>
+	<readertotallen>##TOTAL_ECMSFILTEREDLEN_READERS##</readertotallen>
+	<readertotalemmerroruk>##TOTAL_EMMERRORUK_READERS##</readertotalemmerroruk>
+	<readertotalemmerrorg>##TOTAL_EMMERRORG_READERS##</readertotalemmerrorg>
+	<readertotalemmerrors>##TOTAL_EMMERRORS_READERS##</readertotalemmerrors>
+	<readertotalemmerroruq>##TOTAL_EMMERRORUQ_READERS##</readertotalemmerroruq>
+	<readertotalemmwrittenuk>##TOTAL_EMMWRITTENUK_READERS##</readertotalemmwrittenuk>
+	<readertotalemmwritteng>##TOTAL_EMMWRITTENG_READERS##</readertotalemmwritteng>
+	<readertotalemmwrittens>##TOTAL_EMMWRITTENS_READERS##</readertotalemmwrittens>
+	<readertotalemmwrittenuq>##TOTAL_EMMWRITTENUQ_READERS##</readertotalemmwrittenuq>
+	<readertotalemmskippeduk>##TOTAL_EMMSKIPPEDUK_READERS##</readertotalemmskippeduk>
+	<readertotalemmskippedg>##TOTAL_EMMSKIPPEDG_READERS##</readertotalemmskippedg>
+	<readertotalemmskippeds>##TOTAL_EMMSKIPPEDS_READERS##</readertotalemmskippeds>
+	<readertotalemmskippeduq>##TOTAL_EMMSKIPPEDUQ_READERS##</readertotalemmskippeduq>
+	<readertotalemmblockeduk>##TOTAL_EMMBLOCKEDUK_READERS##</readertotalemmblockeduk>
+	<readertotalemmblockedg>##TOTAL_EMMBLOCKEDG_READERS##</readertotalemmblockedg>
+	<readertotalemmblockeds>##TOTAL_EMMBLOCKEDS_READERS##</readertotalemmblockeds>
+	<readertotalemmblockeduq>##TOTAL_EMMBLOCKEDUQ_READERS##</readertotalemmblockeduq>
+	<readertotalsumofallecm>##TOTAL_SUM_ALL_READERS_ECM##</readertotalsumofallecm>
+	<readertotalsumofallemm>##TOTAL_SUM_ALL_READERS_EMM##</readertotalsumofallemm>
     </totals>
 ##TPLAPIFOOTER##

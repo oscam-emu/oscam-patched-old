@@ -846,6 +846,7 @@ int32_t matching_reader(ECM_REQUEST *er, struct s_reader *rdr)
 		{
 			cs_log_dbg(D_TRACE, "ECM is not in ecmwhitelist of reader %s.", rdr->label);
 			rdr->ecmsfilteredlen += 1;
+			rdr->webif_ecmsfilteredlen += 1;
 			return (0);
 		}
 	}
@@ -929,6 +930,7 @@ int32_t matching_reader(ECM_REQUEST *er, struct s_reader *rdr)
 							  "following ECM %04X@%06X:%04X was filtered by ECMHeaderwhitelist of Reader %s from User %s because of not matching Header:",
 							  er->caid, er->prid, er->srvid, rdr->label, username(er->client));
 				rdr->ecmsfilteredhead += 1;
+				rdr->webif_ecmsfilteredhead += 1;
 				return (0);
 			}
 		}
