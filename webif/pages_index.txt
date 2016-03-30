@@ -275,6 +275,7 @@ SYSTEMINFOBIT                 status/status_systeminfo.html
 SUSER                         status/status_user.html
 SUSERICON                     status/status_usericon.html
 USERINFOBIT                   status/status_userinfo.html
+READERINFOBIT                 status/status_readerinfo.html
 
 TOUCH_CSS                     touch/css.css                                               TOUCH
 TOUCH_JSCRIPT                 touch/jscript.js                                            TOUCH

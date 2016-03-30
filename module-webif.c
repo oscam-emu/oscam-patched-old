@@ -223,7 +223,7 @@ static void cacheex_clear_all_stats(void)
 }
 #endif
 
-static void clear_system_stats(void)
+static void clear_info_clients_stats(void)
 {
 	first_client->cwfound = 0;
 	first_client->cwcache = 0;
@@ -234,6 +234,31 @@ static void clear_system_stats(void)
 	first_client->emmok = 0;
 	first_client->emmnok = 0;
 	cacheex_clear_client_stats(first_client);
+}
+
+static void clear_info_readers_stats(void)
+{
+	int8_t i;
+	cs_writelock(__func__, &readerlist_lock);
+	LL_ITER itr = ll_iter_create(configured_readers);
+	struct s_reader *rdr;
+	while((rdr = ll_iter_next(&itr)))
+	{
+		rdr->webif_ecmsok = 0;
+		rdr->webif_ecmsnok = 0;
+		rdr->webif_ecmstout = 0;
+		rdr->webif_ecmsfilteredhead = 0;
+		rdr->webif_ecmsfilteredlen = 0;
+
+		for(i = 0; i < 4; i++)
+		{
+			rdr->webif_emmerror[i] = 0;
+			rdr->webif_emmwritten[i] = 0;
+			rdr->webif_emmskipped[i] = 0;
+			rdr->webif_emmblocked[i] = 0;
+		}
+	}
+	cs_writeunlock(__func__, &readerlist_lock);
 }
 
 static void set_ecm_info(struct templatevars * vars)
@@ -253,7 +278,7 @@ static void set_ecm_info(struct templatevars * vars)
 	  || first_client->cwcacheexhit<0
 #endif
 	){
-		clear_system_stats();
+		clear_info_clients_stats();
 	}
 	//end reset stats
 
@@ -295,6 +320,90 @@ static void set_ecm_info(struct templatevars * vars)
 	tpl_printf(vars, TPLADD, "REL_CWNEGNOK", "%.2f", (double)first_client->cwnot * 100 / ecmneg);
 	//tpl_printf(vars, TPLADD, "REL_CWNEGIGN", "%.2f", (double)first_client->cwignored * 100 / ecmneg);
 	tpl_printf(vars, TPLADD, "REL_CWNEGTOUT", "%.2f", (double)first_client->cwtout * 100 / ecmneg);
+
+	double totalrdrneg = 0, totalrdrpos = 0;
+	double totalrdrok = 0, totalrdrnok = 0, totalrdrtout = 0;
+	double flen = 0, fhead = 0;
+	double teruk = 0, terg = 0, ters = 0, teruq = 0;
+	double twruk = 0, twrg = 0, twrs = 0, twruq = 0;
+	double tskuk = 0, tskg = 0, tsks = 0, tskuq = 0;
+	double tbluk = 0, tblg = 0, tbls = 0, tbluq = 0;
+
+	ecmsum = 0;
+	emmsum = 0;
+
+	cs_readlock(__func__, &readerlist_lock);
+	LL_ITER itr = ll_iter_create(configured_readers);
+	struct s_reader *rdr;
+	while((rdr = ll_iter_next(&itr)))
+	{
+		if (rdr->webif_ecmsok) { totalrdrok += rdr->webif_ecmsok; }
+		if (rdr->webif_ecmsnok) { totalrdrnok += rdr->webif_ecmsnok; }
+		if (rdr->webif_ecmstout) { totalrdrtout += rdr->webif_ecmstout; }
+
+		if (rdr->webif_ecmsfilteredlen) { flen += rdr->webif_ecmsfilteredlen; }
+		if (rdr->webif_ecmsfilteredhead) { fhead += rdr->webif_ecmsfilteredhead; }
+
+		if (rdr->webif_emmerror[0]) { teruk += rdr->webif_emmerror[0]; }
+		if (rdr->webif_emmerror[1]) { teruq += rdr->webif_emmerror[1]; }
+		if (rdr->webif_emmerror[2]) { ters += rdr->webif_emmerror[2]; }
+		if (rdr->webif_emmerror[3]) { terg += rdr->webif_emmerror[3]; }
+
+		if (rdr->webif_emmwritten[0]) { twruk += rdr->webif_emmwritten[0]; }
+		if (rdr->webif_emmwritten[1]) { twruq += rdr->webif_emmwritten[1]; }
+		if (rdr->webif_emmwritten[2]) { twrs += rdr->webif_emmwritten[2]; }
+		if (rdr->webif_emmwritten[3]) { twrg += rdr->webif_emmwritten[3]; }
+
+		if (rdr->webif_emmskipped[0]) { tskuk += rdr->webif_emmskipped[0]; }
+		if (rdr->webif_emmskipped[1]) { tskuq += rdr->webif_emmskipped[1]; }
+		if (rdr->webif_emmskipped[2]) { tsks += rdr->webif_emmskipped[2]; }
+		if (rdr->webif_emmskipped[3]) { tskg += rdr->webif_emmskipped[3]; }
+
+		if (rdr->webif_emmblocked[0]) { tbluk += rdr->webif_emmblocked[0]; }
+		if (rdr->webif_emmblocked[1]) { tbluq += rdr->webif_emmblocked[1]; }
+		if (rdr->webif_emmblocked[2]) { tbls += rdr->webif_emmblocked[2]; }
+		if (rdr->webif_emmblocked[3]) { tblg += rdr->webif_emmblocked[3]; }
+	}
+	cs_readunlock(__func__, &readerlist_lock);
+
+	totalrdrneg = totalrdrnok + totalrdrtout;
+	totalrdrpos = totalrdrok;
+	ecmsum = totalrdrok + totalrdrnok + totalrdrtout;
+
+	tpl_printf(vars, TPLADD, "TOTAL_CWOK_READERS", PRINTF_LOCAL_F, totalrdrok);
+	tpl_printf(vars, TPLADD, "TOTAL_CWNOK_READERS", PRINTF_LOCAL_F, totalrdrnok);
+	tpl_printf(vars, TPLADD, "TOTAL_CWTOUT_READERS", PRINTF_LOCAL_F, totalrdrtout);
+	tpl_printf(vars, TPLADD, "REL_CWOK_READERS", "%.2f", totalrdrok * 100 / ecmsum);
+	tpl_printf(vars, TPLADD, "REL_CWNOK_READERS", "%.2f", totalrdrnok * 100 / ecmsum);
+	tpl_printf(vars, TPLADD, "REL_CWTOUT_READERS", "%.2f", totalrdrtout * 100 / ecmsum);
+	tpl_printf(vars, TPLADD, "TOTAL_CWPOS_READERS", PRINTF_LOCAL_F, totalrdrpos);
+	tpl_printf(vars, TPLADD, "TOTAL_CWNEG_READERS", PRINTF_LOCAL_F, totalrdrneg);
+	tpl_printf(vars, TPLADD, "REL_CWPOS_READERS", "%.2f", totalrdrpos * 100 / ecmsum);
+	tpl_printf(vars, TPLADD, "REL_CWNEG_READERS", "%.2f", totalrdrneg * 100 / ecmsum);
+	tpl_printf(vars, TPLADD, "TOTAL_ELENR", PRINTF_LOCAL_F, flen);
+	tpl_printf(vars, TPLADD, "TOTAL_EHEADR", PRINTF_LOCAL_F, fhead);
+	tpl_printf(vars, TPLADD, "TOTAL_SUM_ALL_READERS_ECM", PRINTF_LOCAL_F, ecmsum);
+
+	tpl_printf(vars, TPLADD, "TOTAL_EMMERRORUK_READERS", PRINTF_LOCAL_F, teruk);
+	tpl_printf(vars, TPLADD, "TOTAL_EMMERRORG_READERS", PRINTF_LOCAL_F, terg);
+	tpl_printf(vars, TPLADD, "TOTAL_EMMERRORS_READERS", PRINTF_LOCAL_F, ters);
+	tpl_printf(vars, TPLADD, "TOTAL_EMMERRORUQ_READERS", PRINTF_LOCAL_F, teruq);
+	tpl_printf(vars, TPLADD, "TOTAL_EMMWRITTENUK_READERS", PRINTF_LOCAL_F, twruk);
+	tpl_printf(vars, TPLADD, "TOTAL_EMMWRITTENG_READERS", PRINTF_LOCAL_F, twrg);
+	tpl_printf(vars, TPLADD, "TOTAL_EMMWRITTENS_READERS", PRINTF_LOCAL_F, twrs);
+	tpl_printf(vars, TPLADD, "TOTAL_EMMWRITTENUQ_READERS", PRINTF_LOCAL_F, twruq);
+	tpl_printf(vars, TPLADD, "TOTAL_EMMSKIPPEDUK_READERS", PRINTF_LOCAL_F, tskuk);
+	tpl_printf(vars, TPLADD, "TOTAL_EMMSKIPPEDG_READERS", PRINTF_LOCAL_F, tskg);
+	tpl_printf(vars, TPLADD, "TOTAL_EMMSKIPPEDS_READERS", PRINTF_LOCAL_F, tsks);
+	tpl_printf(vars, TPLADD, "TOTAL_EMMSKIPPEDUQ_READERS", PRINTF_LOCAL_F, tskuq);
+	tpl_printf(vars, TPLADD, "TOTAL_EMMBLOCKEDUK_READERS", PRINTF_LOCAL_F, tbluk);
+	tpl_printf(vars, TPLADD, "TOTAL_EMMBLOCKEDG_READERS", PRINTF_LOCAL_F, tblg);
+	tpl_printf(vars, TPLADD, "TOTAL_EMMBLOCKEDS_READERS", PRINTF_LOCAL_F, tbls);
+	tpl_printf(vars, TPLADD, "TOTAL_EMMBLOCKEDUQ_READERS", PRINTF_LOCAL_F, tbluq);
+
+	emmsum = teruk + terg + ters + teruq + twruk + twrg + twrs + twruq + tskuk + tskg + tsks + tskuq + tbluk + tblg + tbls + tbluq;
+
+	tpl_printf(vars, TPLADD, "TOTAL_SUM_ALL_READERS_EMM", PRINTF_LOCAL_F, emmsum);
 }
 
 static void refresh_oscam(enum refreshtypes refreshtype)
@@ -1119,6 +1228,7 @@ static char *send_oscam_config_webif(struct templatevars *vars, struct uriparams
 	if(cfg.http_showpicons > 0) { tpl_addVar(vars, TPLADD, "SHOWPICONSCHECKED", "checked"); }
 	if(cfg.http_showmeminfo > 0) { tpl_addVar(vars, TPLADD, "SHOWMEMINFOCHECKED", "checked"); }
 	if(cfg.http_showuserinfo > 0) { tpl_addVar(vars, TPLADD, "SHOWUSERINFOCHECKED", "checked"); }
+	if(cfg.http_showreaderinfo > 0) { tpl_addVar(vars, TPLADD, "SHOWREADERINFOCHECKED", "checked"); }
 	if(cfg.http_showcacheexinfo > 0) { tpl_addVar(vars, TPLADD, "SHOWCACHEEXINFOCHECKED", "checked"); }
 	if(cfg.http_showloadinfo > 0) { tpl_addVar(vars, TPLADD, "SHOWLOADINFOCHECKED", "checked"); }
 	if(cfg.http_showecminfo > 0) { tpl_addVar(vars, TPLADD, "SHOWECMINFOCHECKED", "checked"); }
@@ -1406,8 +1516,10 @@ static void clear_rdr_stats(struct s_reader *rdr)
 	}
 	rdr->ecmsok = 0;
 	rdr->ecmsnok = 0;
+	rdr->ecmstout = 0;
 	rdr->ecmshealthok = 0;
 	rdr->ecmshealthnok = 0;
+	rdr->ecmshealthtout = 0;
 	rdr->ecmsfilteredhead = 0;
 	rdr->ecmsfilteredlen = 0;
 }
@@ -1439,9 +1551,13 @@ static char *send_oscam_reader(struct templatevars *vars, struct uriparams *para
 
 	tpl_addVar(vars, TPLADD, "READERACTIONCOLS", config_enabled(WITH_LB) ? "6" : "5");
 
-	if(strcmp(getParam(params, "action"), "resetserverstats") == 0)
+	if(strcmp(getParam(params, "action"), "resetuserstats") == 0)
 	{
-		clear_system_stats();
+		clear_info_clients_stats();
+	}
+	if(strcmp(getParam(params, "action"), "resetreaderstats") == 0)
+	{
+		clear_info_readers_stats();
 	}
 	if(strcmp(getParam(params, "action"), "reloadreaders") == 0)
 	{
@@ -1533,12 +1649,18 @@ static char *send_oscam_reader(struct templatevars *vars, struct uriparams *para
 	int jsondelimiter = 0;
 	int existing_insert = 0;
 
+	int32_t total_readers = 0;
+	int32_t disabled_readers = 0;
+	int32_t active_readers = 0;
+	int32_t connected_readers = 0;
+
 	ll_iter_reset(&itr); //going to iterate all configured readers
 	while((rdr = ll_iter_next(&itr)))
 	{
 		struct s_client *cl = rdr->client;
 		if(rdr->label[0] && rdr->typ)
 		{
+			total_readers += 1;
 
 			// used for API and WebIf
 			tpl_addVar(vars, TPLADD, "READERNAME", xml_encode(vars, rdr->label));
@@ -1566,6 +1688,11 @@ static char *send_oscam_reader(struct templatevars *vars, struct uriparams *para
 			tpl_addVar(vars, TPLADD, "CTYPSORT", reader_get_type_desc(rdr, 0));
 
 			tpl_addVar(vars, TPLADD, "READERCLASS", rdr->enable ? "enabledreader" : "disabledreader");
+
+			if(rdr->enable) { active_readers += 1; }
+			else { disabled_readers += 1; }
+
+			if(rdr->tcp_connected) { connected_readers += 1; }
 
 			if(rdr->description)
 				tpl_printf(vars, TPLADD, "DESCRIPTION","%s(%s)",!apicall?"&#13;":"",xml_encode(vars, rdr->description));
@@ -1607,6 +1734,8 @@ static char *send_oscam_reader(struct templatevars *vars, struct uriparams *para
 			tpl_printf(vars, TPLADD, "ECMSOKREL", " (%.2f %%)", rdr->ecmshealthok);
 			tpl_printf(vars, TPLADD, "ECMSNOK", PRINTF_LOCAL_D, rdr->ecmsnok);
 			tpl_printf(vars, TPLADD, "ECMSNOKREL", " (%.2f %%)",rdr->ecmshealthnok);
+			tpl_printf(vars, TPLADD, "ECMSTOUT", PRINTF_LOCAL_D, rdr->ecmstout);
+			tpl_printf(vars, TPLADD, "ECMSTOUTREL", " (%.2f %%)",rdr->ecmshealthtout);
 			tpl_printf(vars, TPLADD, "ECMSFILTEREDHEAD", PRINTF_LOCAL_D, rdr->ecmsfilteredhead);
 			tpl_printf(vars, TPLADD, "ECMSFILTEREDLEN", PRINTF_LOCAL_D, rdr->ecmsfilteredlen);
 #ifdef WITH_LB
@@ -1679,6 +1808,11 @@ static char *send_oscam_reader(struct templatevars *vars, struct uriparams *para
 
 		}
 	}
+
+	tpl_printf(vars, TPLADD, "TOTAL_READERS", "%d", total_readers);
+	tpl_printf(vars, TPLADD, "TOTAL_DISABLED_READERS", "%d", disabled_readers);
+	tpl_printf(vars, TPLADD, "TOTAL_ACTIVE_READERS", "%d", active_readers);
+	tpl_printf(vars, TPLADD, "TOTAL_CONNECTED_READERS", "%d", connected_readers);
 
 	//CM info
 	tpl_addVar(vars, TPLADD, "DISPLAYUSERINFO", "hidden"); // no userinfo in readers
@@ -3352,9 +3486,14 @@ static char *send_oscam_user_config(struct templatevars *vars, struct uriparams 
 		if(account) { clear_account_stats(account); }
 	}
 
-	if(strcmp(getParam(params, "action"), "resetserverstats") == 0)
+	if(strcmp(getParam(params, "action"), "resetuserstats") == 0)
 	{
-		clear_system_stats();
+		clear_info_clients_stats();
+	}
+
+	if(strcmp(getParam(params, "action"), "resetreaderstats") == 0)
+	{
+		clear_info_readers_stats();
 	}
 
 	if(strcmp(getParam(params, "action"), "resetalluserstats") == 0)
@@ -3740,6 +3879,7 @@ static char *send_oscam_user_config(struct templatevars *vars, struct uriparams 
 	tpl_printf(vars, TPLADD, "TOTAL_ONLINE", "%d", online_users);
 
 	//CM info
+	tpl_addVar(vars, TPLADD, "DISPLAYREADERINFO", "hidden"); // no readerinfo in users
 	set_ecm_info(vars);
 
 	if(!apicall)
@@ -4375,9 +4515,13 @@ static char *send_oscam_status(struct templatevars * vars, struct uriparams * pa
 		}
 	}
 
-	if(strcmp(getParam(params, "action"), "resetserverstats") == 0)
+	if(strcmp(getParam(params, "action"), "resetuserstats") == 0)
 	{
-		clear_system_stats();
+		clear_info_clients_stats();
+	}
+	if(strcmp(getParam(params, "action"), "resetreaderstats") == 0)
+	{
+		clear_info_readers_stats();
 	}
 	if(strcmp(getParam(params, "action"), "restart") == 0)
 	{
@@ -4476,6 +4620,11 @@ static char *send_oscam_status(struct templatevars * vars, struct uriparams * pa
 	int32_t server_count_all = 0, server_count_shown = 0, server_count_hidden = 0;
 	int32_t monitor_count_all = 0, monitor_count_shown = 0;
 	int32_t shown;
+
+	int32_t total_readers = 0;
+	int32_t active_readers = 0;
+	int32_t disabled_readers = 0;
+	int32_t connected_readers = 0;
 
 	struct s_client *cl;
 	int8_t filtered;
@@ -5156,6 +5305,22 @@ static char *send_oscam_status(struct templatevars * vars, struct uriparams * pa
 #endif
 
 	}
+
+	LL_ITER itr = ll_iter_create(configured_readers);
+	struct s_reader *rdrr;
+	while((rdrr = ll_iter_next(&itr)))
+	{
+		if(rdrr->label[0] && rdrr->typ)
+		{
+			total_readers += 1;
+
+			if(rdrr->enable) { active_readers += 1; }
+			else { disabled_readers += 1; }
+
+			if(rdrr->tcp_connected) { connected_readers += 1; }
+		}
+	}
+
 	cs_readunlock(__func__, &clientlist_lock);
 	cs_readunlock(__func__, &readerlist_lock);
 
@@ -5274,6 +5439,11 @@ static char *send_oscam_status(struct templatevars * vars, struct uriparams * pa
 	tpl_printf(vars, TPLADD, "TOTAL_ONLINE", "%d", online_users);
 	tpl_printf(vars, TPLADD, "TOTAL_CONNECTED", "%d", connected_users);
 
+	tpl_printf(vars, TPLADD, "TOTAL_READERS", "%d", total_readers);
+	tpl_printf(vars, TPLADD, "TOTAL_DISABLED_READERS", "%d", disabled_readers);
+	tpl_printf(vars, TPLADD, "TOTAL_ACTIVE_READERS", "%d", active_readers);
+	tpl_printf(vars, TPLADD, "TOTAL_CONNECTED_READERS", "%d", connected_readers);
+
 	//CM info
 	set_ecm_info(vars);
 
@@ -5306,7 +5476,7 @@ static char *send_oscam_status(struct templatevars * vars, struct uriparams * pa
 #endif
 	set_status_info(vars, p_stat_cur);
 
-	if(cfg.http_showmeminfo || cfg.http_showuserinfo || cfg.http_showloadinfo || cfg.http_showecminfo || (cfg.http_showcacheexinfo  && config_enabled(CS_CACHEEX))){
+	if(cfg.http_showmeminfo || cfg.http_showuserinfo || cfg.http_showreaderinfo || cfg.http_showloadinfo || cfg.http_showecminfo || (cfg.http_showcacheexinfo  && config_enabled(CS_CACHEEX))){
 		tpl_addVar(vars, TPLADD, "DISPLAYINFO", "visible");
 	}
 	else{
@@ -5315,8 +5485,10 @@ static char *send_oscam_status(struct templatevars * vars, struct uriparams * pa
 
 	tpl_addVar(vars, TPLADD, "DISPLAYSYSINFO", cfg.http_showmeminfo ? "visible" : "hidden");
 	tpl_addVar(vars, TPLADD, "DISPLAYUSERINFO", cfg.http_showuserinfo ? "visible" : "hidden");
+	tpl_addVar(vars, TPLADD, "DISPLAYREADERINFO", cfg.http_showreaderinfo ? "visible" : "hidden");
 	tpl_addVar(vars, TPLADD, "DISPLAYLOADINFO", cfg.http_showloadinfo ?"visible" : "hidden");
 	tpl_addVar(vars, TPLADD, "DISPLAYECMINFO", cfg.http_showecminfo ? "visible" : "hidden");
+	tpl_addVar(vars, TPLADD, "DISPLAYECMINFO_READERS", cfg.http_showecminfo ? "visible" : "hidden");
 
 	if(cfg.http_showcacheexinfo == 1 && config_enabled(CS_CACHEEX)){
 		tpl_addVar(vars, TPLADD, "DISPLAYCACHEEXINFO", "visible");

@@ -816,22 +816,26 @@ function updateReaderpage(data) {
 				.data('sort-value', item.stats.ecmsnok);
 		}
 		if (!is_nopoll('readercol6')) {
-			$(uid + " td.readercol6").text(item.stats.ecmsfiltered);
+			$(uid + " td.readercol6").text(item.stats.ecmstout + item.stats.ecmstoutrel)
+				.data('sort-value', item.stats.ecmstout);
 		}
 		if (!is_nopoll('readercol7')) {
-			$(uid + " td.readercol7").text(item.stats.emmerror);
+			$(uid + " td.readercol7").text(item.stats.ecmsfiltered);
 		}
 		if (!is_nopoll('readercol8')) {
-			$(uid + " td.readercol8").text(item.stats.emmwritten);
+			$(uid + " td.readercol8").text(item.stats.emmerror);
 		}
 		if (!is_nopoll('readercol9')) {
-			$(uid + " td.readercol9").text(item.stats.emmskipped);
+			$(uid + " td.readercol9").text(item.stats.emmwritten);
 		}
 		if (!is_nopoll('readercol10')) {
-			$(uid + " td.readercol10").text(item.stats.emmblocked);
+			$(uid + " td.readercol10").text(item.stats.emmskipped);
 		}
 		if (!is_nopoll('readercol11')) {
-			$(uid + " td.readercol11").text(item.stats.lbweight);
+			$(uid + " td.readercol11").text(item.stats.emmblocked);
+		}
+		if (!is_nopoll('readercol12')) {
+			$(uid + " td.readercol12").text(item.stats.lbweight);
 		}
 
 		if (typeof custompoll == 'function') {
@@ -1059,7 +1063,7 @@ function updateCacheextotals(data) {
 }
 
 /*
- *	Statuspage Functions: Update Totals User + ECM
+ *	Statuspage Functions: Update Totals User + Totals Reader + ECM + EMM
  */
 function updateTotals(data) {
 	$("#total_users").text(data.oscam.totals.total_users);
@@ -1068,27 +1072,61 @@ function updateTotals(data) {
 	$("#total_online").text(data.oscam.totals.total_online);
 	$("#total_disabled").text(data.oscam.totals.total_disabled);
 	$("#total_expired").text(data.oscam.totals.total_expired);
+	$("#total_readers").text(data.oscam.totals.total_readers);
+	$("#total_active_readers").text(data.oscam.totals.total_active_readers);
+	$("#total_connected_readers").text(data.oscam.totals.total_connected_readers);
+	$("#total_disabled_readers").text(data.oscam.totals.total_disabled_readers);
 	$("#total_cwok").text(data.oscam.totals.total_cwok);
+	$("#total_cwok_readers").text(data.oscam.totals.total_cwok_readers);
 	$("#rel_cwok").text(data.oscam.totals.rel_cwok);
+	$("#rel_cwok_readers").text(data.oscam.totals.rel_cwok_readers);
 	$("#total_cwcache").text(data.oscam.totals.total_cwcache);
 	$("#rel_cwcache").text(data.oscam.totals.rel_cwcache);
 	$("#total_cwnok").text(data.oscam.totals.total_cwnok);
+	$("#total_cwnok_readers").text(data.oscam.totals.total_cwnok_readers);
 	$("#rel_cwnok").text(data.oscam.totals.rel_cwnok);
+	$("#rel_cwnok_readers").text(data.oscam.totals.rel_cwnok_readers);
 	$("#total_cwtout").text(data.oscam.totals.total_cwtout);
+	$("#total_cwtout_readers").text(data.oscam.totals.total_cwtout_readers);
 	$("#rel_cwtout").text(data.oscam.totals.rel_cwtout);
+	$("#rel_cwtout_readers").text(data.oscam.totals.rel_cwtout_readers);
 	$("#total_cwign").text(data.oscam.totals.total_cwign);
 	//$( "#rel_cwign" ).text( data.oscam.totals.rel_cwign );
 	$("#total_ecm_min").text(data.oscam.totals.total_ecm_min);
 	$("#total_cw").text(data.oscam.totals.total_cw);
 	$("#total_cwpos").text(data.oscam.totals.total_cwpos);
+	$("#total_cwpos_readers").text(data.oscam.totals.total_cwpos_readers);
 	$("#rel_cwpos").text(data.oscam.totals.rel_cwpos);
+	$("#rel_cwpos_readers").text(data.oscam.totals.rel_cwpos_readers);
 	$("#total_cwneg").text(data.oscam.totals.total_cwneg);
+	$("#total_cwneg_readers").text(data.oscam.totals.total_cwneg_readers);
 	$("#rel_cwneg").text(data.oscam.totals.rel_cwneg);
+	$("#rel_cwneg_readers").text(data.oscam.totals.rel_cwneg_readers);
 	$("#total_emok").text(data.oscam.totals.total_emok);
 	$("#rel_emok").text(data.oscam.totals.rel_emok);
 	$("#total_emnok").text(data.oscam.totals.total_emnok);
 	$("#rel_emnok").text(data.oscam.totals.rel_emnok);
 	$("#total_em").text(data.oscam.totals.total_em);
+	$("#total_elenr").text(data.oscam.totals.total_elenr);
+	$("#total_eheadr").text(data.oscam.totals.total_eheadr);
+	$("#total_emmerroruk_readers").text(data.oscam.totals.total_emmerroruk_readers);
+	$("#total_emmerrorg_readers").text(data.oscam.totals.total_emmerrorg_readers);
+	$("#total_emmerrors_readers").text(data.oscam.totals.total_emmerrors_readers);
+	$("#total_emmerroruq_readers").text(data.oscam.totals.total_emmerroruq_readers);
+	$("#total_emmwrittenuk_readers").text(data.oscam.totals.total_emmwrittenuk_readers);
+	$("#total_emmwritteng_readers").text(data.oscam.totals.total_emmwritteng_readers);
+	$("#total_emmwrittens_readers").text(data.oscam.totals.total_emmwrittens_readers);
+	$("#total_emmwrittenuq_readers").text(data.oscam.totals.total_emmwrittenuq_readers);
+	$("#total_emmskippeduk_readers").text(data.oscam.totals.total_emmskippeduk_readers);
+	$("#total_emmskippedg_readers").text(data.oscam.totals.total_emmskippedg_readers);
+	$("#total_emmskippeds_readers").text(data.oscam.totals.total_emmskippeds_readers);
+	$("#total_emmskippeduq_readers").text(data.oscam.totals.total_emmskippeduq_readers);
+	$("#total_emmblockeduk_readers").text(data.oscam.totals.total_emmblockeduk_readers);
+	$("#total_emmblockedg_readers").text(data.oscam.totals.total_emmblockedg_readers);
+	$("#total_emmblockeds_readers").text(data.oscam.totals.total_emmblockeds_readers);
+	$("#total_emmblockeduq_readers").text(data.oscam.totals.total_emmblockeduq_readers);
+	$("#total_sum_all_readers_ecm").text(data.oscam.totals.total_sum_all_readers_ecm);
+	$("#total_sum_all_readers_emm").text(data.oscam.totals.total_sum_all_readers_emm);
 }
 
 /*
