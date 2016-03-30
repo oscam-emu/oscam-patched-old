@@ -3189,7 +3189,14 @@ static void webif_add_client_proto(struct templatevars *vars, struct s_client *c
 		{
 			tpl_printf(vars, TPLADD, "CLIENTPROTO", "%s (%s-%s)", proto, cc->remote_version, cc->remote_build);
 			tpl_printf(vars, TPLADD, "CLIENTPROTOSORT", "%s (%s-%s)", proto, cc->remote_version, cc->remote_build);
-			tpl_addVar(vars, TPLADD, "CLIENTPROTOTITLE", cc->extended_mode ? cc->remote_oscam : "");
+			if(cccam_client_multics_mode(cl))
+			{
+				tpl_printf(vars, TPLADD, "CLIENTPROTOTITLE", "Multics, revision r%d", cc->multics_version[0] | (cc->multics_version[1] << 8));
+			}
+			else
+			{
+				tpl_addVar(vars, TPLADD, "CLIENTPROTOTITLE", cc->extended_mode ? cc->remote_oscam : "");
+			}
 			if(cfg.http_showpicons )
 			{
 				char picon_name[32];
