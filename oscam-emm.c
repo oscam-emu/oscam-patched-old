@@ -507,6 +507,7 @@ void do_emm(struct s_client *client, EMM_PACKET *ep)
 		{
 #ifdef WEBIF
 			aureader->emmblocked[ep->type]++;
+			aureader->webif_emmblocked[ep->type]++;
 			is_blocked = aureader->emmblocked[ep->type];
 #endif
 			/* we have to write the log for blocked EMM here because

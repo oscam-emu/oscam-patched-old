@@ -3334,7 +3334,7 @@ static void webif_add_client_proto(struct templatevars *vars, struct s_client *c
 			if(cfg.http_showpicons )
 			{
 				char picon_name[32];
-				snprintf(picon_name, sizeof(picon_name) / sizeof(char) - 1, "%s_%s_%s", proto, cc->remote_version, cc->remote_build);
+				snprintf(picon_name, sizeof(picon_name) / sizeof(char) - 1, "%s", proto);
 				if(picon_exists(picon_name))
 				{
 					if (!apicall) {
@@ -3344,13 +3344,21 @@ static void webif_add_client_proto(struct templatevars *vars, struct s_client *c
 						tpl_addVar(vars, TPLADD, "CCD", cc->extended_mode ? cc->remote_oscam : "");
 						tpl_addVar(vars, TPLADD, "CLIENTPROTO", tpl_getTpl(vars, "PROTOCCCAMPIC"));
 					} else {
-						tpl_printf(vars, TPLADDONCE, "PROTOICON", "%s_%s_%s",(char *)proto, cc->remote_version, cc->remote_build);
+						tpl_printf(vars, TPLADDONCE, "PROTOICON", "%s",(char *)proto);
 					}
 				}
 				else
 				{
-					tpl_printf(vars, TPLADD, "CLIENTPROTOTITLE", "%s missing icon: IC_%s_%s_%s.tpl",
-					cc->extended_mode ? cc->remote_oscam : "", proto, cc->remote_version, cc->remote_build);
+					if(cccam_client_multics_mode(cl))
+					{
+						tpl_printf(vars, TPLADD, "CLIENTPROTOTITLE", "Multics, revision r%d missing icon: IC_%s.tpl",
+							 cc->multics_version[0] | (cc->multics_version[1] << 8), proto);
+					}
+					else
+					{
+						tpl_printf(vars, TPLADD, "CLIENTPROTOTITLE", "%s missing icon: IC_%s.tpl",
+							 cc->extended_mode ? cc->remote_oscam : "", proto);
+					}
 				}
 			}
 		}
