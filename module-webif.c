@@ -3331,34 +3331,57 @@ static void webif_add_client_proto(struct templatevars *vars, struct s_client *c
 			{
 				tpl_addVar(vars, TPLADD, "CLIENTPROTOTITLE", cc->extended_mode ? cc->remote_oscam : "");
 			}
-			if(cfg.http_showpicons )
+
+			if(cfg.http_showpicons)
 			{
 				char picon_name[32];
-				snprintf(picon_name, sizeof(picon_name) / sizeof(char) - 1, "%s", proto);
-				if(picon_exists(picon_name))
+
+				int8_t is_other_proto = 0;
+				if(cccam_client_multics_mode(cl)) { is_other_proto = 1; }
+
+				switch(is_other_proto)
 				{
-					if (!apicall) {
-						tpl_addVar(vars, TPLADD, "CCA", (char *)proto);
-						tpl_addVar(vars, TPLADD, "CCB", cc->remote_version);
-						tpl_addVar(vars, TPLADD, "CCC", cc->remote_build);
-						tpl_addVar(vars, TPLADD, "CCD", cc->extended_mode ? cc->remote_oscam : "");
-						tpl_addVar(vars, TPLADD, "CLIENTPROTO", tpl_getTpl(vars, "PROTOCCCAMPIC"));
-					} else {
-						tpl_printf(vars, TPLADDONCE, "PROTOICON", "%s",(char *)proto);
-					}
-				}
-				else
-				{
-					if(cccam_client_multics_mode(cl))
-					{
-						tpl_printf(vars, TPLADD, "CLIENTPROTOTITLE", "Multics, revision r%d missing icon: IC_%s.tpl",
-							 cc->multics_version[0] | (cc->multics_version[1] << 8), proto);
-					}
-					else
-					{
-						tpl_printf(vars, TPLADD, "CLIENTPROTOTITLE", "%s missing icon: IC_%s.tpl",
-							 cc->extended_mode ? cc->remote_oscam : "", proto);
-					}
+					case 1:
+						snprintf(picon_name, sizeof(picon_name) / sizeof(char) - 1, "%s_r_%d", proto, cc->multics_version[0] | (cc->multics_version[1] << 8));
+						if(picon_exists(picon_name))
+						{
+							if (!apicall) {
+								tpl_addVar(vars, TPLADD, "CCA", (char *)proto);
+								tpl_addVar(vars, TPLADD, "CCB", "r");
+								tpl_printf(vars, TPLADD, "CCC", "%d", cc->multics_version[0] | (cc->multics_version[1] << 8));
+								tpl_addVar(vars, TPLADD, "CCD", "");
+								tpl_addVar(vars, TPLADD, "CLIENTPROTO", tpl_getTpl(vars, "PROTOCCCAMPIC"));
+							} else {
+								tpl_printf(vars, TPLADDONCE, "PROTOICON", "%s_r_%d",(char *)proto, cc->multics_version[0] | (cc->multics_version[1] << 8));
+							}
+						}
+						else
+						{
+							tpl_printf(vars, TPLADD, "CLIENTPROTOTITLE", "Multics, revision r%d missing icon: IC_%s_r_%d.tpl",
+								 cc->multics_version[0] | (cc->multics_version[1] << 8), proto, cc->multics_version[0] | (cc->multics_version[1] << 8));
+						}
+						break;
+
+					default:
+						snprintf(picon_name, sizeof(picon_name) / sizeof(char) - 1, "%s_%s_%s", proto, cc->remote_version, cc->remote_build);
+						if(picon_exists(picon_name))
+						{
+							if (!apicall) {
+								tpl_addVar(vars, TPLADD, "CCA", (char *)proto);
+								tpl_addVar(vars, TPLADD, "CCB", cc->remote_version);
+								tpl_addVar(vars, TPLADD, "CCC", cc->remote_build);
+								tpl_addVar(vars, TPLADD, "CCD", cc->extended_mode ? cc->remote_oscam : "");
+								tpl_addVar(vars, TPLADD, "CLIENTPROTO", tpl_getTpl(vars, "PROTOCCCAMPIC"));
+							} else {
+								tpl_printf(vars, TPLADDONCE, "PROTOICON", "%s_%s_%s",(char *)proto, cc->remote_version, cc->remote_build);
+							}
+						}
+						else
+						{
+							tpl_printf(vars, TPLADD, "CLIENTPROTOTITLE", "%s missing icon: IC_%s_%s_%s.tpl",
+								 cc->extended_mode ? cc->remote_oscam : "", proto, cc->remote_version, cc->remote_build);
+						}
+						break;
 				}
 			}
 		}
