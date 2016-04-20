@@ -2050,8 +2050,10 @@ struct s_config
 	int8_t		gbox_proxy_cards_num;  
 	char            gbox_my_vers[3];
 	char		gbox_my_cpu_api[3];
-	uint8_t		gsms_dis;
-	char            *gbox_tmp_dir;      
+	uint8_t					gsms_dis;
+	uint8_t					log_hello;
+	char						*gbox_tmp_dir; 
+	uint8_t					ccc_reshare;    	     
 #endif
 #ifdef MODULE_SERIAL
 	char            *ser_device;
