@@ -914,7 +914,7 @@ int32_t gbox_cmd_switch(struct s_client *proxy, uchar *data, int32_t n)
 	case MSG_GOODBYE:
 		cs_log("-> goodbye message to %s",username(proxy));	
 		//msg goodbye is an indication from peer that requested ECM failed (not found/rejected...)
-		//TODO: implement on suitable place in oscam-gbx 
+		//TODO: implement on suitable place - rebroadcast ECM to other peers 
 		break;
 	case MSG_UNKNWN:
 		cs_log("-> MSG_UNKNWN 48F9 to %s", username(proxy));	  

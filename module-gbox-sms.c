@@ -340,7 +340,7 @@ void start_sms_sender(void)
 		sms_sender_active = 1;
 	}
 	
-	if(is_active)
+	if(is_active || cfg.gsms_dis)
 	{
 		SAFE_MUTEX_UNLOCK(&sms_mutex);
 		return;	
