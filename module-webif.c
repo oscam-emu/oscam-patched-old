@@ -5756,6 +5756,7 @@ static char *send_oscam_services(struct templatevars * vars, struct uriparams * 
 					{
 						delete_from_SIDTABBITS(&rdr->sidtabs.ok, position, sidtablength);
 						delete_from_SIDTABBITS(&rdr->sidtabs.no, position, sidtablength);
+						delete_from_SIDTABBITS(&rdr->lb_sidtabs.ok, position, sidtablength);
 					}
 					free_sidtab(sidtab);
 					++counter;
