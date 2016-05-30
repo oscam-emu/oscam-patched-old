@@ -963,7 +963,7 @@ int32_t casc_process_ecm(struct s_reader *reader, ECM_REQUEST *er)
 
 	if(!cl || !cl->ecmtask)
 	{
-		rdr_log(reader, "WARNING: ecmtask not a available");
+		rdr_log(reader, "WARNING: ecmtask not available");
 		return -1;
 	}
 
