@@ -1816,21 +1816,20 @@ function decodeVideoguardEMM(text, target, addHideButton) {
 		html += '<p><input type="button" value="Hide" title="Hide" onclick="$(\'' + target + '\').css(\'display\', \'none\');" /></p><br/>';
 	}
 
+  var AddTextType = {"data":"Data", "length":"Length", "type":"Type", "emmType":"EMM-Type", "emmType2":"EMM-Type2", 
+  	"keyIndex":"Key-Index", "keyIndex2":"Key-Index2", "fixedValue":"Fixed Value", "subEmm":"Sub-EMM", "date":"Date",
+  	"checksum":"Checksum", "emmStartMarker":"Start-Marker EMM", "cardSerial":"Serial Number (Smartcard)",
+  	"boxSerial":"Serial Number (Receiver)", "emmEndMarker":"Sub-EMM End", "rest":"rest ????"};
+
 	function addText(count, color, text, parm) {
 
 		html += '<font style="color: ' + color + '"><b>';
-
-		var xor = 0x00;
-		var sum = 0x00;
 
 		var ret = '';
 		for (var i = 0; i < count; i++) {
 			var v = bytes.shift();
 			if (typeof v === 'undefined') {
 				v = '??';
-			} else {
-				sum += parseInt(v, 16);
-				xor ^= parseInt(v, 16);
 			}
 			html += v + ' ';
 			ret += v;
@@ -1839,14 +1838,8 @@ function decodeVideoguardEMM(text, target, addHideButton) {
 			}
 		}
 
-		xor &= 0xFF;
-		sum &= 0xFF;
-
 		switch (text) {
-			case 'Data':
-				//text += ' - <b>('+xor.toString(16)+' '+sum.toString(16)+')</b>';
-				break;
-			case 'Length':
+			case AddTextType.length:
 				var len = parseInt(ret, 16);
 				text += ' - <b>' + len + '</b>';
 
@@ -1857,7 +1850,7 @@ function decodeVideoguardEMM(text, target, addHideButton) {
 				}
 
 				break;
-			case 'Type':
+			case AddTextType.type:
 				switch (ret) {
 					case '41':
 						text += ' - <b>unique</b> EMM for Smartcard';
@@ -1874,7 +1867,7 @@ function decodeVideoguardEMM(text, target, addHideButton) {
 				}
 				break;
 
-			case 'EMM-Type':
+			case AddTextType.emmType:
 				switch (ret) {
 					case '02':
 						text += ' - <b>Single-EMM</b>';
@@ -1888,7 +1881,7 @@ function decodeVideoguardEMM(text, target, addHideButton) {
 				}
 				break;
 
-			case 'EMM-Type2':
+			case AddTextType.emmType2:
 				switch (ret) {
 					case '44':
 						text += ' - <b>User-Encryption</b>';
@@ -1910,7 +1903,7 @@ function decodeVideoguardEMM(text, target, addHideButton) {
 				}
 
 				break;
-			case 'Key-Index':
+			case AddTextType.keyIndex:
 
 				if (!isV13V14) {
 					text += ' - <b>' + ret + '</b>';
@@ -1929,28 +1922,27 @@ function decodeVideoguardEMM(text, target, addHideButton) {
 				}
 
 				break;
-			case 'Key-Index2':
+			case AddTextType.keyIndex2:
 				text += ' - <b>unknown</b>';
 				break;
-			case 'fixer Wert':
+			case AddTextType.fixedValue:
 				if (ret == parm) {
 					text += ' - <font style="color:#009900"><b>OK</b></font>';
 				} else {
 					text += ' - <font style="color:#F00000"><b>FAIL (' + parm + ')</b></font>';
 				}
 				break;
-			case 'Sub-EMM':
+			case AddTextType.subEmm:
 				switch (ret) {
 					default: text += ' - <b>EMM ' + ret + '</b>';
 					break;
 				}
 				break;
-			case 'Date':
+			case AddTextType.date:
 				var b = ret.replace(/[^A-Fa-f0-9]/g, "").match(/.{1,2}/g) || [];
-
+				
 				var bin = parseInt(b[3] + b[4] + b[5], 16);
 				var time = {};
-				console.log(bin.toString(2));
 				time.checksum = (bin & parseInt('11111111', 2));
 				bin = bin >>> 8;
 				time.s = ((bin & parseInt('11111', 2)) * 2);
@@ -1960,9 +1952,7 @@ function decodeVideoguardEMM(text, target, addHideButton) {
 				time.h = (bin & parseInt('11111', 2));
 				bin = bin >>> 5;
 
-
 				bin = parseInt(b[0] + b[1] + b[2], 16);
-				console.log(bin.toString(2), ((bin & 0xFFFF00) >> 8).toString(2));
 				var date = {};
 				date.d = (bin & parseInt('11111111', 2));
 				bin = bin >>> 8;
@@ -1986,9 +1976,23 @@ function decodeVideoguardEMM(text, target, addHideButton) {
 				if (time.checksum == checksum) {
 					text += ' - <font style="color:#009900"><b>OK</b></font>';
 				} else {
-					text += ' - <font style="color:#F00000"><b>FAIL (' + checksum + ')</b></font>';
+					text += ' - <font style="color:#F00000"><b>FAIL (' + checksum.toString(16).toUpperCase() + ')</b></font>';
 				}
-
+				break;
+			case AddTextType.checksum:
+				var checksumData = parseInt(ret, 16);
+				var checksum = 0x00;
+					
+				for(var i = 0; i < parm.length; i++) {
+					checksum += parseInt(parm[i], 16);
+					checksum &= 0xFF;
+				}
+				
+				if (checksumData == checksum) {
+					text += ' - <font style="color:#009900"><b>OK</b></font>';
+				} else {
+					text += ' - <font style="color:#F00000"><b>FAIL (' + checksum.toString(16).toUpperCase() + ')</b></font>';
+				}		
 				break;
 		}
 
@@ -1997,22 +2001,22 @@ function decodeVideoguardEMM(text, target, addHideButton) {
 	}
 
 	function SingleEMM() {
-		addText(1, '#00F', 'Length');
-		addText(1, '#000', 'Fixed Value', '90');
-		var datal = parseInt(addText(1, '#00F', 'Length'), 16);
+		addText(1, '#00F', AddTextType.length);
+		addText(1, '#000', AddTextType.fixedValue, '90');
+		var datal = parseInt(addText(1, '#00F', AddTextType.length), 16);
 
-		var emmtype2 = addText(1, '#b22222', 'EMM-Type2');
+		var emmtype2 = addText(1, '#b22222', AddTextType.emmType2);
 		switch (emmtype2) {
 			case '40':
 			case '44':
 			case '60':
-				addText(1, '#b22222', 'Key-Index');
-				addText((datal - 2), '#000', 'Data');
+				addText(1, '#b22222', AddTextType.keyIndex);
+				addText((datal - 2), '#000', AddTextType.data);
 
 				break;
 			default:
-				addText(1, '#b22222', 'Key-Index2');
-				addText((datal - 2), '#000', 'Data');
+				addText(1, '#b22222', AddTextType.keyIndex2);
+				addText((datal - 2), '#000', AddTextType.data);
 				break;
 		}
 	}
@@ -2021,47 +2025,50 @@ function decodeVideoguardEMM(text, target, addHideButton) {
 	// ----------------------------------------------------------------------
 	// ----------------------------------------------------------------------
 
-	addText(2, '#000', 'Start-Marker EMM');
-	var length = parseInt(addText(1, '#00F', 'Length'), 16);
-	var type = addText(1, '#40e0d0', 'Type');
+	addText(2, '#000', AddTextType.emmStartMarker);
+	var length = parseInt(addText(1, '#00F', AddTextType.length), 16);
+	var type = addText(1, '#40e0d0', AddTextType.type);
 
 	if (type == '01') { // 0000 0001 shared/global
 	} else if (type == '41') { // 0100 0001 unique
-		addText(4, '#ff8c00', 'Serial Number (Smartcard)');
+		addText(4, '#ff8c00', AddTextType.cardSerial);
 	} else if (type == 'C1') { // 1100 0001 Receiver/Cam
-		addText(4, '#ff8c00', 'Serial Number (Receiver)');
+		addText(4, '#ff8c00', AddTextType.boxSerial);
 	}
 
-	var emmtype = addText(1, '#008000', 'EMM-Type');
+	var emmtype = addText(1, '#008000', AddTextType.emmType);
 	switch (emmtype) {
 		case '02':
-			var emmtype2 = addText(1, '#008000', 'EMM-Type2');
+			var emmtype2 = addText(1, '#008000', AddTextType.emmType2);
 			if (emmtype2 == '06') {
-				addText(6, '#00A0A0', 'Date');
+				addText(6, '#00A0A0', AddTextType.date);
 			}
 			SingleEMM();
 			break;
 		case '07':
-			addText(1, '#00F', 'Length');
-			addText(2, '#000', 'Fixed Value', '0531');
-			addText(4, '#ff8c00', 'Serial Number (Smartcard)');
-			addText(1, '#000', 'Fixed Value', '2B');
-			addText(1, '#00F', 'Length');
-			addText(1, '#000', 'Fixed Value', '05');
+			var checksumData = bytes.slice(0, parseInt(bytes[0], 16));
+			checksumData.unshift('07');
+			
+			addText(1, '#00F', AddTextType.length);
+			addText(2, '#000', AddTextType.fixedValue, '0531');
+			addText(4, '#ff8c00',  AddTextType.cardSerial);
+			addText(1, '#000', AddTextType.fixedValue, '2B');
+			addText(1, '#00F', AddTextType.length);
+			addText(1, '#000', AddTextType.fixedValue, '05');
 
 			while (bytes.length > 2) {
-				var subemm = parseInt(addText(1, '#E000E0', 'Sub-EMM'), 16);
-				addText(4, '#ff8c00', 'Box-Serial');
+				var subemm = parseInt(addText(1, '#E000E0', AddTextType.subEmm), 16);
+				addText(4, '#ff8c00', AddTextType.boxSerial);
 				SingleEMM();
 			}
-			addText(1, '#800080', 'Checksum');
-			addText(1, '#E000E0', 'Sub-EMM End');
+			addText(1, '#800080', AddTextType.checksum, checksumData);
+			addText(1, '#E000E0', AddTextType.emmEndMarker);
 			break;
 	}
 
 	if (bytes.length > 0) {
 		html += '<br/>';
-		addText(bytes.length, '#000', 'rest ????');
+		addText(bytes.length, '#000', AddTextType.rest);
 	}
 	$(target).html(html);
 }
