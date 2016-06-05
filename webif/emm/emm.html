@@ -1,6 +1,60 @@
 ##TPLHEADER##
 ##TPLMENU##
 ##TPLMESSAGE##
+<script>
+  var isV13V14 = ("##CAID##" == "098C" || "##CAID##" == "09C4");
+
+  $(document).ready(function() {
+
+      if ("##CAID##".substr(0, 2) != "09") {
+          return;
+      }
+
+      document.getElementById('rdrUniqueTitle').title = '';
+      document.getElementById('rdrSharedTitle').title = '';
+      document.getElementById('rdrGlobalTitle').title = '';
+
+      var tosingleemm = $('.tosingleemm');
+      var singleemm = $('#singleemm');
+
+      if (singleemm.length > 0 || tosingleemm.length > 0) {
+
+          $('body').append('<div style="z-index: 1; position:absolute; top: 33px; right:0px; background: #EEE; text-align: left; padding: 10px 10px; font-size: 14px; font-family: \'Courier new\', Courier, monospace; display: none;" id="emm_decoder_top"></div>');
+
+          singleemm.on('change', singlechanged);
+          singleemm.on('keyup', singlechanged);
+          singleemm.on('paste', singlechanged);
+
+          function singlechanged() {
+              if (singleemm.val().length < 1) {
+                  document.getElementById('emm_decoder_top').style.display = 'none';
+                  return;
+              }
+
+              decodeVideoguardEMM(singleemm.val(), "#emm_decoder_top", true);
+              document.getElementById('emm_decoder_top').style.display = 'block';
+          }
+
+          $('body').append('<div style="z-index: 2; position:fixed; top: 33px; background: #EEE; text-align: left; padding: 20px 10px; font-size: 14px; font-family: \'Courier new\', Courier, monospace; display: none;" id="emm_decoder"></div>');
+
+          tosingleemm.on('mouseover', function(e) {
+              var text = $(this).text().split(' ')[7];
+              decodeVideoguardEMM(text, "#emm_decoder", false);
+
+              var emmdecoder = document.getElementById('emm_decoder');
+              emmdecoder.style.top = (e.clientY + 20) + "px";
+              emmdecoder.style.left = (e.clientX + 20) + "px";
+              emmdecoder.style.display = 'block';
+          });
+
+          tosingleemm.on('mouseout', function() {
+              document.getElementById('emm_decoder').style.display = 'none';
+          });
+
+      }
+  });
+</script>
+  
 	<DIV ID="subnav">
 		<UL ID="nav"></UL>
 	</DIV>
@@ -16,11 +70,11 @@
 		<DIV CLASS="extract">
 			<P class="emmhead">Saved EMM's for Reader: ##READER##</P>
 			<P>Unique EMM&nbsp;&nbsp;&nbsp;&nbsp;<span class="emminfo">##RDREMMUNIQUE_TXT##</span></P>
-			<PRE ##RDREMMUNIQUE_TITLE##>##RDREMMUNIQUE##</PRE>
+			<PRE id="rdrUniqueTitle" ##RDREMMUNIQUE_TITLE##>##RDREMMUNIQUE##</PRE>
 			<P>Shared EMM&nbsp;&nbsp;&nbsp;&nbsp;<span class="emminfo">##RDREMMSHARED_TXT##</span></P>
-			<PRE ##RDREMMSHARED_TITLE##>##RDREMMSHARED##</PRE>
+			<PRE id="rdrSharedTitle" ##RDREMMSHARED_TITLE##>##RDREMMSHARED##</PRE>
 			<P>Global EMM&nbsp;&nbsp;&nbsp;&nbsp;<span class="emminfo">##RDREMMGLOBAL_TXT##</span></P>
-			<PRE ##RDREMMGLOBAL_TITLE##>##RDREMMGLOBAL##</PRE>
+			<PRE id="rdrGlobalTitle" ##RDREMMGLOBAL_TITLE##>##RDREMMGLOBAL##</PRE>
 		</DIV>
 	</form>
 ##TPLFOOTER##

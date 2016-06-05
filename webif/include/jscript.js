@@ -463,6 +463,7 @@ $(function () {
 	$("a.tosingleemm").click(function (e) {
 		var ins_emm = (/\s+[0-9a-fA-F]+\s+([0-9a-fA-F]+)\s+/).exec($(this).text());
 		$('#singleemm').val(ins_emm[1]);
+		$('#singleemm').change();
 	});
 });
 
@@ -1803,6 +1804,267 @@ $(document).ready(function () {
 		}
 	}
 });
+
+function decodeVideoguardEMM(text, target, addHideButton) {
+
+	text = text.trim();
+
+	var bytes = text.replace(/[^A-Fa-f0-9]/g, "").match(/.{1,2}/g) || [];
+	var html = '';
+
+	if (addHideButton) {
+		html += '<p><input type="button" value="Hide" title="Hide" onclick="$(\'' + target + '\').css(\'display\', \'none\');" /></p><br/>';
+	}
+
+	function addText(count, color, text, parm) {
+
+		html += '<font style="color: ' + color + '"><b>';
+
+		var xor = 0x00;
+		var sum = 0x00;
+
+		var ret = '';
+		for (var i = 0; i < count; i++) {
+			var v = bytes.shift();
+			if (typeof v === 'undefined') {
+				v = '??';
+			} else {
+				sum += parseInt(v, 16);
+				xor ^= parseInt(v, 16);
+			}
+			html += v + ' ';
+			ret += v;
+			if (((i + 1) % 16) == 0) {
+				html += '<br/>';
+			}
+		}
+
+		xor &= 0xFF;
+		sum &= 0xFF;
+
+		switch (text) {
+			case 'Data':
+				//text += ' - <b>('+xor.toString(16)+' '+sum.toString(16)+')</b>';
+				break;
+			case 'Length':
+				var len = parseInt(ret, 16);
+				text += ' - <b>' + len + '</b>';
+
+				if (bytes.length >= len) {
+					text += ' - <font style="color:#009900"><b>OK (' + bytes.length + ')</b></font>';
+				} else {
+					text += ' - <font style="color:#F00000"><b>FAIL (' + bytes.length + ')</b></font>';
+				}
+
+				break;
+			case 'Type':
+				switch (ret) {
+					case '41':
+						text += ' - <b>unique</b> EMM for Smartcard';
+						break;
+					case '01':
+						text += ' - <b>shared/global</b> EMM for Smartcard';
+						break;
+					case 'C1':
+						text += ' - EMM for Receiver/CAM';
+						break;
+					default:
+						text += ' - <b>unknown</b>';
+						break;
+				}
+				break;
+
+			case 'EMM-Type':
+				switch (ret) {
+					case '02':
+						text += ' - <b>Single-EMM</b>';
+						break;
+					case '07':
+						text += ' - <b>Multi-EMM</b>';
+						break;
+					default:
+						text += ' - <b>unknown</b>';
+						break;
+				}
+				break;
+
+			case 'EMM-Type2':
+				switch (ret) {
+					case '44':
+						text += ' - <b>User-Encryption</b>';
+						break;
+					case '60':
+						text += ' - <b>System-Encryption</b>';
+						break;
+					case '40':
+						text += ' - <b>System-Encryption</b>';
+						break;
+					case '06':
+						text += ' - <b>Time</b>';
+						break;
+					case '00':
+						break;
+					default:
+						text += ' - <b>unknown</b>';
+						break;
+				}
+
+				break;
+			case 'Key-Index':
+
+				if (!isV13V14) {
+					text += ' - <b>' + ret + '</b>';
+				}
+
+				switch (ret) {
+					case '01':
+						text += ' - <b>V13</b>';
+						break;
+					case '02':
+						text += ' - <b>V14</b>';
+						break;
+					default:
+						text += ' - <b>unknown</b>';
+						break;
+				}
+
+				break;
+			case 'Key-Index2':
+				text += ' - <b>unknown</b>';
+				break;
+			case 'fixer Wert':
+				if (ret == parm) {
+					text += ' - <font style="color:#009900"><b>OK</b></font>';
+				} else {
+					text += ' - <font style="color:#F00000"><b>FAIL (' + parm + ')</b></font>';
+				}
+				break;
+			case 'Sub-EMM':
+				switch (ret) {
+					default: text += ' - <b>EMM ' + ret + '</b>';
+					break;
+				}
+				break;
+			case 'Date':
+				var b = ret.replace(/[^A-Fa-f0-9]/g, "").match(/.{1,2}/g) || [];
+
+				var bin = parseInt(b[3] + b[4] + b[5], 16);
+				var time = {};
+				console.log(bin.toString(2));
+				time.checksum = (bin & parseInt('11111111', 2));
+				bin = bin >>> 8;
+				time.s = ((bin & parseInt('11111', 2)) * 2);
+				bin = bin >>> 5;
+				time.m = (bin & parseInt('111111', 2));
+				bin = bin >>> 6;
+				time.h = (bin & parseInt('11111', 2));
+				bin = bin >>> 5;
+
+
+				bin = parseInt(b[0] + b[1] + b[2], 16);
+				console.log(bin.toString(2), ((bin & 0xFFFF00) >> 8).toString(2));
+				var date = {};
+				date.d = (bin & parseInt('11111111', 2));
+				bin = bin >>> 8;
+				date.m = (bin & parseInt('11111111', 2));
+				bin = bin >>> 8;
+
+				date.y = parseInt(date.m / 12) + 2004;
+				date.m -= (((date.y - 2004) * 12) - 1);
+
+				text += ' - <b>' + date.d + '.' + date.m + '.' + date.y + '</b>';
+				text += ' <b>' + time.h + ':' + time.m + ':' + time.s + ' UTC</b>';
+
+				var checksum = 0x08;
+				for (var i = 0; i < 5; i++) {
+					checksum += (parseInt(b[i], 16) & 0xFF);
+				}
+				checksum &= 0xFF;
+				checksum = checksum.toString(16).toUpperCase();
+				time.checksum = time.checksum.toString(16).toUpperCase();
+
+				if (time.checksum == checksum) {
+					text += ' - <font style="color:#009900"><b>OK</b></font>';
+				} else {
+					text += ' - <font style="color:#F00000"><b>FAIL (' + checksum + ')</b></font>';
+				}
+
+				break;
+		}
+
+		html += '</b></font> - ' + text + '<br/>';
+		return ret;
+	}
+
+	function SingleEMM() {
+		addText(1, '#00F', 'Length');
+		addText(1, '#000', 'Fixed Value', '90');
+		var datal = parseInt(addText(1, '#00F', 'Length'), 16);
+
+		var emmtype2 = addText(1, '#b22222', 'EMM-Type2');
+		switch (emmtype2) {
+			case '40':
+			case '44':
+			case '60':
+				addText(1, '#b22222', 'Key-Index');
+				addText((datal - 2), '#000', 'Data');
+
+				break;
+			default:
+				addText(1, '#b22222', 'Key-Index2');
+				addText((datal - 2), '#000', 'Data');
+				break;
+		}
+	}
+
+	// ----------------------------------------------------------------------
+	// ----------------------------------------------------------------------
+	// ----------------------------------------------------------------------
+
+	addText(2, '#000', 'Start-Marker EMM');
+	var length = parseInt(addText(1, '#00F', 'Length'), 16);
+	var type = addText(1, '#40e0d0', 'Type');
+
+	if (type == '01') { // 0000 0001 shared/global
+	} else if (type == '41') { // 0100 0001 unique
+		addText(4, '#ff8c00', 'Serial Number (Smartcard)');
+	} else if (type == 'C1') { // 1100 0001 Receiver/Cam
+		addText(4, '#ff8c00', 'Serial Number (Receiver)');
+	}
+
+	var emmtype = addText(1, '#008000', 'EMM-Type');
+	switch (emmtype) {
+		case '02':
+			var emmtype2 = addText(1, '#008000', 'EMM-Type2');
+			if (emmtype2 == '06') {
+				addText(6, '#00A0A0', 'Date');
+			}
+			SingleEMM();
+			break;
+		case '07':
+			addText(1, '#00F', 'Length');
+			addText(2, '#000', 'Fixed Value', '0531');
+			addText(4, '#ff8c00', 'Serial Number (Smartcard)');
+			addText(1, '#000', 'Fixed Value', '2B');
+			addText(1, '#00F', 'Length');
+			addText(1, '#000', 'Fixed Value', '05');
+
+			while (bytes.length > 2) {
+				var subemm = parseInt(addText(1, '#E000E0', 'Sub-EMM'), 16);
+				addText(4, '#ff8c00', 'Box-Serial');
+				SingleEMM();
+			}
+			addText(1, '#800080', 'Checksum');
+			addText(1, '#E000E0', 'Sub-EMM End');
+			break;
+	}
+
+	if (bytes.length > 0) {
+		html += '<br/>';
+		addText(bytes.length, '#000', 'rest ????');
+	}
+	$(target).html(html);
+}
 
 /**
  * Really Simple Color Picker in jQuery
