@@ -1809,7 +1809,7 @@ function decodeVideoguardEMM(text, target, addHideButton) {
 
 	text = text.trim();
 
-	var bytes = text.replace(/[^A-Fa-f0-9]/g, "").match(/.{1,2}/g) || [];
+	var bytes = text.replace(/[^A-Fa-f0-9]/g, "").toUpperCase().match(/.{1,2}/g) || [];
 	var html = '';
 
 	if (addHideButton) {
@@ -2244,7 +2244,7 @@ function decodeVideoguardEMM(text, target, addHideButton) {
 					}
 					
 					var remainingDataLength = irdEmmLength - 1 - filterSectionLength - 1;
-					while(remainingDataLength > 0) {						
+					while(remainingDataLength > 0) {
 						remainingDataLength -= ReadIrdNano();
 					}
 					break;
