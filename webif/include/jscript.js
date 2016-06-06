@@ -2064,7 +2064,7 @@ function decodeVideoguardEMM(text, target, addHideButton) {
 		var cardEmmLength = addText(1, '#00F', AddTextType.cardEmmLength);
 		var remainingDataLength = cardEmmLength;
 		
-		while (remainingDataLength > 0) {
+		while (remainingDataLength > 0 && bytes.length) {
 			var cardNanoType = addText(1, '#008000', AddTextType.cardNanoType);
 
 			var fixedSizeNanos = {
@@ -2157,7 +2157,7 @@ function decodeVideoguardEMM(text, target, addHideButton) {
 				addText(1, '#000', AddTextType.pairingdeviceCount);
 
 				var remainingDataLengthNano = irdNanoLength - 1;
-				while (remainingDataLengthNano > 0) {
+				while (remainingDataLengthNano > 0 && bytes.length) {
 					var startLength = bytes.length;
 					addText(1, '#E000E0', AddTextType.pairingDevice);
 					addText(4, '#ff8c00', AddTextType.boxSerial);
@@ -2215,7 +2215,7 @@ function decodeVideoguardEMM(text, target, addHideButton) {
 				case '02':
 					
 					var remainingDataLength = irdEmmLength - 1;
-					while(remainingDataLength > 0) {
+					while(remainingDataLength > 0 && bytes.length) {
 						remainingDataLength -= ReadIrdNano();
 					}
 					break;
@@ -2224,7 +2224,7 @@ function decodeVideoguardEMM(text, target, addHideButton) {
 					var filterSectionLength = addText(1, '#00F', AddTextType.filterSectionLength);
 					var remainingDataLength = filterSectionLength;
 					
-					while (remainingDataLength > 0) {
+					while (remainingDataLength > 0 && bytes.length) {
 						var filterNano = addText(1, '#008000', AddTextType.filterNanoType);
 						switch (filterNano) {
 							case '30':
@@ -2244,7 +2244,7 @@ function decodeVideoguardEMM(text, target, addHideButton) {
 					}
 					
 					var remainingDataLength = irdEmmLength - 1 - filterSectionLength - 1;
-					while(remainingDataLength > 0) {
+					while(remainingDataLength > 0 && bytes.length) {
 						remainingDataLength -= ReadIrdNano();
 					}
 					break;
