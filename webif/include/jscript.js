@@ -1816,10 +1816,14 @@ function decodeVideoguardEMM(text, target, addHideButton) {
 		html += '<p><input type="button" value="Hide" title="Hide" onclick="$(\'' + target + '\').css(\'display\', \'none\');" /></p><br/>';
 	}
 
-  var AddTextType = {"data":"Data", "length":"Length", "type":"Type", "emmType":"EMM-Type", "emmType2":"EMM-Type2", 
-  	"keyIndex":"Key-Index", "keyIndex2":"Key-Index2", "fixedValue":"Fixed Value", "subEmm":"Sub-EMM", "date":"Date",
-  	"checksum":"Checksum", "emmStartMarker":"Start-Marker EMM", "cardSerial":"Serial Number (Smartcard)",
-  	"boxSerial":"Serial Number (Receiver)", "emmEndMarker":"Sub-EMM End", "rest":"rest ????"};
+  var AddTextType = {"data":"Data", "length":"Length", "type":"Type", "emmType":"EMM-Type", "encryptionType":"Encryption Type", 
+  	"keyIndex":"Key-Index", "keyIndex2":"Key-Index2", "fixedValue":"Fixed Value", "pairingDevice":"Pairing Device", "date":"Date",
+  	"checksum":"Checksum", "emmStartMarker":"EMM Marker", "cardSerial":"Serial Number (Smartcard)",
+  	"boxSerial":"Serial Number (Receiver)", "emmEndMarker":"Sub-EMM End", "rest":"rest ????",
+  	"cardEmmLength":"Card EMM Length", "cardNanoLength":"Card Nano Length", "irdEmmLength":"IRD EMM Length",
+  	"filterSectionLength":"Filter Section Length", "irdNanoLength":"IRD Nano Length", "cardNanoType":"Card Nano Type",
+  	"irdNanoType":"IRD Nano Type", "filterNanoType":"Filter Nano Type", "cardGroupSerial":"Serial Number (Card Group)",
+  	"mpegSectionLength":"EMM Length", "irdEmmChecksum":"IRD EMM Checksum", "pairingdeviceCount":"Pairing Device Count"};
 
 	function addText(count, color, text, parm) {
 
@@ -1839,7 +1843,25 @@ function decodeVideoguardEMM(text, target, addHideButton) {
 		}
 
 		switch (text) {
+			case AddTextType.mpegSectionLength:
+				var len = ((parseInt(parm, 16) << 8) + parseInt(ret, 16)) & 0x0FFF;
+				text += ' - <b>' + len + '</b>';
+
+				if (bytes.length >= len) {
+					text += ' - <font style="color:#009900"><b>OK (' + bytes.length + ')</b></font>';
+				} else {
+					text += ' - <font style="color:#F00000"><b>FAIL (' + bytes.length + ')</b></font>';
+				}
+				ret = len;			
+				break;
+			
 			case AddTextType.length:
+			case AddTextType.cardEmmLength:
+			case AddTextType.cardNanoLength:
+			case AddTextType.irdEmmLength:
+			case AddTextType.filterSectionLength:
+			case AddTextType.irdNanoLength:
+
 				var len = parseInt(ret, 16);
 				text += ' - <b>' + len + '</b>';
 
@@ -1848,32 +1870,37 @@ function decodeVideoguardEMM(text, target, addHideButton) {
 				} else {
 					text += ' - <font style="color:#F00000"><b>FAIL (' + bytes.length + ')</b></font>';
 				}
-
+				ret = len;
 				break;
 			case AddTextType.type:
-				switch (ret) {
-					case '41':
-						text += ' - <b>unique</b> EMM for Smartcard';
-						break;
-					case '01':
-						text += ' - <b>shared/global</b> EMM for Smartcard';
-						break;
-					case 'C1':
-						text += ' - EMM for Receiver/CAM';
-						break;
-					default:
-						text += ' - <b>unknown</b>';
-						break;
+			
+				var type = parseInt(ret, 16) & 0xC0;
+				var subEmmCount = ((parseInt(ret, 16) & 0x30) >> 16) + 1;
+				
+				if (type == 0x40) {
+					text += ' - <b>unique</b> EMM for Smartcard';
+				} 
+				else if (type == 0xC0) {
+					text += ' - EMM for Receiver/CAM';
+				} 
+				else if (type == 0x80) {
+					text += ' - <b>shared</b> EMM for Smartcard';
+				} 
+				else {
+					text += ' - <b>global</b> EMM for Smartcard';
 				}
+				
+				text += ' (' + subEmmCount + ' Sub EMMs)';
+				
 				break;
 
 			case AddTextType.emmType:
 				switch (ret) {
 					case '02':
-						text += ' - <b>Single-EMM</b>';
+						text += ' - <b>Default</b>';
 						break;
 					case '07':
-						text += ' - <b>Multi-EMM</b>';
+						text += ' - <b>With Filter Nanos</b>';
 						break;
 					default:
 						text += ' - <b>unknown</b>';
@@ -1881,7 +1908,7 @@ function decodeVideoguardEMM(text, target, addHideButton) {
 				}
 				break;
 
-			case AddTextType.emmType2:
+			case AddTextType.encryptionType:
 				switch (ret) {
 					case '44':
 						text += ' - <b>User-Encryption</b>';
@@ -1892,17 +1919,65 @@ function decodeVideoguardEMM(text, target, addHideButton) {
 					case '40':
 						text += ' - <b>System-Encryption</b>';
 						break;
-					case '06':
-						text += ' - <b>Time</b>';
-						break;
-					case '00':
-						break;
 					default:
 						text += ' - <b>unknown</b>';
 						break;
 				}
 
 				break;
+				
+			case AddTextType.cardNanoType:
+				switch (ret) {
+					case '01':
+						text += ' - <b>Set date</b>';
+						break;
+					case '90':
+						text += ' - <b>Encrypted Nano</b>';
+						break;
+					case '41':
+						text += ' - <b>Add a ChID</b>';
+						break;
+					case '42':
+						text += ' - <b>Delete a ChID</b>';
+						break;
+					default:
+						text += ' - <b>unknown</b>';
+						break;
+				}
+				break;
+					
+			case AddTextType.irdNanoType:
+				switch (ret) {
+					case '02':
+						text += ' - <b>Set Date/Time</b>';
+						break;
+					case '07':
+					case '08':
+						text += ' - <b>Download Firmware</b>';
+						break;
+					case '2B':
+						text += ' - <b>Pairing Data</b>';
+						break;
+					default:
+						text += ' - <b>unknown</b>';
+						break;
+				}
+				break;
+					
+			case AddTextType.filterNanoType:
+				switch (ret) {
+					case '30':
+						text += ' - <b>Always Valid</b>';
+						break;
+					case '31':
+						text += ' - <b>Card Address</b>';
+						break;
+					default:
+						text += ' - <b>unknown</b>';
+						break;
+				}
+				break;
+				
 			case AddTextType.keyIndex:
 
 				if (!isV13V14) {
@@ -1932,19 +2007,17 @@ function decodeVideoguardEMM(text, target, addHideButton) {
 					text += ' - <font style="color:#F00000"><b>FAIL (' + parm + ')</b></font>';
 				}
 				break;
-			case AddTextType.subEmm:
+			case AddTextType.pairingDevice:
 				switch (ret) {
-					default: text += ' - <b>EMM ' + ret + '</b>';
+					default: text += ' - <b>Device ' + ret + '</b>';
 					break;
 				}
 				break;
 			case AddTextType.date:
 				var b = ret.replace(/[^A-Fa-f0-9]/g, "").match(/.{1,2}/g) || [];
-				
-				var bin = parseInt(b[3] + b[4] + b[5], 16);
+
+				var bin = parseInt(b[2] + b[3], 16);
 				var time = {};
-				time.checksum = (bin & parseInt('11111111', 2));
-				bin = bin >>> 8;
 				time.s = ((bin & parseInt('11111', 2)) * 2);
 				bin = bin >>> 5;
 				time.m = (bin & parseInt('111111', 2));
@@ -1952,7 +2025,7 @@ function decodeVideoguardEMM(text, target, addHideButton) {
 				time.h = (bin & parseInt('11111', 2));
 				bin = bin >>> 5;
 
-				bin = parseInt(b[0] + b[1] + b[2], 16);
+				bin = parseInt(b[0] + b[1], 16);
 				var date = {};
 				date.d = (bin & parseInt('11111111', 2));
 				bin = bin >>> 8;
@@ -1964,22 +2037,9 @@ function decodeVideoguardEMM(text, target, addHideButton) {
 
 				text += ' - <b>' + date.d + '.' + date.m + '.' + date.y + '</b>';
 				text += ' <b>' + time.h + ':' + time.m + ':' + time.s + ' UTC</b>';
-
-				var checksum = 0x08;
-				for (var i = 0; i < 5; i++) {
-					checksum += (parseInt(b[i], 16) & 0xFF);
-				}
-				checksum &= 0xFF;
-				checksum = checksum.toString(16).toUpperCase();
-				time.checksum = time.checksum.toString(16).toUpperCase();
-
-				if (time.checksum == checksum) {
-					text += ' - <font style="color:#009900"><b>OK</b></font>';
-				} else {
-					text += ' - <font style="color:#F00000"><b>FAIL (' + checksum.toString(16).toUpperCase() + ')</b></font>';
-				}
 				break;
 			case AddTextType.checksum:
+			case AddTextType.irdEmmChecksum:
 				var checksumData = parseInt(ret, 16);
 				var checksum = 0x00;
 					
@@ -2000,76 +2060,206 @@ function decodeVideoguardEMM(text, target, addHideButton) {
 		return ret;
 	}
 
-	function SingleEMM() {
-		addText(1, '#00F', AddTextType.length);
-		addText(1, '#000', AddTextType.fixedValue, '90');
-		var datal = parseInt(addText(1, '#00F', AddTextType.length), 16);
+	function ReadSingleCardEMM() {
+		var cardEmmLength = addText(1, '#00F', AddTextType.cardEmmLength);
+		var remainingDataLength = cardEmmLength;
+		
+		while (remainingDataLength > 0) {
+			var cardNanoType = addText(1, '#000', AddTextType.cardNanoType);
 
-		var emmtype2 = addText(1, '#b22222', AddTextType.emmType2);
-		switch (emmtype2) {
-			case '40':
-			case '44':
-			case '60':
-				addText(1, '#b22222', AddTextType.keyIndex);
-				addText((datal - 2), '#000', AddTextType.data);
+			var fixedSizeNanos = {
+				"01": 0x04,
+				"09": 0x03,
+				"10": 0x02,
+				"19": 0x01,
+				"1E": 0x08,
+				"24": 0x00,
+				"25": 0x00,
+				"27": 0x0D,
+				"2B": 0x02,
+				"2D": 0x04,
+				"30": 0x00,
+				"31": 0x04,
+				"32": 0x03,
+				"33": 0x23,
+				"3D": 0x02,
+				"3E": 0x00,
+				"41": 0x05,
+				"42": 0x02,
+				"44": 0x04,
+				"4E": 0x04,
+				"7A": 0x02,
+			};
 
+			if (fixedSizeNanos[cardNanoType] != undefined) {
+
+				if (cardNanoType == "01") {
+					addText(4, '#00A0A0', AddTextType.date);
+				}
+				else {
+					addText(fixedSizeNanos[cardNanoType], '#000', AddTextType.data);
+				}
+				remainingDataLength -= fixedSizeNanos[cardNanoType] + 1;
+			}
+			else {
+				var cardNanoLength = addText(1, '#00F', AddTextType.cardNanoLength);
+
+				if (cardNanoType == "90") {
+					var encryptionType = addText(1, '#b22222', AddTextType.encryptionType);
+					switch (encryptionType) {
+						case '40':
+						case '44':
+						case '60':
+							addText(1, '#b22222', AddTextType.keyIndex);
+							addText((cardNanoLength - 2), '#000', AddTextType.data);
+
+							break;
+						default:
+							addText(1, '#b22222', AddTextType.keyIndex2);
+							addText((cardNanoLength - 2), '#000', AddTextType.data);
+							break;
+					}
+				}
+				else {
+					addText(cardNanoLength, '#000', AddTextType.data);
+				}
+
+				remainingDataLength -= cardNanoLength + 2;
+			}
+
+		}
+
+	}
+
+	function ReadIrdNano() {
+
+	var irdNanoType = addText(1, '#008000', AddTextType.irdNanoType);
+
+	var fixedSizeNanos = {
+		"02": 0x04,
+	};
+
+	if (fixedSizeNanos[irdNanoType] != undefined) {
+
+		if (irdNanoType == "02") {
+			addText(4, '#00A0A0', AddTextType.date);
+		}
+		else {
+			addText(fixedSizeNanos[cardNanoType], '#000', AddTextType.data);
+		}
+		return fixedSizeNanos[irdNanoType] + 1;
+	}
+	else {
+		var irdNanoLength = addText(1, '#00F', AddTextType.irdNanoLength);
+
+		switch (irdNanoType) {
+			case '2B':
+				addText(1, '#000', AddTextType.pairingdeviceCount);
+
+				var remainingDataLengthNano = irdNanoLength - 1;
+				while (remainingDataLengthNano > 0) {
+					var startLength = bytes.length;
+					addText(1, '#E000E0', AddTextType.pairingDevice);
+					addText(4, '#ff8c00', AddTextType.boxSerial);
+					ReadSingleCardEMM();
+					remainingDataLengthNano -= startLength - bytes.length;
+				}
 				break;
+
 			default:
-				addText(1, '#b22222', AddTextType.keyIndex2);
-				addText((datal - 2), '#000', AddTextType.data);
+				addText(irdNanoLength, '#000', AddTextType.data);
 				break;
+		}
+
+		return irdNanoLength + 2;
+	}
+}
+
+	// ----------------------------------------------------------------------
+	// ----------------------------------------------------------------------
+	// ----------------------------------------------------------------------
+	
+	var partOfLength = bytes[1];
+	addText(2, '#000', AddTextType.emmStartMarker);
+	addText(1, '#00F', AddTextType.mpegSectionLength, partOfLength);
+	
+	var filterByte = parseInt(addText(1, '#40e0d0', AddTextType.type), 16);
+	var type = filterByte & 0xC0;
+	var subEmmCount = ((filterByte & 0x30) >> 16) + 1;
+
+	for(var i = 0; i < subEmmCount; i++) {
+ 		if (type == 0x40) { // unique: card
+			addText(4, '#ff8c00', AddTextType.cardSerial);
+		} else if (type == 0xC0) { // unique: receiver/cam
+			addText(4, '#ff8c00', AddTextType.boxSerial);
+		} else if (type == 0x80) { // shared: card group
+			addText(3, '#ff8c00', AddTextType.cardGroupSerial);
+			addText(1, '#000', AddTextType.fixedValue, '01');
 		}
 	}
 
-	// ----------------------------------------------------------------------
-	// ----------------------------------------------------------------------
-	// ----------------------------------------------------------------------
+	while (bytes.length) {
+		var emmtype = addText(1, '#008000', AddTextType.emmType);
 
-	addText(2, '#000', AddTextType.emmStartMarker);
-	var length = parseInt(addText(1, '#00F', AddTextType.length), 16);
-	var type = addText(1, '#40e0d0', AddTextType.type);
+		var irdEmmLength = addText(1, '#008000', AddTextType.irdEmmLength);
+		var checksumData = {};
 
-	if (type == '01') { // 0000 0001 shared/global
-	} else if (type == '41') { // 0100 0001 unique
-		addText(4, '#ff8c00', AddTextType.cardSerial);
-	} else if (type == 'C1') { // 1100 0001 Receiver/Cam
-		addText(4, '#ff8c00', AddTextType.boxSerial);
-	}
+		if (irdEmmLength > 0) {
+			checksumData = bytes.slice(0, irdEmmLength - 1);
+			checksumData.unshift(irdEmmLength.toString(16));
+			checksumData.unshift(emmtype);
+		}
 
-	var emmtype = addText(1, '#008000', AddTextType.emmType);
-	switch (emmtype) {
-		case '02':
-			var emmtype2 = addText(1, '#008000', AddTextType.emmType2);
-			if (emmtype2 == '06') {
-				addText(6, '#00A0A0', AddTextType.date);
+		if (irdEmmLength > 0) {
+			switch (emmtype) {
+				case '02':
+					
+					var remainingDataLength = irdEmmLength - 1;
+					while(remainingDataLength > 0) {
+						remainingDataLength -= ReadIrdNano();
+					}
+					break;
+
+				case '07':
+					var filterSectionLength = addText(1, '#008000', AddTextType.filterSectionLength);
+					var remainingDataLength = filterSectionLength;
+					
+					while (remainingDataLength > 0) {
+						var filterNano = addText(1, '#008000', AddTextType.filterNanoType);
+						switch (filterNano) {
+							case '30':
+								remainingDataLength -= 1;
+								break;
+
+							case '31':
+								addText(4, '#ff8c00', AddTextType.cardSerial);
+								remainingDataLength -= 5;
+								break;
+
+							default:
+								addText(remainingDataLength - 1, '#000', AddTextType.data);
+								remainingDataLength = 0;
+								break;
+						}
+					}
+					
+					var remainingDataLength = irdEmmLength - 1 - filterSectionLength - 1;
+					while(remainingDataLength > 0) {						
+						remainingDataLength -= ReadIrdNano();
+					}
+					break;
+					
+				default:
+					addText(irdEmmLength - 1, '#000', AddTextType.data);
+					break;
 			}
-			SingleEMM();
-			break;
-		case '07':
-			var checksumData = bytes.slice(0, parseInt(bytes[0], 16));
-			checksumData.unshift('07');
-			
-			addText(1, '#00F', AddTextType.length);
-			addText(2, '#000', AddTextType.fixedValue, '0531');
-			addText(4, '#ff8c00',  AddTextType.cardSerial);
-			addText(1, '#000', AddTextType.fixedValue, '2B');
-			addText(1, '#00F', AddTextType.length);
-			addText(1, '#000', AddTextType.fixedValue, '05');
 
-			while (bytes.length > 2) {
-				var subemm = parseInt(addText(1, '#E000E0', AddTextType.subEmm), 16);
-				addText(4, '#ff8c00', AddTextType.boxSerial);
-				SingleEMM();
-			}
-			addText(1, '#800080', AddTextType.checksum, checksumData);
-			addText(1, '#E000E0', AddTextType.emmEndMarker);
-			break;
+			addText(1, '#800080', AddTextType.irdEmmChecksum, checksumData);
+		}
+
+		ReadSingleCardEMM();
 	}
 
-	if (bytes.length > 0) {
-		html += '<br/>';
-		addText(bytes.length, '#000', AddTextType.rest);
-	}
 	$(target).html(html);
 }
 
