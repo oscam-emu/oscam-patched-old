@@ -2076,19 +2076,26 @@ function decodeVideoguardEMM(text, target, addHideButton) {
 				"24": 0x00,
 				"25": 0x00,
 				"27": 0x0D,
-				"2B": 0x02,
+				"2B": 0x02,//0x03
 				"2D": 0x04,
 				"30": 0x00,
-				"31": 0x04,
+				"31": 0x04,//0x03
 				"32": 0x03,
 				"33": 0x23,
 				"3D": 0x02,
 				"3E": 0x00,
-				"41": 0x05,
+				"41": 0x05,//0x04
 				"42": 0x02,
 				"44": 0x04,
 				"4E": 0x04,
 				"7A": 0x02,
+				
+				"02": 0x01,
+				"03": 0x03,
+				"04": 0x00,
+				"48": 0x00,
+				"C0": 0x00,
+				
 			};
 
 			if (fixedSizeNanos[cardNanoType] != undefined) {
@@ -2186,15 +2193,17 @@ function decodeVideoguardEMM(text, target, addHideButton) {
 	var filterByte = parseInt(addText(1, '#40e0d0', AddTextType.type), 16);
 	var type = filterByte & 0xC0;
 	var subEmmCount = ((filterByte & 0x30) >> 16) + 1;
-
-	for(var i = 0; i < subEmmCount; i++) {
- 		if (type == 0x40) { // unique: card
-			addText(4, '#ff8c00', AddTextType.cardSerial);
-		} else if (type == 0xC0) { // unique: receiver/cam
-			addText(4, '#ff8c00', AddTextType.boxSerial);
-		} else if (type == 0x80) { // shared: card group
-			addText(3, '#ff8c00', AddTextType.cardGroupSerial);
-			addText(1, '#000', AddTextType.fixedValue, '01');
+	
+	if(partOfLength != 0) { // partOfLength == 0 for emms by cccam clients, these do not have the serials part
+		for(var i = 0; i < subEmmCount; i++) {
+ 			if (type == 0x40) { // unique: card
+				addText(4, '#ff8c00', AddTextType.cardSerial);
+			} else if (type == 0xC0) { // unique: receiver/cam
+				addText(4, '#ff8c00', AddTextType.boxSerial);
+			} else if (type == 0x80) { // shared: card group
+				addText(3, '#ff8c00', AddTextType.cardGroupSerial);
+				addText(1, '#000', AddTextType.fixedValue, '01');
+			}
 		}
 	}
 
