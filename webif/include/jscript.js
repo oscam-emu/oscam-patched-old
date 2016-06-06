@@ -2065,7 +2065,7 @@ function decodeVideoguardEMM(text, target, addHideButton) {
 		var remainingDataLength = cardEmmLength;
 		
 		while (remainingDataLength > 0) {
-			var cardNanoType = addText(1, '#000', AddTextType.cardNanoType);
+			var cardNanoType = addText(1, '#008000', AddTextType.cardNanoType);
 
 			var fixedSizeNanos = {
 				"01": 0x04,
@@ -2201,7 +2201,7 @@ function decodeVideoguardEMM(text, target, addHideButton) {
 	while (bytes.length) {
 		var emmtype = addText(1, '#008000', AddTextType.emmType);
 
-		var irdEmmLength = addText(1, '#008000', AddTextType.irdEmmLength);
+		var irdEmmLength = addText(1, '#00F', AddTextType.irdEmmLength);
 		var checksumData = {};
 
 		if (irdEmmLength > 0) {
@@ -2221,7 +2221,7 @@ function decodeVideoguardEMM(text, target, addHideButton) {
 					break;
 
 				case '07':
-					var filterSectionLength = addText(1, '#008000', AddTextType.filterSectionLength);
+					var filterSectionLength = addText(1, '#00F', AddTextType.filterSectionLength);
 					var remainingDataLength = filterSectionLength;
 					
 					while (remainingDataLength > 0) {
