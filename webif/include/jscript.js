@@ -1878,16 +1878,16 @@ function decodeVideoguardEMM(text, target, addHideButton) {
 				var subEmmCount = ((parseInt(ret, 16) & 0x30) >> 16) + 1;
 				
 				if (type == 0x40) {
-					text += ' - <b>unique</b> EMM for Smartcard';
+					text += ' - <b>unique</b> EMM For Smartcard';
 				} 
 				else if (type == 0xC0) {
-					text += ' - EMM for Receiver/CAM';
+					text += ' - <b>unique</b> EMM For Receiver/CAM';
 				} 
 				else if (type == 0x80) {
-					text += ' - <b>shared</b> EMM for Smartcard';
+					text += ' - <b>shared</b> EMM For Smartcard';
 				} 
 				else {
-					text += ' - <b>global</b> EMM for Smartcard';
+					text += ' - <b>global</b> EMM';
 				}
 				
 				text += ' (' + subEmmCount + ' Sub EMMs)';
