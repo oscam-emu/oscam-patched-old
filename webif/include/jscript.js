@@ -1843,6 +1843,12 @@ function decodeVideoguardEMM(text, target, addHideButton) {
 		}
 
 		switch (text) {
+			case AddTextType.emmStartMarker:
+				if(ret.substring(2) == '00') {
+					text += " (cccam)";
+				}
+				break;
+			
 			case AddTextType.mpegSectionLength:
 				var len = ((parseInt(parm, 16) << 8) + parseInt(ret, 16)) & 0x0FFF;
 				text += ' - <b>' + len + '</b>';
@@ -2167,7 +2173,7 @@ function decodeVideoguardEMM(text, target, addHideButton) {
 				while (remainingDataLengthNano > 0 && bytes.length) {
 					var startLength = bytes.length;
 					addText(1, '#E000E0', AddTextType.pairingDevice);
-					addText(4, '#ff8c00', AddTextType.boxSerial);
+					addText(4, '#cc7000', AddTextType.boxSerial);
 					ReadSingleCardEMM();
 					remainingDataLengthNano -= startLength - bytes.length;
 				}
@@ -2190,18 +2196,18 @@ function decodeVideoguardEMM(text, target, addHideButton) {
 	addText(2, '#000', AddTextType.emmStartMarker);
 	addText(1, '#00F', AddTextType.mpegSectionLength, partOfLength);
 	
-	var filterByte = parseInt(addText(1, '#40e0d0', AddTextType.type), 16);
+	var filterByte = parseInt(addText(1, '#199a8d', AddTextType.type), 16);
 	var type = filterByte & 0xC0;
 	var subEmmCount = ((filterByte & 0x30) >> 16) + 1;
 	
 	if(partOfLength != 0) { // partOfLength == 0 for emms by cccam clients, these do not have the serials part
 		for(var i = 0; i < subEmmCount; i++) {
  			if (type == 0x40) { // unique: card
-				addText(4, '#ff8c00', AddTextType.cardSerial);
+				addText(4, '#cc7000', AddTextType.cardSerial);
 			} else if (type == 0xC0) { // unique: receiver/cam
-				addText(4, '#ff8c00', AddTextType.boxSerial);
+				addText(4, '#cc7000', AddTextType.boxSerial);
 			} else if (type == 0x80) { // shared: card group
-				addText(3, '#ff8c00', AddTextType.cardGroupSerial);
+				addText(3, '#cc7000', AddTextType.cardGroupSerial);
 				addText(1, '#000', AddTextType.fixedValue, '01');
 			}
 		}
@@ -2241,7 +2247,7 @@ function decodeVideoguardEMM(text, target, addHideButton) {
 								break;
 
 							case '31':
-								addText(4, '#ff8c00', AddTextType.cardSerial);
+								addText(4, '#cc7000', AddTextType.cardSerial);
 								remainingDataLength -= 5;
 								break;
 
