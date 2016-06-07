@@ -21,10 +21,6 @@
 
           $('body').append('<div style="z-index: 1; position:absolute; top: 33px; right:0px; background: #EEEEEE; text-align: left; padding: 10px 10px; font-size: 14px; color: #000000; font-family: \'Courier new\', Courier, monospace; display: none;" id="emm_decoder_top"></div>');
 
-          singleemm.on('change', singlechanged);
-          singleemm.on('keyup', singlechanged);
-          singleemm.on('paste', singlechanged);
-
           function singlechanged() {
               if (singleemm.val().length < 1) {
                   document.getElementById('emm_decoder_top').style.display = 'none';
@@ -34,6 +30,10 @@
               decodeVideoguardEMM(singleemm.val(), "#emm_decoder_top", true);
               document.getElementById('emm_decoder_top').style.display = 'block';
           }
+
+          singleemm.on('change', singlechanged);
+          singleemm.on('keyup', singlechanged);
+          singleemm.on('paste', singlechanged);
 
           $('body').append('<div style="z-index: 2; position:fixed; top: 33px; background: #EEEEEE; text-align: left; padding: 20px 10px; font-size: 14px; color: #000000; font-family: \'Courier new\', Courier, monospace; display: none;" id="emm_decoder"></div>');
 

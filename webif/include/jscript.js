@@ -1,3 +1,4 @@
+
 var oReloadTimer = null;
 var oCounterTimer = null;
 
@@ -1690,14 +1691,19 @@ var nostorage = 0;
  * General: Start Polling
  */
 $(document).ready(function () {
-
-	if (!localStorage) {
+	
+	try {
+		if (!localStorage) {
+			nostorage = 1;
+			// remove whole filter block - makes no sense
+			// without saving
+			$('#regex').remove();
+		}
+	} catch(err){
 		nostorage = 1;
-		// remove whole filter block - makes no sense
-		// without saving
 		$('#regex').remove();
 	}
-
+	
 	// set default to nothing excluded
 	poll_excluded = '';
 
