@@ -19,7 +19,7 @@
 
       if (singleemm.length > 0 || tosingleemm.length > 0) {
 
-          $('body').append('<div style="z-index: 1; position:absolute; top: 33px; right:0px; background: #EEE; text-align: left; padding: 10px 10px; font-size: 14px; font-family: \'Courier new\', Courier, monospace; display: none;" id="emm_decoder_top"></div>');
+          $('body').append('<div style="z-index: 1; position:absolute; top: 33px; right:0px; background: #EEEEEE; text-align: left; padding: 10px 10px; font-size: 14px; color: #000000; font-family: \'Courier new\', Courier, monospace; display: none;" id="emm_decoder_top"></div>');
 
           singleemm.on('change', singlechanged);
           singleemm.on('keyup', singlechanged);
@@ -35,7 +35,7 @@
               document.getElementById('emm_decoder_top').style.display = 'block';
           }
 
-          $('body').append('<div style="z-index: 2; position:fixed; top: 33px; background: #EEE; text-align: left; padding: 20px 10px; font-size: 14px; font-family: \'Courier new\', Courier, monospace; display: none;" id="emm_decoder"></div>');
+          $('body').append('<div style="z-index: 2; position:fixed; top: 33px; background: #EEEEEE; text-align: left; padding: 20px 10px; font-size: 14px; color: #000000; font-family: \'Courier new\', Courier, monospace; display: none;" id="emm_decoder"></div>');
 
           tosingleemm.on('mouseover', function(e) {
               var text = $(this).text().split(' ')[7];
