@@ -116,6 +116,22 @@ char *trim(char *txt)
 	return txt;
 }
 
+char *trim2(char *txt)
+{
+	int32_t i, n;
+	
+	for(i=n=0; i<(int32_t)strlen(txt); i++)
+	{
+		if(txt[i] == ' ' || txt[i] == '\t') continue;
+		if(txt[i] == '#') {break;}
+		txt[n] = txt[i];
+		n++;
+	}
+	txt[n] = '\0';
+	
+	return txt;
+}
+
 char *remove_white_chars(char *txt)
 {
 
@@ -407,7 +423,7 @@ void get_random_bytes(uint8_t *dst, uint32_t dst_len)
 	}
 }
 
-static unsigned long crc_table[256] =
+static uint32_t crc_table[256] =
 {
 	0x00000000L, 0x77073096L, 0xee0e612cL, 0x990951baL, 0x076dc419L,
 	0x706af48fL, 0xe963a535L, 0x9e6495a3L, 0x0edb8832L, 0x79dcb8a4L,
@@ -473,7 +489,7 @@ static unsigned long crc_table[256] =
 #define DO4(buf) DO2(buf); DO2(buf);
 #define DO8(buf) DO4(buf); DO4(buf);
 
-unsigned long crc32(unsigned long crc, const unsigned char *buf, unsigned int len)
+uint32_t crc32(uint32_t crc, const uint8_t *buf, uint32_t len)
 {
 	if(!buf)
 		{ return 0L; }

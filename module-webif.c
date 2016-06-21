@@ -120,7 +120,7 @@ static bool use_srvid2 = false;
 #define MNU_CFG_FTWIN		17
 #define MNU_CFG_FKEYCW 18
 
-#define MNU_CFG_TOTAL_ITEMS 19 // sum of config or files submenuactivating above. Use it for "All inactive" in function calls too.
+#define MNU_CFG_TOTAL_ITEMS 19 // sum of items above. Use it for "All inactive" in function calls too.
 
 static void set_status_info_var(struct templatevars *vars, char *varname, int no_data, char *fmt, double value) {
 	if (no_data)
@@ -2488,6 +2488,14 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 	tpl_printf(vars, TPLADD, "GBOXRESHARE",   "%d", rdr->gbox_reshare);
 #endif
 
+#ifdef READER_DRECAS
+	tpl_addVar(vars, TPLADD, "STMKEYS", rdr->stmkeys);
+#endif
+
+#if defined(READER_DRE) || defined(READER_DRECAS)
+	tpl_addVar(vars, TPLADD, "USERSCRIPT", rdr->userscript);
+#endif
+
 	tpl_addVar(vars, TPLADD, "PROTOCOL", reader_get_type_desc(rdr, 0));
 
 	// Show only parameters which needed for the reader
@@ -2497,6 +2505,7 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 	case R_DB2COM1:
 	case R_DB2COM2:
 	case R_MOUSE :
+	case R_DRECAS :
 	case R_MP35:
 	case R_SC8in1 :
 	case R_SMART :

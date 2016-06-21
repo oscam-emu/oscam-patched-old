@@ -117,7 +117,7 @@ static void reader_log_emm(struct s_reader *reader, EMM_PACKET *ep, int32_t coun
 		if(!tps)
 			{ tps = &tpe; }
 
-		rdr_log(reader, "%s emmtype=%s, len=%d (hex: 0x%02X), cnt=%d: %s (%"PRId64" ms)",
+		rdr_log(reader, "%s emmtype=%s, len=%d (hex: 0x%.2X), cnt=%d: %s (%"PRId64" ms)",
 				username(ep->client), typedesc[ep->type], SCT_LEN(ep->emm)-3, SCT_LEN(ep->emm)-3, count, rtxt[rc], comp_timeb(&tpe, tps));
 	}
 

@@ -9,6 +9,7 @@ void cs_strncpy(char *destination, const char *source, size_t num);
 char *strtolower(char *txt);
 char *strtoupper(char *txt);
 char *trim(char *txt);
+char *trim2(char *txt);
 char *remove_white_chars(char *txt);
 bool streq(const char *s1, const char *s2);
 
@@ -35,7 +36,7 @@ int32_t array_has_nonzero_byte(uchar *value, int32_t length);
 void get_random_bytes_init(void);
 void get_random_bytes(uint8_t *dst, uint32_t dst_len);
 
-unsigned long crc32(unsigned long crc, const unsigned char *buf, unsigned int len);
+uint32_t crc32(uint32_t crc, const uint8_t *buf, uint32_t len);
 uint16_t ccitt_crc(uint8_t *data, size_t length, uint16_t seed, uint16_t final);
 uint32_t jhash(const char *key, size_t len);
 

@@ -60,6 +60,7 @@
 #define CARDREADER_SMARGO 1
 #define CARDREADER_DB2COM 1
 #define CARDREADER_STINGER 1
+#define CARDREADER_DRECAS 1
 
 #ifdef WITH_PCSC
 #define CARDREADER_PCSC 1
@@ -87,6 +88,10 @@
 
 #ifdef WITH_STAPI5
 #define CARDREADER_STAPI5 1
+#endif
+
+#ifdef READER_DRE
+#define READER_DRECAS 1
 #endif
 
 #endif // WITH_CARDREADER

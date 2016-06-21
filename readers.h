@@ -11,6 +11,7 @@ extern const struct s_cardsystem reader_videoguard1;
 extern const struct s_cardsystem reader_videoguard2;
 extern const struct s_cardsystem reader_videoguard12;
 extern const struct s_cardsystem reader_dre;
+extern const struct s_cardsystem reader_drecas;
 extern const struct s_cardsystem reader_tongfang;
 extern const struct s_cardsystem reader_bulcrypt;
 extern const struct s_cardsystem reader_griffin;
