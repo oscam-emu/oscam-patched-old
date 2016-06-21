@@ -108,6 +108,7 @@ static void protocol_fn(const char *token, char *value, void *setting, FILE *f)
 			{ "newcamd",    R_NEWCAMD },
 			{ "newcamd525", R_NEWCAMD },
 			{ "newcamd524", R_NEWCAMD },
+			{ "drecas",		R_DRECAS },
 			{ NULL        , 0 }
 		}, *p;
 		int i;
@@ -888,6 +889,13 @@ static const struct config_list reader_opts[] =
 #ifdef MODULE_GHTTP
 	DEF_OPT_UINT8("use_ssl"             , OFS(ghttp_use_ssl),           0),
 #endif
+#if defined(READER_DRE) || defined(READER_DRECAS)
+	DEF_OPT_HEX("force_ua"              , OFS(force_ua),                4),
+	DEF_OPT_STR("exec_cmd_file"         , OFS(userscript),              NULL),
+#endif
+#ifdef READER_DRECAS
+	DEF_OPT_STR("stmkeys"               , OFS(stmkeys),                 NULL),
+#endif
 	DEF_OPT_INT8("deprecated"           , OFS(deprecated),              0),
 	DEF_OPT_INT8("audisabled"           , OFS(audisabled),              0),
 	DEF_OPT_FUNC("auprovid"             , 0,                            auprovid_fn),
@@ -923,6 +931,9 @@ static bool reader_check_setting(const struct config_list *UNUSED(clist), void *
 		"readnano", "resetcycle", "smargopatch", "autospeed", "sc8in1_dtrrts_patch", "boxid","fix07",
 		"fix9993", "rsakey", "deskey", "ins7e", "ins7e11", "ins2e06", "force_irdeto", "needsemmfirst", "boxkey",
 		"atr", "detect", "nagra_read", "mhz", "cardmhz", "readtiers", "read_old_classes",
+#if defined(READER_DRE) || defined(READER_DRECAS)
+		"exec_cmd_file",
+#endif
 #ifdef WITH_AZBOX
 		"mode",
 #endif

@@ -674,7 +674,7 @@ int32_t send_dcw(struct s_client *client, ECM_REQUEST *er)
 								};
 	static const char *stxtEx[16] = {"", "group", "caid", "ident", "class", "chid", "queue", "peer", "sid", "", "", "", "", "", "", ""};
 	static const char *stxtWh[16] = {"", "user ", "reader ", "server ", "lserver ", "", "", "", "", "", "", "", "" , "" , "", ""};
-	char sby[100] = "", sreason[32] = "", scwcinfo[32] = "", schaninfo[32] = "", srealecmtime[50]="";
+	char sby[100] = "", sreason[32] = "", scwcinfo[32] = "", schaninfo[CS_SERVICENAME_SIZE] = "", srealecmtime[50]="";
 	char erEx[32] = "";
 	char usrname[38] = "";
 	char channame[CS_SERVICENAME_SIZE];
@@ -1823,7 +1823,7 @@ uint32_t get_subid(ECM_REQUEST *er)
 		id = b2i(2, er->ecm + 11);
 		break; // videoguard
 	case 0x4A: // DRE-Crypt, Bulcrypt, Tongfang and others?
-		if(!caid_is_bulcrypt(er->caid))
+		if(!caid_is_bulcrypt(er->caid) || !caid_is_dre(er->caid))
 			{ id = b2i(2, er->ecm + 6); }
 		break;
 	}

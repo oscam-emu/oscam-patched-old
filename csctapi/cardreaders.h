@@ -13,5 +13,6 @@ extern const struct s_cardreader cardreader_smargo;
 extern const struct s_cardreader cardreader_smartreader;
 extern const struct s_cardreader cardreader_stapi;
 extern const struct s_cardreader cardreader_stinger;
+extern const struct s_cardreader cardreader_drecas;
 
 #endif

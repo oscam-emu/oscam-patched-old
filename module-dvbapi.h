@@ -135,6 +135,7 @@ struct s_ecmpids
 	ca_index_t index[MAX_STREAM_INDICES];
 	int8_t useMultipleIndices;
 	uint32_t streams;
+	uint32_t cadata;
 };
 
 typedef struct filter_s
@@ -165,6 +166,7 @@ struct s_emmpids
 	uint32_t PROVID;
 	uint16_t PID;
 	uint8_t type;
+	uint32_t cadata;
 };
 
 #define PTINUM 10
@@ -236,6 +238,7 @@ struct s_dvbapi_priority
 	uint16_t srvid;
 	uint32_t chid;
 	uint16_t ecmpid;
+	uint32_t cadata;
 	uint16_t mapcaid;
 	uint32_t mapprovid;
 	uint16_t mapecmpid;

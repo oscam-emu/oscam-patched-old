@@ -216,7 +216,7 @@ int32_t ATR_InitFromArray(ATR *atr, const unsigned char atr_buffer[ATR_MAX_SIZE]
 
 int32_t ATR_GetConvention(ATR *atr, int32_t *convention)
 {
-	if(atr->TS == 0x3B)
+	if(atr->TS == 0x3B || atr->TS == 0xDB)
 		{ (*convention) = ATR_CONVENTION_DIRECT; }
 	else if(atr->TS == 0x3F)
 		{ (*convention) = ATR_CONVENTION_INVERSE; }

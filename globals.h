@@ -376,7 +376,7 @@ typedef unsigned char uchar;
 #define CS_MAXPROV    32
 #define CS_MAXPORTS   32  // max server ports
 #define CS_CLIENT_HASHBUCKETS 32
-#define CS_SERVICENAME_SIZE 32
+#define CS_SERVICENAME_SIZE 64
 
 #define CS_ECMSTORESIZE   16  // use MD5()
 #define CS_EMMSTORESIZE   16  // use MD5()
@@ -389,8 +389,13 @@ typedef unsigned char uchar;
 // Support for multiple CWs per channel and other encryption algos
 //#define WITH_EXTENDED_CW 1
 
+#if defined(READER_DRE) || defined(READER_DRECAS)
+#define MAX_ECM_SIZE 1024
+#define MAX_EMM_SIZE 1024
+#else
 #define MAX_ECM_SIZE 596
 #define MAX_EMM_SIZE 512
+#endif
 
 #define CS_EMMCACHESIZE  512 //nr of EMMs that each reader will cache
 #define MSGLOGSIZE 64   //size of string buffer for a ecm to return messages
@@ -423,6 +428,7 @@ typedef unsigned char uchar;
 /////////////////// readers that do not reed baudrate setting and timings are guarded by reader itself (large buffer built in): AFTER R_SMART
 #define R_SMART     0x7 // Smartreader+
 #define R_PCSC      0x8 // PCSC
+#define R_DRECAS    0x9 // Reader DRECAS
 /////////////////// proxy readers after R_CS378X
 #define R_CAMD35    0x20  // Reader cascading camd 3.5x
 #define R_CAMD33    0x21  // Reader cascading camd 3.3x
@@ -1660,17 +1666,28 @@ struct s_reader                                     //contains device info, read
 	struct ecmrl    rlecmh[MAXECMRATELIMIT];
 	int8_t          fix_07;
 	int8_t          fix_9993;
-	int8_t			readtiers;							// method to get videoguard tiers
+	int8_t          readtiers; // method to get videoguard tiers
 	uint8_t         ins7E[0x1A + 1];
 	uint8_t         ins7E11[0x01 + 1];
 	uint8_t         ins2e06[0x04 + 1];
 	int8_t          ins7e11_fast_reset;
 	uint8_t         sc8in1_dtrrts_patch; // fix for kernel commit 6a1a82df91fa0eb1cc76069a9efe5714d087eccd
+
 #ifdef READER_VIACCESS	
-	unsigned char	initCA28; 							// To set when CA28 succeed
-	uint32_t 		key_schedule1[32];
-	uint32_t 		key_schedule2[32];
+	unsigned char   initCA28; // To set when CA28 succeed
+	uint32_t        key_schedule1[32];
+	uint32_t        key_schedule2[32];
 #endif
+
+#if defined(READER_DRE) || defined(READER_DRECAS)
+	char            *userscript;
+	uint32_t        force_ua;
+#endif
+
+#ifdef READER_DRECAS
+	char            *stmkeys;
+#endif
+
 #ifdef MODULE_GBOX
 	uint8_t		gbox_maxdist;
 	uint8_t		gbox_maxecmsend;
@@ -2324,7 +2341,7 @@ static inline bool caid_is_cryptoworks(uint16_t caid) { return caid >> 8 == 0x0D
 static inline bool caid_is_betacrypt(uint16_t caid) { return caid >> 8 == 0x17; }
 static inline bool caid_is_nagra(uint16_t caid) { return caid >> 8 == 0x18; }
 static inline bool caid_is_bulcrypt(uint16_t caid) { return caid == 0x5581 || caid == 0x4AEE; }
-static inline bool caid_is_dre(uint16_t caid) { return caid == 0x4AE0 || caid == 0x4AE1;}
+static inline bool caid_is_dre(uint16_t caid) { return caid == 0x4AE0 || caid == 0x4AE1 || caid == 0x2710;}
 const char *get_cardsystem_desc_by_caid(uint16_t caid);
 
 #endif

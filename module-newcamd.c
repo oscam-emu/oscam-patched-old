@@ -17,7 +17,7 @@
 #include "oscam-string.h"
 #include "oscam-time.h"
 
-const int32_t CWS_NETMSGSIZE = 500;  //csp 0.8.9 (default: 400). This is CWS_NETMSGSIZE. The old default was 240
+const int32_t CWS_NETMSGSIZE = 1024;  //csp 0.8.9 (default: 400). This is CWS_NETMSGSIZE. The old default was 240
 
 #define NCD_CLIENT_ID 0x8888
 
@@ -1130,7 +1130,7 @@ static void newcamd_process_ecm(struct s_client *cl, uchar *buf, int32_t len)
 
 static void newcamd_process_emm(uchar *buf, int32_t len)
 {
-	int32_t ok = 1;
+	int32_t ok = 1, provid;
 	uint16_t caid = 0;
 	struct s_client *cl = cur_client();
 	EMM_PACKET epg;
@@ -1148,12 +1148,13 @@ static void newcamd_process_emm(uchar *buf, int32_t len)
 	epg.caid[0] = (uchar)(caid >> 8);
 	epg.caid[1] = (uchar)(caid);
 
-	/*
-	  epg.provid[0] = (uchar)(aureader->auprovid>>24);
-	  epg.provid[1] = (uchar)(aureader->auprovid>>16);
-	  epg.provid[2] = (uchar)(aureader->auprovid>>8);
-	  epg.provid[3] = (uchar)(aureader->auprovid);
-	*/
+	provid = cfg.ncd_ptab.ports[cl->port_idx].ncd->ncd_ftab.filts[0].prids[0];
+		
+	epg.provid[0] = (uchar)(provid>>24);
+	epg.provid[1] = (uchar)(provid>>16);
+	epg.provid[2] = (uchar)(provid>>8);
+	epg.provid[3] = (uchar)(provid);
+	
 	/*  if (caid == 0x0500)
 	  {
 	    uint16_t emm_head;
@@ -1350,7 +1351,7 @@ static void *newcamd_server(struct s_client *client, uchar *mbuf, int32_t len)
 		break;
 
 	default:
-		if(mbuf[2] > 0x81 && mbuf[2] < 0x90)
+		if(mbuf[2] > 0x81 && mbuf[2] < 0x92)
 			{ newcamd_process_emm(mbuf + 2, len - 2); }
 		else
 		{
@@ -1496,7 +1497,7 @@ static int32_t newcamd_recv_chk(struct s_client *client, uchar *dcw, int32_t *rc
 		return -1;
 
 	default:
-		if(buf[2] > 0x81 && buf[2] < 0x90)  //answer to emm
+		if(buf[2] > 0x81 && buf[2] < 0x92)  //answer to emm
 		{
 			return -1;
 		}

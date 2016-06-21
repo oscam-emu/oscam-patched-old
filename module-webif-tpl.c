@@ -400,6 +400,7 @@ char *tpl_getUnparsedTpl(const char *name, int8_t removeHeader, const char *subd
 											size_t len = strlen(ptr2);
 											check_conf(WITH_CARDREADER, ptr2);
 											check_conf(CARDREADER_PHOENIX, ptr2);
+											check_conf(CARDREADER_DRECAS, ptr2);
 											check_conf(CARDREADER_INTERNAL_AZBOX, ptr2);
 											check_conf(CARDREADER_INTERNAL_COOLAPI, ptr2);
 											check_conf(CARDREADER_INTERNAL_SCI, ptr2);
@@ -590,7 +591,7 @@ int32_t tpl_saveIncludedTpls(const char *path)
 		{
 			if(strncmp(tpl->tpl_name, "IC", 2) != 0)
 			{
-				fprintf(fp, "<!--OSCam;%lu;%s;%s;%s-->\n", crc32(0L, (unsigned char *)tpl->tpl_data, tpl->tpl_data_len), CS_VERSION, CS_SVN_VERSION, tpl->tpl_deps);
+				fprintf(fp, "<!--OSCam;%d;%s;%s;%s-->\n", crc32(0, (uint8_t *)tpl->tpl_data, tpl->tpl_data_len), CS_VERSION, CS_SVN_VERSION, tpl->tpl_deps);
 			}
 			fwrite(tpl->tpl_data, tpl->tpl_data_len, 1, fp);
 			fclose(fp);

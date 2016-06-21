@@ -449,6 +449,7 @@ static void write_versionfile(bool use_stdout)
 		write_readerconf(READER_DGCRYPT, "DGCrypt");
 		fprintf(fp, "\n");
 		write_cardreaderconf(CARDREADER_PHOENIX, "phoenix");
+		write_cardreaderconf(CARDREADER_DRECAS, "drecas");
 		write_cardreaderconf(CARDREADER_INTERNAL_AZBOX, "internal_azbox");
 		write_cardreaderconf(CARDREADER_INTERNAL_COOLAPI, "internal_coolapi");
 		write_cardreaderconf(CARDREADER_INTERNAL_COOLAPI2, "internal_coolapi2");
@@ -1535,6 +1536,9 @@ const struct s_cardsystem *cardsystems[] =
 #ifdef READER_DRE
 	&reader_dre,
 #endif
+#ifdef READER_DRECAS
+	&reader_drecas,
+#endif
 #ifdef READER_TONGFANG
 	&reader_tongfang,
 #endif
@@ -1566,6 +1570,9 @@ const struct s_cardreader *cardreaders[] =
 #endif
 #ifdef CARDREADER_PHOENIX
 	&cardreader_mouse,
+#endif
+#ifdef CARDREADER_DRECAS
+	&cardreader_drecas,
 #endif
 #ifdef CARDREADER_MP35
 	&cardreader_mp35,
