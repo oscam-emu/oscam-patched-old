@@ -196,7 +196,7 @@ READERCONFIGDESKEY            readerconfig/readerconfig_hwreader_deskey.html    
 READERCONFIGSC8IN1            readerconfig/readerconfig_hwreader_sc8in1.html              CARDREADER_SC8IN1
 READERCONFIGSMARGO            readerconfig/readerconfig_hwreader_smargo.html              CARDREADER_SMARGO,CARDREADER_PHOENIX
 READERCONFIGVIACCESS          readerconfig/readerconfig_hwreader_viaccess.html            READER_VIACCESS
-READERCONFIGDRE		            readerconfig/readerconfig_hwreader_dre.html         	      READER_DRE
+READERCONFIGDRE               readerconfig/readerconfig_hwreader_dre.html                 READER_DRE
 READERCONFIGVIDEOGUARD        readerconfig/readerconfig_hwreader_videoguard.html          READER_VIDEOGUARD
 READERCONFIGLBWEIGHT          readerconfig/readerconfig_lbweight.html                     WITH_LB
 READERCONFIGNCD525BIT         readerconfig/readerconfig_ncd525bit.html                    MODULE_NEWCAMD
