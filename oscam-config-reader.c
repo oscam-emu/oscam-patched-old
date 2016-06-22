@@ -266,7 +266,7 @@ static void deskey_fn(const char *token, char *value, void *setting, FILE *f)
 	if(value)
 	{
 		int32_t len = strlen(value);
-		if(((len % 16) != 0) || len == 0 || len > 64)
+		if(((len % 16) != 0) || len == 0 || len > 128*2)
 		{
 			rdr->des_key_length = 0;
 			memset(rdr->des_key, 0, sizeof(rdr->des_key));
