@@ -1496,7 +1496,7 @@ struct s_reader                                     //contains device info, read
 	uint8_t         boxkey_length;
 	uint8_t         rsa_mod[120];                   // rsa modulus for nagra cards.
 	uint8_t         rsa_mod_length;
-	uint8_t         des_key[32];                    // 3des key for Viaccess 16 bytes
+	uint8_t         des_key[128];                   // 3des key for Viaccess 16 bytes, des key for Dre 128 bytes
 	uint8_t         des_key_length;
 	uchar           atr[64];
 	uchar           card_atr[64];                   // ATR readed from card

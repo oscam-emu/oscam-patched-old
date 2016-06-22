@@ -192,7 +192,7 @@ READERCONFIGNAGRA             readerconfig/readerconfig_hwreader_nagra.html     
 READERCONFIGNANO              readerconfig/readerconfig_hwreader_nano.html                WITH_CARDREADER
 READERPINCODE                 readerconfig/readerconfig_hwreader_pincode.html             READER_CONAX,READER_CRYPTOWORKS,READER_VIACCESS,READER_SECA
 READERCONFIGRSAKEY            readerconfig/readerconfig_hwreader_rsakey.html              READER_NAGRA,READER_IRDETO,READER_CONAX
-READERCONFIGDESKEY            readerconfig/readerconfig_hwreader_deskey.html              READER_VIACCESS
+READERCONFIGDESKEY            readerconfig/readerconfig_hwreader_deskey.html              READER_VIACCESS,READER_DRE
 READERCONFIGSC8IN1            readerconfig/readerconfig_hwreader_sc8in1.html              CARDREADER_SC8IN1
 READERCONFIGSMARGO            readerconfig/readerconfig_hwreader_smargo.html              CARDREADER_SMARGO,CARDREADER_PHOENIX
 READERCONFIGVIACCESS          readerconfig/readerconfig_hwreader_viaccess.html            READER_VIACCESS
