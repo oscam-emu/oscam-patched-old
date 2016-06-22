@@ -2175,6 +2175,15 @@ struct s_config
 	int32_t    max_cache_time;  //seconds ecms are stored in ecmcwcache
 	int32_t    max_hitcache_time;  //seconds hits are stored in cspec_hitcache (to detect dyn wait_time)
 
+	int8_t      reload_useraccounts;
+	int8_t      reload_readers;
+	int8_t      reload_provid;
+	int8_t      reload_services_ids;
+	int8_t      reload_tier_ids;
+	int8_t      reload_fakecws;
+	int8_t      reload_ac_stat;
+	int8_t      reload_log;
+
 	int8_t      block_same_ip;   //0=allow all, 1=block client requests to reader with same ip   (default=1)
 	int8_t      block_same_name; //0=allow all, 1=block client requests to reader with same name (default=1)
 
