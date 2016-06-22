@@ -651,6 +651,14 @@ static char *send_oscam_config_global(struct templatevars *vars, struct uriparam
 	tpl_printf(vars, TPLADD, "SLEEP", "%d", cfg.tosleep);
 	tpl_addVar(vars, TPLADD, "UNLOCKPARENTALCHECKED", (cfg.ulparent == 1) ? "checked" : "");
 
+	if(cfg.reload_useraccounts) { tpl_addVar(vars, TPLADD, "RELOADUSERACCOUNTSCHECKED", "checked"); }
+	if(cfg.reload_readers)      { tpl_addVar(vars, TPLADD, "RELOADREADERSCHECKED", "checked"); }
+	if(cfg.reload_provid)       { tpl_addVar(vars, TPLADD, "RELOADPROVIDCHECKED", "checked"); }
+	if(cfg.reload_services_ids) { tpl_addVar(vars, TPLADD, "RELOADSERVICESIDSCHECKED", "checked"); }
+	if(cfg.reload_tier_ids)     { tpl_addVar(vars, TPLADD, "RELOADTIERUDSCHECKED", "checked"); }
+	if(cfg.reload_fakecws)      { tpl_addVar(vars, TPLADD, "RELOADFAKECWSCHECKED", "checked"); }
+	if(cfg.reload_ac_stat)      { tpl_addVar(vars, TPLADD, "RELOADACSTATCHECKED", "checked"); }
+	if(cfg.reload_log)          { tpl_addVar(vars, TPLADD, "RELOADLOGCHECKED", "checked"); }
 
 	if(cfg.block_same_ip)   { tpl_addVar(vars, TPLADD, "BLOCKSAMEIPCHECKED", "checked"); }
 	if(cfg.block_same_name) { tpl_addVar(vars, TPLADD, "BLOCKSAMENAMECHECKED", "checked"); }
