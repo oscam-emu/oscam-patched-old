@@ -198,6 +198,7 @@ int32_t ICC_Async_CardWrite(struct s_reader *reader, unsigned char *command, uin
 	if(crdr_ops->card_write)
 	{
 		call(crdr_ops->card_write(reader, command, rsp, lr, command_len));
+		rdr_log_dump_dbg(reader, D_READER, rsp, *lr, "Answer from cardreader:");
 		return OK;
 	}
 
