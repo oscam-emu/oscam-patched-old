@@ -1260,7 +1260,7 @@ static char *send_oscam_config_webif(struct templatevars *vars, struct uriparams
 
 #ifdef WITH_SSL
 	if(cfg.http_cert != NULL) { tpl_addVar(vars, TPLADD, "HTTPCERT", cfg.http_cert); }
-	tpl_addVar(vars, TPLADD, "HTTPFORCESSLV3SELECT", (cfg.http_force_sslv3 == 1) ? "checked" : "");
+	tpl_addVar(vars, TPLADD, "HTTPFORCESECUREMODESELECT", (cfg.https_force_secure_mode == 1) ? "checked" : "");
 #endif
 
 #ifndef WEBIF_JQUERY
