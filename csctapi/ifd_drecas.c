@@ -9,7 +9,6 @@
 #ifdef CARDREADER_DRECAS
 #include "../oscam-time.h"
 #include "icc_async.h"
-#include "ifd_db2com.h"
 #include "ifd_drecas.h"
 #include "io_serial.h"
 
