@@ -864,12 +864,21 @@ SSL_CTX *SSL_Webif_Init(void)
 	CRYPTO_set_dynlock_lock_callback(SSL_dyn_lock_function);
 	CRYPTO_set_dynlock_destroy_callback(SSL_dyn_destroy_function);
 
+#ifndef SSL_OP_NO_TLSv1_1
+#error "This OpenSSL version does not support TLS >= 1.1. Compile oscam without SSL."
+#endif
+
 	ctx = SSL_CTX_new(SSLv23_server_method());
 
 #if defined(SSL_CTX_set_ecdh_auto)
 		SSL_CTX_set_ecdh_auto(ctx, 1);
 #else
-		SSL_CTX_set_tmp_ecdh(ctx, EC_KEY_new_by_curve_name(NID_X9_62_prime256v1));
+		EC_KEY *ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
+		if(ecdh)
+		{
+			SSL_CTX_set_tmp_ecdh(ctx, ecdh);
+			EC_KEY_free(ecdh);
+		}
 #endif
 
 	if(cfg.https_force_secure_mode)
