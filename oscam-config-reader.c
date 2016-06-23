@@ -844,6 +844,7 @@ static const struct config_list reader_opts[] =
 	DEF_OPT_FUNC("ecmheaderwhitelist"   , 0,                            ecmheaderwhitelist_fn),
 	DEF_OPT_FUNC("detect"               , 0,                            detect_fn),
 	DEF_OPT_INT8("nagra_read"           , OFS(nagra_read),              0),
+	DEF_OPT_INT8("detect_seca_nagra_tunneled_card", OFS(detect_seca_nagra_tunneled_card), 1),
 	DEF_OPT_INT32("mhz"                 , OFS(mhz),                     357),
 	DEF_OPT_INT32("cardmhz"             , OFS(cardmhz),                 357),
 #ifdef WITH_AZBOX
