@@ -35,4 +35,6 @@ void remove_sid_block(struct cc_card *card, struct cc_srvid *srvid_blocked);
 
 void merge_sids(struct cc_card *carddst, struct cc_card *cardsrc);
 
+void cccam_refresh_share(void);
+
 #endif

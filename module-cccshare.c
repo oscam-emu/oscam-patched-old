@@ -25,6 +25,7 @@ static int32_t card_removed_count;
 static int32_t card_dup_count;
 static pthread_t share_updater_thread;
 static bool share_updater_thread_active;
+static bool share_updater_refresh;
 
 int32_t card_valid_for_client(struct s_client *cl, struct cc_card *card);
 
@@ -1525,16 +1526,19 @@ void share_updater(void)
 	uint32_t card_count = 0;
 	while(share_updater_thread_active)
 	{
+		const uint32_t sleep_step = 500;
+		uint32_t sleep_time;
+		uint32_t slept;
 		if(i > 0 && card_count < 100)    //fast refresh only if we have less cards
 		{
 			cs_log_dbg(D_TRACE, "share-updater mode=initfast t=1s i=%d", i);
-			cs_sleepms(1000);
+			sleep_time = 1000;
 			i--;
 		}
 		else if(i > 0)
 		{
 			cs_log_dbg(D_TRACE, "share-updater mode=initslow t=6s i=%d", i);
-			cs_sleepms(6000); //1s later than garbage collector because this list uses much space
+			sleep_time = 6000; //1s later than garbage collector because this list uses much space
 			i -= 6;
 		}
 		else
@@ -1542,10 +1546,21 @@ void share_updater(void)
 			if(cfg.cc_update_interval <= 10)
 				{ cfg.cc_update_interval = DEFAULT_UPDATEINTERVAL; }
 			cs_log_dbg(D_TRACE, "share-updater mode=interval t=%ds", cfg.cc_update_interval);
-			cs_sleepms(cfg.cc_update_interval * 1000);
+			sleep_time = cfg.cc_update_interval * 1000;
+		}
+		for(slept = 0; slept < sleep_time; slept += sleep_step)
+		{
+			if(!share_updater_thread_active || share_updater_refresh)
+			{
+				share_updater_refresh = 0;
+				break;
+			}
+			cs_sleepms(sleep_step);
 		}
 		if(!share_updater_thread_active)
 			{ break; }
+
+		cs_log_dbg(D_TRACE, "share-updater check");
 
 		uint32_t cur_check = 0;
 		uint32_t cur_card_check = 0;
@@ -1654,6 +1669,7 @@ void cccam_init_share(void)
 
 	share_updater_thread = 0;
 	share_updater_thread_active = 1;
+	share_updater_refresh = 0;
 	
 	pthread_t temp;
 	int32_t ret = start_thread("share updater", (void *)&share_updater, NULL, &temp, 1, 1);
@@ -1670,5 +1686,10 @@ void cccam_done_share(void)
 		share_updater_thread_active = 0;
 		share_updater_thread = 0;
 	}
+}
+
+void cccam_refresh_share(void)
+{
+	share_updater_refresh = 1;
 }
 #endif
