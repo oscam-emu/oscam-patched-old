@@ -2563,6 +2563,10 @@ int32_t cc_parse_msg(struct s_client *cl, uint8_t *buf, int32_t l)
 
 		cs_writeunlock(__func__, &cc->cards_busy);
 
+#ifdef MODULE_CCCSHARE
+		cccam_refresh_share();
+#endif
+
 		break;
 	}
 
