@@ -864,11 +864,16 @@ SSL_CTX *SSL_Webif_Init(void)
 	CRYPTO_set_dynlock_lock_callback(SSL_dyn_lock_function);
 	CRYPTO_set_dynlock_destroy_callback(SSL_dyn_destroy_function);
 
+	ctx = SSL_CTX_new(TLSv1_2_server_method());
+
+#if defined(SSL_CTX_set_ecdh_auto)
+		SSL_CTX_set_ecdh_auto(ctx, 1);
+#else
+		SSL_CTX_set_tmp_ecdh(ctx, EC_KEY_new_by_curve_name(NID_X9_62_prime256v1));
+#endif
+
 	if(cfg.https_force_secure_mode)
 	{
-		ctx = SSL_CTX_new(TLSv1_2_server_method());
-		SSL_CTX_set_ecdh_auto(ctx, 1);
-		
 #ifdef SSL_CTX_clear_options
 		SSL_CTX_clear_options(ctx, SSL_OP_ALL); //we CLEAR all bug workarounds! This is for security reason
 #else
@@ -876,11 +881,6 @@ SSL_CTX *SSL_Webif_Init(void)
 #endif
 	
 		SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION);
-	}
-	else
-	{ 
-		ctx = SSL_CTX_new(TLSv1_2_server_method());
-		SSL_CTX_set_ecdh_auto(ctx, 1);
 	}
 
 	char path[128];
