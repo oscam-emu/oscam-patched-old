@@ -540,7 +540,7 @@ static const struct config_list webif_opts[] =
 	DEF_OPT_INT8("httpsavefullcfg"          , OFS(http_full_cfg),           0),
 	DEF_OPT_INT8("httpoverwritebakfile"     , OFS(http_overwrite_bak_file), 0),
 	DEF_OPT_STR("httpcert"                  , OFS(http_cert),               NULL),
-	DEF_OPT_INT8("httpforcesslv3"           , OFS(http_force_sslv3),        0),
+	DEF_OPT_INT8("https_force_secure_mode"  , OFS(https_force_secure_mode), 1),
 	DEF_OPT_FUNC("httpdyndns"               , OFS(http_dyndns),             http_dyndns_fn),
 	DEF_OPT_INT32("aulow"                   , OFS(aulow),                   30),
 	DEF_OPT_INT32("hideclient_to"           , OFS(hideclient_to),           25),
