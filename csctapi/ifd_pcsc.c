@@ -105,6 +105,15 @@ static int32_t pcsc_init(struct s_reader *pcsc_reader)
 			return ERROR;
 		}
 
+		char* device_line;
+		char* device_first;
+		char* device_second;
+
+		device_line = strdup((const char *)&pcsc_reader->device);
+		device_first = strsep(&device_line, ":");
+		device_second = strsep(&device_line, ":");
+		reader_nb = atoi(device_first);
+
 		/* fill the readers table */
 		nbReaders = 0;
 		ptr = mszReaders;
@@ -112,16 +121,19 @@ static int32_t pcsc_init(struct s_reader *pcsc_reader)
 		{
 			rdr_log_dbg(pcsc_reader, D_DEVICE, "PCSC pcsc_reader %d: %s", nbReaders, ptr);
 			readers[nbReaders] = ptr;
+			if ((reader_nb == -1) && (device_second != NULL) && strstr(ptr,device_second)){
+				reader_nb = nbReaders;
+			}
 			ptr += strlen(ptr) + 1;
 			nbReaders++;
 		}
 
-		reader_nb = atoi((const char *)&pcsc_reader->device);
 		if(reader_nb < 0 || reader_nb >= nbReaders)
 		{
 			rdr_log(pcsc_reader, "Wrong pcsc_reader index: %d", reader_nb);
 			NULLFREE(mszReaders);
 			NULLFREE(readers);
+			NULLFREE(device_line);
 			return ERROR;
 		}
 
@@ -131,6 +143,7 @@ static int32_t pcsc_init(struct s_reader *pcsc_reader)
 		NULLFREE(readers);
 		}
 		NULLFREE(mszReaders);
+		NULLFREE(device_line);
 	}
 	else
 	{
