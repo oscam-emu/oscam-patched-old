@@ -1699,6 +1699,13 @@ void dvbapi_parse_cat(int32_t demux_id, uchar *buf, int32_t len)
 				break;
 			case 0x27:
 			case 0x4A:
+				
+				if(caid_is_bulcrypt(caid))
+				{
+					dvbapi_add_emmpid(demux_id, caid, emm_pid, 0, 0, EMM_UNIQUE | EMM_SHARED | EMM_GLOBAL);
+					break;
+				}
+				
 				emm_provider = (uint32_t)buf[i+6];
 				if(buf[i+6] == 0xFE) 
 				{
@@ -2939,20 +2946,21 @@ void dvbapi_parse_descriptor(int32_t demux_id, uint32_t info_length, unsigned ch
 		{
 			if(caid_is_viaccess(descriptor_ca_system_id) && descriptor_length == 0x0F && buffer[j + 12] == 0x14)
 				{ descriptor_ca_provider = b2i(3, buffer + j + 14) &0xFFFFF0; }
-
+			
 			else if(caid_is_nagra(descriptor_ca_system_id) && descriptor_length == 0x07)
 				{ descriptor_ca_provider = b2i(2, buffer + j + 7); }
 			
-			else if(caid_is_dre(descriptor_ca_system_id) && descriptor_length > 0x04 )
+			else if((descriptor_ca_system_id >> 8 == 0x4A || descriptor_ca_system_id == 0x2710) && descriptor_length > 0x04 )
 				{ 
 					descriptor_ca_provider = buffer[j + 6];
-					if( descriptor_length == 0xA)
+					
+					if(caid_is_dre(descriptor_ca_system_id) && descriptor_length == 0xA)
 					{
 						descriptor_ca_data = (buffer[j+8] << 24) | (buffer[j+9] << 16) | (buffer[j+10] << 8) | buffer[j+11];
 						snprintf(txt, 40, "CA DATA: %X", descriptor_ca_data);
 					}
 				}
-
+			
 			dvbapi_add_ecmpid(demux_id, descriptor_ca_system_id, descriptor_ca_pid, descriptor_ca_provider, descriptor_ca_data, txt);
 			
 		}
