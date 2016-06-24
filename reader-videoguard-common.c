@@ -36,7 +36,7 @@ void set_known_card_info(struct s_reader *reader, const unsigned char *atr, cons
 	csystem_data->card_system_version = NDSUNKNOWN;
 	csystem_data->card_desc = "VideoGuard Unknown Card";
 
-	NDS_ATR_ENTRY nds_atr_table[] = // {atr}, atr len, base year, tier start, nds version, description
+	static const NDS_ATR_ENTRY nds_atr_table[] = // {atr}, atr len, base year, tier start, nds version, description
 	{
 		/* known NDS1 atrs */
 		{	{ 0x3F, 0x78, 0x13, 0x25, 0x04, 0x40, 0xB0, 0x09, 0x4A, 0x50, 0x01, 0x4E, 0x5A },
