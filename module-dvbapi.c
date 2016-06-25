@@ -4565,16 +4565,6 @@ void dvbapi_process_input(int32_t demux_id, int32_t filter_num, uchar *buffer, i
 		// we have an ecm with the correct irdeto index (or fakechid)
 		for(p = dvbapi_priority; p != NULL ; p = p->next)  // check for ignore!
 		{
-			if((p->type == 'p')
-					&& (p->caid == curpid->CAID)
-					&& (p->provid == curpid->PROVID)
-					&& (!p->ecmpid || p->ecmpid == curpid->ECM_PID)
-					&& (!p->pidx || p->pidx-1 == pid) 
-					&& (!p->srvid || p->srvid == demux[demux_id].program_number))
-			{ 
-				if(p->chid < 0x10000 && p->chid == chid) { break; }
-			}
-			
 			if((p->type != 'i')
 					|| (p->caid && p->caid != curpid->CAID)
 					|| (p->provid && p->provid != curpid->PROVID)
@@ -4583,7 +4573,7 @@ void dvbapi_process_input(int32_t demux_id, int32_t filter_num, uchar *buffer, i
 					|| (p->srvid && p->srvid != demux[demux_id].program_number))
 				{ continue; }
 			
-			if(p->type == 'i' && ((p->chid < 0x10000 && p->chid == chid) || (!p->caid && caid_is_irdeto(curpid->CAID))))    // found a ignore chid match with current ecm -> ignoring this irdeto index
+			if(p->type == 'i' && (p->chid < 0x10000 && p->chid == chid))    // found a ignore chid match with current ecm -> ignoring this irdeto index
 			{
 				curpid->irdeto_curindex++;
 				if(curpid->irdeto_cycle == 0xFE) curpid->irdeto_cycle = buffer[4]; // on startup set to current irdeto index
