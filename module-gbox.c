@@ -1279,7 +1279,7 @@ static void gbox_send_dcw(struct s_client *cl, ECM_REQUEST *er)
 
 	cs_log_dbg(D_READER, "<- CW (<- %d) to %04X from %s:%d", ere->gbox_hops, ere->gbox_peer, cli->reader->label, cli->port);
 }
-
+/*
 void *gbox_rebroadcast_thread(struct gbox_rbc_thread_args *args)
 {
 	if (!args) { return NULL; }
@@ -1324,7 +1324,7 @@ void *gbox_rebroadcast_thread(struct gbox_rbc_thread_args *args)
 
 	return NULL;
 }
-
+*/
 static int32_t gbox_send_ecm(struct s_client *cli, ECM_REQUEST *er)
 {
 	if(!cli || !er || !cli->reader)
@@ -1466,7 +1466,7 @@ static int32_t gbox_send_ecm(struct s_client *cli, ECM_REQUEST *er)
 		}	  	
 		gbox_send(cli, send_buf_1, cont_1);
 		cli->reader->last_s = time((time_t *) 0);
-	
+/*	
 		if(er->gbox_ecm_status < GBOX_ECM_ANSWERED)
 		{ 
 			//Create thread to rebroacast ecm after time
@@ -1489,7 +1489,8 @@ static int32_t gbox_send_ecm(struct s_client *cli, ECM_REQUEST *er)
 			}
 		}
 		else
-			{ er->gbox_ecm_status--; }
+*/			{ er->gbox_ecm_status--; }
+
 	}	
 	return 0;
 }
