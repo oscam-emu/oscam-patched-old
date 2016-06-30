@@ -1050,7 +1050,7 @@ typedef struct ecm_request_t
 #endif
 
 	void            *src_data;
-	int32_t         csp_hash; 					// csp has its own hash
+	uint32_t        csp_hash; 					// csp has its own hash
 
 	struct s_client *cacheex_src;               // Cacheex origin
 #ifdef CS_CACHEEX

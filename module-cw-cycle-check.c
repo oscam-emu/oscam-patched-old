@@ -14,7 +14,7 @@
 struct s_cwc_md5
 {
 	uchar           md5[CS_ECMSTORESIZE];
-	int32_t         csp_hash;
+	uint32_t        csp_hash;
 	uchar           cw[16];
 };
 

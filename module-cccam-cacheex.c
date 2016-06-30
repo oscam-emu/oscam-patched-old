@@ -15,6 +15,11 @@
 #include "oscam-chk.h"
 #include "oscam-reader.h"
 
+#define CSP_HASH_SWAP(n) (((((uint32_t)(n) & 0xFF)) << 24) | \
+                  ((((uint32_t)(n) & 0xFF00)) << 8) | \
+                  ((((uint32_t)(n) & 0xFF0000)) >> 8) | \
+                  ((((uint32_t)(n) & 0xFF000000)) >> 24))
+
 extern int32_t cc_cli_connect(struct s_client *cl);
 extern int32_t cc_cmd_send(struct s_client *cl, uint8_t *buf, int32_t len, cc_msg_type_t cmd);
 
@@ -282,7 +287,7 @@ static int32_t cc_cacheex_push_out(struct s_client *cl, struct ecm_request_t *er
 	ofs += sizeof(er->ecmd5);
 
 	//write csp hashcode:
-	i2b_buf(4, htonl(er->csp_hash), ofs);
+	i2b_buf(4, CSP_HASH_SWAP(er->csp_hash), ofs);
 	ofs += 4;
 
 	//write cw:
@@ -381,7 +386,7 @@ void cc_cacheex_push_in(struct s_client *cl, uchar *buf)
 		{ return; }
 
 	//Read csp_hash:
-	er->csp_hash = ntohl(b2i(4, ofs));
+	er->csp_hash = CSP_HASH_SWAP(b2i(4, ofs));
 	ofs += 4;
 
 	//Read cw:

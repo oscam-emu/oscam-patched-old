@@ -115,7 +115,7 @@ static uint8_t parse_request(struct ecm_request_t *er, uchar *buf)
 	uint16_t srvid = b2i(2, buf + 1);
 	uint16_t onid = b2i(2, buf + 3);
 	uint16_t caid = b2i(2, buf + 5);
-	int32_t hash = b2i(4, buf + 7);
+	uint32_t hash = b2i(4, buf + 7);
 
 	er->caid = caid;
 	er->onid = onid;
