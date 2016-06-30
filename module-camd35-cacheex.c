@@ -16,6 +16,11 @@
 
 uint8_t camd35_node_id[8];
 
+#define CSP_HASH_SWAP(n) (((((uint32_t)(n) & 0xFF)) << 24) | \
+                  ((((uint32_t)(n) & 0xFF00)) << 8) | \
+                  ((((uint32_t)(n) & 0xFF0000)) >> 8) | \
+                  ((((uint32_t)(n) & 0xFF000000)) >> 24))
+
 /**
  * send push filter
  */
@@ -274,7 +279,7 @@ static int32_t camd35_cacheex_push_out(struct s_client *cl, struct ecm_request_t
 	ofs += sizeof(er->ecmd5);
 
 	//write csp hashcode:
-	i2b_buf(4, htonl(er->csp_hash), ofs);
+	i2b_buf(4, CSP_HASH_SWAP(er->csp_hash), ofs);
 	ofs += 4;
 
 	//write cw:
@@ -363,7 +368,7 @@ static void camd35_cacheex_push_in(struct s_client *cl, uchar *buf)
 		{ return; }
 
 	//Read csp_hash:
-	er->csp_hash = ntohl(b2i(4, ofs));
+	er->csp_hash = CSP_HASH_SWAP(b2i(4, ofs));
 	ofs += 4;
 
 	//Read cw:

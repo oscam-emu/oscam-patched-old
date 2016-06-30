@@ -1215,7 +1215,7 @@ void request_cw_from_readers(ECM_REQUEST *er, uint8_t stop_stage)
 }
 
 
-void add_cache_from_reader(ECM_REQUEST *er, struct s_reader *rdr, int32_t csp_hash, uchar *ecmd5, uchar *cw, int16_t caid, int32_t prid, int16_t srvid ){
+void add_cache_from_reader(ECM_REQUEST *er, struct s_reader *rdr, uint32_t csp_hash, uchar *ecmd5, uchar *cw, int16_t caid, int32_t prid, int16_t srvid ){
 	ECM_REQUEST *ecm;
 	if (cs_malloc(&ecm, sizeof(ECM_REQUEST))){
 		cs_ftime(&ecm->tps);

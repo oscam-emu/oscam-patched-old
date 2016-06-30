@@ -55,7 +55,7 @@ typedef struct cache_t {
 	list 			ll_cw;
 	struct timeb	upd_time; //updated time. Update time at each cw got
 	struct timeb	first_recv_time;  //time of first cw received
-	int32_t			csp_hash;
+	uint32_t			csp_hash;
 
 	node		    ht_node;  //node for hash table
 	node		    ll_node;  //node for linked list
@@ -153,7 +153,7 @@ CW *get_first_cw(ECMHASH *ecmhash, ECM_REQUEST *er){
 }
 
 static int compare_csp_hash(const void *arg, const void *obj){
-	int32_t h = ((const ECMHASH*)obj)->csp_hash;
+	uint32_t h = ((const ECMHASH*)obj)->csp_hash;
 	return memcmp(arg, &h, 4);
 }
 
@@ -201,7 +201,7 @@ struct ecm_request_t *check_cache(ECM_REQUEST *er, struct s_client *cl)
 
 	SAFE_RWLOCK_RDLOCK(&cache_lock);
 
-	result = find_hash_table(&ht_cache, &er->csp_hash, sizeof(int32_t),&compare_csp_hash);
+	result = find_hash_table(&ht_cache, &er->csp_hash, sizeof(uint32_t),&compare_csp_hash);
 	cw = get_first_cw(result, er);
 	if (!cw)
 		goto out_err;
@@ -320,14 +320,14 @@ void add_cache(ECM_REQUEST *er){
 	SAFE_RWLOCK_WRLOCK(&cache_lock);
 
 	//add csp_hash to cache
-	result = find_hash_table(&ht_cache, &er->csp_hash, sizeof(int32_t), &compare_csp_hash);
+	result = find_hash_table(&ht_cache, &er->csp_hash, sizeof(uint32_t), &compare_csp_hash);
 	if(!result){
 		if(cs_malloc(&result, sizeof(ECMHASH))){
 			result->csp_hash = er->csp_hash;
 			init_hash_table(&result->ht_cw, &result->ll_cw);
 			cs_ftime(&result->first_recv_time);
 
-			add_hash_table(&ht_cache, &result->ht_node, &ll_cache, &result->ll_node, result, &result->csp_hash, sizeof(int32_t));
+			add_hash_table(&ht_cache, &result->ht_node, &ll_cache, &result->ll_node, result, &result->csp_hash, sizeof(uint32_t));
 
 		}else{
 			SAFE_RWLOCK_UNLOCK(&cache_lock);
