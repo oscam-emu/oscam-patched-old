@@ -376,7 +376,7 @@ typedef unsigned char uchar;
 #define CS_MAXPROV    32
 #define CS_MAXPORTS   32  // max server ports
 #define CS_CLIENT_HASHBUCKETS 32
-#define CS_SERVICENAME_SIZE 64
+#define CS_SERVICENAME_SIZE 32
 
 #define CS_ECMSTORESIZE   16  // use MD5()
 #define CS_EMMSTORESIZE   16  // use MD5()
