@@ -2704,6 +2704,7 @@ int32_t format_ecm(ECM_REQUEST *ecm, char *result, size_t size)
 		{ return ecmfmt(result, size, ecm->caid, ecm->onid, ecm->prid, ecm->chid, ecm->pid, ecm->srvid, ecm->ecmlen, ecmd5hex, csphash, cwhex, ecm->gbox_ecm_id, 0, payload, tier); }
 	else
 #endif
-		return ecmfmt(result, size, ecm->caid, ecm->onid, ecm->prid, ecm->chid, ecm->pid, ecm->srvid, ecm->ecmlen, ecmd5hex, csphash, cwhex, 0, 0, payload, tier);
+		return ecmfmt(result, size, ecm->caid, ecm->onid, ecm->prid, ecm->chid, ecm->pid, ecm->srvid, ecm->ecmlen, ecmd5hex, csphash, cwhex, 0,
+		((ecm->selected_reader && ecm->selected_reader->currenthops) ? ecm->selected_reader->currenthops : 0), payload, tier);
 }
 
