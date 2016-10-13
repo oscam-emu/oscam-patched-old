@@ -1084,7 +1084,12 @@ static void gbox_local_cards(struct s_reader *reader, TUNTAB *ttab)
 			if ((cfg.gbox_proxy_card[i] >> 24) == 0x05)
 			{
 				cs_log_dbg(D_READER,"add proxy card:  slot %d %04lX:%06lX",slot, (cfg.gbox_proxy_card[i] >> 16) & 0xFFF0, cfg.gbox_proxy_card[i] & 0xFFFFF);
-			} else
+			}
+			else if ((cfg.gbox_proxy_card[i] >> 24) == 0x0d)
+			{
+				cs_log_dbg(D_READER,"add proxy card:  slot %d %04lX:%06lX",slot, cfg.gbox_proxy_card[i] >> 16, (cfg.gbox_proxy_card[i] >> 8 ) & 0xFF);
+			}			
+			else
 			{
 				cs_log_dbg(D_READER,"add proxy card:  slot %d %04lX:%06lX",slot, cfg.gbox_proxy_card[i] >> 16, cfg.gbox_proxy_card[i] & 0xFFFF);
 			}	
