@@ -1081,22 +1081,11 @@ static void gbox_local_cards(struct s_reader *reader, TUNTAB *ttab)
 		{
 			slot = gbox_next_free_slot(local_gbox.id);
 			gbox_add_card(local_gbox.id, cfg.gbox_proxy_card[i], slot, reader->gbox_reshare, 0, GBOX_CARD_TYPE_PROXY, NULL);
-			if ((cfg.gbox_proxy_card[i] >> 24) == 0x05)
-			{
-				cs_log_dbg(D_READER,"add proxy card:  slot %d %04lX:%06lX",slot, (cfg.gbox_proxy_card[i] >> 16) & 0xFFF0, cfg.gbox_proxy_card[i] & 0xFFFFF);
-			}
-			else if ((cfg.gbox_proxy_card[i] >> 24) == 0x0d)
-			{
-				cs_log_dbg(D_READER,"add proxy card:  slot %d %04lX:%06lX",slot, cfg.gbox_proxy_card[i] >> 16, (cfg.gbox_proxy_card[i] >> 8 ) & 0xFF);
-			}			
-			else
-			{
-				cs_log_dbg(D_READER,"add proxy card:  slot %d %04lX:%06lX",slot, cfg.gbox_proxy_card[i] >> 16, cfg.gbox_proxy_card[i] & 0xFFFF);
-			}	
+			cs_log_dbg(D_READER,"add proxy card: slot %d %04X:%06X",slot, gbox_get_caid(cfg.gbox_proxy_card[i]), gbox_get_provid(cfg.gbox_proxy_card[i]));			
 		}
-	}  // end add proxy reader cards
+	}	//end add proxy reader cards
 	gbox_write_local_cards_info();
-} //end add local gbox cards
+}	//end add local gbox cards
 
 //returns -1 in case of error, 1 if authentication was performed, 0 else
 static int8_t gbox_check_header(struct s_client *cli, struct s_client *proxy, uchar *data, int32_t l)
