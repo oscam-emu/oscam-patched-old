@@ -1012,7 +1012,7 @@ static void gbox_local_cards(struct s_reader *reader, TUNTAB *ttab)
 	cs_readlock(__func__, &clientlist_lock);
 	for(cl = first_client; cl; cl = cl->next)
 	{
-		if(cl->typ == 'r' && cl->reader && cl->reader->card_status == 2)
+		if(cl->typ == 'r' && cl->reader && cl->reader->card_status == CARD_INSERTED)
 		{
 			slot = gbox_next_free_slot(local_gbox.id);
 			//SECA, Viaccess and Cryptoworks have multiple providers
