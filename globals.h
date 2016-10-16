@@ -389,7 +389,7 @@ typedef unsigned char uchar;
 // Support for multiple CWs per channel and other encryption algos
 //#define WITH_EXTENDED_CW 1
 
-#if defined(READER_DRE) || defined(READER_DRECAS)
+#if defined(READER_DRE) || defined(READER_DRECAS)	|| defined(READER_VIACCESS)
 #define MAX_ECM_SIZE 1024
 #define MAX_EMM_SIZE 1024
 #else
