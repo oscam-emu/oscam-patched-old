@@ -494,6 +494,7 @@ static int8_t gbox_auth_client(struct s_client *cli, uint32_t gbox_password)
 
 static void gbox_server_init(struct s_client *cl)
 {
+	cs_writelock(__func__, &clientlist_lock);
 	if(!cl->init_done)
 	{
 		if(IP_ISSET(cl->ip))
@@ -504,6 +505,7 @@ static void gbox_server_init(struct s_client *cl)
 		
 		start_sms_sender();
 	}
+	cs_writeunlock(__func__, &clientlist_lock);
 	return;
 }
 
