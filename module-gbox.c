@@ -108,24 +108,24 @@ unsigned char *GboxCPU( unsigned char a ) {
 	return a2i(cfg.gbox_my_cpu_api,1);
 }
 
-static void write_goodnight_to_osd_file(struct s_client *cli)
+static void write_msg_to_osd (struct s_client *cli, uint8_t msg_id)
 {
-	char *fext= FILE_GOODNIGHT_OSD; 
+	char *fext= FILE_MSG_OSD; 
 	char *fname = get_gbox_tmp_fname(fext); 
 	if (file_exists(fname))
 	{
-	char buf[50];
-	memset(buf, 0, sizeof(buf));
-	snprintf(buf, sizeof(buf), "%s %s %s", fname, username(cli), cli->reader->device);
-	cs_log_dbg(D_READER, "found file %s - write goodnight info from %s %s to OSD", fname, username(cli),cli->reader->device);
-	char *cmd = buf;
-              FILE *p;
-              if ((p = popen(cmd, "w")) == NULL)
-		{	
+		char buf[50];
+		memset(buf, 0, sizeof(buf));
+		snprintf(buf, sizeof(buf), "%s %d %s %s", fname, msg_id, username(cli), cli->reader->device);
+		cs_log_dbg(D_READER, "found driver %s - write msg (id= %d) from %s %s to OSD", fname, msg_id, username(cli),cli->reader->device);
+		char *cmd = buf;
+		FILE *p;
+		if ((p = popen(cmd, "w")) == NULL)
+			{
 			cs_log("Error %s",fname);
 			return;
-		}
-              pclose(p);
+			}
+		pclose(p);
 	}
 	return;
 }
@@ -651,7 +651,7 @@ int32_t gbox_cmd_hello(struct s_client *cli, uchar *data, int32_t n)
 		{
 			//This is a good night / reset packet (good night data[0xA] / reset !data[0xA] 
 			cs_log("-> Good Night from %s %s",username(cli), cli->reader->device);
-			write_goodnight_to_osd_file(cli);
+			write_msg_to_osd(cli, MSGID_GOODNIGHT_OSD);
 			gbox_reinit_proxy(cli);
 		}
 		else	//last packet of Hello
@@ -1275,7 +1275,7 @@ static void gbox_send_dcw(struct s_client *cl, ECM_REQUEST *er)
 
 	cs_log_dbg(D_READER, "<- CW (<- %d) to %04X from %s:%d", ere->gbox_hops, ere->gbox_peer, cli->reader->label, cli->port);
 }
-/*
+/* // see r11270
 void *gbox_rebroadcast_thread(struct gbox_rbc_thread_args *args)
 {
 	if (!args) { return NULL; }
@@ -1462,7 +1462,7 @@ static int32_t gbox_send_ecm(struct s_client *cli, ECM_REQUEST *er)
 		}	  	
 		gbox_send(cli, send_buf_1, cont_1);
 		cli->reader->last_s = time((time_t *) 0);
-/*	
+/*	// see r11270
 		if(er->gbox_ecm_status < GBOX_ECM_ANSWERED)
 		{ 
 			//Create thread to rebroacast ecm after time
@@ -1646,7 +1646,7 @@ static void gbox_s_idle(struct s_client *cl)
 		else { time_since_last = llabs(proxy->last - time(NULL)); }
 		if (time_since_last > (HELLO_KEEPALIVE_TIME*3) && cl->gbox_peer_id != NO_GBOX_ID)	
 		{
-			//gbox peer apparently died without saying goodbye
+			//gbox peer apparently died without saying goodnight
 			peer = proxy->gbox;
 			cs_writelock(__func__, &peer->lock);
 			cs_log_dbg(D_READER, "time since last proxy activity in sec: %d => taking gbox peer offline",time_since_last);
