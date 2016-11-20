@@ -57,7 +57,7 @@ static int32_t poll_gsms_data (uint16_t *boxid, uint8_t *num, char *text)
 }
 static void write_gsms_to_osd_file(struct s_client *cli, unsigned char *gsms)
 {
-#ifdef GBOX_ENABLE_UNSAFE_OSD
+#ifdef GBOX_ENABLE_UNSAFE_EXTENDED_OSD
 	char *fext= FILE_OSD_MSG; 
 	char *fname = get_gbox_tmp_fname(fext); 
 	if (file_exists(fname))
@@ -76,8 +76,7 @@ static void write_gsms_to_osd_file(struct s_client *cli, unsigned char *gsms)
               pclose(p);
 	}
 #else
-	cs_log("OSD: username=%s dev=%s msg=%s", username(cli), cli->reader->device, gsms);
-	cs_log_dbg(D_READER, "OSD is disabled because it is a security risk, to enable it recompile OSCAM.");
+	cs_log_dbg(D_READER, "Extended OSD disabled. OSD: username=%s dev=%s msg=%s", username(cli), cli->reader->device, gsms);
 #endif
 	return;
 }
@@ -187,7 +186,7 @@ static void gbox_send_gsms2peer(struct s_client *cl, char *gsms, uint8_t msg_typ
 				outbuf[10] = (peer->gbox.id >> 8) & 0xff;
 				outbuf[11] = peer->gbox.id & 0xff;
 				outbuf[12] = (local_gbox_id >> 8) & 0xff;
-				outbuf[13] = local_gbox_id & 0xff;								
+				outbuf[13] = local_gbox_id & 0xff;
 				outbuf[14] = msg_type; //msg type
 				outbuf[15] = gsms_len; // gsms length
 				memcpy(&outbuf[16], gsms,gsms_len);

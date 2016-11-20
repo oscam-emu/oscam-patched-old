@@ -251,7 +251,7 @@ static uint8_t got_from_backup(uint32_t caprovid, uint16_t id_peer, uint8_t slot
         {
                 if (card->caprovid == caprovid && card->id.peer == id_peer && card->id.slot == slot)
                 {
-                        cs_log_dbg(D_READER, "getting backup card: %04X\n", card->id.peer);
+                        cs_log_dbg(D_READER, "backup card from peer: %04X %08X", card->id.peer, card->caprovid );
                         ll_remove(gbox_backup_cards, card);
                         card->origin_peer = origin_peer;
                         ll_append(gbox_cards, card);
@@ -269,6 +269,8 @@ void gbox_add_card(uint16_t id_peer, uint32_t caprovid, uint8_t slot, uint8_t le
         uint16_t caid = gbox_get_caid(caprovid);
         uint32_t provid = gbox_get_provid(caprovid);
 
+				if(!caprovid)	//skip caprov 00000000
+					{ return; }
         //don't insert 0100:000000
         if(caid_is_seca(caid) && (!provid))
                 { return; }
@@ -284,7 +286,7 @@ void gbox_add_card(uint16_t id_peer, uint32_t caprovid, uint8_t slot, uint8_t le
                         cs_log("Card allocation failed");
                         return;
                 }
-                cs_log_dbg(D_READER, "new card: %04X\n", id_peer);
+                cs_log_dbg(D_READER, "new card from peer: %04X %08X", id_peer, caprovid);
                 card->caprovid = caprovid;
                 card->id.peer = id_peer;
                 card->id.slot = slot;
@@ -362,7 +364,7 @@ void gbox_delete_cards(uint8_t delete_type, uint16_t criteria)
                 }
                 if (found)
                 {
-                        cs_log_dbg(D_READER, "remove card: %04X\n", card->id.peer);
+                        cs_log_dbg(D_READER, "remove card from peer: %04X %08X", card->id.peer, card->caprovid);
                         ll_remove(gbox_cards, card);
                         ll_append(gbox_backup_cards, card);
                         update_checkcode(card);
@@ -435,7 +437,7 @@ void gbox_add_good_sid(uint16_t id_card, uint16_t caid, uint8_t slot, uint16_t s
                         srvid->srvid.sid = sid_ok;
                         srvid->srvid.provid_id = gbox_get_provid(card->caprovid);
                         srvid->last_cw_received = time(NULL);
-                        cs_log_dbg(D_READER, "Adding good SID: %04X for CAID: %04X Provider: %04X on CardID: %04X\n", sid_ok, caid, gbox_get_provid(card->caprovid), id_card);
+                        cs_log_dbg(D_READER, "Adding good SID: %04X for CAID: %04X Provider: %04X on CardID: %04X", sid_ok, caid, gbox_get_provid(card->caprovid), id_card);
                         ll_append(card->goodsids, srvid);
                         break;
                 }

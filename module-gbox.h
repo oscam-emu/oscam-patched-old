@@ -7,7 +7,7 @@
  * may execute code on your machine. do not enable this unless you know what you are
  * doing and accept the posssible *BAD* consequences
 */
-//#define GBOX_ENABLE_UNSAFE_OSD 1
+//#define GBOX_ENABLE_UNSAFE_EXTENDED_OSD 1
 
 #ifdef MODULE_GBOX
 
@@ -57,11 +57,12 @@
 #define FILE_MSG_OSD            "msg.osd"
 #define FILE_LOCAL_CARDS_INFO   "sc.info"
 
-#define	MSGID_GOODNIGHT_OSD     0
-#define	MSGID_GSMS1_OSD         1
-#define	MSGID_GSMS2_OSD         2
-#define	MSGID_GOODBYE_OSD       3
-#define	MSGID_PEERONLINE_OSD    4
+#define	MSGID_GOODNIGHT         0
+#define	MSGID_GSMS              1
+#define	MSGID_GONEOFFLINE       2
+#define	MSGID_COMEONLINE        3
+#define	MSGID_GOODBYE           4
+#define	MSGID_LOSTCONNECT       5
 
 #define GBOX_STAT_HELLOL        0
 #define GBOX_STAT_HELLOS        1
@@ -141,6 +142,8 @@ struct gbox_peer
     uchar *hostname;
     uchar checkcode[7];
     int8_t online;
+    uint8_t onlinestat;
+    uint8_t authstat;
     uint8_t next_hello;
     uchar ecm_idx;
     CS_MUTEX_LOCK lock;
