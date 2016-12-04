@@ -137,9 +137,9 @@ static void show_class(struct s_reader *reader, const char *p, uint32_t provid, 
 					rdr_log(reader, "class: %02X, expiry date: %04d/%02d/%02d - %04d/%02d/%02d", cls,
 							vd.year_s + 1980, vd.month_s, vd.day_s,
 							vd.year_e + 1980, vd.month_e, vd.day_e);
-							time_t start_t, end_t;
 					
 					//convert time:
+					time_t start_t, end_t;
 					struct tm tm;
 					memset(&tm, 0, sizeof(tm));
 					tm.tm_year = vd.year_s + 80; //via year starts in 1980, tm_year starts in 1900
@@ -1934,8 +1934,10 @@ static int32_t viaccess_card_info(struct s_reader *reader)
 
 	insa4[2] = 0x00;
 	write_cmd(insa4, NULL); // select issuer 0
+	
 	for(i = 1; (cta_res[cta_lr - 2] == 0x90) && (cta_res[cta_lr - 1] == 0); i++)
 	{
+		bool added = false;
 		uint32_t l_provid, l_sa;
 		uchar l_name[64];
 		insc0[4] = 0x1a;
@@ -1975,8 +1977,7 @@ static int32_t viaccess_card_info(struct s_reader *reader)
 		rdr_log_sensitive(reader, "provider: %d, id: {%06X%s}, sa: {%08X}, geo: %s",
 						  i, l_provid, l_name, l_sa, (l < 4) ? "empty" : cs_hexdump(1, cta_res, l, tmp, sizeof(tmp)));
 		
-		// add entitlement info for provid without class
-		cs_add_entitlement(reader, reader->caid, l_provid, 0, 0, 0, 0, 5, 1);
+		
 
 		// read classes subscription
 		insac[2] = 0xa9;
@@ -2003,8 +2004,15 @@ static int32_t viaccess_card_info(struct s_reader *reader)
 						(cta_res[cta_lr - 1] == 0x00 || cta_res[cta_lr - 1] == 0x08))
 				{
 					show_class(reader, NULL, l_provid, cta_res, cta_lr - 2);
+					added = true;
 				}
 			}
+		}
+		
+		if(!added)
+		{
+			// add entitlement info for provid without class
+			cs_add_entitlement(reader, reader->caid, l_provid, 0, 0, 0, 0, 5, 1);
 		}
 
 		insac[4] = 0;
