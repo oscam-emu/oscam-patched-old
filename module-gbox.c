@@ -728,6 +728,23 @@ static int8_t is_blocked_peer(uint16_t peer)
 	else { return 0; }
 }
 
+static int8_t validate_peerpass(uint32_t rcvd_peer_pw)
+{
+	struct s_client *cli;
+	cs_readlock(__func__, &clientlist_lock);
+	for(cli = first_client; cli; cli = cli->next)
+	{
+		if(cli->gbox && cli->typ == 'p')
+			{
+				struct s_reader *rdr = cli->reader;
+				if (rcvd_peer_pw == a2i(rdr->r_pwd, 4)) 
+				{ return 1; } // valid peerpass
+			}
+	}
+	cs_readunlock(__func__, &clientlist_lock);
+	return 0;
+}
+
 static int8_t gbox_incoming_ecm(struct s_client *cli, uchar *data, int32_t n)
 {
 	if (!cli || !cli->gbox || !data || !cli->reader) { return -1; }
@@ -1109,6 +1126,7 @@ static int8_t gbox_check_header_recvd(struct s_client *cli, struct s_client *pro
 	char tmp[0x50];
 	int32_t n = l;
 	uint8_t authentication_done = 0;
+	uint16_t peer_recvd_id = 0;
 	uint32_t my_received_pw = 0;
 	uint32_t peer_received_pw = 0;
 	cs_log_dump_dbg(D_READER, data, n, "-> encrypted data (%d bytes):", n);
@@ -1118,13 +1136,20 @@ static int8_t gbox_check_header_recvd(struct s_client *cli, struct s_client *pro
 	my_received_pw = b2i(4, data + 2);
 	if (my_received_pw == local_gbox.password)
 	{
-		cs_log_dbg(D_READER, "-> data from peer: %04X   data: %s", cli->gbox_peer_id, cs_hexdump(0, data, l, tmp, sizeof(tmp)));
-
 		if (gbox_decode_cmd(data) != MSG_CW)
 		{
+			peer_received_pw = b2i(4, data + 6);
+			peer_recvd_id = gbox_convert_password_to_id(peer_received_pw);
+			cs_log_dbg(D_READER, "-> data from peer: %04X   data: %s", peer_recvd_id, cs_hexdump(0, data, l, tmp, sizeof(tmp)));
+			cs_log_dbg(D_READER,"my_received pw: %08X - peer_recvd pw: %08X - peer_recvd_id: %04X ", my_received_pw, peer_received_pw, peer_recvd_id);			
+			if (!validate_peerpass(peer_received_pw))
+			{
+				cs_log("peer: %04X - peerpass: %08X invalid -> check [reader] section",  peer_recvd_id, peer_received_pw);
+				return -1;
+			}
 			if (cli->gbox_peer_id == NO_GBOX_ID)
 			{
-				if (gbox_auth_client(cli, b2i(4, data + 6)) < 0)
+				if (gbox_auth_client(cli, peer_received_pw) < 0)
 				{ 
 					cs_log ("Authentication failed. Please check user in oscam.server and oscam.user");
 					return -1;
@@ -1135,15 +1160,17 @@ static int8_t gbox_check_header_recvd(struct s_client *cli, struct s_client *pro
 				peer = proxy->gbox;
 			}
 			if (!peer) { return -1; }
-			peer_received_pw = b2i(4, data + 6);
+
 			if (peer_received_pw != peer->gbox.password)
 			{
 				cs_log("gbox peer: %04X sends wrong password", peer->gbox.id);
 				return -1;
 				//continue; // next client
 			}
-		} else 
+		} 
+		else //is  MSG_CW
 		{
+			cs_log_dbg(D_READER, "-> CW data from peer: %04X   data: %s", cli->gbox_peer_id, cs_hexdump(0, data, l, tmp, sizeof(tmp)));
 			// if my pass ok verify CW | pass to peer
 			if((data[39] != ((local_gbox.id >> 8) & 0xff)) || (data[40] != (local_gbox.id & 0xff))) 	
 			{
