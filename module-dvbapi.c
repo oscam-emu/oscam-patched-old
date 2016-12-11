@@ -5788,6 +5788,21 @@ void dvbapi_write_cw(int32_t demux_id, uchar *cw, int32_t pid, int32_t stream_id
 					cs_log_dbg(D_DVBAPI, "Demuxer %d writing %s part (%s) of controlword, replacing expired (%s)", demux_id, (n == 1 ? "even" : "odd"), newcw, lastcw);
 					cs_log_dbg(D_DVBAPI, "Demuxer %d write cw%d index: %d (ca%d)", demux_id, n, ca_descr.index, i);
 					
+					if(cfg.dvbapi_boxtype == BOXTYPE_PC || cfg.dvbapi_boxtype == BOXTYPE_PC_NODMX)
+						dvbapi_net_send(DVBAPI_CA_SET_DESCR, demux[demux_id].socket_fd, demux_id, -1 /*unused*/, (unsigned char *) &ca_descr, NULL, NULL, demux[demux_id].client_proto_version);
+					else
+					{
+						if(ca_fd[i] <= 0)
+						{
+							ca_fd[i] = dvbapi_open_device(1, i, demux[demux_id].adapter_index);
+							if(ca_fd[i] <= 0) { continue; } 
+						}
+						if (dvbapi_ioctl(ca_fd[i], CA_SET_DESCR, &ca_descr) < 0)
+						{
+							cs_log("ERROR: ioctl(CA_SET_DESCR): %s", strerror(errno));
+						}
+					}
+					
 					if(cfg.dvbapi_extended_cw_api == 1)
 					{
 						ca_descr_mode.index = usedidx;
@@ -5808,23 +5823,7 @@ void dvbapi_write_cw(int32_t demux_id, uchar *cw, int32_t pid, int32_t stream_id
 								cs_log("ERROR: ioctl(CA_SET_DESCR_MODE): %s", strerror(errno));
 							}
 						}
-					}
-					
-					if(cfg.dvbapi_boxtype == BOXTYPE_PC || cfg.dvbapi_boxtype == BOXTYPE_PC_NODMX)
-						dvbapi_net_send(DVBAPI_CA_SET_DESCR, demux[demux_id].socket_fd, demux_id, -1 /*unused*/, (unsigned char *) &ca_descr, NULL, NULL, demux[demux_id].client_proto_version);
-					else
-					{
-						if(ca_fd[i] <= 0)
-						{
-							ca_fd[i] = dvbapi_open_device(1, i, demux[demux_id].adapter_index);
-							if(ca_fd[i] <= 0) { continue; } 
-						}
-						if (dvbapi_ioctl(ca_fd[i], CA_SET_DESCR, &ca_descr) < 0)
-						{
-							cs_log("ERROR: ioctl(CA_SET_DESCR): %s", strerror(errno));
-						}
-					}
-				
+					}			
 				}
 			}
 #endif
