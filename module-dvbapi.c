@@ -1625,7 +1625,7 @@ void dvbapi_add_emmpid(int32_t demux_id, uint16_t caid, uint16_t emmpid, uint32_
 		demux[demux_id].EMMpids[demux[demux_id].EMMpidcount].PID = emmpid;
 		demux[demux_id].EMMpids[demux[demux_id].EMMpidcount].CAID = caid;
 		demux[demux_id].EMMpids[demux[demux_id].EMMpidcount].PROVID = provid;
-		demux[demux_id].EMMpids[demux[demux_id].EMMpidcount++].type = type;
+		demux[demux_id].EMMpids[demux[demux_id].EMMpidcount].type = type;
 		demux[demux_id].EMMpids[demux[demux_id].EMMpidcount++].cadata = cadata;
 		cs_log_dbg(D_DVBAPI, "Added new emmpid %d CAID: %04X EMM_PID: %04X PROVID: %06X%sTYPE %s", demux[demux_id].EMMpidcount - 1, caid, emmpid, provid,
 			cadatatext, typetext);
