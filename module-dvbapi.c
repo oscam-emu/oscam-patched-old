@@ -1545,7 +1545,7 @@ void dvbapi_add_ecmpid_int(int32_t demux_id, uint16_t caid, uint16_t ecmpid, uin
 	
 	if(demux[demux_id].ECMpidcount >= ECM_PIDS)
 	{
-		cs_log("We reached maximum ECMpids: unabled to add to demuxer %d ecmpid %d CAID: %04X ECM_PID: %04X PROVID: %06X %s", 
+		cs_log("We reached maximum ECMpids: unable to add to demuxer %d ecmpid %d CAID: %04X ECM_PID: %04X PROVID: %06X %s", 
 			demux_id, demux[demux_id].ECMpidcount, caid, ecmpid, provid, txt);
 		return; 
 	}
@@ -1670,7 +1670,6 @@ void dvbapi_parse_cat(int32_t demux_id, uchar *buf, int32_t len)
 	for(i = 8; i < (b2i(2, buf + 1)&0xFFF) - 1; i += buf[i + 1] + 2)
 	{
 		if(buf[i] != 0x09) { continue; }
-		if(demux[demux_id].EMMpidcount >= ECM_PIDS) { break; }
 
 		uint16_t caid = b2i(2, buf + i + 2);
 		uint16_t emm_pid = b2i(2, buf + i +4)&0x1FFF;
@@ -2932,8 +2931,6 @@ void dvbapi_parse_descriptor(int32_t demux_id, uint32_t info_length, unsigned ch
 
 		if(buffer[j] != 0x09) { continue; }
 		
-		if(demux[demux_id].ECMpidcount >= ECM_PIDS) { break; }
-
 		int32_t descriptor_ca_system_id = b2i(2, buffer + j + 2);
 		int32_t descriptor_ca_pid = b2i(2, buffer + j + 4)&0x1FFF;
 		int32_t descriptor_ca_provider = 0;
@@ -3333,52 +3330,52 @@ int32_t dvbapi_parse_capmt(unsigned char *buffer, uint32_t length, int32_t connf
 		uint8_t is_audio = 0;
 		es_info_length = b2i(2, buffer + i +3)&0x0FFF;
 		
-		if(demux[demux_id].STREAMpidcount >= ECM_PIDS)
+		if(demux[demux_id].STREAMpidcount < ECM_PIDS)
 		{
-			break;
-		}
 
-		demux[demux_id].STREAMpids[demux[demux_id].STREAMpidcount] = elementary_pid;
-		demux[demux_id].STREAMpidsType[demux[demux_id].STREAMpidcount] = buffer[i];
-		demux[demux_id].STREAMpidcount++;
+			demux[demux_id].STREAMpids[demux[demux_id].STREAMpidcount] = elementary_pid;
+			demux[demux_id].STREAMpidsType[demux[demux_id].STREAMpidcount] = buffer[i];
+			demux[demux_id].STREAMpidcount++;
 		
-		cs_log_dbg(D_DVBAPI,"Demuxer %d stream %s(type: %02x pid: %04x length: %d)", demux_id, get_streamtxt(stream_type), stream_type, elementary_pid, es_info_length);
+			cs_log_dbg(D_DVBAPI,"Demuxer %d stream %s(type: %02x pid: %04x length: %d)", demux_id, get_streamtxt(stream_type), stream_type, elementary_pid,
+				es_info_length);
 		
-		// find and register videopid
-		if(!vpid && 
-			(stream_type == 0x01 || stream_type == 0x02 || stream_type == 0x10 || stream_type == 0x1B 
-			|| stream_type == 0x24 || stream_type == 0x42 || stream_type == 0xD1 || stream_type == 0xEA)) 
-		{
-			vpid = elementary_pid;
-		}
-			
-		if(es_info_length != 0 && es_info_length < length)
-		{
-			dvbapi_parse_descriptor(demux_id, es_info_length, buffer + i + 5, &is_audio);
-			
-			if((stream_type == 0x06 || stream_type == 0x80 || stream_type == 0x82) && is_audio)
-			{
-				demux[demux_id].STREAMpidsType[demux[demux_id].STREAMpidcount-1] = 0x03;
-				stream_type = 0x03;
-			}
-			else if(!vpid && stream_type == 0x80 && !is_audio)
+			// find and register videopid
+			if(!vpid && 
+				(stream_type == 0x01 || stream_type == 0x02 || stream_type == 0x10 || stream_type == 0x1B 
+				|| stream_type == 0x24 || stream_type == 0x42 || stream_type == 0xD1 || stream_type == 0xEA)) 
 			{
 				vpid = elementary_pid;
 			}
-		}
-		else
-		{
-			for(addentry = dvbapi_priority; addentry != NULL; addentry = addentry->next)
+			
+			if(es_info_length != 0 && es_info_length < length)
 			{
-				if(addentry->type != 'a'
+				dvbapi_parse_descriptor(demux_id, es_info_length, buffer + i + 5, &is_audio);
+			
+				if((stream_type == 0x06 || stream_type == 0x80 || stream_type == 0x82) && is_audio)
+				{
+					demux[demux_id].STREAMpidsType[demux[demux_id].STREAMpidcount-1] = 0x03;
+					stream_type = 0x03;
+				}
+				else if(!vpid && stream_type == 0x80 && !is_audio)
+				{
+					vpid = elementary_pid;
+				}
+			}
+			else
+			{
+				for(addentry = dvbapi_priority; addentry != NULL; addentry = addentry->next)
+				{
+					if(addentry->type != 'a'
 						|| (addentry->ecmpid && pmtpid && addentry->ecmpid != pmtpid) // ecmpid is misused to hold pmtpid in case of A: rule
 						|| (addentry->ecmpid && !pmtpid && addentry->ecmpid != vpid) // some receivers dont forward pmtpid, use vpid instead
 						|| (addentry->srvid != demux[demux_id].program_number))
 					{ continue; }
-				cs_log_dbg(D_DVBAPI, "Demuxer %d fake ecmpid %04X@%06X:%04x for unencrypted stream on srvid %04X", demux_id, addentry->mapcaid, addentry->mapprovid,
-					addentry->mapecmpid, demux[demux_id].program_number);
-				dvbapi_add_ecmpid(demux_id, addentry->mapcaid, addentry->mapecmpid, addentry->mapprovid, 0, " (fake ecmpid)");
-				break;
+					cs_log_dbg(D_DVBAPI, "Demuxer %d fake ecmpid %04X@%06X:%04x for unencrypted stream on srvid %04X", demux_id, addentry->mapcaid,
+						addentry->mapprovid, addentry->mapecmpid, demux[demux_id].program_number);
+					dvbapi_add_ecmpid(demux_id, addentry->mapcaid, addentry->mapecmpid, addentry->mapprovid, 0, " (fake ecmpid)");
+					break;
+				}
 			}
 		}
 	}
