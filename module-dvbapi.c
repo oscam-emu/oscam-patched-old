@@ -1519,9 +1519,6 @@ void dvbapi_start_emm_filter(int32_t demux_index)
 void dvbapi_add_ecmpid_int(int32_t demux_id, uint16_t caid, uint16_t ecmpid, uint32_t provid, uint32_t cadata, char *txt) 
 {
 	int32_t n, added = 0;
-	
-	if(demux[demux_id].ECMpidcount >= ECM_PIDS)
-		{ return; }
 
 	int32_t stream = demux[demux_id].STREAMpidcount - 1;
 	for(n = 0; n < demux[demux_id].ECMpidcount; n++)
@@ -1545,6 +1542,14 @@ void dvbapi_add_ecmpid_int(int32_t demux_id, uint16_t caid, uint16_t ecmpid, uin
 
 	if(added == 1)
 		{ return; }
+	
+	if(demux[demux_id].ECMpidcount >= ECM_PIDS)
+	{
+		cs_log("We reached maximum ECMpids: unabled to add to demuxer %d ecmpid %d CAID: %04X ECM_PID: %04X PROVID: %06X %s", 
+			demux_id, demux[demux_id].ECMpidcount, caid, ecmpid, provid, txt);
+		return; 
+	}
+	
 	demux[demux_id].ECMpids[demux[demux_id].ECMpidcount].ECM_PID = ecmpid;
 	demux[demux_id].ECMpids[demux[demux_id].ECMpidcount].CAID = caid;
 	demux[demux_id].ECMpids[demux[demux_id].ECMpidcount].PROVID = provid;
@@ -1615,12 +1620,21 @@ void dvbapi_add_emmpid(int32_t demux_id, uint16_t caid, uint16_t emmpid, uint32_
 			return;
 		}
 	}
-	demux[demux_id].EMMpids[demux[demux_id].EMMpidcount].PID = emmpid;
-	demux[demux_id].EMMpids[demux[demux_id].EMMpidcount].CAID = caid;
-	demux[demux_id].EMMpids[demux[demux_id].EMMpidcount].PROVID = provid;
-	demux[demux_id].EMMpids[demux[demux_id].EMMpidcount++].type = type;
-	demux[demux_id].EMMpids[demux[demux_id].EMMpidcount++].cadata = cadata;
-	cs_log_dbg(D_DVBAPI, "Added new emmpid %d CAID: %04X EMM_PID: %04X PROVID: %06X%sTYPE %s", demux[demux_id].EMMpidcount - 1, caid, emmpid, provid, cadatatext, typetext);
+	if(i < ECM_PIDS)
+	{
+		demux[demux_id].EMMpids[demux[demux_id].EMMpidcount].PID = emmpid;
+		demux[demux_id].EMMpids[demux[demux_id].EMMpidcount].CAID = caid;
+		demux[demux_id].EMMpids[demux[demux_id].EMMpidcount].PROVID = provid;
+		demux[demux_id].EMMpids[demux[demux_id].EMMpidcount++].type = type;
+		demux[demux_id].EMMpids[demux[demux_id].EMMpidcount++].cadata = cadata;
+		cs_log_dbg(D_DVBAPI, "Added new emmpid %d CAID: %04X EMM_PID: %04X PROVID: %06X%sTYPE %s", demux[demux_id].EMMpidcount - 1, caid, emmpid, provid,
+			cadatatext, typetext);
+	}
+	else
+	{
+		cs_log_dbg(D_DVBAPI, "We reached max emmpids: unable to add new emmpid %d CAID: %04X EMM_PID: %04X PROVID: %06X%sTYPE %s",
+			demux[demux_id].EMMpidcount - 1, caid, emmpid, provid, cadatatext, typetext);
+	}
 }
 
 void dvbapi_parse_cat(int32_t demux_id, uchar *buf, int32_t len)
