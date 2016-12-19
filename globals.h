@@ -617,7 +617,9 @@ enum {E2_GLOBAL = 0, E2_GROUP, E2_CAID, E2_IDENT, E2_CLASS, E2_CHID, E2_QUEUE, E
 #define DEFAULT_CC_RECONNECT 12000
 #define DEFAULT_CC_RECV_TIMEOUT 2000
 
-#define CS_GBOX_MAX_PROXY_CARDS	32
+#define GBOX_MAX_PROXY_CARDS 32
+#define GBOX_MAX_IGNORED_PEERS  16
+#define GBOX_MAX_BLOCKED_ECM 16
 
 #define DEFAULT_AC_USERS   -1 // Use global cfg
 #define DEFAULT_AC_PENALTY -1 // Use global cfg
@@ -2064,14 +2066,18 @@ struct s_config
 	char            *gbox_hostname;
 	int32_t         gbox_reconnect;
 	char            gbox_my_password[9];
-	unsigned long	gbox_proxy_card[CS_GBOX_MAX_PROXY_CARDS];
-	int8_t		gbox_proxy_cards_num;  
+	unsigned long   gbox_proxy_card[GBOX_MAX_PROXY_CARDS];
+	int8_t          gbox_proxy_cards_num;
 	char            gbox_my_vers[3];
-	char		gbox_my_cpu_api[3];
-	uint8_t					gsms_dis;
-	uint8_t					log_hello;
-	char						*gbox_tmp_dir; 
-	uint8_t					ccc_reshare;    	     
+	char            gbox_my_cpu_api[3];
+	uint8_t         gsms_dis;
+	uint8_t         log_hello;
+	char            *gbox_tmp_dir; 
+	uint8_t         ccc_reshare;
+	uint16_t        gbox_ignored_peer[GBOX_MAX_IGNORED_PEERS];
+	uint8_t         gbox_ignored_peer_num;
+	uint16_t        gbox_block_ecm[GBOX_MAX_BLOCKED_ECM];
+	uint8_t         gbox_block_ecm_num;
 #endif
 #ifdef MODULE_SERIAL
 	char            *ser_device;

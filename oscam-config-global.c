@@ -848,22 +848,82 @@ static const struct config_list serial_opts[] = { DEF_LAST_OPT };
 #endif
 
 #ifdef MODULE_GBOX
+
+static void gbox_block_ecm_fn(const char *token, char *value, void *UNUSED(setting), FILE *f)
+{
+	if (value)
+	{
+		char *ptr1, *saveptr1 = NULL;
+		memset(cfg.gbox_block_ecm, 0, sizeof(cfg.gbox_block_ecm));
+		int n = 0, i;
+		for (i = 0, ptr1 = strtok_r(value, ",", &saveptr1); (i < 4) && (ptr1); ptr1 = strtok_r(NULL, ",", &saveptr1))
+		{
+			if (n < GBOX_MAX_BLOCKED_ECM)
+			{ cfg.gbox_block_ecm[n++] = a2i(ptr1, 4); }
+		}
+		cfg.gbox_block_ecm_num = n;
+		return;
+	}
+	if (cfg.gbox_block_ecm_num > 0)
+	{
+		int i;
+		char *dot = "";
+		fprintf_conf(f, token, " ");
+		for (i = 0; i < cfg.gbox_block_ecm_num; i++)
+		{
+			fprintf(f, "%s%04X", dot, cfg.gbox_block_ecm[i]);
+			dot = ",";
+		}
+		fprintf(f, "\n");
+	}
+}
+
+static void gbox_ignored_peer_fn(const char *token, char *value, void *UNUSED(setting), FILE *f)
+{
+	if (value)
+	{
+		char *ptr1, *saveptr1 = NULL;
+		memset(cfg.gbox_ignored_peer, 0, sizeof(cfg.gbox_ignored_peer));
+		int n = 0, i;
+		for (i = 0, ptr1 = strtok_r(value, ",", &saveptr1); (i < 4) && (ptr1); ptr1 = strtok_r(NULL, ",", &saveptr1))
+		{
+			if (n < GBOX_MAX_IGNORED_PEERS)
+			{ cfg.gbox_ignored_peer[n++] = a2i(ptr1, 4); }
+		}
+		cfg.gbox_ignored_peer_num = n;
+		return;
+	}
+	if (cfg.gbox_ignored_peer_num > 0)
+	{
+		int i;
+		char *dot = "";
+		fprintf_conf(f, token, " ");
+		for (i = 0; i < cfg.gbox_ignored_peer_num; i++)
+		{
+			fprintf(f, "%s%04X", dot, cfg.gbox_ignored_peer[i]);
+			dot = ",";
+		}
+		fprintf(f, "\n");
+	}
+}
+
 static void gbox_proxy_card_fn(const char *token, char *value, void *UNUSED(setting), FILE *f)
 {
 	if (value)
 	{
 		char *ptr1, *saveptr1 = NULL;
-	 	memset(cfg.gbox_proxy_card, 0, sizeof(cfg.gbox_proxy_card));
+		memset(cfg.gbox_proxy_card, 0, sizeof(cfg.gbox_proxy_card));
 		int n = 0, i;
 		for (i = 0, ptr1 = strtok_r(value, ",", &saveptr1); (i < 8) && (ptr1); ptr1 = strtok_r(NULL, ",", &saveptr1))
 		{
-		    cfg.gbox_proxy_card[n++] = a2i(ptr1, 8);
+			if (n < GBOX_MAX_PROXY_CARDS)
+				{ cfg.gbox_proxy_card[n++] = a2i(ptr1, 8); }
 		}
 		cfg.gbox_proxy_cards_num = n;
 		return;
 	 }
 	if (cfg.gbox_proxy_cards_num > 0)
-	{ 
+	{
 		int i;
 		char *dot = "";
 		fprintf_conf(f, token, " ");
@@ -915,6 +975,8 @@ static const struct config_list gbox_opts[] =
 	DEF_OPT_UINT8("ccc_reshare"		, OFS(ccc_reshare),	0),	
 	DEF_OPT_UINT8("log_hello"			, OFS(log_hello),		1),	
 	DEF_OPT_STR("tmp_dir"		, OFS(gbox_tmp_dir),		NULL),
+	DEF_OPT_FUNC("ignore_peer"	, OFS(gbox_ignored_peer),		gbox_ignored_peer_fn ),
+	DEF_OPT_FUNC("block_ecm"	, OFS(gbox_block_ecm),		gbox_block_ecm_fn ),
 	DEF_LAST_OPT
 };
 #else

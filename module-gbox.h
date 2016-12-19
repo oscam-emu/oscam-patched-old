@@ -63,6 +63,8 @@
 #define	MSGID_COMEONLINE        3
 #define	MSGID_GOODBYE           4
 #define	MSGID_LOSTCONNECT       5
+#define	MSGID_ATTACK            6
+#define	MSGID_IPMISSMATCH       7
 
 #define GBOX_STAT_HELLOL        0
 #define GBOX_STAT_HELLOS        1
