@@ -37,8 +37,15 @@
 			</TR>
 			<TR><TD><A>Ratelimittime:</A></TD><TD><input name="ratelimittime" class="withunit short" type="text" maxlength="5" value="##RATELIMITTIME##"> ms</TD></TR>
 			<TR><TD><A>Additional ms to hold SRVID in slot:</A></TD><TD><input name="srvidholdtime" class="short" type="text" maxlength="5" value="##SRVIDHOLDTIME##"></TD></TR>
-			<TR><TD><A>Cooldown Delay:</A></TD><TD><input name="cooldowndelay" class="short" type="text" maxlength="5" value="##COOLDOWNDELAY##"></TD></TR>
-			<TR><TD><A>Cooldown Time:</A></TD><TD><input name="cooldowntime" class="short" type="text" maxlength="5" value="##COOLDOWNTIME##"></TD></TR>
+			<TR><TD><A data-p="cooldown">Cool down:</A></TD>
+				<TD CLASS="invisible">
+					<TABLE>
+						<TR>
+							<TD><A data-p="cooldown">delay: </A><input name="cooldowndelay" class="short" type="text" maxlength="5" value="##COOLDOWNDELAY##"> ms ,</TD>
+							<TD><A data-p="cooldown">duration: </A><input name="cooldowntime" class="short" type="text" maxlength="5" value="##COOLDOWNTIME##"> ms. If used, you need to define both values</TD>
+						</TR>
+					</TABLE>
+			</TR>
 			<TR><TD><A>ECM not found limit:</A></TD><TD><input name="ecmnotfoundlimit" class="medium" type="text" maxlength="6" value="##ECMNOTFOUNDLIMIT##"></TD></TR>
 			<TR><TD><A>ECM whitelist:</A></TD><TD><textarea name="ecmwhitelist" rows="2" class="bt">##ECMWHITELIST##</textarea></TD></TR>
 			<TR><TD><A>ECM HeaderWhitelist:</A></TD><TD><textarea name="ecmheaderwhitelist" rows="2" class="bt">##ECMHEADERWHITELIST##</textarea></TD></TR>
