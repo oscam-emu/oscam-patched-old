@@ -24,24 +24,25 @@
 			<TR><TD><A>Http Locale:</A></TD><TD><input name="httplocale" class="medium" type="text" maxlength="12" value="##HTTPLOCALE##"> e.g. en_US, de_DE.utf8 (if available and works on the server)</TD></TR>
 			<TR><TD><A>Http dyndns:</A></TD><TD><input name="httpdyndns" type="text" maxlength="200" value="##HTTPDYNDNS##"></TD></TR>
 			<TR><TD><A>Au low:</A></TD><TD><input name="aulow" class="withunit short" type="text" maxlength="5" value="##AULOW##"> min</TD></TR>
-			<TR><TD><A>Http save full config:</A></TD>
+			<TR><TD>Save configuration behavior:</TD>
 				<TD CLASS="invisible">
 					<TABLE>
 						<TR>
-							<TD><input name="httpsavefullcfg" value="0" type="hidden"><input name="httpsavefullcfg" type="checkbox" value="1" ##HTTPSAVEFULLSELECT##><label></label></TD>
-							<TD><A data-p="httpoverwritebakfile">Http overwrite bak file:</A></TD><TD><input name="httpoverwritebakfile" value="0" type="hidden"><input name="httpoverwritebakfile" type="checkbox" value="1" ##HTTPOVERWRITEBAKFILE##><label></label></TD>
+							<TD><A data-p="httpsavefullcfg">http save full config:</A></TD><TD><input name="httpsavefullcfg" value="0" type="hidden"><input name="httpsavefullcfg" type="checkbox" value="1" ##HTTPSAVEFULLSELECT##><label></label></TD>
+							<TD><A data-p="httpoverwritebakfile">http overwrite bak files:</A></TD><TD><input name="httpoverwritebakfile" value="0" type="hidden"><input name="httpoverwritebakfile" type="checkbox" value="1" ##HTTPOVERWRITEBAKFILE##><label></label></TD>
+							<TD><A data-p="httpreadonly">http read only mode (use with caution!):</A></TD><TD><input name="httpreadonly" value="0" type="hidden"><input name="httpreadonly" type="checkbox" value="1" ##HTTPREADONLY##><label></label></TD>
 						</TR>
 					</TABLE>
 				</TD>
 			</TR>
 			<TR><TH COLSPAN="2">Emm settings</TH></TR>
-			<TR><TD><A>Http emmlog cleanup size:</A></TD>
+			<TR><TD>Http emmlog cleanup size:</TD>
 				<TD CLASS="invisible">
 					<TABLE>
 						<TR>
-							<TD>Unique:&nbsp;<input name="httpemmuclean" class="withunit short" type="text" maxlength="5" value="##HTTPEMMUCLEAN##"> kB</TD>
-							<TD>Shared:&nbsp;<input name="httpemmsclean" class="withunit short" type="text" maxlength="5" value="##HTTPEMMSCLEAN##"> kB</TD>
-							<TD>Global:&nbsp;<input name="httpemmgclean" class="withunit short" type="text" maxlength="5" value="##HTTPEMMGCLEAN##"> kB&nbsp;&nbsp;(0 = no clean, -1 = not show log)</TD>
+							<TD><A data-p="httpemmuclean">Unique:&nbsp;</A><input name="httpemmuclean" class="withunit short" type="text" maxlength="5" value="##HTTPEMMUCLEAN##"> kB</TD>
+							<TD><A data-p="httpemmsclean">Shared:&nbsp;</A><input name="httpemmsclean" class="withunit short" type="text" maxlength="5" value="##HTTPEMMSCLEAN##"> kB</TD>
+							<TD><A data-p="httpemmgclean">Global:&nbsp;</A><input name="httpemmgclean" class="withunit short" type="text" maxlength="5" value="##HTTPEMMGCLEAN##"> kB&nbsp;&nbsp;(0 = no clean, -1 = not show log)</TD>
 						</TR>
 					</TABLE>
 				</TD>
@@ -83,17 +84,17 @@
 					</TABLE>
 				</TD>
 			</TR>
-			<TR><TD><A>Show in STATUS:</A></TD>
+			<TR><TD>Show in Status:</TD>
 				<TD CLASS="invisible">
 					<TABLE>
 						<TR>
-							<TD><input name="http_status_log" type="hidden" value="0"><input name="http_status_log" type="checkbox" value="1" ##SHOWLOGCHECKED##><label>Log</label></TD>
-							<TD><input name="httpshowuserinfo" type="hidden" value="0"><input name="httpshowuserinfo" type="checkbox" value="1" ##SHOWUSERINFOCHECKED##><label>Users info</label></TD>
-							<TD><input name="httpshowreaderinfo" type="hidden" value="0"><input name="httpshowreaderinfo" type="checkbox" value="1" ##SHOWREADERINFOCHECKED##><label>Readers info</label></TD>
-							<TD><input name="httpshowecminfo" type="hidden" value="0"><input name="httpshowecminfo" type="checkbox" value="1" ##SHOWECMINFOCHECKED##><label>ECM info</label></TD>
+							<TD><A data-p="http_status_log"</A><label>Log:</label></TD><TD><input name="http_status_log" type="hidden" value="0"><input name="http_status_log" type="checkbox" value="1" ##SHOWLOGCHECKED##></TD>
+							<TD><A data-p="httpshowreaderinfo"</A><label>Readers info:</label></TD><TD><input name="httpshowreaderinfo" type="hidden" value="0"><input name="httpshowreaderinfo" type="checkbox" value="1" ##SHOWREADERINFOCHECKED##></TD>
+							<TD><A data-p="httpshowecminfo"</A><label>ECM info:</label></TD><TD><input name="httpshowecminfo" type="hidden" value="0"><input name="httpshowecminfo" type="checkbox" value="1" ##SHOWECMINFOCHECKED##></TD>
+							<TD><A data-p="httpshowuserinfo"</A><label>Users info:</label></TD><TD><input name="httpshowuserinfo" type="hidden" value="0"><input name="httpshowuserinfo" type="checkbox" value="1" ##SHOWUSERINFOCHECKED##></TD>
 ##TPLSHOWCACHEEXINFO##
-							<TD><input name="httpshowmeminfo" type="hidden" value="0"><input name="httpshowmeminfo" type="checkbox" value="1" ##SHOWMEMINFOCHECKED##><label>Memory info</label></TD>
-							<TD><input name="httpshowloadinfo" type="hidden" value="0"><input name="httpshowloadinfo" type="checkbox" value="1" ##SHOWLOADINFOCHECKED##><label>Load info</label></TD>
+							<TD><A data-p="httpshowmeminfo"</A><label>Memory info:</label></TD><TD><input name="httpshowmeminfo" type="hidden" value="0"><input name="httpshowmeminfo" type="checkbox" value="1" ##SHOWMEMINFOCHECKED##></TD>
+							<TD><A data-p="httpshowloadinfo"</A><label>Load info:</label></TD><TD><input name="httpshowloadinfo" type="hidden" value="0"><input name="httpshowloadinfo" type="checkbox" value="1" ##SHOWLOADINFOCHECKED##></TD>
 						</TR>
 					</TABLE>
 				</TD>
