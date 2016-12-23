@@ -27,12 +27,15 @@
 #define HELLO_KEEPALIVE_TIME	120 //send hello to peer every 2 min in case no ecm received
 #define STATS_WRITE_TIME	300 //write stats file every 5 min
 #define MAX_GBOX_CARDS 1024  //send max. 1024 to peer
+#define LOCALS_CHECK_TIME 30 //check local cards every 30 sec
 
 #define LOCAL_GBOX_MAJOR_VERSION	0x02
 
 static struct gbox_data local_gbox;
 static uint8_t local_gbox_initialized = 0;
+static uint8_t local_cards_initialized = 0;
 static time_t last_stats_written;
+static time_t last_locals_checked;
 
 static int32_t gbox_send_ecm(struct s_client *cli, ECM_REQUEST *er);
 
@@ -596,6 +599,7 @@ static void gbox_send_checkcode(struct s_client *cli)
 {
 	struct gbox_peer *peer = cli->gbox;
 	uchar outbuf[20];
+	cs_log_dump_dbg(D_READER, gbox_get_checkcode(), 7, "<- my checkcode:");
 	gbox_message_header(outbuf, MSG_CHECKCODE, peer->gbox.password, local_gbox.password);
 	memcpy(outbuf + 10, gbox_get_checkcode(), 7);
 	gbox_send(cli, outbuf, 17);
@@ -1172,7 +1176,7 @@ static int8_t gbox_check_header_recvd(struct s_client *cli, struct s_client *pro
 			peer_received_pw = b2i(4, data + 6);
 			peer_recvd_id = gbox_convert_password_to_id(peer_received_pw);
 			cs_log_dbg(D_READER, "-> data from peer: %04X   data: %s", peer_recvd_id, cs_hexdump(0, data, l, tmp, sizeof(tmp)));
-			cs_log_dbg(D_READER,"my_received pw: %08X - peer_recvd pw: %08X - peer_recvd_id: %04X ", my_received_pw, peer_received_pw, peer_recvd_id);
+			//cs_log_dbg(D_READER,"my_received pw: %08X - peer_recvd pw: %08X - peer_recvd_id: %04X ", my_received_pw, peer_received_pw, peer_recvd_id);
 			if (check_peer_ignored(peer_recvd_id))
 			{
 				cs_log("Peer blocked by conf - ignoring gbox peer_id: %04X",  peer_recvd_id);
@@ -1192,11 +1196,15 @@ static int8_t gbox_check_header_recvd(struct s_client *cli, struct s_client *pro
 				}
 				authentication_done = 1;
 				proxy = get_gbox_proxy(cli->gbox_peer_id);
+			if (!local_cards_initialized)
+				{ 
+				local_cards_initialized = 1;
 				gbox_local_cards(proxy->reader, &cli->ttab);
+				}
 				peer = proxy->gbox;
 			}
 			if (!peer) { return -1; }
-				
+
 			if (peer_received_pw != peer->gbox.password)
 			{
 				cs_log("gbox peer: %04X sends wrong password", peer->gbox.id);
@@ -1212,7 +1220,6 @@ static int8_t gbox_check_header_recvd(struct s_client *cli, struct s_client *pro
 			{
 				cs_log("gbox peer: %04X sends CW for other than my id: %04X", cli->gbox_peer_id, local_gbox.id);
 				return -1;
-				//continue; // next client
 			}
 		}
 	}
@@ -1227,7 +1234,6 @@ static int8_t gbox_check_header_recvd(struct s_client *cli, struct s_client *pro
 		cs_log("-> ATTACK ALERT from IP %s", cs_inet_ntoa(cli->ip));
 		cs_log_dbg(D_READER,"-> received data: %s", cs_hexdump(0, data, n, tmp, sizeof(tmp)));
 		return -1;
-		//continue; // next client
 	}
 	if (!proxy) { return -1; }
 
@@ -1239,6 +1245,12 @@ static int8_t gbox_check_header_recvd(struct s_client *cli, struct s_client *pro
 		return -1;
 	}
 	if(!peer) { return -1; }
+
+	if ((time(NULL) - last_locals_checked) > LOCALS_CHECK_TIME)
+	{ 
+		gbox_local_cards(proxy->reader, &cli->ttab);
+		last_locals_checked = time(NULL);
+	}
 
 	if(!peer->authstat)
 	{
@@ -1269,7 +1281,7 @@ static int32_t gbox_recv(struct s_client *cli, uchar *buf, int32_t l)
 	if (ret < 0) { return -1; }
 
 	//in case of new authentication the proxy gbox can now be found 
-	if (ret) { proxy = get_gbox_proxy(cli->gbox_peer_id); } 	
+	if (ret) { proxy = get_gbox_proxy(cli->gbox_peer_id); } 
 
 	if (!proxy) { return -1; }
 
@@ -1592,13 +1604,13 @@ static void init_local_gbox(void)
 
 	local_gbox.password = a2i(cfg.gbox_my_password, 4);
 	//cs_log_dbg(D_READER, "gbox my password: %s:", cfg.gbox_my_password);
-
 	local_gbox.id = gbox_convert_password_to_id(local_gbox.password);
 	if (local_gbox.id == NO_GBOX_ID)
 	{
 		cs_log("invalid local gbox id: %04X", local_gbox.id);
 	}
 	last_stats_written = time(NULL);
+	last_locals_checked = time(NULL);
 	gbox_write_version();
 	local_gbox_initialized = 1;
 }
@@ -1644,7 +1656,7 @@ static int32_t gbox_client_init(struct s_client *cli)
 	memset(peer, 0, sizeof(struct gbox_peer));
 
 	peer->gbox.password = a2i(rdr->r_pwd, 4);
-	cs_log_dbg(D_READER,"peer-reader-label: %s  peer-reader-password: %s", cli->reader->label, rdr->r_pwd);
+	//cs_log_dbg(D_READER,"peer-reader-label: %s  peer-reader-password: %s", cli->reader->label, rdr->r_pwd);
 	peer->gbox.id = gbox_convert_password_to_id(peer->gbox.password);
 	if (get_gbox_proxy(peer->gbox.id) || peer->gbox.id == NO_GBOX_ID || peer->gbox.id == local_gbox.id)
 	{
