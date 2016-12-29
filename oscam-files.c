@@ -146,3 +146,22 @@ int32_t safe_overwrite_with_bak(char *destfile, char *temp_file, char *bakfile, 
 		{ cs_log("Error removing temp config file %s (errno=%d %s)!", temp_file, errno, strerror(errno)); }
 	return 0;
 }
+
+#ifdef MODULE_GBOX
+char *get_gbox_filename(char *dest, size_t destlen, const char *filename)
+{
+	char *tmp_dir = get_tmp_dir();
+	const char *slash = "/";
+	if(cfg.gbox_tmp_dir != NULL)
+	{
+		if(cfg.gbox_tmp_dir[strlen(cfg.gbox_tmp_dir) - 1] == '/') { slash = ""; }
+		snprintf(dest, destlen, "%s%s%s", cfg.gbox_tmp_dir, slash, filename);	
+	}
+	else
+	{
+		if(tmp_dir[strlen(tmp_dir) - 1] == '/') { slash = ""; }
+		snprintf(dest, destlen, "%s%s%s", tmp_dir, slash, filename);
+	}
+	return dest;
+}
+#endif
