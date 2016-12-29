@@ -68,17 +68,17 @@ static bool use_srvid2 = false;
 
 /* constants for menuactivating */
 #define MNU_STATUS 		0
-#define MNU_LIVELOG 	1
+#define MNU_LIVELOG 		1
 #define MNU_CONFIG		2
 #define MNU_READERS		3
 #define MNU_USERS		4
-#define MNU_SERVICES	5
+#define MNU_SERVICES		5
 #define MNU_FILES		6
 #define MNU_FAILBAN		7
 #define MNU_CACHEEX		8
 #define MNU_SCRIPT		9
-#define MNU_SHUTDOWN	10
-#define MNU_TOTAL_ITEMS 11 // sum of items above
+#define MNU_SHUTDOWN		10
+#define MNU_TOTAL_ITEMS 	11 // sum of items above
 
 /* constants for config.html submenuactivating */
 #define MNU_CFG_GLOBAL 		0
@@ -95,7 +95,7 @@ static bool use_srvid2 = false;
 #define MNU_CFG_SCAM		11
 #define MNU_CFG_SERIAL		12
 #define MNU_CFG_DVBAPI		13
-#define MNU_CFG_LCD			14
+#define MNU_CFG_LCD		14
 #define MNU_CFG_MONITOR		15
 #define MNU_CFG_WEBIF		16
 
@@ -119,23 +119,17 @@ static bool use_srvid2 = false;
 #define MNU_CFG_FCSS		16
 #define MNU_CFG_FTWIN		17
 #define MNU_CFG_FKEYCW		18
-
-#ifdef MODULE_GBOX
 /* constants for files.html for GBOX submenuactivating */
-#define MNU_GBX_FSCINF      19 
-#define MNU_GBX_FSHRINF     20
-#define MNU_GBX_FSHRONL     21
-#define MNU_GBX_FSTAINF     22
-#define MNU_GBX_FEXPINF     23
-#define MNU_GBX_FSMSLOG     24
-#define MNU_GBX_FSMSACK     25
-#define MNU_GBX_FSMSNACK    26
-#define MNU_CFG_TOTAL_ITEMS 27 // sum of items above. Use it for "All inactive" in function calls too.
+#define MNU_GBX_FSCINF      	19 
+#define MNU_GBX_FSHRINF     	20
+#define MNU_GBX_FSHRONL     	21
+#define MNU_GBX_FSTAINF     	22
+#define MNU_GBX_FEXPINF     	23
+#define MNU_GBX_FSMSLOG     	24
+#define MNU_GBX_FSMSACK     	25
+#define MNU_GBX_FSMSNACK    	26
 
-#else
-#define MNU_CFG_TOTAL_ITEMS 19 // sum of items above. Use it for "All inactive" in function calls too.
-
-#endif
+#define MNU_CFG_TOTAL_ITEMS 	27 // sum of items above. Use it for "All inactive" in function calls too.
 
 static void set_status_info_var(struct templatevars *vars, char *varname, int no_data, char *fmt, double value) {
 	if (no_data)
