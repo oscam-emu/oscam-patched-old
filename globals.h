@@ -1048,7 +1048,7 @@ typedef struct ecm_request_t
 	uint32_t        gbox_crc;       // rcrc for gbox, used to identify ECM task in peer responses
 	uint16_t        gbox_ecm_id;
 	uint8_t         gbox_ecm_status;
-	LLIST		*gbox_cards_pending; //type gbox_card_pending
+	LLIST			*gbox_cards_pending; //type gbox_card_pending
 #endif
 
 	void            *src_data;
@@ -1261,7 +1261,7 @@ struct s_client
 
 #ifdef MODULE_GBOX
 	void            *gbox;
-	uint16_t	gbox_peer_id;
+	uint16_t		gbox_peer_id;
 #endif
 
 #ifdef MODULE_GHTTP
@@ -2062,14 +2062,17 @@ struct s_config
 	uint32_t        cc_recv_timeout;                // The poll() timeout parameter in ms. Default: DEFAULT_CC_RECV_TIMEOUT (2000 ms).
 #endif
 #ifdef MODULE_GBOX
-	uint32_t        gbx_port[CS_MAXPORTS];
+	#define 		GBOX_MY_VERS_DEF 		0x25
+	#define 		GBOX_MY_CPU_API_DEF 	0x40
+
+	uint16_t        gbox_port[CS_MAXPORTS];
 	char            *gbox_hostname;
 	int32_t         gbox_reconnect;
-	char            gbox_my_password[9];
+	uint32_t        gbox_password;
 	unsigned long   gbox_proxy_card[GBOX_MAX_PROXY_CARDS];
 	int8_t          gbox_proxy_cards_num;
-	char            gbox_my_vers[3];
-	char            gbox_my_cpu_api[3];
+	uint32_t		gbox_my_vers;
+	uint8_t			gbox_my_cpu_api;
 	uint8_t         gsms_dis;
 	uint8_t         log_hello;
 	char            *gbox_tmp_dir; 

@@ -118,9 +118,19 @@ static bool use_srvid2 = false;
 #define MNU_CFG_FFAKECWS	15
 #define MNU_CFG_FCSS		16
 #define MNU_CFG_FTWIN		17
-#define MNU_CFG_FKEYCW 18
+#define MNU_CFG_FKEYCW      18
 
-#define MNU_CFG_TOTAL_ITEMS 19 // sum of items above. Use it for "All inactive" in function calls too.
+/* constants for files.html for GBOX submenuactivating */
+#define MNU_GBX_FSCINF      19 
+#define MNU_GBX_FSHRINF     20
+#define MNU_GBX_FSHRONL     21
+#define MNU_GBX_FSTAINF     22
+#define MNU_GBX_FEXPINF     23
+#define MNU_GBX_FSMSLOG     24
+#define MNU_GBX_FSMSACK     25
+#define MNU_GBX_FSMSNACK    26
+
+#define MNU_CFG_TOTAL_ITEMS 27 // sum of items above. Use it for "All inactive" in function calls too.
 
 static void set_status_info_var(struct templatevars *vars, char *varname, int no_data, char *fmt, double value) {
 	if (no_data)
@@ -1009,13 +1019,27 @@ static char *send_oscam_config_gbox(struct templatevars *vars, struct uriparams 
 {
 	setActiveSubMenu(vars, MNU_CFG_GBOX);
 	webif_save_config("gbox", vars, params);
-
 	tpl_addVar(vars, TPLADD, "HOSTNAME", xml_encode(vars, cfg.gbox_hostname));
-	char *value = mk_t_gbox_port();
-	tpl_addVar(vars, TPLAPPEND, "PORT", value);
-	free_mk_t(value);
-	tpl_addVar(vars, TPLADD, "MYPASSWORD", xml_encode(vars, cfg.gbox_my_password));
-
+	char *value0 = mk_t_gbox_port();
+	tpl_addVar(vars, TPLAPPEND, "PORT", value0);
+	free_mk_t(value0);
+	tpl_printf(vars, TPLADD, "GBOXPASSWORD", "%08X", cfg.gbox_password);
+	tpl_printf(vars, TPLADD, "GBOXRECONNECT", "%d", cfg.gbox_reconnect);
+	tpl_printf(vars, TPLADD, "GBOXMYVERS", "%02X", cfg.gbox_my_vers);
+	tpl_printf(vars, TPLAPPEND, "GBOXMYCPUAPI", "%02X", cfg.gbox_my_cpu_api);
+	if(cfg.ccc_reshare == 1)  { tpl_addVar(vars, TPLADD, "GBOXCCCRESHARE", "checked"); }
+	if(cfg.log_hello == 1)  { tpl_addVar(vars, TPLADD, "GBOXLOGHELLO", "checked"); }
+	if(cfg.gsms_dis == 1)  { tpl_addVar(vars, TPLADD, "GBOXGSMSDISABLE", "checked"); }
+	if(cfg.gbox_tmp_dir != NULL) { tpl_addVar(vars, TPLADD, "GBOXTMPDIR", cfg.gbox_tmp_dir); }
+	char *value1 = mk_t_gbox_proxy_card();	
+	tpl_addVar(vars, TPLAPPEND, "GBOXPROXYCARD", value1);
+	free_mk_t(value1);
+	char *value2 = mk_t_gbox_ignored_peer();	
+	tpl_addVar(vars, TPLAPPEND, "GBOXIGNOREDPEER", value2);
+	free_mk_t(value2);
+	char *value3 = mk_t_gbox_block_ecm();	
+	tpl_addVar(vars, TPLAPPEND, "GBOXBLOCKECM", value3);
+	free_mk_t(value3);
 	return tpl_getTpl(vars, "CONFIGGBOX");
 }
 #endif
@@ -2498,6 +2522,7 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 	tpl_printf(vars, TPLADD, "GBOXMAXDISTANCE",   "%d", rdr->gbox_maxdist);
 	tpl_printf(vars, TPLADD, "GBOXMAXECMSEND",   "%d", rdr->gbox_maxecmsend);
 	tpl_printf(vars, TPLADD, "GBOXRESHARE",   "%d", rdr->gbox_reshare);
+	tpl_printf(vars, TPLADD, "GBOXCCCAMRESHARE",   "%d", rdr->gbox_cccam_reshare);
 #endif
 
 #ifdef READER_DRECAS
@@ -2541,9 +2566,11 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 	case R_GHTTP:
 		tpl_addVar(vars, TPLAPPEND, "READERDEPENDINGCONFIG", tpl_getTpl(vars, "READERCONFIGGHTTPBIT"));
 		break;
+#ifdef MODULE_GBOX
 	case R_GBOX:
 		tpl_addVar(vars, TPLAPPEND, "READERDEPENDINGCONFIG", tpl_getTpl(vars, "READERCONFIGGBOXBIT"));
 		break;
+#endif
 	case R_NEWCAMD:
 		if(rdr->ncd_proto == NCD_525)
 		{
@@ -6112,7 +6139,7 @@ static void webif_process_userfile(struct templatevars * vars, struct uriparams 
 	tpl_addVar(vars, TPLADD, "FILTERFORM", tpl_getTpl(vars, "FILTERFORM"));
 }
 
-enum file_types { FTYPE_CONFIG, FTYPE_VERSION, FTYPE_ANTICASC, FTYPE_LOGFILE, FTYPE_USERFILE };
+enum file_types { FTYPE_CONFIG, FTYPE_VERSION, FTYPE_ANTICASC, FTYPE_LOGFILE, FTYPE_USERFILE , FTYPE_GBOX };
 
 struct files
 {
@@ -6158,6 +6185,16 @@ static char *send_oscam_files(struct templatevars * vars, struct uriparams * par
 #endif
 #ifdef MODULE_CONSTCW
 		{ "constant.cw",     MNU_CFG_FKEYCW,    FTYPE_CONFIG },     // id 18
+#endif
+#ifdef MODULE_GBOX
+		{ "sc.info",         MNU_GBX_FSCINF,    FTYPE_GBOX },     // id 19
+		{ "share.info",      MNU_GBX_FSHRINF,   FTYPE_GBOX },     // id 20
+		{ "share.onl",       MNU_GBX_FSHRONL,   FTYPE_GBOX },     // id 21
+		{ "stats.info",      MNU_GBX_FSTAINF,   FTYPE_GBOX },     // id 22
+		{ "expired.info",    MNU_GBX_FEXPINF,   FTYPE_GBOX },     // id 23
+		{ "gsms.log",        MNU_GBX_FSMSLOG,   FTYPE_GBOX },     // id 24
+		{ "gsms.ack",        MNU_GBX_FSMSACK,   FTYPE_GBOX },     // id 25
+		{ "gsms.nack",       MNU_GBX_FSMSNACK,  FTYPE_GBOX },     // id 26
 #endif
 		{ NULL, 0, 0 },
 	};
@@ -6244,6 +6281,11 @@ static char *send_oscam_files(struct templatevars * vars, struct uriparams * par
 				break;
 			case FTYPE_USERFILE:
 				if(!apicall) { webif_process_userfile(vars, params, targetfile, sizeof(targetfile)); }
+				break;
+			case FTYPE_GBOX:
+#ifdef MODULE_GBOX
+				get_gbox_filename(targetfile, sizeof(targetfile), entry->file);
+#endif
 				break;
 			}
 			tpl_addVar(vars, TPLADD, "APIFILENAME", entry->file);
