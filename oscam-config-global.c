@@ -849,16 +849,41 @@ static const struct config_list serial_opts[] = { DEF_LAST_OPT };
 
 #ifdef MODULE_GBOX
 
+static void gbox_password_fn(const char *token, char *value, void *UNUSED(setting), FILE *f)
+{
+	if (value)
+	{
+	    const char *s;
+		s=value;
+    	if (s[strspn(s, "0123456789abcdefABCDEF")] == 0)
+		{
+    		/* valid Hexa symbol */
+			cfg.gbox_password = a2i(value, 8);
+			return;
+	 	}
+	 	else
+	 	{
+	 		cfg.gbox_password = 0;
+	 	}
+	 }
+	if (cfg.gbox_password != 0)
+	{
+		fprintf_conf(f, token, "%08X\n", cfg.gbox_password);
+	}
+}
+
 static void gbox_block_ecm_fn(const char *token, char *value, void *UNUSED(setting), FILE *f)
 {
 	if (value)
 	{
 		char *ptr1, *saveptr1 = NULL;
+		const char *s;
 		memset(cfg.gbox_block_ecm, 0, sizeof(cfg.gbox_block_ecm));
 		int n = 0, i;
 		for (i = 0, ptr1 = strtok_r(value, ",", &saveptr1); (i < 4) && (ptr1); ptr1 = strtok_r(NULL, ",", &saveptr1))
 		{
-			if (n < GBOX_MAX_BLOCKED_ECM)
+			s=ptr1;
+			if ((n < GBOX_MAX_BLOCKED_ECM) && (s[strspn(s, "0123456789abcdefABCDEF")] == 0))
 			{ cfg.gbox_block_ecm[n++] = a2i(ptr1, 4); }
 		}
 		cfg.gbox_block_ecm_num = n;
@@ -866,15 +891,9 @@ static void gbox_block_ecm_fn(const char *token, char *value, void *UNUSED(setti
 	}
 	if (cfg.gbox_block_ecm_num > 0)
 	{
-		int i;
-		char *dot = "";
-		fprintf_conf(f, token, " ");
-		for (i = 0; i < cfg.gbox_block_ecm_num; i++)
-		{
-			fprintf(f, "%s%04X", dot, cfg.gbox_block_ecm[i]);
-			dot = ",";
-		}
-		fprintf(f, "\n");
+		value = mk_t_gbox_block_ecm();
+		fprintf_conf(f, token, "%s\n", value);
+		free_mk_t(value);
 	}
 }
 
@@ -883,27 +902,23 @@ static void gbox_ignored_peer_fn(const char *token, char *value, void *UNUSED(se
 	if (value)
 	{
 		char *ptr1, *saveptr1 = NULL;
+		const char *s;
 		memset(cfg.gbox_ignored_peer, 0, sizeof(cfg.gbox_ignored_peer));
 		int n = 0, i;
 		for (i = 0, ptr1 = strtok_r(value, ",", &saveptr1); (i < 4) && (ptr1); ptr1 = strtok_r(NULL, ",", &saveptr1))
 		{
-			if (n < GBOX_MAX_IGNORED_PEERS)
-			{ cfg.gbox_ignored_peer[n++] = a2i(ptr1, 4); }
+			s=ptr1;
+			if ((n < GBOX_MAX_IGNORED_PEERS) && (s[strspn(s, "0123456789abcdefABCDEF")] == 0))
+			{ cfg.gbox_ignored_peer[n++] = a2i(ptr1, 4); }	
 		}
 		cfg.gbox_ignored_peer_num = n;
 		return;
 	}
 	if (cfg.gbox_ignored_peer_num > 0)
 	{
-		int i;
-		char *dot = "";
-		fprintf_conf(f, token, " ");
-		for (i = 0; i < cfg.gbox_ignored_peer_num; i++)
-		{
-			fprintf(f, "%s%04X", dot, cfg.gbox_ignored_peer[i]);
-			dot = ",";
-		}
-		fprintf(f, "\n");
+		value = mk_t_gbox_ignored_peer();
+		fprintf_conf(f, token, "%s\n", value);
+		free_mk_t(value);
 	}
 }
 
@@ -912,27 +927,24 @@ static void gbox_proxy_card_fn(const char *token, char *value, void *UNUSED(sett
 	if (value)
 	{
 		char *ptr1, *saveptr1 = NULL;
+		const char *s;
 		memset(cfg.gbox_proxy_card, 0, sizeof(cfg.gbox_proxy_card));
 		int n = 0, i;
 		for (i = 0, ptr1 = strtok_r(value, ",", &saveptr1); (i < 8) && (ptr1); ptr1 = strtok_r(NULL, ",", &saveptr1))
 		{
-			if (n < GBOX_MAX_PROXY_CARDS)
+			s=ptr1;
+			if ((n < GBOX_MAX_PROXY_CARDS) && (s[strspn(s, "0123456789abcdefABCDEF")] == 0))
 				{ cfg.gbox_proxy_card[n++] = a2i(ptr1, 8); }
 		}
 		cfg.gbox_proxy_cards_num = n;
 		return;
 	 }
+
 	if (cfg.gbox_proxy_cards_num > 0)
 	{
-		int i;
-		char *dot = "";
-		fprintf_conf(f, token, " ");
-		for (i = 0; i < cfg.gbox_proxy_cards_num; i++)
-		{
-			fprintf(f, "%s%08lX", dot, cfg.gbox_proxy_card[i]);
-			dot = ",";
-		}
-		fprintf(f, "\n");
+		value = mk_t_gbox_proxy_card();
+		fprintf_conf(f, token, "%s\n", value);
+		free_mk_t(value);
 	}
 }
 
@@ -942,11 +954,11 @@ static void gbox_port_fn(const char *token, char *value, void *UNUSED(setting), 
 	{
 		int i;
 		char *ptr, *saveptr1 = NULL;
-		memset(cfg.gbx_port, 0, sizeof(cfg.gbx_port));
+		memset(cfg.gbox_port, 0, sizeof(cfg.gbox_port));
 		for(i = 0, ptr = strtok_r(value, ",", &saveptr1); ptr && i < CS_MAXPORTS; ptr = strtok_r(NULL, ",", &saveptr1))
 		{
-			cfg.gbx_port[i] = strtoul(ptr, NULL, 10);
-			if(cfg.gbx_port[i])
+			cfg.gbox_port[i] = strtoul(ptr, NULL, 10);
+			if(cfg.gbox_port[i])
 				{ i++; }
 		}
 		return;
@@ -956,27 +968,83 @@ static void gbox_port_fn(const char *token, char *value, void *UNUSED(setting), 
 	free_mk_t(value);
 }
 
+static void gbox_my_vers_fn(const char *token, char *value, void *UNUSED(setting), FILE *f)
+{
+	if(value)
+	{
+		const char *s;
+		s=value;
+		int32_t len = strlen(value);
+    	if ((s[strspn(s, "0123456789abcdefABCDEF")] != 0) || (len == 0) || (len > 2))
+		{
+			fprintf(stderr, "GBox conf parse error, %s=%s\n", token, value);
+			cfg.gbox_my_vers = GBOX_MY_VERS_DEF;
+		}
+		else
+		{
+			cfg.gbox_my_vers = a2i(value,1);
+			return;
+		}
+	}
+	
+	if(cfg.gbox_my_vers != GBOX_MY_VERS_DEF)
+	{
+		fprintf_conf(f, token, "%02X\n", cfg.gbox_my_vers);
+	}
+	else if(cfg.http_full_cfg)
+		{ 		
+			fprintf_conf(f, token, "%02X\n", GBOX_MY_VERS_DEF);
+		}
+}
+
+static void gbox_my_cpu_api_fn(const char *token, char *value, void *UNUSED(setting), FILE *f)
+{
+	if(value)
+	{
+		const char *s;
+		s=value;
+		int32_t len = strlen(value);
+    	if ((s[strspn(s, "0123456789abcdefABCDEF")] != 0) || (len == 0) || (len > 2))
+		{
+			fprintf(stderr, "GBox conf parse error, %s=%s\n", token, value);
+			cfg.gbox_my_cpu_api = GBOX_MY_CPU_API_DEF;
+		}
+		else
+		{
+			cfg.gbox_my_cpu_api = a2i(value,1);	
+			return;
+		}
+	}
+	
+	if(cfg.gbox_my_cpu_api != GBOX_MY_CPU_API_DEF)
+	{
+		fprintf_conf(f, token, "%02X\n", cfg.gbox_my_cpu_api);
+	}
+	else if(cfg.http_full_cfg)
+		{ fprintf_conf(f, token, "%02X\n", GBOX_MY_CPU_API_DEF); }
+}
+
 static bool gbox_should_save_fn(void *UNUSED(var))
 {
-	return cfg.gbx_port[0];
+	return cfg.gbox_port[0];
 }
 
 static const struct config_list gbox_opts[] =
 {
 	DEF_OPT_SAVE_FUNC(gbox_should_save_fn),
-	DEF_OPT_FUNC("port"		, OFS(gbx_port),		gbox_port_fn),
-	DEF_OPT_STR("hostname"		, OFS(gbox_hostname),		NULL),
-	DEF_OPT_INT32("gbox_reconnect"	, OFS(gbox_reconnect),		DEFAULT_GBOX_RECONNECT),
-	DEF_OPT_FUNC("proxy_card"	, OFS(gbox_proxy_card),		gbox_proxy_card_fn ),
-	DEF_OPT_SSTR("my_password"	, OFS(gbox_my_password),	"", SIZEOF(gbox_my_password)),
-	DEF_OPT_SSTR("my_vers"		, OFS(gbox_my_vers),		"25", SIZEOF(gbox_my_vers)),
-	DEF_OPT_SSTR("my_cpu_api"	, OFS(gbox_my_cpu_api),		"40", SIZEOF(gbox_my_cpu_api)),
-	DEF_OPT_UINT8("gsms_disable"	, OFS(gsms_dis),		0),
-	DEF_OPT_UINT8("ccc_reshare"		, OFS(ccc_reshare),	0),	
-	DEF_OPT_UINT8("log_hello"			, OFS(log_hello),		1),	
-	DEF_OPT_STR("tmp_dir"		, OFS(gbox_tmp_dir),		NULL),
-	DEF_OPT_FUNC("ignore_peer"	, OFS(gbox_ignored_peer),		gbox_ignored_peer_fn ),
-	DEF_OPT_FUNC("block_ecm"	, OFS(gbox_block_ecm),		gbox_block_ecm_fn ),
+	DEF_OPT_FUNC("port"             , OFS(gbox_port)			, gbox_port_fn),
+	DEF_OPT_STR("hostname"          , OFS(gbox_hostname)		, NULL),
+	DEF_OPT_FUNC("my_password"		, OFS(gbox_password)		, gbox_password_fn ),
+	DEF_OPT_INT32("gbox_reconnect"  , OFS(gbox_reconnect)		, DEFAULT_GBOX_RECONNECT),
+	DEF_OPT_FUNC("my_vers"			, OFS(gbox_my_vers)			, gbox_my_vers_fn),
+	DEF_OPT_FUNC("my_cpu_api"		, OFS(gbox_my_cpu_api)		, gbox_my_cpu_api_fn),
+	DEF_OPT_UINT8("ccc_reshare"     , OFS(ccc_reshare)			, 0),
+	DEF_OPT_UINT8("gsms_disable"    , OFS(gsms_dis)				, 1),
+	DEF_OPT_UINT8("log_hello"       , OFS(log_hello)			, 1),	
+	DEF_OPT_STR("tmp_dir"           , OFS(gbox_tmp_dir)			, NULL ),
+	DEF_OPT_FUNC("ignore_peer"      , OFS(gbox_ignored_peer)	, gbox_ignored_peer_fn ),
+	DEF_OPT_FUNC("block_ecm"        , OFS(gbox_block_ecm)		, gbox_block_ecm_fn ),
+	DEF_OPT_FUNC("proxy_card"       , OFS(gbox_proxy_card)		,	gbox_proxy_card_fn ),
 	DEF_LAST_OPT
 };
 #else
