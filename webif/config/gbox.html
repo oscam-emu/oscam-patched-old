@@ -1,6 +1,26 @@
 		<input name="part" type="hidden" value="gbox">
 		<TABLE CLASS="config">
 			<TR><TH COLSPAN="2">Edit Gbox Config</TH></TR>
-			<TR><TD><A data-p="port_10">Port:</A></TD><TD><input name="port" class="short" type="text" maxlength="5" value="##PORT##"></TD></TR>
+			<TR><TD><A data-p="port_10">Port:</A></TD><TD>Maximum 32 UDP decimal ports, comma-separated<BR><textarea name="port" rows="4" class="bt" maxlength="192">##PORT##</textarea><BR></TD></TR>
 			<TR><TD><A>Hostname:</A></TD><TD><input name="hostname" class="medium" type="text" maxlength="30" value="##HOSTNAME##"></TD></TR>
-			<TR><TD><A>my Password:</A></TD><TD><input name="my_password"class="medium"  type="text" maxlength="8" value="##MYPASSWORD##"></TD></TR>
+			<TR><TD><A>Password:</A></TD><TD><input name="my_password"class="medium"  type="text" maxlength="8" value="##GBOXPASSWORD##">&nbsp;(always 4 bytes or 8 hexa digits)</TD></TR>
+			<TR><TD><A data-p="gbox_reconnect">Reconnect every:</A></TD><TD><input name="gbox_reconnect" class="withunit short" type="text" maxlength="4" value="##GBOXRECONNECT##"> s</TD></TR>
+			<TR><TD><A data-p="my_vers">Version:</A></TD><TD><input name="my_vers" class="short" type="text" maxlength="2" value="##GBOXMYVERS##">&nbsp;default: 25 (always 1 byte)</TD></TR>
+			<TR><TD><A data-p="my_cpu_api">CPU API:</A></TD><TD><input name="my_cpu_api" class="short" type="text" maxlength="2" value="##GBOXMYCPUAPI##">&nbsp;default: 40 (always 1 byte)</TD></TR>
+			<TR><TD><A>CCcam reshare:</A></TD><TD><input name="ccc_reshare" type="hidden" value="0"><input name="ccc_reshare" type="checkbox" value="1" ##GBOXCCCRESHARE##></TD></TR>
+			<TR><TD>Informations:</TD>
+				<TD CLASS="invisible">
+					<TABLE>
+						<TR>
+							<TD><A>Log hello messages:</A></TD><TD><input name="log_hello" type="hidden" value="0"><input name="log_hello" type="checkbox" value="1" ##GBOXLOGHELLO##></TD>
+							<TD><A>Disable Gbox SMS:</A></TD><TD><input name="gsms_disable" type="hidden" value="0"><input name="gsms_disable" type="checkbox" value="1" ##GBOXGSMSDISABLE##></TD>
+						</TR>
+					</TABLE>
+				</TD>
+			</TR>
+			<TR><TD><A>tmp dir:</A></TD><TD>By default it will use the same tmp folder as OSCam.<BR><input name="tmp_dir" type="text" maxlength="128" value="##GBOXTMPDIR##"></TD></TR>
+			<TR><TH COLSPAN="2">Custom sharing behavior:</TH></TR>
+			<TR><TD><A data-p="ignore_peer">Ignored peer(s):</A></TD><TD>Maximum 16 * 2 bytes (4 hexa digits), comma-separated<BR><textarea name="ignore_peer" rows="2" class="bt" maxlength="81">##GBOXIGNOREDPEER##</textarea><BR></TD></TR>
+			<TR><TD><A data-p="block_ecm">Block ECM(s) peer(s):</A></TD><TD>Maximum 16 * 2 bytes (4 hexa digits), comma-separated<BR><textarea name="block_ecm" rows="2" class="bt" maxlength="81">##GBOXBLOCKECM##</textarea><BR></TD></TR>
+			<TR><TD><A data-p="proxy_card">Proxy cards:</A></TD><TD>Maximum 32 * 4 bytes (8 hexa digits), comma-separated<BR><textarea name="proxy_card" rows="6" class="bt" maxlength="288">##GBOXPROXYCARD##</textarea><BR></TD></TR>
+

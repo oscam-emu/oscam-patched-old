@@ -216,9 +216,66 @@ char *mk_t_gbox_port(void)
 	char *dot = "";
 	for(i = 0; i < CS_MAXPORTS; i++)
 	{
-		if(!cfg.gbx_port[i]) { break; }
+		if(!cfg.gbox_port[i]) { break; }
 
-		pos += snprintf(value + pos, needed - pos, "%s%d", dot, cfg.gbx_port[i]);
+		pos += snprintf(value + pos, needed - pos, "%s%d", dot, cfg.gbox_port[i]);
+		dot = ",";
+	}
+	return value;
+}
+/*
+ * Creates a string ready to write as a token into config or WebIf for the gbox proxy card. You must free the returned value through free_mk_t().
+ */
+char *mk_t_gbox_proxy_card(void)
+{
+	int32_t i, pos = 0, needed = GBOX_MAX_PROXY_CARDS * 9 + 8;
+
+	char *value;
+	if(!cs_malloc(&value, needed)) { return ""; }
+	char *dot = "";
+	for(i = 0; i < GBOX_MAX_PROXY_CARDS; i++)
+	{
+		if(!cfg.gbox_proxy_card[i]) { break; }
+
+		pos += snprintf(value + pos, needed - pos, "%s%08lX", dot, cfg.gbox_proxy_card[i]);
+		dot = ",";
+	}
+	return value;
+}
+/*
+ * Creates a string ready to write as a token into config or WebIf for the gbox ignore peer. You must free the returned value through free_mk_t().
+ */
+char *mk_t_gbox_ignored_peer(void)
+{
+	int32_t i, pos = 0, needed = GBOX_MAX_IGNORED_PEERS * 5 + 8;
+
+	char *value;
+	if(!cs_malloc(&value, needed)) { return ""; }
+	char *dot = "";
+	for(i = 0; i < GBOX_MAX_IGNORED_PEERS; i++)
+	{
+		if(!cfg.gbox_ignored_peer[i]) { break; }
+
+		pos += snprintf(value + pos, needed - pos, "%s%04hX", dot, cfg.gbox_ignored_peer[i]);
+		dot = ",";
+	}
+	return value;
+}
+/*
+ * Creates a string ready to write as a token into config or WebIf for the gbox block ecm. You must free the returned value through free_mk_t().
+ */
+char *mk_t_gbox_block_ecm(void)
+{
+	int32_t i, pos = 0, needed = GBOX_MAX_BLOCKED_ECM * 5 + 8;
+
+	char *value;
+	if(!cs_malloc(&value, needed)) { return ""; }
+	char *dot = "";
+	for(i = 0; i < GBOX_MAX_BLOCKED_ECM; i++)
+	{
+		if(!cfg.gbox_block_ecm[i]) { break; }
+
+		pos += snprintf(value + pos, needed - pos, "%s%04hX", dot, cfg.gbox_block_ecm[i]);
 		dot = ",";
 	}
 	return value;
