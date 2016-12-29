@@ -382,17 +382,6 @@ static void write_versionfile(bool use_stdout)
 #ifdef WEBIF
 	fprintf(fp, "WebifPort:      %d\n", cfg.http_port);
 #endif
-#ifdef MODULE_GBOX
-	if(cfg.gbox_tmp_dir == NULL) 
-	{ 
-		fprintf(fp, "\nGBox tmp_dir:   not defined using: %s\n", cs_tmpdir);
-	}
-	else
-	{
-		fprintf(fp, "\nGBox tmp_dir:   %s\n", cfg.gbox_tmp_dir);
-	} 
-	fprintf(fp, "                value read during start up, not refreshed if changed later in webif!\n");
-#endif
 	fprintf(fp, "\n");
 	write_conf(WEBIF, "Web interface support");
 	write_conf(WEBIF_LIVELOG, "LiveLog support");

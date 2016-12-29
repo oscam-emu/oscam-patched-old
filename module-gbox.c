@@ -65,6 +65,13 @@ uint32_t gbox_get_local_gbox_password(void)
 	return local_gbox.password;
 }
 
+static uint8_t gbox_get_my_vers (void)
+{
+	uint8_t gbx_vers = a2i(cfg.gbox_my_vers,1);
+
+	return gbx_vers;
+}
+
 static uint8_t gbox_get_my_cpu_api (void)
 {
 /* For configurable later adapt according to these functions:
@@ -100,9 +107,8 @@ unsigned char *GboxCPU( unsigned char a ) {
 	}
 	return s_23:
 }
-	return cfg.gbox_my_cpu_api;
 */
-	return(cfg.gbox_my_cpu_api);
+	return a2i(cfg.gbox_my_cpu_api,1);
 }
 
 static void write_msg_to_osd (struct s_client *cli, uint8_t msg_id, uint16_t misc)
@@ -185,7 +191,7 @@ void gbox_write_version(void)
 		cs_log("Couldn't open %s: %s", get_gbox_tmp_fname(FILE_GBOX_VERSION), strerror(errno));
 		return;
 	}
-	fprintf(fhandle, "%02X.%02X\n", LOCAL_GBOX_MAJOR_VERSION, cfg.gbox_my_vers);
+	fprintf(fhandle, "%02X.%02X\n", LOCAL_GBOX_MAJOR_VERSION, gbox_get_my_vers());
 	fclose(fhandle);
 }
 
@@ -1217,12 +1223,12 @@ static int8_t gbox_check_header_recvd(struct s_client *cli, struct s_client *pro
 			}
 		}
 	}
-
+	/*
 	else if (gbox_decode_cmd(data) == MSG_GSMS_1 || gbox_decode_cmd(data) == MSG_GSMS_ACK_1 ) 
 	{
 		// MSG_GSMS_1 dont have passw and would fail. Just let them pass through for processing later
 	}
-
+	*/
 	else // error my passw
 	{
 		cs_log("-> ATTACK ALERT from IP %s", cs_inet_ntoa(cli->ip));
@@ -1479,7 +1485,7 @@ static int32_t gbox_send_ecm(struct s_client *cli, ECM_REQUEST *er)
 
 	i2b_buf(2, local_gbox.id, send_buf_1 + len2);
 
-	send_buf_1[len2 + 2] = cfg.gbox_my_vers;
+	send_buf_1[len2 + 2] = gbox_get_my_vers();
 	send_buf_1[len2 + 3] = 0x00;
 	send_buf_1[len2 + 4] = gbox_get_my_cpu_api();
 
@@ -1590,13 +1596,14 @@ static void init_local_gbox(void)
 {
 	local_gbox.id = 0;
 	local_gbox.password = 0;
-	local_gbox.minor_version = cfg.gbox_my_vers;
+	local_gbox.minor_version = gbox_get_my_vers();
 	local_gbox.cpu_api = gbox_get_my_cpu_api();
 	init_gbox_cards();
 
-	if(cfg.gbox_password == 0) { return; }
+	if(!cfg.gbox_my_password || strlen(cfg.gbox_my_password) != 8) { return; }
 
-	local_gbox.password = cfg.gbox_password;
+	local_gbox.password = a2i(cfg.gbox_my_password, 4);
+	//cs_log_dbg(D_READER, "gbox my password: %s:", cfg.gbox_my_password);
 	local_gbox.id = gbox_convert_password_to_id(local_gbox.password);
 	if (local_gbox.id == NO_GBOX_ID)
 	{
@@ -1619,9 +1626,10 @@ static int32_t gbox_client_init(struct s_client *cli)
 	if (!local_gbox_initialized)
 		{ init_local_gbox(); }
 
-	if(!cfg.gbox_port[0])
+	if(!cfg.gbx_port[0] || cfg.gbx_port[0] > 65535)
 	{
-		cs_log("error, no/invalid port=%d configured in oscam.conf!", cfg.gbox_port[0] ? cfg.gbox_port[0] : 0);
+		cs_log("error, no/invalid port=%d configured in oscam.conf!",
+			   cfg.gbx_port[0] ? cfg.gbx_port[0] : 0);
 		return -1;
 	}
 	
@@ -1634,7 +1642,8 @@ static int32_t gbox_client_init(struct s_client *cli)
 
 	if(!local_gbox.id)
 	{
-		cs_log("error, no/invalid password '%08X' configured in oscam.conf!", cfg.gbox_password);
+		cs_log("error, no/invalid password '%s' configured in oscam.conf!",
+			   cfg.gbox_my_password ? cfg.gbox_my_password : "");
 		return -1;
 	}
 
@@ -1723,7 +1732,7 @@ static void gbox_send_boxinfo(struct s_client *cli)
 	uchar outbuf[30];
 	int32_t hostname_len = strlen(cfg.gbox_hostname);
 	gbox_message_header(outbuf, MSG_BOXINFO, peer->gbox.password, local_gbox.password);
-	outbuf[0xA] = cfg.gbox_my_vers;
+	outbuf[0xA] = gbox_get_my_vers();
 	outbuf[0xB] = gbox_get_my_cpu_api();
 	memcpy(&outbuf[0xC], cfg.gbox_hostname, hostname_len);
 	cs_log("gbox send 'HERE?' to boxid: %04X", peer->gbox.id);
@@ -1793,7 +1802,7 @@ static int8_t gbox_send_peer_good_night(struct s_client *proxy)
 			outbuf[10] = 0x01;
 			outbuf[11] = 0x80;
 			memset(&outbuf[12], 0xff, 7);
-			outbuf[19] = cfg.gbox_my_vers;
+			outbuf[19] = gbox_get_my_vers();
 			outbuf[20] = gbox_get_my_cpu_api();
 			memcpy(&outbuf[21], cfg.gbox_hostname, hostname_len);
 			outbuf[21 + hostname_len] = hostname_len;
@@ -1833,11 +1842,10 @@ void module_gbox(struct s_module *ph)
 	int32_t i;
 	for(i = 0; i < CS_MAXPORTS; i++)
 	{
-		if(!cfg.gbox_port[i]) { break; }
+		if(!cfg.gbx_port[i]) { break; }
 		ph->ptab.nports++;
-		ph->ptab.ports[i].s_port = cfg.gbox_port[i];
+		ph->ptab.ports[i].s_port = cfg.gbx_port[i];
 	}
-	
 	ph->desc = "gbox";
 	ph->num = R_GBOX;
 	ph->type = MOD_CONN_UDP;
