@@ -3586,7 +3586,7 @@ int32_t dvbapi_parse_capmt(unsigned char *buffer, uint32_t length, int32_t connf
 		}
 	}
 	
-	int32_t DoNotStartEMM = NULL;
+	int32_t DoNotStartEMM = 0;
 	#if defined(WITH_COOLAPI) || defined(WITH_COOLAPI2)
 		// Don't start and Stop EMM Filters over and over again if we are on FTA
 		if (dvbapi_client->last_caid == NO_CAID_VALUE) {
@@ -5774,6 +5774,7 @@ void dvbapi_write_cw(int32_t demux_id, uchar *cw, int32_t pid, int32_t stream_id
 			if (idx == INDEX_INVALID) return; // return on no index!
 
 #if defined WITH_COOLAPI || defined WITH_COOLAPI2
+			ca_descr_mode.cipher_mode = cipher_mode;
 			ca_descr.index = idx;
 			ca_descr.parity = n;
 			memcpy(demux[demux_id].lastcw[n], cw + (n * 8), 8);
@@ -5862,7 +5863,7 @@ void dvbapi_write_cw(int32_t demux_id, uchar *cw, int32_t pid, int32_t stream_id
 								cs_log("ERROR: ioctl(CA_SET_DESCR_MODE): %s", strerror(errno));
 							}
 						}
-					}			
+					}
 				}
 			}
 #endif
