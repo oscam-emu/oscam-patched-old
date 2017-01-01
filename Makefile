@@ -272,7 +272,9 @@ SRC-$(CONFIG_CS_CACHEEX) += module-csp.c
 SRC-$(CONFIG_CW_CYCLE_CHECK) += module-cw-cycle-check.c
 SRC-$(CONFIG_WITH_AZBOX) += module-dvbapi-azbox.c
 SRC-$(CONFIG_WITH_MCA) += module-dvbapi-mca.c
-SRC-$(CONFIG_WITH_COOLAPI) += module-dvbapi-coolapi.c
+### SRC-$(CONFIG_WITH_COOLAPI) += module-dvbapi-coolapi.c 
+### experimental reversed API
+SRC-$(CONFIG_WITH_COOLAPI) += module-dvbapi-coolapi-legacy.c
 SRC-$(CONFIG_WITH_COOLAPI2) += module-dvbapi-coolapi.c
 SRC-$(CONFIG_WITH_SU980) += module-dvbapi-coolapi.c
 SRC-$(CONFIG_WITH_STAPI) += module-dvbapi-stapi.c
