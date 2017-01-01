@@ -1124,6 +1124,13 @@ uint16_t tunemm_caid_map(uint8_t direct, uint16_t caid, uint16_t srvid)
 
 int32_t dvbapi_stop_filter(int32_t demux_index, int32_t type)
 {
+	#if defined(WITH_COOLAPI) || defined(WITH_COOLAPI2)
+	// We prevented PAT and PMT from starting, so lets don't close them either.
+	if (type != TYPE_ECM && type != TYPE_EMM && type != TYPE_SDT) {
+		return 1;
+	}
+	#endif
+
 	int32_t g, error = 0;
 
 	for(g = 0; g < MAX_FILTER; g++) // just stop them all, we dont want to risk leaving any stale filters running due to lowering of maxfilters
@@ -1371,11 +1378,23 @@ void dvbapi_start_sdt_filter(int32_t demux_index)
 
 void dvbapi_start_pat_filter(int32_t demux_index)
 {
+	#if defined(WITH_COOLAPI) || defined(WITH_COOLAPI2)
+		// PAT-Filter breaks API and OSCAM for Coolstream. 
+		// Don't use it
+		return;
+	#endif
+
 	dvbapi_start_filter(demux_index, demux[demux_index].pidindex, 0x00, 0x001, 0x01, 0x00, 0xFF, 0, TYPE_PAT);
 }
 
 void dvbapi_start_pmt_filter(int32_t demux_index, int32_t pmt_pid)
 {
+	#if defined(WITH_COOLAPI) || defined(WITH_COOLAPI2)
+		// PMT-Filter breaks API and OSCAM for Coolstream. 
+		// Don't use it
+		return;
+	#endif
+
 	uchar filter[16], mask[16];
 	memset(filter, 0, 16);
 	memset(mask, 0, 16);
@@ -3529,17 +3548,6 @@ int32_t dvbapi_parse_capmt(unsigned char *buffer, uint32_t length, int32_t connf
 		}
 	}
 
-	if(cfg.dvbapi_au > 0 && demux[demux_id].EMMpidcount == 0) // only do emm setup if au enabled and not running!
-	{
-		demux[demux_id].emm_filter = -1; // to register first run emmfilter start
-		if(demux[demux_id].emmstart.time == 1)   // irdeto fetch emm cat direct!
-		{
-			cs_ftime(&demux[demux_id].emmstart); // trick to let emm fetching start after 30 seconds to speed up zapping
-			dvbapi_start_filter(demux_id, demux[demux_id].pidindex, 0x001, 0x001, 0x01, 0x01, 0xFF, 0, TYPE_EMM); //CAT
-		}
-		else { cs_ftime(&demux[demux_id].emmstart); } // for all other caids delayed start!
-	}
-
 	if(start_descrambling)
 	{
 		for(j = 0; j < MAX_DEMUX; j++)
@@ -3577,6 +3585,26 @@ int32_t dvbapi_parse_capmt(unsigned char *buffer, uint32_t length, int32_t connf
 			}
 		}
 	}
+	
+	int32_t DoNotStartEMM = NULL;
+	#if defined(WITH_COOLAPI) || defined(WITH_COOLAPI2)
+		// Don't start and Stop EMM Filters over and over again if we are on FTA
+		if (dvbapi_client->last_caid == NO_CAID_VALUE) {
+			DoNotStartEMM = 1;
+		}
+	#endif
+	
+	if(cfg.dvbapi_au > 0 && demux[demux_id].EMMpidcount == 0 && !DoNotStartEMM) // only do emm setup if au enabled and not running!
+	{
+		demux[demux_id].emm_filter = -1; // to register first run emmfilter start
+		if(demux[demux_id].emmstart.time == 1)   // irdeto fetch emm cat direct!
+		{
+			cs_ftime(&demux[demux_id].emmstart); // trick to let emm fetching start after 30 seconds to speed up zapping
+			dvbapi_start_filter(demux_id, demux[demux_id].pidindex, 0x001, 0x001, 0x01, 0x01, 0xFF, 0, TYPE_EMM); //CAT
+		}
+		else { cs_ftime(&demux[demux_id].emmstart); } // for all other caids delayed start!
+	}
+
 	return demux_id;
 }
 
@@ -6656,7 +6684,8 @@ int32_t dvbapi_activate_section_filter(int32_t demux_index, int32_t num, int32_t
 		break;
 	}
 #endif
-	#if defined WITH_COOLAPI || defined WITH_COOLAPI2
+	// Isn't implemented in COOLAPI-1 (legacy)
+	#if defined WITH_COOLAPI2
 	case COOLAPI:
 	{
 		int32_t n = coolapi_get_filter_num(fd);
