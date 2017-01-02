@@ -668,6 +668,10 @@ static int32_t cacheex_add_to_cache_int(struct s_client *cl, ECM_REQUEST *er, in
 	for(i = 0; i < 16; i += 4)
 	{
 		c = ((er->cw[i] + er->cw[i + 1] + er->cw[i + 2]) & 0xff);
+		
+		if(cfg->disablecrccws || cl->account->disablecrccacheex)
+			{ break; }
+
 		if((i!=12) && selectedForIgnChecksum && (er->cw[i + 3] != c)){
 			break;
 		}
