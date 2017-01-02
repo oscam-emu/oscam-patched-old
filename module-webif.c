@@ -710,6 +710,12 @@ static char *send_oscam_config_global(struct templatevars *vars, struct uriparam
 	tpl_addVar(vars, TPLADD, "DOUBLECHECKCAID", value);
 	free_mk_t(value);
 
+	tpl_addVar(vars, TPLADD, "DISABLECRCCWSCHECKEDGLOBAL", (cfg.disablecrccws == 1) ? "checked" : "");
+
+	value = mk_t_ftab(&cfg.disablecrccws_only_for);
+	tpl_addVar(vars, TPLADD, "IGNCHKSUMONLYFORGLOBAL", value);
+	free_mk_t(value);
+
 #ifdef LEDSUPPORT
 	if(cfg.enableled == 1)
 		{ tpl_addVar(vars, TPLADD, "ENABLELEDSELECTED1", "selected"); }
@@ -2059,6 +2065,11 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 	tpl_addVar(vars, TPLADD, "FALLBACK_PERCAID", value);
 	free_mk_t(value);
 
+	// disable checksum test only for selected caid/provid
+	value = mk_t_ftab(&rdr->disablecrccws_only_for);
+	tpl_addVar(vars, TPLADD, "IGN_CHKSUM_ONLYFOR", value);
+	free_mk_t(value);
+
 #ifdef WITH_LB
 		tpl_addVar(vars, TPLADD, "LBFORCEFALLBACK", (rdr->lb_force_fallback == 1) ? "checked" : "");
 #endif
@@ -3213,6 +3224,10 @@ static char *send_oscam_user_config_edit(struct templatevars *vars, struct uripa
 	tpl_addVar(vars, TPLADD, "AFCHECKED", (account->cacheex.allow_filter == 1) ? "checked" : "");
 	tpl_addVar(vars, TPLADD, "BLOCKFAKECWSCHECKED", (account->cacheex.block_fakecws == 1) ? "checked" : "");
 	tpl_addVar(vars, TPLADD, "NWTCHECKED", (account->no_wait_time == 1) ? "checked" : "");
+	tpl_addVar(vars, TPLADD, "DISABLECRCCEX4USER", (account->disablecrccacheex == 1) ? "checked" : "");
+	value = mk_t_ftab(&account->disablecrccacheex_only_for);
+	tpl_addVar(vars, TPLADD, "IGNCRCCEX4USERONLYFOR", value);
+	free_mk_t(value);
 	
 #endif
 

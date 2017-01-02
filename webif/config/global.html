@@ -36,7 +36,15 @@
 			</TR>
 			<TR><TD><A>Drop duplicate users:</A></TD>
 				<TD>
-					<input name="dropdups" value="0" type="hidden"><input name="dropdups" value="1" type="checkbox" ##DROPDUPSCHECKED##><label></label>
+					<input name="dropdups" value="0" type="hidden"><input name="dropdups" value="1" type="checkbox" ##DROPDUPSCHECKED##>
+				</TD>
+			</TR>
+			<TR><TD><A>Skip CWs checksum test:</A></TD>
+				<TD>
+					<input name="disablecrccws" type="hidden" value="0"><input name="disablecrccws" type="checkbox" value="1" ##DISABLECRCCWSCHECKEDGLOBAL##>
+				</TD>
+			</TR>
+			<TR><TD><A>Skip CWs checksum test only for:</A></TD><TD><textarea name="disablecrccws_only_for" rows="3" class="bt">##IGNCHKSUMONLYFORGLOBAL##</textarea>
 				</TD>
 			</TR>
 			<TR><TH COLSPAN="2">Logging</TH></TR>
