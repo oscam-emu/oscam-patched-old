@@ -665,11 +665,9 @@ static int32_t cacheex_add_to_cache_int(struct s_client *cl, ECM_REQUEST *er, in
 			}
 
 	uint8_t i, c;
-	uint8_t null = 0;
 	for(i = 0; i < 16; i += 4)
 	{
 		c = ((er->cw[i] + er->cw[i + 1] + er->cw[i + 2]) & 0xff);
-		null |= (er->cw[i] | er->cw[i + 1] | er->cw[i + 2]);
 		if((i!=12) && selectedForIgnChecksum && (er->cw[i + 3] != c)){
 			break;
 		}
@@ -684,7 +682,7 @@ static int32_t cacheex_add_to_cache_int(struct s_client *cl, ECM_REQUEST *er, in
 		}
 	}
 
-	if(null == 0 || chk_is_null_CW(er->cw))
+	if(chk_is_null_CW(er->cw))
 	{
 		cs_log_dump_dbg(D_CACHEEX, er->cw, 16, "push received null cw from %s", csp ? "csp" : username(cl));
 		cl->cwcacheexerr++;
