@@ -20,6 +20,17 @@ bool cs_malloc(void *result, size_t size)
 	return !!*tmp;
 }
 
+bool cs_malloc_nonull(void *result, size_t size)
+{
+	void **tmp = result;
+	*tmp = malloc(size);
+	if(*tmp == NULL)
+	{
+		fprintf(stderr, "%s: ERROR: Can't allocate %zu bytes!", __func__, size);
+	}
+	return !!*tmp;
+}
+
 /* This function encapsulates realloc. It automatically adds an error message
    to the log if it failed and calls cs_exit(quiterror) if quiterror > -1.
    result will be automatically filled with the new memory position or NULL

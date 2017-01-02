@@ -30,6 +30,7 @@ extern CS_MUTEX_LOCK ecm_pushed_deleted_lock;
 extern struct ecm_request_t	*ecm_pushed_deleted;
 extern CS_MUTEX_LOCK ecmcache_lock;
 extern struct ecm_request_t *ecmcwcache;
+extern pthread_mutex_t  cacheex_src_lock;
 
 // HIT CACHE functions **************************************************************
 
@@ -272,17 +273,24 @@ static void *chkcache_process(void)
 	struct s_ecm_answer *ea;
 	struct s_client *cex_src=NULL;
 	struct s_write_from_cache *wfc=NULL;
+	int32_t i;
 
 	while(cacheex_running)
 	{
+		i = 0;
 		cs_readlock(__func__, &ecmcache_lock);
-		for(er = ecmcwcache; er; er = er->next)
+		for(er = ecmcwcache; er; er = er->next, i++)
 		{
+	  	  if(i == 2)
+	  	  {
+	       i++;
+	       cs_readunlock(__func__, &ecmcache_lock);
+		  }				
 			timeout = time(NULL)-((cfg.ctimeout+500)/1000+1);
 			if(er->tps.time < timeout)
 				{ break; }
 
-			if(er->rc<E_UNHANDLED || er->readers_timeout_check)  //already answered
+			if(er->rc<E_UNHANDLED || er->readers_timeout_check || er->safety & 0x4)  //already answered
 				{ continue; }
 
 			//********  CHECK IF FOUND ECM IN CACHE
@@ -290,6 +298,7 @@ static void *chkcache_process(void)
 			if(ecm)     //found in cache
 			{
 				//check for add_hitcache
+				pthread_mutex_lock(&cacheex_src_lock);
 				if(ecm->cacheex_src)   //cw from cacheex
 				{
 					if((er->cacheex_wait_time && !er->cacheex_wait_time_expired) || !er->cacheex_wait_time)   //only when no wait_time expires (or not wait_time)
@@ -328,6 +337,8 @@ static void *chkcache_process(void)
 							{ cacheex_del_hitcache(er->client, ecm); }
 					}
 				}
+				pthread_mutex_unlock(&cacheex_src_lock);
+				
 				//END check for add_hitcache
 
 				if(check_client(er->client))
@@ -352,8 +363,10 @@ static void *chkcache_process(void)
 					{ NULLFREE(ecm); }
 			}
 		}
-		cs_readunlock(__func__, &ecmcache_lock);
-
+	  if(i < 3)
+	  {
+	   cs_readunlock(__func__, &ecmcache_lock);
+	  }	
 		cs_sleepms(10);
 	}
 
