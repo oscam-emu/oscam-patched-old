@@ -16,7 +16,6 @@
 #include "oscam-lock.h"
 #include "oscam-string.h"
 #include "oscam-time.h"
-#include "oscam-garbage.h"
 
 #define UNDEF_AVG_TIME 99999  //NOT set here 0 or small value! Could cause there reader get selected
 #define MAX_ECM_SEND_CACHE 16
@@ -1322,8 +1321,6 @@ void stat_get_best_reader(ECM_REQUEST *er)
 				}
 				else
 					{ er->matching_rdr = ea->next; }
-				cs_lock_destroy(__func__, &ea->ecmanswer_lock);
-				add_garbage(ea);	
 			}
 		}
 		if(!er->reader_avail)
@@ -2023,17 +2020,11 @@ static struct ecm_request_t *check_same_ecm(ECM_REQUEST *er)
 	time_t timeout;
 	struct s_ecm_answer *ea_ecm = NULL, *ea_er = NULL;
 	uint8_t rdrs = 0;
-	int32_t i = 0;
 
 
 	cs_readlock(__func__, &ecmcache_lock);
-	for(ecm = ecmcwcache; ecm; ecm = ecm->next, i++)
+	for(ecm = ecmcwcache; ecm; ecm = ecm->next)
 	{
-	 if(i == 2)
-	 {
-	  i++;
-	  cs_readunlock(__func__, &ecmcache_lock);
-	 }
 		timeout = time(NULL) - ((cfg.ctimeout + 500) / 1000);
 
 		if(ecm->tps.time <= timeout)
@@ -2062,17 +2053,11 @@ static struct ecm_request_t *check_same_ecm(ECM_REQUEST *er)
 
 		if(!rdrs)
 		{
-		 if(i < 3)
-		 {
-	 	  cs_readunlock(__func__, &ecmcache_lock);
-		 }
-		 return ecm;
+			cs_readunlock(__func__, &ecmcache_lock);
+			return ecm;
 		}
 	}
-	if(i < 3)
-	{
-	 cs_readunlock(__func__, &ecmcache_lock);
-	}
+	cs_readunlock(__func__, &ecmcache_lock);
 	return NULL; // nothing found so return null
 }
 

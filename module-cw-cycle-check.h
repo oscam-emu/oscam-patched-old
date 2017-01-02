@@ -5,11 +5,6 @@ uint8_t checkcwcycle(struct s_client *client, ECM_REQUEST *er, struct s_reader *
 
 #ifdef CW_CYCLE_CHECK
 void cleanupcwcycle(void);
-void cwc_destroy(void);
-int32_t cache_size_cwc(void);
-int16_t cache_size_cwc_selected(int8_t test);
-void cwc_init_lock(void);
-int8_t get_ecmofs(uint16_t caid);
 #else
 static inline void cleanupcwcycle(void) { }
 #endif

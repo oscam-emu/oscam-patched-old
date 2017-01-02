@@ -1638,7 +1638,7 @@ int32_t cc_send_ecm(struct s_client *cl, ECM_REQUEST *er)
 			cl->reader->last_s = time(NULL);
 			cc_cmd_send(cl, ecmbuf, cur_er->ecmlen + 13, MSG_CW_ECM); // send ecm
 
-			add_garbage(ecmbuf);
+			NULLFREE(ecmbuf);
 
 			//For EMM
 			set_au_data(cl, rdr, card, cur_er);
@@ -2951,7 +2951,6 @@ int32_t cc_parse_msg(struct s_client *cl, uint8_t *buf, int32_t l)
 			{
 				cs_log_dbg(D_CLIENT, "%s NO ECMTASK!!!! l=%d", getprefix(), l);
 				NULLFREE(server_card);
-				NULLFREE(er);
 			}
 
 		}

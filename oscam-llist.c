@@ -104,7 +104,7 @@ void ll_destroy_free_data(LLIST **pl)
 
 
 /* Internal iteration function. Make sure that you don't have a lock and that it and it->l are set. */
-void *ll_iter_next_nolock(LL_ITER *it)
+static void *ll_iter_next_nolock(LL_ITER *it)
 {
 	if(it->l->version != it->ll_version)
 	{
@@ -193,7 +193,7 @@ void ll_clear_data(LLIST *l)
 }
 
 /* Appends to the list. Do not call this from outside without having a lock! */
-LL_NODE *ll_append_nolock(LLIST *l, void *obj)
+static LL_NODE *ll_append_nolock(LLIST *l, void *obj)
 {
 	if(l && obj && !l->flag)
 	{
@@ -494,12 +494,6 @@ void ll_iter_remove_data(LL_ITER *it)
 	add_garbage(obj);
 }
 
-void ll_iter_remove_data_nolock(LL_ITER *it)
-{
-	void *obj = ll_iter_remove_nolock(it);
-	add_garbage(obj);
-}
-
 void *ll_has_elements(const LLIST *l)
 {
 	if(!l || !l->initial || l->flag)
@@ -714,14 +708,4 @@ void ll_remove_first_data(LLIST *l)
 {
 	void *data = ll_remove_first(l);
 	if(data) { NULLFREE(data); }
-}
-
-void ll_lock(LLIST *l, int32_t type_of_lock)
-{
-	if(!l || l->flag) { return; }
-
-	if(type_of_lock)
-	 cs_writelock(__func__, &l->lock);
-	else
-	 cs_writeunlock(__func__, &l->lock);
 }

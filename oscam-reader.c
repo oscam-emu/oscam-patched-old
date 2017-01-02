@@ -1058,16 +1058,10 @@ void reader_get_ecm(struct s_reader *reader, ECM_REQUEST *er)
 	struct s_ecm_answer *ea = NULL, *ea_prev = NULL;
 	struct ecm_request_t *ecm;
 	time_t timeout;
-	int32_t i;
-	i = 0;
+
 	cs_readlock(__func__, &ecmcache_lock);
-	for(ecm = ecmcwcache; ecm; ecm = ecm->next, i++)
+	for(ecm = ecmcwcache; ecm; ecm = ecm->next)
 	{
-		if(i == 2)
-		{
-		 i++;
-		 cs_readunlock(__func__, &ecmcache_lock);
-		}
 		timeout = time(NULL) - ((cfg.ctimeout+500)/1000+1);
 		if(ecm->tps.time <= timeout)
 			{ break; }
@@ -1083,10 +1077,7 @@ void reader_get_ecm(struct s_reader *reader, ECM_REQUEST *er)
 			ea = NULL;
 		}
 	}
-	if(i < 3)
-	{
-	 cs_readunlock(__func__, &ecmcache_lock);
-	}
+	cs_readunlock(__func__, &ecmcache_lock);
 	if(ea)   //found ea in cached ecm, asking for this reader
 	{
 		ea_er->is_pending = true;
@@ -1344,7 +1335,7 @@ static int32_t restart_cardreader_int(struct s_reader *rdr, int32_t restart)
 		cs_sleepms(1500);  //we have to wait a bit so free_client is ended and socket closed too!
 	}
 
-	while((restart && is_valid_client(cl)) || (cl && !cl->safety))
+	while(restart && is_valid_client(cl))
 	{
 		// If we quick disable+enable a reader (webif), remove_reader_from_active is called from
 		// cleanup. this could happen AFTER reader is restarted, so oscam crashes or reader is hidden

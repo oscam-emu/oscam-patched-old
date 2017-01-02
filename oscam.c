@@ -105,12 +105,6 @@ CS_MUTEX_LOCK readerlist_lock;
 CS_MUTEX_LOCK fakeuser_lock;
 CS_MUTEX_LOCK readdir_lock;
 CS_MUTEX_LOCK cwcycle_lock;
-CS_MUTEX_LOCK lladd_lock;
-CS_MUTEX_LOCK emm_lock;
-
-
-pthread_mutex_t  cacheex_src_lock;
-
 pthread_key_t getclient;
 static int32_t bg;
 static int32_t gbdb;
@@ -1211,7 +1205,6 @@ static void process_clients(void)
 		pfdcount = 1;
 
 		//connected tcp clients
-		cs_readlock(__func__, &clientlist_lock);
 		for(cl = first_client->next; cl; cl = cl->next)
 		{
 			if(cl->init_done && !cl->kill && cl->pfd && cl->typ == 'c' && !cl->is_udp)
@@ -1243,8 +1236,6 @@ static void process_clients(void)
 				}
 			}
 		}
-		cs_readunlock(__func__, &clientlist_lock);
-
 
 		//server (new tcp connections or udp messages)
 		for(k = 0; k < CS_MAX_MOD; k++)
@@ -1379,14 +1370,11 @@ static void *reader_check(void)
 	cs_pthread_cond_init(__func__, &reader_check_sleep_cond_mutex, &reader_check_sleep_cond);
 	while(!exit_oscam)
 	{
-		cs_readlock(__func__, &clientlist_lock);
 		for(cl = first_client->next; cl ; cl = cl->next)
 		{
 			if(!cl->thread_active)
 				{ client_check_status(cl); }
 		}
-		cs_readunlock(__func__, &clientlist_lock);
-
 		cs_readlock(__func__, &readerlist_lock);
 		for(rdr = first_active_reader; rdr; rdr = rdr->next)
 		{
@@ -1791,12 +1779,6 @@ int32_t main(int32_t argc, char *argv[])
 	cs_lock_create(__func__, &ecm_pushed_deleted_lock, "ecm_pushed_deleted_lock", 5000);
 	cs_lock_create(__func__, &readdir_lock, "readdir_lock", 5000);
 	cs_lock_create(__func__, &cwcycle_lock, "cwcycle_lock", 5000);
-	cs_lock_create(__func__, &lladd_lock, "lladd_lock", 5000);
-	cs_lock_create(__func__, &emm_lock, "emm_lock", 5000);
-
-	
-	pthread_mutex_init(&cacheex_src_lock, NULL);
-
 	init_cache();
 	cacheex_init_hitcache();
 	init_config();
@@ -1878,8 +1860,6 @@ int32_t main(int32_t argc, char *argv[])
 	checkcache_process_thread_start();
 
 	lcd_thread_start();
-	
-	cwc_init_lock();
 
 	do_report_emm_support();
 
@@ -1971,10 +1951,6 @@ int32_t main(int32_t argc, char *argv[])
 	config_free();
 	ssl_done();
 
-#ifdef CW_CYCLE_CHECK
-	cwc_destroy();
-#endif	
-	
 	detect_valgrind();
 	if (!running_under_valgrind)
 		cs_log("cardserver down");

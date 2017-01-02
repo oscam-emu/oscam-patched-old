@@ -223,14 +223,11 @@ static void cacheex_clear_all_stats(void)
 		account = account->next;
 	}
 	struct s_client *cl;
-	cs_readlock(__func__, &clientlist_lock);
 	for(cl = first_client->next; cl ; cl = cl->next)
 	{
 		cacheex_clear_client_stats(cl);
 		ll_clear_data(cl->ll_cacheex_stats);
 	}
-	cs_readunlock(__func__, &clientlist_lock);
-
 	cacheex_clear_client_stats(first_client);
 }
 #endif
@@ -456,7 +453,6 @@ static void refresh_oscam(enum refreshtypes refreshtype)
 		ac_init_stat();
 		struct s_client *cl;
 		struct s_auth *account;
-		cs_readlock(__func__, &clientlist_lock);
 		for(cl = first_client->next; cl ; cl = cl->next)
 		{
 			if(cl->typ == 'c' && (account = cl->account))
@@ -464,8 +460,6 @@ static void refresh_oscam(enum refreshtypes refreshtype)
 				cl->ac_limit   = (account->ac_users * 100 + 80) * cfg.ac_stime;
 			}
 		}
-		cs_readunlock(__func__, &clientlist_lock);
-
 		break;
 #endif
 	default:
@@ -3492,7 +3486,6 @@ static void webif_add_client_proto(struct templatevars *vars, struct s_client *c
 static void kill_account_thread(struct s_auth *account)
 {
 	struct s_client *cl;
-	cs_readlock(__func__, &clientlist_lock);
 	for(cl = first_client->next; cl ; cl = cl->next)
 	{
 		if(cl->account == account)
@@ -3507,8 +3500,6 @@ static void kill_account_thread(struct s_auth *account)
 			}
 		}
 	}
-	cs_readunlock(__func__, &clientlist_lock);
-
 }
 
 static char *send_oscam_user_config(struct templatevars *vars, struct uriparams *params, int32_t apicall)
@@ -3720,7 +3711,6 @@ static char *send_oscam_user_config(struct templatevars *vars, struct uriparams 
 		isactive = 0;
 		int16_t nrclients = 0;
 		struct s_client *latestclient = NULL;
-		cs_readlock(__func__, &clientlist_lock);
 		for(cl = first_client->next; cl ; cl = cl->next)
 		{
 			if(cl->account && !strcmp(cl->account->usr, account->usr))
@@ -3734,7 +3724,6 @@ static char *send_oscam_user_config(struct templatevars *vars, struct uriparams 
 				nrclients++;
 			}
 		}
-		cs_readunlock(__func__, &clientlist_lock);
 		if(account->cwfound + account->cwnot + account->cwcache > 0)
 		{
 			cwrate = now - account->firstlogin;
@@ -4665,52 +4654,42 @@ static char *send_oscam_status(struct templatevars * vars, struct uriparams * pa
 		if(atoi(hideidle) == 2)
 		{
 			struct s_client *cl;
-			cs_readlock(__func__, &clientlist_lock);
 			for(cl = first_client; cl ; cl = cl->next)
 			{
 				if(cl->typ == 's' || cl->typ == 'h' || cl->typ == 'm'){
 					cl->wihidden = 0;
 				}
 			}
-		    cs_readunlock(__func__, &clientlist_lock);
 		}
 		else if(atoi(hideidle) == 3)
 		{
 			struct s_client *cl;
-			cs_readlock(__func__, &clientlist_lock);
 			for(cl = first_client; cl ; cl = cl->next)
 			{
 				if(cl->typ == 'r'){
 					cl->wihidden = 0;
 				}
 			}
-		    cs_readunlock(__func__, &clientlist_lock);
-
 		}
 		else if(atoi(hideidle) == 4)
 		{
 			struct s_client *cl;
-			cs_readlock(__func__, &clientlist_lock);
 			for(cl = first_client; cl ; cl = cl->next)
 			{
 				if(cl->typ == 'p'){
 					cl->wihidden = 0;
 				}
 			}
-			cs_readunlock(__func__, &clientlist_lock);
 		}
 		else if(atoi(hideidle) == 5)
 		{
 			struct s_client *cl;
-			cs_readlock(__func__, &clientlist_lock);
 			for(cl = first_client; cl ; cl = cl->next)
 			{
 				if(cl->typ == 'c'){
 					cl->wihidden = 0;
 				}
 			}
-			cs_readunlock(__func__, &clientlist_lock);
-
 		}
 		else
 		{
@@ -5517,7 +5496,6 @@ static char *send_oscam_status(struct templatevars * vars, struct uriparams * pa
 		}
 		int32_t latestactivity = 0;
 		struct s_client *latestclient = NULL;
-		cs_readlock(__func__, &clientlist_lock);
 		for(cl = first_client->next; cl ; cl = cl->next)
 		{
 			if(cl->account && !strcmp(cl->account->usr, account->usr))
@@ -5530,7 +5508,6 @@ static char *send_oscam_status(struct templatevars * vars, struct uriparams * pa
 				}
 			}
 		}
-		cs_readunlock(__func__, &clientlist_lock);
 
 		if(latestclient != NULL)
 		{
@@ -5826,7 +5803,6 @@ static char *send_oscam_services(struct templatevars * vars, struct uriparams * 
 						delete_from_SIDTABBITS(&account->sidtabs.ok, position, sidtablength);
 						delete_from_SIDTABBITS(&account->sidtabs.no, position, sidtablength);
 
-						cs_readlock(__func__, &clientlist_lock);
 						for(cl = first_client->next; cl ; cl = cl->next)
 						{
 							if(account == cl->account)
@@ -5835,8 +5811,6 @@ static char *send_oscam_services(struct templatevars * vars, struct uriparams * 
 								cl->sidtabs.no = account->sidtabs.no;
 							}
 						}
-						cs_readunlock(__func__, &clientlist_lock);
-
 					}
 
 					LL_ITER itr = ll_iter_create(configured_readers);
@@ -6939,7 +6913,6 @@ static char *send_oscam_cacheex(struct templatevars * vars, struct uriparams * p
 	const char *cacheex_name_link_tpl = NULL;
 	tpl_addVar(vars, TPLADD, "CLIENTDESCRIPTION", "");
 
-	cs_readlock(__func__, &clientlist_lock);
 	for(i = 0, cl = first_client; cl ; cl = cl->next, i++)
 	{
 		if(cl->typ == 'c' && cl->account && cl->account->cacheex.mode)
@@ -7082,7 +7055,6 @@ static char *send_oscam_cacheex(struct templatevars * vars, struct uriparams * p
 			written = 0;
 		}
 	}
-	cs_readunlock(__func__, &clientlist_lock);
 
 	float cachesum = first_client ? first_client->cwcacheexgot : 1;
 	if(cachesum < 1)
@@ -8361,7 +8333,6 @@ static void *serve_process(void *conn)
 		close(s);
 	}
 
-	pthread_exit(NULL);
 	return NULL;
 }
 
