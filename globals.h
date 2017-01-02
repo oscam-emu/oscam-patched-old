@@ -1469,6 +1469,7 @@ struct s_reader                                     //contains device info, read
 	int8_t          fallback;
 	FTAB            fallback_percaid;
 	FTAB            localcards;
+	FTAB            disablecrccws_only_for;         // ignore checksum for selected caid provid
 #ifdef CS_CACHEEX
 	CECSP           cacheex; //CacheEx Settings
 #endif
@@ -1732,6 +1733,8 @@ struct s_auth
 #ifdef CS_CACHEEX
 	CECSP           cacheex; //CacheEx Settings
 	uint8_t         no_wait_time;
+	uint8_t			disablecrccacheex;
+	FTAB 			disablecrccacheex_only_for;
 #endif
 	int16_t         allowedprotocols;
 	LLIST           *aureader_list;
@@ -1941,6 +1944,8 @@ struct s_config
 	char            *emmlogdir;
 	char            *logfile;
 	char            *mailfile;
+	int8_t          disablecrccws;                  // 1=disable cw checksum test. 0=enable checksum check
+	FTAB            disablecrccws_only_for;         // ignore checksum for selected caid provid
 	uint8_t         logtostdout;
 	uint8_t         logtosyslog;
 	int8_t          logduplicatelines;
@@ -2062,8 +2067,8 @@ struct s_config
 	uint32_t        cc_recv_timeout;                // The poll() timeout parameter in ms. Default: DEFAULT_CC_RECV_TIMEOUT (2000 ms).
 #endif
 #ifdef MODULE_GBOX
-	#define 		GBOX_MY_VERS_DEF 		0x25
-	#define 		GBOX_MY_CPU_API_DEF 	0x40
+#define GBOX_MY_VERS_DEF 0x25
+#define GBOX_MY_CPU_API_DEF 0x40
 
 	uint16_t        gbox_port[CS_MAXPORTS];
 	char            *gbox_hostname;
@@ -2071,8 +2076,8 @@ struct s_config
 	uint32_t        gbox_password;
 	unsigned long   gbox_proxy_card[GBOX_MAX_PROXY_CARDS];
 	int8_t          gbox_proxy_cards_num;
-	uint32_t		gbox_my_vers;
-	uint8_t			gbox_my_cpu_api;
+	uint32_t        gbox_my_vers;
+	uint8_t         gbox_my_cpu_api;
 	uint8_t         gsms_dis;
 	uint8_t         log_hello;
 	char            *gbox_tmp_dir; 
@@ -2148,12 +2153,12 @@ struct s_config
 	int32_t     ac_denysamples;
 	char        *ac_logfile;
 	struct      s_cpmap *cpmap;
-	int8_t		acosc_enabled;
-	int8_t		acosc_max_active_sids;	// global value 0 - unlimited
-	int8_t		acosc_zap_limit;	// global value 0 - unlimited
-	int32_t		acosc_penalty_duration;	// global value how long is penalty activ in sek.
-	int8_t		acosc_penalty;	//global value
-	int32_t		acosc_delay;	//global value
+	int8_t      acosc_enabled;
+	int8_t      acosc_max_active_sids;// global value 0 - unlimited
+	int8_t      acosc_zap_limit;// global value 0 - unlimited
+	int32_t     acosc_penalty_duration;// global value how long is penalty activ in sek.
+	int8_t      acosc_penalty;//global value
+	int32_t     acosc_delay;//global value
 #endif
 
 #ifdef LEDSUPPORT
@@ -2218,7 +2223,7 @@ struct s_config
 	int8_t          cwcycle_dropold;        // what to do on old ecmd5/cw
 	int8_t          cwcycle_sensitive;
 	int8_t          cwcycle_allowbadfromffb;        //allow Bad cycles from Fixed Fallbackreader
-	int8_t			cwcycle_usecwcfromce;		//Use CWC Info from Cacheex Sources for CWC Checking
+	int8_t          cwcycle_usecwcfromce; //Use CWC Info from Cacheex Sources for CWC Checking
 #endif
 
 	//Global whitelist:
