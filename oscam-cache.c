@@ -48,6 +48,7 @@ typedef struct cw_t {
 
 	node		    ht_node;  //node for hash table
 	node		    ll_node;  //node for linked list
+	struct timeb	deleted_time;  //deleting time
 } CW;
 
 typedef struct cache_t {
@@ -67,10 +68,60 @@ static hash_table ht_cache;
 static list ll_cache;
 static int8_t cache_init_done = 0;
 
+static LLIST *cw_deleted;
+
+extern int32_t exit_oscam;
+
+static void cw_check2(void)
+{
+	CW *cw;
+	struct timeb actualtime;
+	set_thread_name(__func__);
+	pthread_cond_t cw_check_sleep_cond1;
+	pthread_mutex_t cw_check_sleep_cond_mutex1;
+	cs_pthread_cond_init(__func__, &cw_check_sleep_cond_mutex1, &cw_check_sleep_cond1);
+	cw_deleted = ll_create("delete_cw");
+	bool test = false;
+	struct s_pushclient *pc, *nxt;
+
+	set_thread_name(__func__);
+	while(1)
+	{
+		if(exit_oscam) { cs_sleepms(1200); test = true; }
+		LL_ITER it = ll_iter_create(cw_deleted);
+		cs_ftime(&actualtime);
+		while((cw = ll_iter_next(&it)))
+		{
+		  int32_t gone = comp_timeb(&actualtime, &cw->deleted_time);
+		  if(gone > 950)
+		  {
+			pthread_rwlock_destroy(&cw->pushout_client_lock);
+			pc = cw->pushout_client;
+			while (pc)
+			{
+			 nxt = pc->next_push;
+			 free(pc);
+			 pc = nxt;
+			}
+		   free(cw);
+		   ll_iter_remove(&it);
+		  }
+		}
+		if(test) { break; }
+		sleepms_on_cond(__func__, &cw_check_sleep_cond_mutex1, &cw_check_sleep_cond1,252); 
+	}
+	pthread_cond_destroy(&cw_check_sleep_cond1);
+	pthread_mutex_destroy(&cw_check_sleep_cond_mutex1);
+	ll_destroy(&cw_deleted);
+	pthread_exit(NULL);
+}
+
 void init_cache(void){
 	init_hash_table(&ht_cache, &ll_cache);
 	if (pthread_rwlock_init(&cache_lock,NULL) != 0)
 		{ cs_log("Error creating lock cache_lock!"); }
+	
+	start_thread("cw_deleting_process", (void *) &cw_check2, NULL, NULL, 1, 1);		
 	else
 		{ cache_init_done = 1; }
 }
@@ -241,6 +292,7 @@ struct ecm_request_t *check_cache(ECM_REQUEST *er, struct s_client *cl)
 			goto out_err;
 
 		if (cs_malloc(&ecm, sizeof(ECM_REQUEST))){
+			cs_ftime(&ecm->tps);
 			ecm->rc = E_FOUND;
 			ecm->rcEx = 0;
 			memcpy(ecm->cw, cw->cw, 16);
@@ -404,15 +456,16 @@ void add_cache(ECM_REQUEST *er){
 	if(cw->count>1)
 		sort_list(&result->ll_cw, count_sort);
 
+	cacheex_cache_add(er, result, cw, add_new_cw);
+
 	SAFE_RWLOCK_UNLOCK(&cache_lock);
 
-	cacheex_cache_add(er, result, cw, add_new_cw);
 }
 
 void cleanup_cache(bool force){
 	ECMHASH *ecmhash;
 	CW *cw;
-	struct s_pushclient *pc, *nxt;
+//	struct s_pushclient *pc, *nxt;
 	node *i,*i_next,*j,*j_next;
 
 	struct timeb now;
@@ -450,18 +503,20 @@ void cleanup_cache(bool force){
 
     			cw = get_data_from_node(j);
     			if(cw){
-					pthread_rwlock_destroy(&cw->pushout_client_lock);
+/*					pthread_rwlock_destroy(&cw->pushout_client_lock);
 					pc = cw->pushout_client;
 					cw->pushout_client=NULL;
 					while (pc) {
 						nxt = pc->next_push;
 						NULLFREE(pc);
 						pc = nxt;
-					}
+					}*/
+					cs_ftime(&cw->deleted_time);
+					ll_append(cw_deleted,cw);
 
 					remove_elem_list(&ecmhash->ll_cw, &cw->ll_node);
 					remove_elem_hash_table(&ecmhash->ht_cw, &cw->ht_node);
-					NULLFREE(cw);
+//					NULLFREE(cw);
     			}
 
 				j = j_next;

@@ -68,7 +68,9 @@ void ll_iter_reset(LL_ITER *it);                // reset itrerator to first llno
 void ll_iter_insert(LL_ITER *it, void *obj);    // insert obj at iterator node
 void *ll_iter_remove(LL_ITER *it);              // remove llnode at iterator, returns ptr to the llnode obj removed
 void ll_iter_remove_data(LL_ITER *it);          // remove llnode and free llnode obj
+void ll_iter_remove_data_nolock(LL_ITER *it);   // remove llnode and free llnode obj without locking
 void *ll_iter_move(LL_ITER *it, int32_t offset);// moves the iterator position
+void *ll_iter_remove_nolock(LL_ITER *it);
 int32_t ll_iter_move_first(LL_ITER *it);        // moves an entry to top
 static inline int32_t ll_count(const LLIST *l)                  // return number of items in list
 {
@@ -77,6 +79,7 @@ static inline int32_t ll_count(const LLIST *l)                  // return number
 
 	return l->count;
 }
+void *ll_iter_next_nolock(LL_ITER *it);
 void *ll_has_elements(const LLIST *l);          // returns first obj if has one
 void *ll_last_element(const LLIST *l);
 int32_t ll_contains(const LLIST *l, const void *obj);
@@ -86,8 +89,9 @@ void ll_remove_data(LLIST *l, void *obj);
 int32_t ll_remove_all(LLIST *l, const LLIST *elements_to_remove); // removes all elements from l where elements are in elements_to_remove
 
 void ll_putall(LLIST *dest, LLIST *src);
+LL_NODE *ll_append_nolock(LLIST *l, void *obj);
 
 void *ll_remove_first(LLIST *l);
 void ll_remove_first_data(LLIST *l);
-
+void ll_lock(LLIST *l, int32_t type_of_lock);
 #endif

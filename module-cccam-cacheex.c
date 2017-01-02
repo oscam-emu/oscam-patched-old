@@ -14,6 +14,7 @@
 #include "oscam-string.h"
 #include "oscam-chk.h"
 #include "oscam-reader.h"
+#include "oscam-garbage.h"
 
 #define CSP_HASH_SWAP(n) (((((uint32_t)(n) & 0xFF)) << 24) | \
                   ((((uint32_t)(n) & 0xFF00)) << 8) | \
@@ -312,6 +313,7 @@ static int32_t cc_cacheex_push_out(struct s_client *cl, struct ecm_request_t *er
 	}
 	ll_li_destroy(li);
 
+	add_garbage(buf);
 	int32_t res = cc_cmd_send(cl, buf, size + 20, MSG_CACHE_PUSH);
 	if(res > 0)   // cache-ex is pushing out, so no receive but last_g should be updated otherwise disconnect!
 	{
@@ -319,7 +321,7 @@ static int32_t cc_cacheex_push_out(struct s_client *cl, struct ecm_request_t *er
 			{ cl->reader->last_s = cl->reader->last_g = time((time_t *)0); } // correct
 		if(cl) { cl->last = time(NULL); }
 	}
-	NULLFREE(buf);
+//	NULLFREE(buf);
 	return res;
 }
 

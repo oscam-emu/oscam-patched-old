@@ -694,7 +694,9 @@ void free_client(struct s_client *cl)
 			{ network_tcp_connection_close(rdr, "cleanup"); }
 		cl->reader = NULL;
 	}
-
+	
+	cl->safety = 1;
+	
 	// Clean client specific data
 	if(cl->typ == 'c')
 	{

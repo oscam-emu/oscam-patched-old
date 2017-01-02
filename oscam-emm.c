@@ -604,7 +604,7 @@ int32_t reader_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 		if(gone > (int64_t)1000*60*60*24*30 || gone < 0) // dont run every time, only on first emm oscam is started and then every 30 days
 		{
 			last_emm_clean = tps;
-			count = clean_stale_emm_cache_and_stat(md5tmp, (int64_t)1000*60*60*24*30); // clean global all emms from all readers after 30 days emm is last seen!
+			count = clean_stale_emm_cache_and_stat(md5tmp, (int64_t)1000*60*60*4/*24*30*/) // clean global all emms from all readers after 30 days emm is last seen! or 4 hours
 			cs_log_dbg(D_EMM, "Cleaned %d emm stale stats and cache entries", count);
 		}
 		
