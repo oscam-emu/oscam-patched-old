@@ -443,10 +443,11 @@ void ftab_fn(const char *token, char *value, void *setting, long ftab_type, FILE
 	if(ftab_type & FTAB_READER)
 	{
 		struct s_reader *rdr = NULL;
-		if(ftab_type & FTAB_PROVID)     { rdr = container_of(setting, struct s_reader, ftab); }
-		if(ftab_type & FTAB_CHID)       { rdr = container_of(setting, struct s_reader, fchid); }
-		if(ftab_type & FTAB_FBPCAID)    { rdr = container_of(setting, struct s_reader, fallback_percaid); }
-		if(ftab_type & FTAB_LOCALCARDS) { rdr = container_of(setting, struct s_reader, localcards); }
+		if(ftab_type & FTAB_PROVID)      { rdr = container_of(setting, struct s_reader, ftab); }
+		if(ftab_type & FTAB_CHID)        { rdr = container_of(setting, struct s_reader, fchid); }
+		if(ftab_type & FTAB_FBPCAID)     { rdr = container_of(setting, struct s_reader, fallback_percaid); }
+		if(ftab_type & FTAB_LOCALCARDS)  { rdr = container_of(setting, struct s_reader, localcards); }
+		if(ftab_type & FTAB_IGNCHKSMCAID){ rdr = container_of(setting, struct s_reader, disablecrccws_only_for); }
 		if(rdr)
 			{ rdr->changes_since_shareupdate = 1; }
 	}
@@ -816,6 +817,7 @@ static const struct config_list reader_opts[] =
 	DEF_OPT_INT8("fallback"             , OFS(fallback),                0),
 	DEF_OPT_FUNC_X("fallback_percaid"   , OFS(fallback_percaid),        ftab_fn, FTAB_READER | FTAB_FBPCAID),
 	DEF_OPT_FUNC_X("localcards"         , OFS(localcards),        		ftab_fn, FTAB_READER | FTAB_LOCALCARDS),
+	DEF_OPT_FUNC_X("disablecrccws_only_for", OFS(disablecrccws_only_for),     ftab_fn, FTAB_READER | FTAB_IGNCHKSMCAID),
 #ifdef CS_CACHEEX
 	DEF_OPT_INT8("cacheex"              , OFS(cacheex.mode),            0),
 	DEF_OPT_INT8("cacheex_maxhop"       , OFS(cacheex.maxhop),          0),

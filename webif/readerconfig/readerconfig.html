@@ -49,8 +49,9 @@
 			<TR><TD><A>ECM not found limit:</A></TD><TD><input name="ecmnotfoundlimit" class="medium" type="text" maxlength="6" value="##ECMNOTFOUNDLIMIT##"></TD></TR>
 			<TR><TD><A>ECM whitelist:</A></TD><TD><textarea name="ecmwhitelist" rows="2" class="bt">##ECMWHITELIST##</textarea></TD></TR>
 			<TR><TD><A>ECM HeaderWhitelist:</A></TD><TD><textarea name="ecmheaderwhitelist" rows="2" class="bt">##ECMHEADERWHITELIST##</textarea></TD></TR>
-			<TR><TD><A>Drop CWs with wrong checksum:</A><input name="dropbadcws" type="hidden" value="0"></TD><TD><input name="dropbadcws" type="checkbox" value="1" ##DROPBADCWSCHECKED##><label></label></TD></TR>
-			<TR><TD><A>Skip CWs checksum test:</A><input name="disablecrccws" type="hidden" value="0"></TD><TD><input name="disablecrccws" type="checkbox" value="1" ##DISABLECRCCWSCHECKED##><label></label></TD></TR>
+			<TR><TD><A>Drop CWs with wrong checksum:</A><input name="dropbadcws" type="hidden" value="0"></TD><TD><input name="dropbadcws" type="checkbox" value="1" ##DROPBADCWSCHECKED##></TD></TR>
+			<TR><TD><A>Skip CWs checksum test:</A><input name="disablecrccws" type="hidden" value="0"></TD><TD><input name="disablecrccws" type="checkbox" value="1" ##DISABLECRCCWSCHECKED##></TD></TR>
+			<TR><TD><A>Skip CWs checksum test only for:</A></TD><TD><textarea name="disablecrccws_only_for" rows="3" class="bt">##IGN_CHKSUM_ONLYFOR##</textarea></TD></TR>
 			<TR><TD><A>Emmcache:</A></TD><TD><input name="emmcache" class="medium" type="text" maxlength="10" value="##EMMCACHE##"></TD></TR>
 			<TR><TD><A data-p="saveemm-u">Saveemm:</A></TD>
 				<TD CLASS="invisible">

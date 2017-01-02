@@ -699,6 +699,37 @@ uint8_t chk_has_fixed_fallback(ECM_REQUEST *er)
 	return n_falb;
 }
 
+uint8_t chk_if_ignore_checksum(ECM_REQUEST *er, int8_t disablecrc, FTAB *disablecrc_only_for)
+{
+	if(!disablecrc && !disablecrc_only_for->nfilts) { return 0; }
+
+		if(!disablecrc_only_for->nfilts)
+			if(disablecrc)
+				{ return 1; }
+
+		int32_t i, k;
+		for(i = 0; i < disablecrc_only_for->nfilts; i++)
+		{
+			uint16_t tcaid = disablecrc_only_for->filts[i].caid;
+			if(tcaid && (tcaid == er->caid || (tcaid < 0x0100 && (er->caid >> 8) == tcaid)))    //caid match
+			{
+
+				int32_t nprids = disablecrc_only_for->filts[i].nprids;
+				if(!nprids)  // No Provider ->Ok
+					{ return 1; }
+
+				for(k = 0; k < nprids; k++)
+				{
+					uint32_t prid =disablecrc_only_for->filts[i].prids[k];
+					if(prid == er->prid)    //Provider matches
+					{ return 1; }
+				}
+			}
+		}
+
+		return 0;
+}
+
 int32_t matching_reader(ECM_REQUEST *er, struct s_reader *rdr)
 {
 
