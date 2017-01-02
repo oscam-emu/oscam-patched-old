@@ -459,14 +459,6 @@ int32_t add_job(struct s_client *cl, enum actions action, void *ptr, int32_t len
 					  ll_count(cl->joblist), username(cl));
 		return 1;
 	}
-	else
-	{
-	 if(cl->kill)
-	 {
-	   free_job_data(data);
-	   return 1;
-	 }
-	}
 	
 	/* pcsc doesn't like this; segfaults on x86, x86_64 */
 	int8_t modify_stacksize = 0;

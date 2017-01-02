@@ -1080,7 +1080,6 @@ typedef struct ecm_request_t
 #endif
 	struct ecm_request_t    *parent;
 	struct ecm_request_t    *next;
-	int8_t safety;
 } ECM_REQUEST;
 
 
@@ -1334,7 +1333,6 @@ struct s_client
 
 	struct s_client *next;                          //make client a linked list
 	struct s_client *nexthashed;
-	int8_t 			safety;
 };
 
 typedef struct s_ecm_whitelist_data

@@ -32,97 +32,10 @@ extern int32_t exit_oscam;
 
 extern CS_MUTEX_LOCK ecm_pushed_deleted_lock;
 extern struct ecm_request_t	*ecm_pushed_deleted;
-extern pthread_mutex_t  cacheex_src_lock;
 
 static pthread_mutex_t cw_process_sleep_cond_mutex;
 static pthread_cond_t cw_process_sleep_cond;
 static int cw_process_wakeups;
-
-static void clean_queue(void)
-{
-			uint32_t count = 0;
-			struct ecm_request_t *ecm, *ecmt = NULL, *prv;
-			time_t ecm_maxcachetime;
-			struct timeb t_now;
-			int32_t i;
-
-			i = 0;
-			cs_ftime(&t_now);
-			ecm_maxcachetime = t_now.time - ((cfg.ctimeout+500)/1000+3);  //to be sure no more access er!
-			
-			cs_readlock(__func__, &ecmcache_lock);
-			for(ecm = ecmcwcache, prv = NULL; ecm; prv = ecm, ecm = ecm->next, count++, i++)
-			{
-				if(i == 2)
-				{
-				 i++;
-				 cs_readunlock(__func__, &ecmcache_lock);
-				}
-
-				if(i >= 3 && ecm->tps.time < ecm_maxcachetime)
-				{
-					ecmt = ecm;
-					if(prv)
-						{ prv->next = NULL; }
-					else
-						{ ecmcwcache = NULL; }
-					break;
-				}
-			}
-			
-			if(i < 3)
-			{
-			 cs_readunlock(__func__, &ecmcache_lock);
-			}
-
-			ecmcwcache_size = count;
-
-			while(ecmt)
-			{
-				ecm = ecmt->next;
-				free_ecm(ecmt);
-				ecmt = ecm;
-			}
-
-#ifdef CS_CACHEEX
-			cs_ftime(&t_now);
-			ecmt=NULL;
-			ecm_maxcachetime = t_now.time - ((cfg.ctimeout+500)/1000+3);
-			i = 0;
-			cs_readlock(__func__, &ecm_pushed_deleted_lock);
-			for(ecm = ecm_pushed_deleted, prv = NULL; ecm; prv = ecm, ecm = ecm->next, i++)
-			{
-				if(i == 2)
-				{
-				 i++;
-				 cs_readunlock(__func__, &ecm_pushed_deleted_lock);
-				}
-				if(i >= 3 && ecm->tps.time < ecm_maxcachetime)
-				{
-					ecmt = ecm;
-					if(prv)
-						{ prv->next = NULL; }
-					else
-						{ ecm_pushed_deleted = NULL; }
-					break;
-				}
-			}
-			if(i < 3)
-			{
-			 cs_readunlock(__func__, &ecm_pushed_deleted_lock);
-			}
-
-			while(ecmt)
-			{
-				ecm = ecmt->next;
-				free_push_in_ecm(ecmt);
-				ecmt = ecm;
-			}
-#endif
-pthread_exit(NULL);
-return;
-}
-
 
 void fallback_timeout(ECM_REQUEST *er)
 {
@@ -204,8 +117,9 @@ static void *cw_process(void)
 {
 	set_thread_name(__func__);
 	int64_t time_to_check_fbtimeout, time_to_check_ctimeout, next_check, ecmc_next, cache_next, n_request_next, msec_wait = 3000;
-	struct timeb t_now,tbc, ecmc_time, cache_time, n_request_time;
+	struct timeb t_now, tbc, ecmc_time, cache_time, n_request_time;
 	ECM_REQUEST *er = NULL;
+	time_t ecm_maxcachetime;
 
 #ifdef CS_CACHEEX
 	int64_t time_to_check_cacheex_wait_time;
@@ -247,18 +161,12 @@ static void *cw_process(void)
 		msec_wait = 0;
 
 		cs_ftime(&t_now);
-		int32_t i;
-		i = 0;
 		cs_readlock(__func__, &ecmcache_lock);
-		for(er = ecmcwcache; er; er = er->next, i++)
+		for(er = ecmcwcache; er; er = er->next)
 		{
- 		 if(i == 2)
-		  {
-		   i++;
-		   cs_readunlock(__func__, &ecmcache_lock);
-		  }
+
 			if(
-				(er->safety & 0x4 || er->from_cacheex || er->from_csp)                  //ignore ecms from cacheex/csp
+				(er->from_cacheex || er->from_csp)                  //ignore ecms from cacheex/csp
 				||
 				er->readers_timeout_check                           //ignore already checked
 				||
@@ -327,11 +235,7 @@ static void *cw_process(void)
 					{ next_check = time_to_check_ctimeout; }
 			}
 		}
-		 if(i < 3)
-		 {
-		   cs_readunlock(__func__, &ecmcache_lock);
-		 }
-		 
+		cs_readunlock(__func__, &ecmcache_lock);
 #ifdef CS_ANTICASC
 		if(cfg.ac_enabled && (ac_next = comp_timeb(&ac_time, &t_now)) <= 10)
 		{
@@ -342,8 +246,68 @@ static void *cw_process(void)
 #endif
 		if((ecmc_next = comp_timeb(&ecmc_time, &t_now)) <= 10)
 		{
-         	//// start_thread do not block proces
-		 	start_thread("clean_queue", (void *) &clean_queue, NULL, NULL, 1, 1); 
+			uint32_t count = 0;
+			struct ecm_request_t *ecm, *ecmt = NULL, *prv;
+
+			cs_readlock(__func__, &ecmcache_lock);
+			for(ecm = ecmcwcache, prv = NULL; ecm; prv = ecm, ecm = ecm->next, count++)
+			{
+				ecm_maxcachetime = t_now.time - ((cfg.ctimeout+500)/1000+3);  //to be sure no more access er!
+
+				if(ecm->tps.time < ecm_maxcachetime)
+				{
+					cs_readunlock(__func__, &ecmcache_lock);
+					cs_writelock(__func__, &ecmcache_lock);
+					ecmt = ecm;
+					if(prv)
+						{ prv->next = NULL; }
+					else
+						{ ecmcwcache = NULL; }
+					cs_writeunlock(__func__, &ecmcache_lock);
+					break;
+				}
+			}
+			if(!ecmt)
+				{ cs_readunlock(__func__, &ecmcache_lock); }
+			ecmcwcache_size = count;
+
+			while(ecmt)
+			{
+				ecm = ecmt->next;
+				free_ecm(ecmt);
+				ecmt = ecm;
+			}
+
+#ifdef CS_CACHEEX
+			ecmt=NULL;
+			cs_readlock(__func__, &ecm_pushed_deleted_lock);
+			for(ecm = ecm_pushed_deleted, prv = NULL; ecm; prv = ecm, ecm = ecm->next)
+			{
+				ecm_maxcachetime = t_now.time - ((cfg.ctimeout+500)/1000+3);
+				if(ecm->tps.time < ecm_maxcachetime)
+				{
+					cs_readunlock(__func__, &ecm_pushed_deleted_lock);
+					cs_writelock(__func__, &ecm_pushed_deleted_lock);
+					ecmt = ecm;
+					if(prv)
+						{ prv->next = NULL; }
+					else
+						{ ecm_pushed_deleted = NULL; }
+					cs_writeunlock(__func__, &ecm_pushed_deleted_lock);
+					break;
+				}
+			}
+			if(!ecmt)
+				{ cs_readunlock(__func__, &ecm_pushed_deleted_lock); }
+
+			while(ecmt)
+			{
+				ecm = ecmt->next;
+				free_push_in_ecm(ecmt);
+				ecmt = ecm;
+			}
+#endif
+
 			cs_ftime(&ecmc_time);
 			ecmc_next = add_ms_to_timeb_diff(&ecmc_time, 1000);
 		}
@@ -577,57 +541,17 @@ void cleanup_ecmtasks(struct s_client *cl)
 	if(cl && !cl->account->usr) { return; }  //not for anonymous users!
 
 	ECM_REQUEST *ecm;
-	
-	struct timeb t_now;
-	time_t ecm_maxcachetime;
-
-	cs_ftime(&t_now);
-	ecm_maxcachetime = t_now.time - ((cfg.ctimeout+500)/1000+2);  //to be sure no more access er!
 
 	//remove this clients ecm from queue. because of cache, just null the client:
-	int32_t i = 0;
 	cs_readlock(__func__, &ecmcache_lock);
-	for(ecm = ecmcwcache; ecm; ecm = ecm->next, i++)
+	for(ecm = ecmcwcache; ecm; ecm = ecm->next)
 	{
- 	  if(i == 2)
-	  {
-	   i++;
-	   cs_readunlock(__func__, &ecmcache_lock);
-	  }	
-		if(ecm->tps.time < ecm_maxcachetime) { break; } 
-		if(ecm->client == cl)
-		{
-			ecm->safety |= 0x4;
-		}
-	}
-	  if(i < 3)
-	  {
-	   i++;
-	   cs_readunlock(__func__, &ecmcache_lock);
-	  }
-	  
-	cs_sleepms(5);
-
-	i = 0;
-	cs_readlock(__func__, &ecmcache_lock);
-	for(ecm = ecmcwcache; ecm; ecm = ecm->next, i++)
-	{
- 	  if(i == 2)
-	  {
-	   i++;
-	   cs_readunlock(__func__, &ecmcache_lock);
-	  }	
-		if(ecm->tps.time < ecm_maxcachetime) { break; } 
 		if(ecm->client == cl)
 		{
 			ecm->client = NULL;
 		}
 	}
-	  if(i < 3)
-	  {
-	   i++;
-	   cs_readunlock(__func__, &ecmcache_lock);
-	  }
+	cs_readunlock(__func__, &ecmcache_lock);
 
 	//remove client from rdr ecm-queue:
 	cs_readlock(__func__, &readerlist_lock);
@@ -636,7 +560,7 @@ void cleanup_ecmtasks(struct s_client *cl)
 	{
 		if(check_client(rdr->client) && rdr->client->ecmtask)
 		{
-//			int i;
+			int i;
 			for(i = 0; i < cfg.max_pending; i++)
 			{
 				ecm = &rdr->client->ecmtask[i];
@@ -1966,16 +1890,14 @@ void write_ecm_answer_fromcache(struct s_write_from_cache *wfc)
 		er->cw_count = ecm->cw_count;
 
 #ifdef CS_CACHEEX
-	while (pthread_mutex_lock(&cacheex_src_lock) !=0) { cs_sleepus(20); }
-	if(ecm->cacheex_src && is_valid_client(ecm->cacheex_src) && !ecm->cacheex_src->kill){ //here we should be sure cex client has not been freed!
+		if(ecm->cacheex_src && is_valid_client(ecm->cacheex_src) && !ecm->cacheex_src->kill){ //here we should be sure cex client has not been freed!
 			er->cacheex_src = ecm->cacheex_src;
 			er->cwc_cycletime = ecm->cwc_cycletime;
 			er->cwc_next_cw_cycle = ecm->cwc_next_cw_cycle;
 		}else{
 			er->cacheex_src = NULL;
 	    }
-		pthread_mutex_unlock(&cacheex_src_lock);
-		
+
 		int8_t cacheex = check_client(er->client) && er->client->account ? er->client->account->cacheex.mode : 0;
 		if(cacheex == 1 && check_client(er->client))
 		{
@@ -2179,8 +2101,6 @@ void get_cw(struct s_client *client, ECM_REQUEST *er)
 		{
 			cs_add_violation(client, client->account->usr);
 			cs_disconnect_client(client);
-			free_ecm(er);
-			return;
 		}
 		er->rc = E_DISABLED;
 	}
@@ -2220,8 +2140,6 @@ void get_cw(struct s_client *client, ECM_REQUEST *er)
 			{
 				cs_add_violation(client, client->account->usr);
 				cs_disconnect_client(client);
-				free_ecm(er);
-				return;
 			}
 			if(client->c35_sleepsend != 0)
 			{
