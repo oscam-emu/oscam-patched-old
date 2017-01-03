@@ -1578,18 +1578,14 @@ int32_t write_ecm_answer(struct s_reader *reader, ECM_REQUEST *er, int8_t rc, ui
 
 	if(reader && cw && rc < E_NOTFOUND)
 	{
+		if(cfg.disablecrccws == 0 && reader->disablecrccws == 0)
+		{
 			uint8_t selectedForIgnChecksum = chk_if_ignore_checksum(er, cfg.disablecrccws, &cfg.disablecrccws_only_for)
 					+ chk_if_ignore_checksum(er, reader->disablecrccws, &reader->disablecrccws_only_for);
 
 			for(i = 0; i < 16; i += 4)
 			{
 				c = ((cw[i] + cw[i + 1] + cw[i + 2]) & 0xff);
-
-				if(cfg.disablecrccws || reader->disablecrccws)
-				{
-					cs_log_dbg(D_TRACE, "notice: CW checksum check disabled");
-					break;
-				}
 
 				if((i!=12) && selectedForIgnChecksum && (cw[i + 3] != c)){
 					cs_log_dbg(D_TRACE, "notice: CW checksum check disabled for %04X:%06X", er->caid, er->prid);
@@ -1633,6 +1629,11 @@ int32_t write_ecm_answer(struct s_reader *reader, ECM_REQUEST *er, int8_t rc, ui
 					}
 				}
 			}
+		}
+		else
+		{
+			cs_log_dbg(D_TRACE, "notice: CW checksum check disabled");
+		}
 	}
 
 #ifdef CW_CYCLE_CHECK
