@@ -683,11 +683,14 @@ int32_t gbox_cmd_hello_rcvd(struct s_client *cli, uchar *data, int32_t n)
 					gbox_peer_online(peer, GBOX_PEER_ONLINE);
 				}
 				else
+				{
 					if (cfg.log_hello)
 						{ cs_log("-> HelloS from %s (%s:%d) V2.%02X with %d cards", cli->reader->label, cs_inet_ntoa(cli->ip), cli->reader->r_port, peer->gbox.minor_version, peer->filtered_cards); }
 					else
 						{	cs_log_dbg(D_READER,"-> HelloS in %d packets from %s (%s:%d) V2.%02X with %d cards filtered to %d cards", (data[0x0B] & 0x0f)+1, cli->reader->label, cs_inet_ntoa(cli->ip), cli->reader->r_port, peer->gbox.minor_version, peer->total_cards, peer->filtered_cards); }
+						
 					gbox_send_hello(cli, GBOX_STAT_HELLOR);
+				}
 			}
 			else
 			{
