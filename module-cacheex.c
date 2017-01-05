@@ -665,7 +665,7 @@ static int32_t cacheex_add_to_cache_int(struct s_client *cl, ECM_REQUEST *er, in
 			}
 
 	uint8_t i, c;
-	if(cfg.disablecrccws == 0 && cl->account->disablecrccacheex == 0 && cl->reader->disablecrccws == 0)
+	if(cfg.disablecrccws == 0 || (cl->typ == 'c' && cl->account->disablecrccacheex == 0) || ( cl->typ == 'p' && cl->reader->disablecrccws == 0))
 	{
 		for(i = 0; i < 16; i += 4)
 		{
