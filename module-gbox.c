@@ -1707,12 +1707,12 @@ static int32_t gbox_client_init(struct s_client *cli)
 	if(!cli->reader->gbox_maxdist)
 		{ cli->reader->gbox_maxdist = DEFAULT_GBOX_MAX_DIST; }
 
-	//value > DEFAULT_GBOX_RESHARE not allowed in gbox network
-	if(!cli->reader->gbox_reshare || cli->reader->gbox_reshare > DEFAULT_GBOX_RESHARE)
-		{ cli->reader->gbox_reshare = DEFAULT_GBOX_RESHARE; }
+	//value > GBOX_MAXHOPS not allowed in gbox network
+	if(!cli->reader->gbox_reshare || cli->reader->gbox_reshare > GBOX_MAXHOPS)
+		{ cli->reader->gbox_reshare = GBOX_MAXHOPS; }
 
-	if(!cli->reader->gbox_cccam_reshare || cli->reader->gbox_cccam_reshare > DEFAULT_GBOX_RESHARE)
-		{ cli->reader->gbox_cccam_reshare = DEFAULT_GBOX_RESHARE; }
+	if(!cli->reader->gbox_cccam_reshare || cli->reader->gbox_cccam_reshare > GBOX_MAXHOPS)
+		{ cli->reader->gbox_cccam_reshare = GBOX_MAXHOPS; }
 
 	start_sms_sender();
 	
