@@ -289,7 +289,7 @@ char *get_provider(uint32_t provid, uint16_t caid, char *buf, uint32_t buflen)
 				if(this->provid[i] == provid)
 				{
 					snprintf(buf, buflen, "%s%s%s%s%s", this->prov,
-							 this->sat && this->sat[0] ? " / " : "", this->sat,
+							 *this->sat && this->sat[0] ? " / " : "", this->sat,
 							 this->lang[0] ? " / " : "", this->lang);
 					found = 1;
 				}
