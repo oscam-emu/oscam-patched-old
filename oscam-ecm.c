@@ -538,7 +538,7 @@ ECM_REQUEST *get_ecmtask(void)
 
 void cleanup_ecmtasks(struct s_client *cl)
 {
-	if(cl && !cl->account->usr) { return; }  //not for anonymous users!
+	if(cl && !*cl->account->usr) { return; }  //not for anonymous users!
 
 	ECM_REQUEST *ecm;
 
@@ -1688,7 +1688,7 @@ int32_t write_ecm_answer(struct s_reader *reader, ECM_REQUEST *er, int8_t rc, ui
 	if(!ea->is_pending)   //not for pending ea - only once for ea
 	{
 		//cache update
-		if(ea && ea->rc < E_NOTFOUND && ea->cw)
+		if(ea && (ea->rc < E_NOTFOUND) && *ea->cw)
 			add_cache_from_reader(er, reader, er->csp_hash, er->ecmd5, ea->cw, er->caid, er->prid, er->srvid );
 
 		//readers stats for LB
