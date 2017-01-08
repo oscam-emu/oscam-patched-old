@@ -1220,12 +1220,10 @@ static int8_t gbox_check_header_recvd(struct s_client *cli, struct s_client *pro
 			}
 		}
 	}
-	/*
 	else if (gbox_decode_cmd(data) == MSG_GSMS_1 || gbox_decode_cmd(data) == MSG_GSMS_ACK_1 ) 
 	{
 		// MSG_GSMS_1 dont have passw and would fail. Just let them pass through for processing later
 	}
-	*/
 	else // error my passw
 	{
 		cs_log("-> ATTACK ALERT from IP %s", cs_inet_ntoa(cli->ip));
