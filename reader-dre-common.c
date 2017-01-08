@@ -202,7 +202,7 @@ static int offtin(uint8_t *buf)
 	y = y * 256; y += buf[2];
 	y = y * 256; y += buf[1];
 	y = y * 256; y += buf[0];
-	if(buf[7] & 0x80) y =- y;
+	if(buf[7] & 0x80) y -= y;
 	return y;
 }
 
