@@ -182,7 +182,7 @@ int32_t write_card(struct cc_data *cc, uint8_t *buf, struct cc_card *card, int32
 			int32_t n;
 			for(n = 0, ptr = cfg.sidtab; ptr; ptr = ptr->next, n++)
 			{
-				if(cl->sidtabs.no & ((SIDTABBITS)1 << n) || card->sidtabno & ((SIDTABBITS)1 << n))
+				if((cl->sidtabs.no & ((SIDTABBITS)1 << n)) || (card->sidtabno & ((SIDTABBITS)1 << n)))
 				{
 					int32_t m;
 					int32_t ok_caid = 0;
