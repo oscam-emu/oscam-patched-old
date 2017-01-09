@@ -469,6 +469,47 @@ void chk_port_tab(char *portasc, PTAB *ptab)
 	NULLFREE(newptab);
 }
 
+
+void chk_port_camd35_tab(char *portasc, PTAB *ptab)
+{
+	int32_t i, j, nfilts;
+	PTAB *newptab;
+	char *ptr1, *ptr2, *ptr4, *provids, *saveptr1, *saveptr2 = NULL;
+	if(!cs_malloc(&newptab, sizeof(PTAB)))
+		{ return; }
+
+	for(nfilts = i = 0, ptr1 = strtok_r(portasc, ";", &saveptr1); (i < CS_MAXPORTS) && (ptr1); ptr1 = strtok_r(NULL, ";", &saveptr1), i++)
+	{
+		if(!newptab->ports[newptab->nports].ncd && !cs_malloc(&newptab->ports[i].ncd, sizeof(struct ncd_port)))
+			{ break; }
+		newptab->ports[newptab->nports].s_port = atoi(ptr1);
+		if((ptr2 = strchr(trim(ptr1), '@')))
+		{
+			*ptr2++ = '\0'; 	//clean up @ symbol
+			newptab->ports[newptab->nports].s_port = atoi(ptr1);
+			if((provids = strchr(trim(ptr2), ':')))
+				{
+					*provids++ = '\0';  //clean up : symbol
+					for(j = 0, ptr4 = strtok_r(provids, ",", &saveptr2); (i < CS_MAXPORTS) && (ptr4); ptr4 = strtok_r(NULL, ",", &saveptr2), j++)
+					{
+						newptab->ports[newptab->nports].ncd->ncd_ftab.filts[0].prids[j] = a2i(ptr4, 6);	
+					}
+					newptab->ports[newptab->nports].ncd->ncd_ftab.filts[0].nprids=j;	
+				}
+			newptab->ports[newptab->nports].ncd->ncd_ftab.filts[0].caid = (uint16_t)a2i(ptr2, sizeof(ptr2));
+			newptab->nports++;
+		}
+		else
+		{
+			newptab->ports[newptab->nports].s_port = atoi(ptr1);
+			if (newptab->ports[newptab->nports].s_port) { newptab->nports++; };
+		}
+		nfilts++;
+	}
+	memcpy(ptab, newptab, sizeof(PTAB));
+	NULLFREE(newptab);
+}
+
 void chk_ecm_whitelist(char *value, ECM_WHITELIST *ecm_whitelist)
 {
 	ecm_whitelist_clear(ecm_whitelist);

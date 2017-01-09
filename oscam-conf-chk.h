@@ -12,6 +12,7 @@ void chk_services(char *labels, SIDTABS *sidtabs);
 void chk_ftab(char *value, FTAB *ftab);
 void chk_cltab(char *classasc, CLASSTAB *clstab);
 void chk_port_tab(char *portasc, PTAB *ptab);
+void chk_port_camd35_tab(char *portasc, PTAB *ptab);
 void chk_ecm_whitelist(char *value, ECM_WHITELIST *ecm_whitelist);
 void chk_ecm_hdr_whitelist(char *value, ECM_HDR_WHITELIST *ecm_hdr_whitelist);
 
