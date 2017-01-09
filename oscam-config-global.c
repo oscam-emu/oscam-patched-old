@@ -677,10 +677,8 @@ static const struct config_list camd35_opts[] =
 static const struct config_list camd35_opts[] = { DEF_LAST_OPT };
 #endif
 
-#if defined(MODULE_CAMD35_TCP) || defined(MODULE_NEWCAMD)
-#define PORTTAB_CS378X  1
-#define PORTTAB_NEWCAMD 2
-static void porttab_fn(const char *token, char *value, void *setting, long type, FILE *f)
+#ifdef MODULE_NEWCAMD
+static void porttab_fn(const char *token, char *value, void *setting, FILE *f)
 {
 	PTAB *ptab = setting;
 	if(value)
@@ -695,11 +693,35 @@ static void porttab_fn(const char *token, char *value, void *setting, long type,
 		}
 		return;
 	}
-	value = (type == PORTTAB_CS378X) ? mk_t_camd35tcp_port() : mk_t_newcamd_port();
+	value = mk_t_newcamd_port();
 	fprintf_conf(f, token, "%s\n", value);
 	free_mk_t(value);
 }
+#endif
 
+#ifdef MODULE_CAMD35_TCP
+static void porttab_camd35_fn(const char *token, char *value, void *setting, FILE *f)
+{
+	PTAB *ptab = setting;
+	if(value)
+	{
+		if(strlen(value) == 0)
+		{
+			clear_ptab(ptab);
+		}
+		else
+		{
+			chk_port_camd35_tab(value, ptab);
+		}
+		return;
+	}
+	value = mk_t_camd35tcp_port();
+	fprintf_conf(f, token, "%s\n", value);
+	free_mk_t(value);
+}
+#endif
+
+#if defined(MODULE_NEWCAMD) || defined(MODULE_CAMD35_TCP)
 static void porttab_free_fn(void *setting)
 {
 	clear_ptab(setting);
@@ -715,9 +737,9 @@ static bool cs378x_should_save_fn(void *UNUSED(var))
 static const struct config_list cs378x_opts[] =
 {
 	DEF_OPT_SAVE_FUNC(cs378x_should_save_fn),
-	DEF_OPT_FUNC_X("port"		, OFS(c35_tcp_ptab),		porttab_fn, PORTTAB_CS378X, .free_value = porttab_free_fn),
-	DEF_OPT_FUNC("serverip"		, OFS(c35_tcp_srvip),		serverip_fn),
-	DEF_OPT_INT8("suppresscmd08"	, OFS(c35_tcp_suppresscmd08),	0),
+	DEF_OPT_FUNC("port"				, OFS(c35_tcp_ptab)			, porttab_camd35_fn	, .free_value = porttab_free_fn),
+	DEF_OPT_FUNC("serverip"			, OFS(c35_tcp_srvip)		, serverip_fn),
+	DEF_OPT_INT8("suppresscmd08"	, OFS(c35_tcp_suppresscmd08), 0),
 	DEF_LAST_OPT
 };
 #else
@@ -733,12 +755,12 @@ static bool newcamd_should_save_fn(void *UNUSED(var))
 static const struct config_list newcamd_opts[] =
 {
 	DEF_OPT_SAVE_FUNC(newcamd_should_save_fn),
-	DEF_OPT_FUNC_X("port"		, OFS(ncd_ptab),	porttab_fn, PORTTAB_NEWCAMD, .free_value = porttab_free_fn),
-	DEF_OPT_FUNC("serverip"		, OFS(ncd_srvip),	serverip_fn),
-	DEF_OPT_FUNC("allowed"		, OFS(ncd_allowed),	iprange_fn, .free_value = iprange_free_fn),
-	DEF_OPT_HEX("key"		, OFS(ncd_key),		SIZEOF(ncd_key)),
-	DEF_OPT_INT8("keepalive"	, OFS(ncd_keepalive),	DEFAULT_NCD_KEEPALIVE),
-	DEF_OPT_INT8("mgclient"		, OFS(ncd_mgclient),	0),
+	DEF_OPT_FUNC("port"			, OFS(ncd_ptab)		, porttab_fn, .free_value = porttab_free_fn),
+	DEF_OPT_FUNC("serverip"		, OFS(ncd_srvip)	, serverip_fn),
+	DEF_OPT_FUNC("allowed"		, OFS(ncd_allowed)	, iprange_fn, .free_value = iprange_free_fn),
+	DEF_OPT_HEX("key"			, OFS(ncd_key)		, SIZEOF(ncd_key)),
+	DEF_OPT_INT8("keepalive"	, OFS(ncd_keepalive), DEFAULT_NCD_KEEPALIVE),
+	DEF_OPT_INT8("mgclient"		, OFS(ncd_mgclient)	, 0),
 	DEF_LAST_OPT
 };
 #else

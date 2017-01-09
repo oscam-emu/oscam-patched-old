@@ -6853,7 +6853,9 @@ static char *send_oscam_EMM(struct templatevars * vars, struct uriparams * param
 static uint64_t get_cacheex_node(struct s_client * cl)
 {
 	uint64_t node = 0x00;
+#if defined(MODULE_CCCAM) || defined(MODULE_CAMD35) || defined(MODULE_CAMD35_TCP)
 	struct s_module *module = (cl->reader ? &cl->reader->ph : get_module(cl));
+#endif
 #ifdef MODULE_CCCAM
 	if(module->num == R_CCCAM && cl->cc)
 	{

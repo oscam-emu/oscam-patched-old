@@ -139,9 +139,9 @@ char *mk_t_camd35tcp_port(void)
 	/* Precheck to determine how long the resulting string will maximally be (might be a little bit smaller but that shouldn't hurt) */
 	for(i = 0; i < cfg.c35_tcp_ptab.nports; ++i)
 	{
-		/* Port is maximally 5 chars long, plus the @caid, plus the ";" between ports */
+		/* Port is maximally 5 chars long, plus the @caid (5), plus the ";" between ports */
 		needed += 11;
-		if(cfg.c35_tcp_ptab.ports[i].ncd && cfg.c35_tcp_ptab.ports[i].ncd->ncd_ftab.filts[0].nprids > 1)
+		if(cfg.c35_tcp_ptab.ports[i].ncd && cfg.c35_tcp_ptab.ports[i].ncd->ncd_ftab.filts[0].nprids > 0)
 		{
 			needed += cfg.c35_tcp_ptab.ports[i].ncd->ncd_ftab.filts[0].nprids * 7;
 		}
@@ -159,12 +159,12 @@ char *mk_t_camd35tcp_port(void)
 							cfg.c35_tcp_ptab.ports[i].s_port,
 							cfg.c35_tcp_ptab.ports[i].ncd->ncd_ftab.filts[0].caid);
 
-			if(cfg.c35_tcp_ptab.ports[i].ncd->ncd_ftab.filts[0].nprids > 1)
+			if(cfg.c35_tcp_ptab.ports[i].ncd->ncd_ftab.filts[0].nprids > 0)
 			{
 				dot2 = ":";
 				for(j = 0; j < cfg.c35_tcp_ptab.ports[i].ncd->ncd_ftab.filts[0].nprids; ++j)
 				{
-					pos += snprintf(value + pos, needed - (value - saveptr), "%s%X", dot2, cfg.c35_tcp_ptab.ports[i].ncd->ncd_ftab.filts[0].prids[j]);
+					pos += snprintf(value + pos, needed - (value - saveptr), "%s%06X", dot2, cfg.c35_tcp_ptab.ports[i].ncd->ncd_ftab.filts[0].prids[j]);
 					dot2 = ",";
 				}
 			}
@@ -172,7 +172,8 @@ char *mk_t_camd35tcp_port(void)
 		}
 		else
 		{
-			pos += snprintf(value + pos, needed - (value - saveptr), "%d", cfg.c35_tcp_ptab.ports[i].s_port);
+			pos += snprintf(value + pos, needed - (value - saveptr), "%s%d", dot1, cfg.c35_tcp_ptab.ports[i].s_port);
+			dot1 = ";";
 		}
 	}
 	return value;
