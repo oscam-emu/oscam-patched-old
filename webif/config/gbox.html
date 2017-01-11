@@ -23,4 +23,33 @@
 			<TR><TD><A data-p="ignore_peer">Ignored peer(s):</A></TD><TD>Maximum 16 * 2 bytes (4 hexa digits), comma-separated<BR><textarea name="ignore_peer" rows="2" class="bt" maxlength="81">##GBOXIGNOREDPEER##</textarea><BR></TD></TR>
 			<TR><TD><A data-p="block_ecm">Block ECM(s) peer(s):</A></TD><TD>Maximum 16 * 2 bytes (4 hexa digits), comma-separated<BR><textarea name="block_ecm" rows="2" class="bt" maxlength="81">##GBOXBLOCKECM##</textarea><BR></TD></TR>
 			<TR><TD><A data-p="proxy_card">Proxy cards:</A></TD><TD>Maximum 32 * 4 bytes (8 hexa digits), comma-separated<BR><textarea name="proxy_card" rows="6" class="bt" maxlength="288">##GBOXPROXYCARD##</textarea><BR></TD></TR>
+		<TR><TH COLSPAN="2">GBox Short Message Service</TH></TR>
+		<TR><TD><A data-p="gbox_save_gsms">Save this GSMS in conf:</A></TD><TD><input name="gbox_save_gsms" value="0" type="hidden"><input name="gbox_save_gsms" value="1" type="checkbox" ##GBOXSAVEGSMS##><label>You need to press save button to really save it!</label></TD></TR>
+		<TR><TD><A data-p="gbox_msg_type">Message type:</TD>
+			<TD><select name="gbox_msg_type">
+				<option value="0" ##GBOXMSGTYPENORMAL##>0 - normal text message</option>
+				<option value="1" ##GBOXMSGTYPEOSD##>1 - normal txt message + OSD message</option>
+				</select>
+			</TD>
+		</TR>
+		<TR><TD><A data-p="gbox_dest_peers">Destination peer(s):</A></TD>
+			<TD>Maximum 16 * 2 bytes (4 hexa digits), comma-separated. For broadcast to all use FFFF.<BR>
+			<textarea name="gbox_dest_peers" rows="2" class="bt" maxlength="79">##GBOXMSGDESTPEERS##</textarea>
+			</TD>
+		</TR>
+		<TR><TD><A data-p="gbox_msg_txt">Text to send:</A></TD>
+			<TD>From 6 to 127 alphanumerical characters.<BR>
+			<textarea name="gbox_msg_txt" rows="3" class="bt" maxlength="127">##GBOXMSGTXT##</textarea>
+			</TD>
+		</TR>
+		<TR><TD>Action for GSMS</TD>
+			<TD><TABLE align="center" width="100%"><TR>
+				<TD class="centered" TITLE="Send SMS to defined peers"><input name="action" type="submit" value="Send GSMS" ##BTNDISABLED##></TD>
+				<TD class="centered" TITLE="Clear the form"><input type="button" name="resetallgsms" value="Reset GSMS" onclick="window.location.href = 'config.html?part=gbox&action=resetallgsms';" /></TD>
+				<TD class="centered" TITLE="Define online GBox peers as destination"><input name="action" type="submit" value="Online peers" ##BTNDISABLED##></TD>
+			</TR></TABLE></TD>
+		</TR>
+		<TR CLASS="configfirstrow"><TD></TD><TD></TD></TR>
+		</TR>
 
+		

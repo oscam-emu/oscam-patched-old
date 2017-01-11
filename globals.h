@@ -617,10 +617,6 @@ enum {E2_GLOBAL = 0, E2_GROUP, E2_CAID, E2_IDENT, E2_CLASS, E2_CHID, E2_QUEUE, E
 #define DEFAULT_CC_RECONNECT 12000
 #define DEFAULT_CC_RECV_TIMEOUT 2000
 
-#define GBOX_MAX_PROXY_CARDS 32
-#define GBOX_MAX_IGNORED_PEERS  16
-#define GBOX_MAX_BLOCKED_ECM 16
-
 #define DEFAULT_AC_USERS   -1 // Use global cfg
 #define DEFAULT_AC_PENALTY -1 // Use global cfg
 
@@ -2067,8 +2063,13 @@ struct s_config
 	uint32_t        cc_recv_timeout;                // The poll() timeout parameter in ms. Default: DEFAULT_CC_RECV_TIMEOUT (2000 ms).
 #endif
 #ifdef MODULE_GBOX
-#define GBOX_MY_VERS_DEF 0x25
-#define GBOX_MY_CPU_API_DEF 0x40
+    #define         GBOX_MY_VERS_DEF       0x25
+    #define         GBOX_MY_CPU_API_DEF    0x40
+    #define        	GBOX_MAX_PROXY_CARDS   32
+    #define        	GBOX_MAX_IGNORED_PEERS 16
+    #define        	GBOX_MAX_BLOCKED_ECM   16
+    #define        	GBOX_MAX_DEST_PEERS    16
+    #define        	GBOX_MAX_MSG_TXT       127
 
 	uint16_t        gbox_port[CS_MAXPORTS];
 	char            *gbox_hostname;
@@ -2086,6 +2087,11 @@ struct s_config
 	uint8_t         gbox_ignored_peer_num;
 	uint16_t        gbox_block_ecm[GBOX_MAX_BLOCKED_ECM];
 	uint8_t         gbox_block_ecm_num;
+	uint8_t			gbox_save_gsms;
+	uint8_t			gbox_msg_type;
+	uint16_t		gbox_dest_peers[GBOX_MAX_DEST_PEERS];
+	uint8_t			gbox_dest_peers_num;
+	char			gbox_msg_txt[GBOX_MAX_MSG_TXT+1];
 #endif
 #ifdef MODULE_SERIAL
 	char            *ser_device;

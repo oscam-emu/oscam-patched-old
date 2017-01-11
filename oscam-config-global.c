@@ -1063,6 +1063,47 @@ static void gbox_my_cpu_api_fn(const char *token, char *value, void *UNUSED(sett
 		{ fprintf_conf(f, token, "%02X\n", GBOX_MY_CPU_API_DEF); }
 }
 
+static void gbox_dest_peers_fn(const char *token, char *value, void *UNUSED(setting), FILE *f)
+{
+	if (value)
+	{
+		char *ptr1, *saveptr1 = NULL;
+		const char *s;
+		memset(cfg.gbox_dest_peers, 0, sizeof(cfg.gbox_dest_peers));
+		int n = 0;
+		for (ptr1 = strtok_r(value, ",", &saveptr1); (ptr1); ptr1 = strtok_r(NULL, ",", &saveptr1))
+		{
+			s=trim(ptr1);
+			if ((n < GBOX_MAX_DEST_PEERS) && (s[strspn(s, "0123456789abcdefABCDEF")] == 0))
+			{ cfg.gbox_dest_peers[n++] = a2i(trim(ptr1), strlen(trim(ptr1))); }
+		}
+		cfg.gbox_dest_peers_num = n;
+		return;
+	}
+	if ((cfg.gbox_dest_peers_num > 0) && cfg.gbox_save_gsms)
+	{
+		value = mk_t_gbox_dest_peers();
+		fprintf_conf(f, token, "%s\n", value);
+		free_mk_t(value);
+	}
+}
+
+static void gbox_msg_txt_fn(const char *token, char *value, void *UNUSED(setting), FILE *f)
+{
+	int len = 0;
+	if (value)
+	{
+		len = strlen(value);
+		if (len > GBOX_MAX_MSG_TXT) { len = GBOX_MAX_MSG_TXT; }
+		cs_strncpy(cfg.gbox_msg_txt,value, len+1);
+		return;
+	}
+	if ((cfg.gbox_msg_txt[0]!='\0') && cfg.gbox_save_gsms)
+	{
+		fprintf_conf(f, token, "%s\n", cfg.gbox_msg_txt);
+	}
+}
+
 static bool gbox_should_save_fn(void *UNUSED(var))
 {
 	return cfg.gbox_port[0];
@@ -1084,6 +1125,10 @@ static const struct config_list gbox_opts[] =
 	DEF_OPT_FUNC("ignore_peer"	, OFS(gbox_ignored_peer), gbox_ignored_peer_fn ),
 	DEF_OPT_FUNC("block_ecm"	, OFS(gbox_block_ecm)	, gbox_block_ecm_fn ),
 	DEF_OPT_FUNC("proxy_card"	, OFS(gbox_proxy_card)	, gbox_proxy_card_fn ),
+	DEF_OPT_UINT8("gbox_save_gsms"	, OFS(gbox_save_gsms)		, 0),
+ 	DEF_OPT_UINT8("gbox_msg_type"	, OFS(gbox_msg_type)		, 0),
+ 	DEF_OPT_FUNC("gbox_dest_peers"	, OFS(gbox_dest_peers)		, gbox_dest_peers_fn ),
+ 	DEF_OPT_FUNC("gbox_msg_txt"		, OFS(gbox_msg_txt)			, gbox_msg_txt_fn ),
 	DEF_LAST_OPT
 };
 #else

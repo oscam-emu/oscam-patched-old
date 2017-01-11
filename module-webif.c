@@ -30,6 +30,9 @@
 #include "oscam-string.h"
 #include "oscam-time.h"
 #include "oscam-work.h"
+#ifdef MODULE_GBOX
+#include "module-gbox-sms.h"
+#endif
 
 extern const struct s_cardreader *cardreaders[];
 extern char cs_confdir[];
@@ -95,9 +98,10 @@ static bool use_srvid2 = false;
 #define MNU_CFG_SCAM		11
 #define MNU_CFG_SERIAL		12
 #define MNU_CFG_DVBAPI		13
-#define MNU_CFG_LCD		14
+#define MNU_CFG_LCD			14
 #define MNU_CFG_MONITOR		15
 #define MNU_CFG_WEBIF		16
+#define MNU_GBOX_SMS		17
 
 /* constants for files.html submenuactivating */
 #define MNU_CFG_FVERSION	0
@@ -1022,8 +1026,109 @@ static char *send_oscam_config_newcamd(struct templatevars *vars, struct uripara
 #ifdef MODULE_GBOX
 static char *send_oscam_config_gbox(struct templatevars *vars, struct uriparams *params)
 {
+	uint8_t 	i=0;
+	char		local_gbox_save_gsms[2],local_gbox_msg_type[3], local_gbox_dest_peers[GBOX_MAX_DEST_PEERS*5], tmp_gbox_dest_peers[GBOX_MAX_DEST_PEERS*5] ;
+	int			n=0, len_gbox_save_gsms=0, len_gbox_msg_type=0, len_gbox_dest_peers=0, len_gbox_msg_txt=0;
+	char		*ptr1, *saveptr1, *isbroadcast = NULL;
+	const char	*s;
+	uint16_t	gbox_dest_peers_tmp;
+	
 	setActiveSubMenu(vars, MNU_CFG_GBOX);
 	webif_save_config("gbox", vars, params);
+	/*
+	 * Action when GetOnlinePeers is pressed
+	 */
+	if(streq(getParam(params, "action"), "Online peers"))
+	{
+		gbox_get_online_peers();
+		// init var
+		len_gbox_save_gsms=strlen(getParam(params, "gbox_msg_type"));
+		len_gbox_msg_type=strlen(getParam(params, "gbox_msg_type"));
+		len_gbox_msg_txt=strlen(getParam(params, "gbox_msg_txt"));
+		if(len_gbox_msg_txt>GBOX_MAX_MSG_TXT) { len_gbox_msg_txt=GBOX_MAX_MSG_TXT; }
+		// retrieve value from Webif
+		cs_strncpy(local_gbox_save_gsms, getParam(params, "gbox_save_gsms"), len_gbox_save_gsms+1);
+		cfg.gbox_save_gsms=atoi(local_gbox_save_gsms);
+		cs_strncpy(local_gbox_msg_type, getParam(params, "gbox_msg_type"), len_gbox_msg_type+1);
+		cfg.gbox_msg_type=atoi(local_gbox_msg_type);
+		cs_strncpy(cfg.gbox_msg_txt,getParam(params, "gbox_msg_txt"), len_gbox_msg_txt+1);
+	}
+	/*
+	 *  Action when ResetGSMS button is pressed
+	 */	
+	if(streq(getParam(params, "action"), "resetallgsms"))
+	{
+		cfg.gbox_save_gsms = 0;
+		cfg.gbox_msg_type = 0;
+		for(i = 0; i < GBOX_MAX_DEST_PEERS; i++)
+		{
+			cfg.gbox_dest_peers[i]='\0';
+		}
+		cfg.gbox_dest_peers_num=0;
+		for(i = 0; i < GBOX_MAX_MSG_TXT; i++)
+		{
+			cfg.gbox_msg_txt[i]='\0';
+		}	
+		tpl_addMsg(vars, "GBOX: Reset GSMS datas done!");
+	}
+	/*
+	 * Action when Send GSMS is pressed
+	 */
+	if(streq(getParam(params, "action"), "Send GSMS"))
+	{		
+		// init var
+		len_gbox_msg_type=strlen(getParam(params, "gbox_msg_type"));
+		len_gbox_dest_peers=strlen(trim(getParam(params, "gbox_dest_peers")));
+		len_gbox_msg_txt=strlen(getParam(params, "gbox_msg_txt"));
+		if(len_gbox_msg_txt>GBOX_MAX_MSG_TXT) { len_gbox_msg_txt=GBOX_MAX_MSG_TXT; }
+		// retrieve value from Webif
+		cs_strncpy(local_gbox_msg_type, getParam(params, "gbox_msg_type"), len_gbox_msg_type+1);
+		cfg.gbox_msg_type=atoi(local_gbox_msg_type);
+		cs_strncpy(local_gbox_dest_peers, strtoupper(trim(getParam(params, "gbox_dest_peers"))), len_gbox_dest_peers+1);
+		cs_strncpy(tmp_gbox_dest_peers, strtoupper(trim(getParam(params, "gbox_dest_peers"))), len_gbox_dest_peers+1);
+		cs_strncpy(cfg.gbox_msg_txt,getParam(params, "gbox_msg_txt"), len_gbox_msg_txt+1);
+		n=0;
+		for (ptr1 = strtok_r(tmp_gbox_dest_peers, ",", &saveptr1); (ptr1); ptr1 = strtok_r(NULL, ",", &saveptr1))
+		{
+			s=trim(ptr1);
+			if ((n < GBOX_MAX_DEST_PEERS) && (s[strspn(s, "0123456789abcdefABCDEF")] == 0))
+			{ cfg.gbox_dest_peers[n++] = a2i(trim(ptr1), strlen(trim(ptr1))); }
+		}
+		cfg.gbox_dest_peers_num = n;
+		/*
+			Start sending GBox SMS
+		*/		
+		if((strlen(cfg.gbox_msg_txt) > 5))
+		{
+			isbroadcast=strstr(local_gbox_dest_peers, "FFFF");
+			if(isbroadcast == NULL)
+			{
+				n =0;	
+				for (i = 0, ptr1 = strtok_r(local_gbox_dest_peers, ",", &saveptr1); (i < 4) && (ptr1); ptr1 = strtok_r(NULL, ",", &saveptr1))
+				{
+					s=ptr1;
+					if ((n < GBOX_MAX_DEST_PEERS) && (s[strspn(s, "0123456789abcdefABCDEF")] == 0))
+					{ 
+						gbox_dest_peers_tmp = a2i(ptr1, 4);
+						if(gbox_direct_send_gsms(gbox_dest_peers_tmp, cfg.gbox_msg_type, cfg.gbox_msg_txt)) { cs_log("GBOX  message sent to[%04X] type[%d] text[%s] ", gbox_dest_peers_tmp, cfg.gbox_msg_type, cfg.gbox_msg_txt);}
+						n++;
+					}
+				}
+				tpl_addMsg(vars, "GBOX Send SMS: individual messages started.");
+			}
+			else
+			{
+				if(gbox_direct_send_gsms(0xFFFF, cfg.gbox_msg_type, cfg.gbox_msg_txt)) { cs_log("GBOX broadcast message sent type[%d] text[%s] ", cfg.gbox_msg_type, cfg.gbox_msg_txt);}
+				tpl_addMsg(vars, "GBOX Send SMS: broadcast started.");
+			}
+		}
+		else
+		{
+			cs_log("GBox SMS: destination peers or message text not specified or too short");
+			tpl_addMsg(vars, "GBOX: Send SMS failed - error in input fields: dest peers or text message.");
+		}
+	}
+		
 	tpl_addVar(vars, TPLADD, "HOSTNAME", xml_encode(vars, cfg.gbox_hostname));
 	char *value0 = mk_t_gbox_port();
 	tpl_addVar(vars, TPLAPPEND, "PORT", value0);
@@ -1045,6 +1150,23 @@ static char *send_oscam_config_gbox(struct templatevars *vars, struct uriparams 
 	char *value3 = mk_t_gbox_block_ecm();	
 	tpl_addVar(vars, TPLAPPEND, "GBOXBLOCKECM", value3);
 	free_mk_t(value3);
+/* 
+ *	GBOX SMS
+*/
+	tpl_addVar(vars, TPLADD, "GBOXSAVEGSMS", (cfg.gbox_save_gsms == 1) ? "checked" : "");
+	if(cfg.gbox_msg_type == 0)
+	{
+		tpl_addVar(vars, TPLADD, "GBOXMSGTYPENORMAL", "selected");
+	}
+	else if(cfg.gbox_msg_type == 1)
+	{
+		tpl_addVar(vars, TPLADD, "GBOXMSGTYPEOSD", "selected");	
+	}
+	char *gmsg_dest_peers = mk_t_gbox_dest_peers();
+	tpl_addVar(vars, TPLADD, "GBOXMSGDESTPEERS", gmsg_dest_peers); 
+	free_mk_t(gmsg_dest_peers);
+	tpl_addVar(vars, TPLADD, "GBOXMSGTXT", cfg.gbox_msg_txt);
+
 	return tpl_getTpl(vars, "CONFIGGBOX");
 }
 #endif

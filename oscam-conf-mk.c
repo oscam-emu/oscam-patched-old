@@ -139,8 +139,8 @@ char *mk_t_camd35tcp_port(void)
 	/* Precheck to determine how long the resulting string will maximally be (might be a little bit smaller but that shouldn't hurt) */
 	for(i = 0; i < cfg.c35_tcp_ptab.nports; ++i)
 	{
-		/* Port is maximally 5 chars long, plus the @caid (5), plus the ";" between ports */
-		needed += 11;
+		/* Port is maximally 5 chars long, plus comma, plus the @caid, plus the :provid plus the ";" between ports */
+		needed += 18;
 		if(cfg.c35_tcp_ptab.ports[i].ncd && cfg.c35_tcp_ptab.ports[i].ncd->ncd_ftab.filts[0].nprids > 0)
 		{
 			needed += cfg.c35_tcp_ptab.ports[i].ncd->ncd_ftab.filts[0].nprids * 7;
@@ -277,6 +277,24 @@ char *mk_t_gbox_block_ecm(void)
 		if(!cfg.gbox_block_ecm[i]) { break; }
 
 		pos += snprintf(value + pos, needed - pos, "%s%04hX", dot, cfg.gbox_block_ecm[i]);
+		dot = ",";
+	}
+	return value;
+}
+/*
+ * Creates a string ready to write as a token into config or WebIf for the gbox SMS dest peers. You must free the returned value through free_mk_t().
+ */
+char *mk_t_gbox_dest_peers(void)
+{
+	int32_t i, pos = 0, needed = GBOX_MAX_DEST_PEERS * 5 + 8;
+
+	char *value;
+	if(!cs_malloc(&value, needed)) { return ""; }
+	char *dot = "";
+	for(i = 0; i < GBOX_MAX_DEST_PEERS; i++)
+	{
+		if(!cfg.gbox_dest_peers[i]) { break; }
+		pos += snprintf(value + pos, needed - pos, "%s%04hX", dot, cfg.gbox_dest_peers[i]);
 		dot = ",";
 	}
 	return value;
