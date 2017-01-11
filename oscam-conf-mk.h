@@ -15,6 +15,7 @@ extern char *mk_t_gbox_port(void);
 extern char *mk_t_gbox_proxy_card(void);
 extern char *mk_t_gbox_ignored_peer(void);
 extern char *mk_t_gbox_block_ecm(void);
+extern char *mk_t_gbox_dest_peers(void);
 extern char *mk_t_aeskeys(struct s_reader *rdr);
 extern char *mk_t_newcamd_port(void);
 extern char *mk_t_aureader(struct s_auth *account);

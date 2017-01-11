@@ -197,6 +197,97 @@ static void gbox_send_gsms2peer(struct s_client *cl, char *gsms, uint8_t msg_typ
 	return;
 }
 
+int gbox_direct_send_gsms(uint16_t boxid, uint8_t num, char *gsms)
+{
+	uint8_t gsms_prot = 0, msg_type = 0, gsms_len = 0;
+	int peer_found=0;
+	char text[GBOX_MAX_MSG_TXT+1];
+	
+	memset(text, 0, sizeof(text));
+	if(cfg.gsms_dis)
+	{
+		gsms_unavail();
+		return 0;
+	}
+	gsms_len = strlen(gsms);
+	if(gsms_len<6)
+	{
+		cs_log("GBOX: message to send to peer is too short 6 chars expected and %d received texte[%s]", gsms_len, gsms);
+	}
+	else if(gsms_len>GBOX_MAX_MSG_TXT)
+	{
+		gsms_len=GBOX_MAX_MSG_TXT;
+		cs_log("GBOX message is too long so it will be truncated to max. [%d].", GBOX_MAX_MSG_TXT);
+	}
+	cs_strncpy(text,gsms,gsms_len+1);
+
+	switch(num)
+	{
+		case 0: {gsms_prot = 1; msg_type = 0x30; break;}
+		case 1: {gsms_prot = 1; msg_type = 0x31; break;}
+		case 2: {gsms_prot = 2;	msg_type = 0x30; break;}
+		case 3: {gsms_prot = 2;	msg_type = 0x31; break;}
+		default:{cs_log("ERROR unknown gsms protocol"); return 0;}
+	}
+	cs_log_dbg(D_READER,"init gsms_length=%d  msg_type=%02X msg_prot=%d",gsms_len, msg_type, gsms_prot);
+	struct s_client *cl;
+	for (cl = first_client; cl; cl = cl->next)
+	{
+		peer_found=0;
+		if(cl->gbox && cl->typ == 'p')
+		{
+			struct gbox_peer *peer = cl->gbox;
+			if (peer->online && boxid == 0xFFFF) //send gsms to all peers online
+			{
+				gbox_send_gsms2peer(cl, text, msg_type, gsms_prot, gsms_len);
+				peer_found=1;
+			}
+			if (!peer->online && boxid == 0xFFFF)
+			{
+				cs_log("GBOX Info: peer %04X is OFFLINE",peer->gbox.id); 
+				write_gsms_nack( cl, gsms_prot, 1); 
+			}
+			if (peer->online && boxid == peer->gbox.id)
+			{
+				gbox_send_gsms2peer(cl, text, msg_type, gsms_prot, gsms_len);
+				peer_found=1; 
+			}
+			if (!peer->online && boxid == peer->gbox.id)
+			{
+				cs_log("GBOX WARNING: send GSMS failed - peer %04X is OFFLINE",peer->gbox.id);
+				write_gsms_nack( cl, gsms_prot, 0);  
+			}
+		}
+	}
+	return peer_found;
+}
+
+void gbox_get_online_peers(void)
+{
+	int n = 0, i;
+	struct s_client *cl;
+	
+	for(i = 0; i < GBOX_MAX_DEST_PEERS; i++)
+	{
+		cfg.gbox_dest_peers[i]='\0';
+	}
+	cfg.gbox_dest_peers_num=0;
+	
+	for (cl = first_client; cl; cl = cl->next)
+	{
+		if((cl->gbox && cl->typ == 'p') && (n<GBOX_MAX_DEST_PEERS))
+		{
+			struct gbox_peer *peer = cl->gbox;
+			if (peer->online) //peer is online
+			{
+				cfg.gbox_dest_peers[n++] = (peer->gbox.id);
+			}
+		}
+	}
+	cfg.gbox_dest_peers_num = n;
+	return;
+}
+
 void gbox_init_send_gsms(void)
 {
 	uint16_t boxid = 0;
