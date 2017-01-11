@@ -62,9 +62,8 @@ enum ftab_fn
 	FTAB_CHID					= 0x08,
 	FTAB_FBPCAID				= 0x10,
 	FTAB_LOCALCARDS				= 0x20,
-	FTAB_IGNCHKSMCAID 			= 0x20,
-	FTAB_IGNCRCCEX4USERONLYFOR 	= 0x20,
-	FTAB_GLOBALIGNCHKSMCAID		= 0x20
+	FTAB_IGNCHKSMCAID			= 0x40,
+	FTAB_IGNCRCCEX4USERONLYFOR	= 0x80
 };
 
 void ftab_fn(const char *token, char *value, void *setting, long ftab_type, FILE *f);
