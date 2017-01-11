@@ -208,7 +208,8 @@ typedef struct demux_s
 	uint8_t running;
 	uint8_t old_ecmfiltercount; // previous ecm filtercount
 	uint8_t old_emmfiltercount; // previous emm filtercount
-	pthread_mutex_t answerlock; // requestmode 1 avoid race	
+	pthread_mutex_t answerlock; // requestmode 1 avoid race
+	int8_t init_mutex;
 #ifdef WITH_STAPI
 	uint32_t DescramblerHandle[PTINUM];
 	int32_t desc_pidcount;
