@@ -474,7 +474,7 @@ void chk_port_camd35_tab(char *portasc, PTAB *ptab)
 {
 	int32_t i, j, nfilts;
 	PTAB *newptab;
-	char *ptr1, *ptr2, *ptr4, *provids, *saveptr1, *saveptr2 = NULL;
+	char *ptr1, *ptr2, *ptr4, *provids, *saveptr1 = NULL, *saveptr2 = NULL;
 	if(!cs_malloc(&newptab, sizeof(PTAB)))
 		{ return; }
 
