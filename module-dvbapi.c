@@ -1761,20 +1761,13 @@ void dvbapi_parse_cat(int32_t demux_id, uchar *buf, int32_t len)
 	return;
 }
 
+static pthread_mutex_t lockindex = PTHREAD_MUTEX_INITIALIZER;
+
 ca_index_t dvbapi_get_descindex(int32_t demux_index, int32_t pid, int32_t stream_id)
 {
 	int32_t i, j, k, fail = 1;
 	ca_index_t idx = 0;
 	uint32_t tmp_idx;
-
-	static pthread_mutex_t lockindex;
-	static int8_t init_mutex = 0;
-	
-	if(init_mutex == 0)
-	{
-		SAFE_MUTEX_INIT(&lockindex, NULL);
-		init_mutex = 1;	
-	}
 	
 	if(cfg.dvbapi_boxtype == BOXTYPE_NEUMO)
 	{
@@ -1997,6 +1990,7 @@ void dvbapi_stop_descrambling(int32_t demux_id)
 	dvbapi_stop_filter(demux_id, TYPE_ECM);
 	
 	memset(&demux[demux_id], 0 , sizeof(DEMUXTYPE));
+	SAFE_MUTEX_INIT(&demux[demux_id].answerlock, NULL);
 	for(i = 0; i < ECM_PIDS; i++)
 	{
 		for(j = 0; j < MAX_STREAM_INDICES; j++)
@@ -4076,8 +4070,7 @@ int32_t dvbapi_net_init_listenfd(void)
 	return listenfd;
 }
 
-static pthread_mutex_t event_handler_lock;
-static int8_t init_mutex = 0;
+static pthread_mutex_t event_handler_lock = PTHREAD_MUTEX_INITIALIZER;
 
 void event_handler(int32_t UNUSED(signal))
 {
@@ -4088,12 +4081,6 @@ void event_handler(int32_t UNUSED(signal))
 	int32_t i, pmt_fd;
 	uchar mbuf[2048]; // dirty fix: larger buffer needed for CA PMT mode 6 with many parallel channels to decode
 	if(dvbapi_client != cur_client()) { return; }
-	
-	if(init_mutex == 0)
-	{
-		SAFE_MUTEX_INIT(&event_handler_lock, NULL);
-		init_mutex = 1;	
-	}
 
 	SAFE_MUTEX_LOCK(&event_handler_lock);
 
@@ -5178,6 +5165,7 @@ static void *dvbapi_main_local(void *cli)
 	memset(demux, 0, sizeof(struct demux_s) * MAX_DEMUX);
 	for(i = 0; i < MAX_DEMUX; i++)
 	{
+		SAFE_MUTEX_INIT(&demux[i].answerlock, NULL);
 		for(j = 0; j < ECM_PIDS; j++)
 		{
 			for(l = 0; l < MAX_STREAM_INDICES; l++)
@@ -5185,6 +5173,8 @@ static void *dvbapi_main_local(void *cli)
 				demux[i].ECMpids[j].index[l] = INDEX_INVALID;
 			}
 		}
+		demux[i].pidindex = -1;
+		demux[i].curindex = -1;
 	}
 	
 	memset(ca_fd, 0, sizeof(ca_fd));
@@ -5982,13 +5972,7 @@ void dvbapi_send_dcw(struct s_client *client, ECM_REQUEST *er)
 		}
 
 		if(er->rc < E_NOTFOUND && cfg.dvbapi_requestmode == 1 && er->caid != 0) // FOUND
-		{
-			if(demux[i].init_mutex == 0)
-			{
-				SAFE_MUTEX_INIT(&demux[i].answerlock, NULL);
-				demux[i].init_mutex = 1;	
-			}
-			
+		{	
 			SAFE_MUTEX_LOCK(&demux[i].answerlock); // only process one ecm answer
 			
 			if(demux[i].ECMpids[j].checked != 4)
