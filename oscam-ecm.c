@@ -1573,7 +1573,7 @@ int32_t write_ecm_answer(struct s_reader *reader, ECM_REQUEST *er, int8_t rc, ui
 
 
 
- 	if(rc < E_NOTFOUND && cw && !chk_halfCW(er,cw) && !(strcmp(reader->description,  "cccam_mcs") == 0)){
+ 	if(rc < E_NOTFOUND && cw && !chk_halfCW(er,cw)){
  		rc = E_NOTFOUND;
  		cs_log_dbg(D_TRACE | D_LB, "WARNING: reader %s send wrong swapped NDS cw, set rc=E_NOTFOUND!", reader ? reader->label : "-");
  	}
