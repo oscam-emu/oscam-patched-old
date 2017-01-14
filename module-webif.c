@@ -101,7 +101,6 @@ static bool use_srvid2 = false;
 #define MNU_CFG_LCD			14
 #define MNU_CFG_MONITOR		15
 #define MNU_CFG_WEBIF		16
-#define MNU_GBOX_SMS		17
 
 /* constants for files.html submenuactivating */
 #define MNU_CFG_FVERSION	0
@@ -8310,6 +8309,7 @@ static int32_t process_request(FILE * f, IN_ADDR_T in)
 			case 29:
 				result = send_oscam_logpoll(vars, &params);
 				break;
+			//case 30: jquery.js
 #endif				
 			default:
 				result = send_oscam_status(vars, &params, 0);
