@@ -1,14 +1,6 @@
 #ifndef MODULE_GBOX_H_
 #define MODULE_GBOX_H_
 
-/*
- * WARNING! Enabling this will make gbox call external programs for OSD with parameters
- * received from the network. this means that a rogue server that sends you SMS messages
- * may execute code on your machine. do not enable this unless you know what you are
- * doing and accept the posssible *BAD* consequences
-*/
-//#define GBOX_ENABLE_UNSAFE_EXTENDED_OSD 1
-
 #ifdef MODULE_GBOX
 
 #define NO_GBOX_ID			0
@@ -29,10 +21,9 @@
 #define MSG_HELLO1	0x4849
 #define MSG_CHECKCODE	0x41C0
 #define MSG_GOODBYE	0x9091
-#define MSG_GSMS_ACK_1	0x9098
-#define MSG_GSMS_ACK_2	0x9099
+#define MSG_GSMS_ACK	0x9099
+#define MSG_GSMS	0x0FFF
 #define MSG_GSMS_1	0x0FF0
-#define MSG_GSMS_2	0x0FFF
 #define MSG_BOXINFO	0xA0A1
 #define MSG_UNKNWN	0x48F9
 
@@ -64,7 +55,8 @@
 #define	MSGID_GOODBYE           4
 #define	MSGID_LOSTCONNECT       5
 #define	MSGID_ATTACK            6
-#define	MSGID_IPMISSMATCH       7
+#define	MSGID_IPCHANGE          7
+#define	MSGID_UNKNOWNMSG        8
 
 #define GBOX_STAT_HELLOL        0
 #define GBOX_STAT_HELLOS        1
@@ -166,7 +158,7 @@ struct gbox_ecm_request_ext
     uint8_t	gbox_version;
     uint8_t	gbox_unknown;   //byte between version and cpu info of
     uint8_t	gbox_type;
-    uchar	gbox_routing_info[GBOX_MAXHOPS];  //support max 10 hops
+    uchar	gbox_routing_info[GBOX_MAXHOPS];
 };
 
 char *get_gbox_tmp_fname(char *fext);
