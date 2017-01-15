@@ -362,6 +362,7 @@ static int32_t chk_chid(ECM_REQUEST *er, FTAB *fchid, char *type, char *name)
 {
 	int32_t rc = 1, i, j, found_caid = 0;
 	if(!fchid->nfilts) { return 1; }
+	if(er->chid == 0 && er->ecm[0] == 0) { return 1; } // skip empty ecm, chid 00 to avoid no matching readers in dvbapi
 
 	for(i = rc = 0; (!rc) && i < fchid->nfilts; i++)
 		if(er->caid == fchid->filts[i].caid)
