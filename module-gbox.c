@@ -107,9 +107,7 @@ unsigned char *GboxCPU( unsigned char a ) {
 
 static void write_msg_to_osd (struct s_client *cli, uint8_t msg_id, uint16_t misc)
 {
-	#ifdef GBOX_ENABLE_UNSAFE_EXTENDED_OSD
 	if (msg_id == MSGID_GSMS && misc == 0x31) {return;}
-	#endif
 	char *fext= FILE_MSG_OSD; 
 	char *fname = get_gbox_tmp_fname(fext); 
 	if (file_exists(fname))
@@ -125,7 +123,7 @@ static void write_msg_to_osd (struct s_client *cli, uint8_t msg_id, uint16_t mis
 			cs_log("Error %s",fname);
 			return;
 			}
-		pclose(p);
+			pclose(p);
 	}
 	return;
 }
@@ -536,7 +534,6 @@ int8_t gbox_message_header(uchar *buf, uint16_t cmd, uint32_t peer_password, uin
 {
 	if (!buf) { return -1; }
 	i2b_buf(2, cmd, buf);
-	if (cmd == MSG_GSMS_1) { return 0; }
 	i2b_buf(4, peer_password, buf + 2);
 	if (cmd == MSG_CW) { return 0; }	
 	i2b_buf(4, local_password, buf + 6);
@@ -687,7 +684,7 @@ int32_t gbox_cmd_hello_rcvd(struct s_client *cli, uchar *data, int32_t n)
 					if (cfg.log_hello)
 						{ cs_log("-> HelloS from %s (%s:%d) V2.%02X with %d cards", cli->reader->label, cs_inet_ntoa(cli->ip), cli->reader->r_port, peer->gbox.minor_version, peer->filtered_cards); }
 					else
-						{	cs_log_dbg(D_READER,"-> HelloS in %d packets from %s (%s:%d) V2.%02X with %d cards filtered to %d cards", (data[0x0B] & 0x0f)+1, cli->reader->label, cs_inet_ntoa(cli->ip), cli->reader->r_port, peer->gbox.minor_version, peer->total_cards, peer->filtered_cards); }
+						{ cs_log_dbg(D_READER,"-> HelloS in %d packets from %s (%s:%d) V2.%02X with %d cards filtered to %d cards", (data[0x0B] & 0x0f)+1, cli->reader->label, cs_inet_ntoa(cli->ip), cli->reader->r_port, peer->gbox.minor_version, peer->total_cards, peer->filtered_cards); }
 				}
 			gbox_send_hello(cli, GBOX_STAT_HELLOR);
 			}
@@ -984,41 +981,29 @@ int32_t gbox_recv_cmd_switch(struct s_client *proxy, uchar *data, int32_t n)
 		write_msg_to_osd(proxy, MSGID_GOODBYE, 0);
 		break;
 	case MSG_UNKNWN:
-		cs_log("-> MSG_UNKNWN 48F9 from %s %s", username(proxy), proxy->reader->device);	  
+		cs_log("-> MSG_UNKNWN 48F9 from %s %s", username(proxy), proxy->reader->device);
+		write_msg_to_osd(proxy, MSGID_UNKNOWNMSG, 0);
 		break;
-	case MSG_GSMS_1:
+		case MSG_GSMS_1:
+		cs_log("-> MSG_GSMS_1 from %s %s. Obsolete protocol no longer supported", username(proxy), proxy->reader->device);
+		//write_gsms_msg(proxy, data +4, data[3], data[2]);
+		write_msg_to_osd(proxy, MSGID_UNKNOWNMSG, 0);
+		break;
+	case MSG_GSMS:
 		if (!cfg.gsms_dis)
 		{
-			cs_log("-> MSG_GSMS_1 from %s %s", username(proxy), proxy->reader->device);
-			gbox_send_gsms_ack(proxy,1);
-			write_gsms_msg(proxy, data +4, data[3], data[2]);
-			write_msg_to_osd(proxy, MSGID_GSMS, data[3]); // Notification only, no message content
-		}
-		else	{gsms_unavail();}
- 		break;
-	case MSG_GSMS_2:
-		if (!cfg.gsms_dis)
-		{
-			cs_log("-> MSG_GSMS_2 from %s %s", username(proxy), proxy->reader->device);
-			gbox_send_gsms_ack(proxy,2);
+			cs_log("-> MSG_GSMS from %s %s", username(proxy), proxy->reader->device);
+			gbox_send_gsms_ack(proxy);
 			write_gsms_msg(proxy, data +16, data[14], data[15]);
 			write_msg_to_osd(proxy, MSGID_GSMS, data[14]); // Notification only, no message content
 		}
 		else	{gsms_unavail();}
 		break;
-	case MSG_GSMS_ACK_1:
+	case MSG_GSMS_ACK:
 		if (!cfg.gsms_dis)
 		{
-			cs_log("-> MSG_GSMS_ACK_1 from %s %s", username(proxy), proxy->reader->device);
-			write_gsms_ack(proxy,1);
-		}
-		else	{gsms_unavail();}
-		break;
-	case MSG_GSMS_ACK_2:
-		if (!cfg.gsms_dis)
-		{
-			cs_log("-> MSG_GSMS_ACK_2 from %s %s", username(proxy), proxy->reader->device);
-			write_gsms_ack(proxy,2);
+			cs_log("-> MSG_GSMS_ACK from %s %s", username(proxy), proxy->reader->device);
+			write_gsms_ack(proxy);
 		} 
 		else	{gsms_unavail();}
 		break;
@@ -1205,7 +1190,6 @@ static int8_t gbox_check_header_recvd(struct s_client *cli, struct s_client *pro
 			{
 				cs_log("gbox peer: %04X sends wrong password", peer->gbox.id);
 				return -1;
-				//continue; // next client
 			}
 		} 
 		else //is  MSG_CW
@@ -1219,9 +1203,9 @@ static int8_t gbox_check_header_recvd(struct s_client *cli, struct s_client *pro
 			}
 		}
 	}
-	else if (gbox_decode_cmd(data) == MSG_GSMS_1 || gbox_decode_cmd(data) == MSG_GSMS_ACK_1 ) 
+	else if (gbox_decode_cmd(data) == MSG_GSMS_1)
 	{
-		// MSG_GSMS_1 dont have passw and would fail. Just let them pass through for processing later
+		// MSG_GSMS_1 dont have passw and would fail. Just let it pass through for processing later
 	}
 	else // error my passw
 	{
@@ -1235,7 +1219,7 @@ static int8_t gbox_check_header_recvd(struct s_client *cli, struct s_client *pro
 	{ 
 		cs_log("Received IP %s did not match previous IP %s. Try to reconnect.", cs_inet_ntoa(cli->ip), cs_inet_ntoa(proxy->ip));
 		gbox_reconnect_client(cli->gbox_peer_id);
-		write_msg_to_osd(cli, MSGID_IPMISSMATCH, 0);
+		write_msg_to_osd(cli, MSGID_IPCHANGE, 0);
 		return -1;
 	}
 	if(!peer) { return -1; }

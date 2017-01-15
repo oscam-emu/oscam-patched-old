@@ -11,10 +11,10 @@
 
 void gbox_init_send_gsms(void);
 void write_gsms_msg (struct s_client *cli, uchar *gsms, uint16_t type, uint16_t UNUSED(msglen));
+void gbox_send_gsms_ack(struct s_client *cli);
 int  gbox_direct_send_gsms(uint16_t boxid, uint8_t num, char *gsms);
 void gbox_get_online_peers(void);
-void gbox_send_gsms_ack(struct s_client *cli, uint8_t gsms_prot);
-void write_gsms_ack (struct s_client *cli, uint8_t gsms_prot);
+void write_gsms_ack (struct s_client *cli);
 void gsms_unavail(void);
 void start_sms_sender(void);
 void stop_sms_sender(void);
