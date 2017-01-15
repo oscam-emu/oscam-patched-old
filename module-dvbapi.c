@@ -1989,8 +1989,10 @@ void dvbapi_stop_descrambling(int32_t demux_id)
 	}
 	dvbapi_stop_filter(demux_id, TYPE_ECM);
 	
+	pthread_mutex_destroy(&demux[demux_id].answerlock);
 	memset(&demux[demux_id], 0 , sizeof(DEMUXTYPE));
 	SAFE_MUTEX_INIT(&demux[demux_id].answerlock, NULL);
+	
 	for(i = 0; i < ECM_PIDS; i++)
 	{
 		for(j = 0; j < MAX_STREAM_INDICES; j++)
@@ -5208,8 +5210,6 @@ static void *dvbapi_main_local(void *cli)
 			return NULL;
 		}
 	}
-
-	SAFE_MUTEX_INIT(&event_handler_lock, NULL);
 
 	for(i = 0; i < MAX_DEMUX; i++)  // init all demuxers!
 	{
