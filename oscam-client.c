@@ -487,7 +487,7 @@ void kill_all_clients(void)
 	{
 		if(cl->typ == 'c' || cl->typ == 'm')
 		{
-			if((cl->account) && (cl->account->usr))
+			if(cl->account)
 				{ cs_log("killing client %s", cl->account->usr); }
 			kill_thread(cl);
 		}
