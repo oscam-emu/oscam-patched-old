@@ -538,13 +538,13 @@ ECM_REQUEST *get_ecmtask(void)
 
 void cleanup_ecmtasks(struct s_client *cl)
 {
-	if((cl) && (!cl->account->usr)) { return; }  //not for anonymous users!
+	if(!cl) { return; }
 
 	ECM_REQUEST *ecm;
 
 	//remove this clients ecm from queue. because of cache, just null the client:
 	cs_readlock(__func__, &ecmcache_lock);
-	for(ecm = ecmcwcache; ecm; ecm = ecm->next)
+	for(ecm = ecmcwcache; ecm && cl; ecm = ecm->next)
 	{
 		if(ecm->client == cl)
 		{
@@ -561,7 +561,7 @@ void cleanup_ecmtasks(struct s_client *cl)
 		if(check_client(rdr->client) && rdr->client->ecmtask)
 		{
 			int i;
-			for(i = 0; i < cfg.max_pending; i++)
+			for(i = 0; (i < cfg.max_pending) && cl; i++)
 			{
 				ecm = &rdr->client->ecmtask[i];
 				if(ecm->client == cl)
@@ -1691,7 +1691,7 @@ int32_t write_ecm_answer(struct s_reader *reader, ECM_REQUEST *er, int8_t rc, ui
 	if(!ea->is_pending)   //not for pending ea - only once for ea
 	{
 		//cache update
-		if(ea && (ea->rc < E_NOTFOUND) && (ea->cw))
+		if(ea && (ea->rc < E_NOTFOUND) && (!chk_is_null_CW(ea->cw)))
 			add_cache_from_reader(er, reader, er->csp_hash, er->ecmd5, ea->cw, er->caid, er->prid, er->srvid );
 
 		//readers stats for LB
