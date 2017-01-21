@@ -632,6 +632,29 @@ static void ratelimitecm_fn(const char *token, char *value, void *setting, FILE 
 		{ fprintf_conf(f, token, "%d\n", rdr->ratelimitecm); }
 }
 
+static void ecmunique_fn(const char *token, char *value, void *setting, FILE *f)
+{
+	struct s_reader *rdr = setting;
+	if(value)
+	{
+		if(strlen(value) == 0)
+		{
+			rdr->ecmunique = 0; // default
+		}
+		else
+		{
+			rdr->ecmunique = atoi(value);
+			if(rdr->ecmunique >= 1) 
+			{ rdr->ecmunique=1; }
+			else
+			{ rdr->ecmunique=0; }
+		}
+		return;
+	}
+	if((rdr->ratelimitecm && rdr->ecmunique!=0) || cfg.http_full_cfg)
+		{ fprintf_conf(f, token, "%d\n", rdr->ecmunique); }
+}
+
 static void ratelimittime_fn(const char *token, char *value, void *setting, FILE *f)
 {
 	struct s_reader *rdr = setting;
@@ -661,6 +684,7 @@ static void ratelimittime_fn(const char *token, char *value, void *setting, FILE
 	if(rdr->ratelimitecm || cfg.http_full_cfg)
 		{ fprintf_conf(f, token, "%d\n", rdr->ratelimittime); }
 }
+
 static void srvidholdtime_fn(const char *token, char *value, void *setting, FILE *f)
 {
 	struct s_reader *rdr = setting;
@@ -904,8 +928,8 @@ static const struct config_list reader_opts[] =
 	DEF_OPT_FUNC("auprovid"             , 0,                            auprovid_fn),
 	DEF_OPT_INT8("ndsversion"           , OFS(ndsversion),              0),
 	DEF_OPT_FUNC("ratelimitecm"         , 0,                            ratelimitecm_fn),
+	DEF_OPT_FUNC("ecmunique"            , 0,                            ecmunique_fn),
 	DEF_OPT_FUNC("ratelimittime"        , 0,                            ratelimittime_fn),
-	DEF_OPT_INT8("ecmunique"            , OFS(ecmunique),               0),
 	DEF_OPT_FUNC("srvidholdtime"        , 0,                            srvidholdtime_fn),
 	DEF_OPT_FUNC("cooldown"             , 0,                            cooldown_fn),
 	DEF_OPT_FUNC("cooldowndelay"        , 0,                            cooldowndelay_fn),
