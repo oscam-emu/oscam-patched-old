@@ -30,7 +30,7 @@
 					<TABLE>
 						<TR>
 							<TD><input name="ratelimitecm" class="short" type="text" maxlength="5" value="##RATELIMITECM##"><label></label></TD>
-							<TD><A data-p="ecmunique">ECM Unique:</A><input name="ecmunique" type="hidden" value="0"></TD><TD><input name="ecmunique" type="checkbox" value="1" ##ECMUNIQUECHECKED##><label></label></TD>
+							<TD><A data-p="ecmunique" title="You need to define first Ratelimit ECM">ECM Unique:</A></TD><TD><input name="ecmunique" type="hidden" value="0"><input name="ecmunique" type="checkbox" value="1" ##ECMUNIQUECHECKED##><label></label></TD>
 						</TR>
 					</TABLE>
 				</TD>
@@ -50,8 +50,8 @@
 			<TR><TD><A>ECM not found limit:</A></TD><TD><input name="ecmnotfoundlimit" class="medium" type="text" maxlength="6" value="##ECMNOTFOUNDLIMIT##"></TD></TR>
 			<TR><TD><A>ECM whitelist:</A></TD><TD><textarea name="ecmwhitelist" rows="2" class="bt">##ECMWHITELIST##</textarea></TD></TR>
 			<TR><TD><A>ECM HeaderWhitelist:</A></TD><TD><textarea name="ecmheaderwhitelist" rows="2" class="bt">##ECMHEADERWHITELIST##</textarea></TD></TR>
-			<TR><TD><A>Drop CWs with wrong checksum:</A><input name="dropbadcws" type="hidden" value="0"></TD><TD><input name="dropbadcws" type="checkbox" value="1" ##DROPBADCWSCHECKED##></TD></TR>
-			<TR><TD><A>Skip CWs checksum test:</A><input name="disablecrccws" type="hidden" value="0"></TD><TD><input name="disablecrccws" type="checkbox" value="1" ##DISABLECRCCWSCHECKED##></TD></TR>
+			<TR><TD><A>Drop CWs with wrong checksum:</A></TD><TD><input name="dropbadcws" type="hidden" value="0"><input name="dropbadcws" type="checkbox" value="1" ##DROPBADCWSCHECKED##></TD></TR>
+			<TR><TD><A>Skip CWs checksum test:</A></TD><TD><input name="disablecrccws" type="hidden" value="0"><input name="disablecrccws" type="checkbox" value="1" ##DISABLECRCCWSCHECKED##></TD></TR>
 			<TR><TD><A>Skip CWs checksum test only for:</A></TD><TD><textarea name="disablecrccws_only_for" rows="3" class="bt">##IGN_CHKSUM_ONLYFOR##</textarea></TD></TR>
 			<TR><TD><A>Emmcache:</A></TD><TD><input name="emmcache" class="medium" type="text" maxlength="10" value="##EMMCACHE##"></TD></TR>
 			<TR><TD><A data-p="saveemm-u">Saveemm:</A></TD>
