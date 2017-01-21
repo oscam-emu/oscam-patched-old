@@ -538,7 +538,7 @@ ECM_REQUEST *get_ecmtask(void)
 
 void cleanup_ecmtasks(struct s_client *cl)
 {
-	if(cl && !*cl->account->usr) { return; }  //not for anonymous users!
+	if((cl) && (!cl->account->usr)) { return; }  //not for anonymous users!
 
 	ECM_REQUEST *ecm;
 
