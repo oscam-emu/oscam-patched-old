@@ -115,7 +115,7 @@ static uint8_t countCWpart(ECM_REQUEST *er, struct s_cw_cycle_check *cwc)
 static uint8_t checkvalidCW(ECM_REQUEST *er)
 {
 	uint8_t ret = 1;	
-	if(chk_is_null_CW(er->cw)) 
+	if(chk_is_null_CW(er->cw) && er->caid !=0x2600) // 0x2600 used by biss and constant cw could be indeed zero 
 	{ er->rc = E_NOTFOUND; }
 
 	if(er->rc == E_NOTFOUND)

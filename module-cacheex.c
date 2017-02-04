@@ -686,7 +686,7 @@ static int32_t cacheex_add_to_cache_int(struct s_client *cl, ECM_REQUEST *er, in
 		}
 	}
 
-	if(chk_is_null_CW(er->cw))
+	if(chk_is_null_CW(er->cw) && er->caid !=0x2600) // 0x2600 used by biss and constant cw could be indeed zero
 	{
 		cs_log_dump_dbg(D_CACHEEX, er->cw, 16, "push received null cw from %s", csp ? "csp" : username(cl));
 		cl->cwcacheexerr++;

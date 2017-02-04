@@ -1565,7 +1565,7 @@ int32_t write_ecm_answer(struct s_reader *reader, ECM_REQUEST *er, int8_t rc, ui
 	}
 
 	//SPECIAL CHECKs for rc
-	if(rc < E_NOTFOUND && cw && chk_is_null_CW(cw))    //if cw=0 by anticascading
+	if(rc < E_NOTFOUND && cw && chk_is_null_CW(cw) && er->caid !=0x2600) // 0x2600 used by biss and constant cw could be zero but still catch cw=0 by anticascading
 	{
 		rc = E_NOTFOUND;
 		cs_log_dbg(D_TRACE | D_LB, "WARNING: reader %s send fake cw, set rc=E_NOTFOUND!", reader ? reader->label : "-");
@@ -1691,7 +1691,7 @@ int32_t write_ecm_answer(struct s_reader *reader, ECM_REQUEST *er, int8_t rc, ui
 	if(!ea->is_pending)   //not for pending ea - only once for ea
 	{
 		//cache update
-		if(ea && (ea->rc < E_NOTFOUND) && (!chk_is_null_CW(ea->cw)))
+		if(ea && (ea->rc < E_NOTFOUND) && (!chk_is_null_CW(ea->cw) && er->caid !=0x2600)) // 0x2600 used by biss and constant cw could be indeed zero
 			add_cache_from_reader(er, reader, er->csp_hash, er->ecmd5, ea->cw, er->caid, er->prid, er->srvid );
 
 		//readers stats for LB
