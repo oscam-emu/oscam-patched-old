@@ -601,7 +601,8 @@ void mca_send_dcw(struct s_client *client, ECM_REQUEST *er)
 	for(n = 0; n < 2; n++)
 	{
 		// 0x2600 used by biss and constant cw could be indeed zero
-		if((memcmp(er->cw + (n * 8), demux[0].lastcw[0], 8) && memcmp(er->cw + (n * 8), demux[0].lastcw[1], 8)) && memcmp(er->cw + (n * 8), nullcw, 8) || er->caid == 0x2600)
+		if((memcmp(er->cw + (n * 8), demux[0].lastcw[0], 8) && memcmp(er->cw + (n * 8), demux[0].lastcw[1], 8)) 
+			&& (memcmp(er->cw + (n * 8), nullcw, 8) !=0  || er->caid == 0x2600))
 		{
 			memcpy(demux[0].lastcw[n], er->cw + (n * 8), 8);
 			memcpy(openxcas_cw + (n * 8), er->cw + (n * 8), 8);
