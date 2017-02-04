@@ -727,7 +727,7 @@ int32_t stapi_write_cw(int32_t demux_id, uchar *cw, uint16_t *STREAMpids, int32_
 
 	for(l = 0; l < 2; l++)
 	{
-		if(memcmp(cw + (l * 8), demux[demux_id].lastcw[l], 8) != 0 && memcmp(cw + (l * 8), nullcw, 8) != 0)
+		if(memcmp(cw + (l * 8), demux[demux_id].lastcw[l], 8) != 0)
 		{
 			ErrorCode = oscam_sttkd_KeyWrite(tkd_desc_info[demux[demux_id].dev_index].key_hndl, l, cw + (l * 8));
 			
