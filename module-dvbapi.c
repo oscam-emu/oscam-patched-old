@@ -5764,7 +5764,9 @@ void dvbapi_write_cw(int32_t demux_id, uchar *cw, int32_t pid, int32_t stream_id
 		cs_hexdump(0, demux[demux_id].lastcw[n], 8, lastcw, sizeof(lastcw));
 		cs_hexdump(0, cw + (n * 8), 8, newcw, sizeof(newcw));
 
-		if((memcmp(cw + (n * 8), demux[demux_id].lastcw[n], 8) != 0 || cwEmpty || stream_id >1))
+		// check if already delivered and new cw part is valid but dont check for nullcw on Biss
+		if((memcmp(cw + (n * 8), demux[demux_id].lastcw[n], 8) != 0 || cwEmpty || stream_id >1)
+			&& (memcmp(cw + (n * 8), nullcw, 8) != 0 || demux[demux_id].ECMpids[pid].CAID == 0x2600))
 		{
 			ca_index_t idx = dvbapi_ca_setpid(demux_id, pid, stream_id, (algo == CA_ALGO_DES));  // prepare ca
 			if (idx == INDEX_INVALID) return; // return on no index!
