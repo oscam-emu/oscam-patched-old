@@ -702,22 +702,22 @@ int32_t stapi_write_cw(int32_t demux_id, uchar *cw, uint16_t *STREAMpids, int32_
 		}
 
 		if(demux[demux_id].DescramblerHandle[n] == 0) { continue; }
-		
-		int32_t pidnum = demux[demux_id].pidindex; // get current pidindex used for descrambling
-		ca_index_t idx = demux[demux_id].ECMpids[pidnum].index[0];
-
-		if(idx == INDEX_INVALID)   // if no indexer for this pid get one!
-		{
-			idx = dvbapi_get_descindex(demux_id, pidnum, 0);
-			cs_log_dbg(D_DVBAPI, "Demuxer %d PID: %d CAID: %04X ECMPID: %04X is using index %d", demux_id, pidnum,
-					  demux[demux_id].ECMpids[pidnum].CAID, demux[demux_id].ECMpids[pidnum].ECM_PID, idx);
-		}
-		
+			
 		for(k = 0; k < STREAMpidcount; k++)
 		{
 			stapi_DescramblerAssociate(demux_id, STREAMpids[k], ASSOCIATE, n);
 		}
 	}
+
+	int32_t pidnum = demux[demux_id].pidindex; // get current pidindex used for descrambling
+	ca_index_t idx = demux[demux_id].ECMpids[pidnum].index[0];
+	
+	if(idx == INDEX_INVALID)   // if no indexer for this pid get one!
+	{
+		idx = dvbapi_get_descindex(demux_id, pidnum, 0);
+		cs_log_dbg(D_DVBAPI, "Demuxer %d PID: %d CAID: %04X ECMPID: %04X is using index %d", demux_id, pidnum,
+			demux[demux_id].ECMpids[pidnum].CAID, demux[demux_id].ECMpids[pidnum].ECM_PID, idx);
+	}	
 
 	for(l = 0; l < 2; l++)
 	{
