@@ -126,13 +126,15 @@ static bool use_srvid2 = false;
 #define MNU_GBX_FSCINF      	19 
 #define MNU_GBX_FSHRINF     	20
 #define MNU_GBX_FSHRONL     	21
-#define MNU_GBX_FSTAINF     	22
-#define MNU_GBX_FEXPINF     	23
+#define MNU_GBX_FVERS       	22
+#define MNU_GBX_FATTACK     	23
 #define MNU_GBX_FSMSLOG     	24
 #define MNU_GBX_FSMSACK     	25
 #define MNU_GBX_FSMSNACK    	26
+#define MNU_GBX_FSTAINF     	27
+#define MNU_GBX_FEXPINF     	28
 
-#define MNU_CFG_TOTAL_ITEMS 	27 // sum of items above. Use it for "All inactive" in function calls too.
+#define MNU_CFG_TOTAL_ITEMS 	29 // sum of items above. Use it for "All inactive" in function calls too.
 
 static void set_status_info_var(struct templatevars *vars, char *varname, int no_data, char *fmt, double value) {
 	if (no_data)
@@ -6325,11 +6327,13 @@ static char *send_oscam_files(struct templatevars * vars, struct uriparams * par
 		{ "sc.info",         MNU_GBX_FSCINF,    FTYPE_GBOX },     // id 19
 		{ "share.info",      MNU_GBX_FSHRINF,   FTYPE_GBOX },     // id 20
 		{ "share.onl",       MNU_GBX_FSHRONL,   FTYPE_GBOX },     // id 21
-		{ "stats.info",      MNU_GBX_FSTAINF,   FTYPE_GBOX },     // id 22
-		{ "expired.info",    MNU_GBX_FEXPINF,   FTYPE_GBOX },     // id 23
+		{ "gbox.ver",        MNU_GBX_FVERS,     FTYPE_GBOX },     // id 22
+		{ "attack.txt",      MNU_GBX_FATTACK,   FTYPE_GBOX },     // id 23
 		{ "gsms.log",        MNU_GBX_FSMSLOG,   FTYPE_GBOX },     // id 24
 		{ "gsms.ack",        MNU_GBX_FSMSACK,   FTYPE_GBOX },     // id 25
 		{ "gsms.nack",       MNU_GBX_FSMSNACK,  FTYPE_GBOX },     // id 26
+		{ "stats.info",      MNU_GBX_FSTAINF,   FTYPE_GBOX },     // id 27
+		{ "expired.info",    MNU_GBX_FEXPINF,   FTYPE_GBOX },     // id 28
 #endif
 		{ NULL, 0, 0 },
 	};

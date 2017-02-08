@@ -307,7 +307,7 @@ void gbox_add_card(uint16_t id_peer, uint32_t caprovid, uint8_t slot, uint8_t le
         return;
 }
 
-uchar *gbox_get_checkcode(void)
+uchar *gbox_get_my_checkcode(void)
 {
         return &checkcode[0];
 }

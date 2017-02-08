@@ -23,7 +23,6 @@
 #define MSG_GOODBYE	0x9091
 #define MSG_GSMS_ACK	0x9099
 #define MSG_GSMS	0x0FFF
-#define MSG_GSMS_1	0x0FF0
 #define MSG_BOXINFO	0xA0A1
 #define MSG_UNKNWN	0x48F9
 
