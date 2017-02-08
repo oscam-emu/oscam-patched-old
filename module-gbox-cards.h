@@ -16,7 +16,7 @@ void gbox_write_local_cards_info(void);
 void gbox_write_stats(void);
 void init_gbox_cards(void);
 void gbox_add_card(uint16_t id_peer, uint32_t caprovid, uint8_t slot, uint8_t level, uint8_t distance, uint8_t type, struct gbox_peer *origin_peer);
-uchar *gbox_get_checkcode(void);
+uchar *gbox_get_my_checkcode(void);
 uint16_t gbox_count_peer_cards(uint16_t peer_id);
 uint16_t gbox_count_cards(void);
 void gbox_delete_cards(uint8_t delete_type, uint16_t criteria);
