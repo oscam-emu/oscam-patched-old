@@ -5,6 +5,9 @@
 #include "oscam-net.h"
 #include "oscam-string.h"
 
+const char *shortDay[8] = {"SUN","MON","TUE","WED","THU","FRI","SAT","ALL"};
+const char *weekdstr = "SUNMONTUEWEDTHUFRISATALL";
+
 /*
  * Creates a string ready to write as a token into config or WebIf for CAIDs. You must free the returned value through free_mk_t().
  */
@@ -885,6 +888,74 @@ char *mk_t_allowedprotocols(struct s_auth *account)
 		tmp = tmp << 1;
 	}
 	return value;
+}
+
+/*
+ * return allowed time frame string from internal array content
+ *
+ */
+
+char *mk_t_allowedtimeframe(struct s_auth *account)
+{
+	char *result;
+	if(!cs_malloc(&result, MAXALLOWEDTF))
+		{ return ""; }
+		
+	if(account->allowedtimeframe_set)
+	{
+		char 	mytime[6];
+		uint8_t day;
+		uint8_t value_in_day = 0;
+		uint8_t intime = 0;
+		uint16_t minutes =0;
+		uint16_t hours;
+		char	septime[2] = {'\0'};
+		char	sepday[2] = {'\0'};
+		
+		for(day=0;day<SIZE_SHORTDAY;day++) {
+			for(hours=0;hours<24;hours++) {
+				for(minutes=0;minutes<60;minutes++) {
+					if(CHECK_BIT(account->allowedtimeframe[day][hours][minutes/30],(minutes % 30))) {
+							if(value_in_day == 0) {
+							strcat(result,&sepday[0]);
+							strcat(result,shortDay[day]);
+							strcat(result,"@");
+							value_in_day = 1;
+							intime=0;
+							sepday[0]=';';
+							septime[0]='\0';
+						}
+						if(!intime) {
+							strcat(result,&septime[0]);
+							snprintf(mytime,6,"%02d:%02d", hours, minutes);
+							strcat(result,mytime);
+							strcat(result,"-");
+							septime[0]=',';
+							intime=1;
+						}
+						// Special case 23H59 is enabled we close the day at 24H00
+						if(((hours*60)+minutes)==1439) {
+							strcat(result,"24:00");
+							intime=0;
+							septime[0]='\0';
+							value_in_day = 0;
+						}
+					}
+					else if(intime) {
+							snprintf(mytime,6,"%02d:%02d", hours, minutes);
+							strcat(result,mytime);
+							septime[0]=',';
+							intime=0;
+						}
+				}	
+			}
+			value_in_day = 0;
+		}
+	}
+	else {
+		result="";
+	}
+	return result; 
 }
 
 /*

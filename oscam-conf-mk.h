@@ -28,6 +28,7 @@ extern char *mk_t_ecm_hdr_whitelist(struct s_ecm_hdr_whitelist *ecm_hdr_whitelis
 extern char *mk_t_cltab(CLASSTAB *clstab);
 extern char *mk_t_emmbylen(struct s_reader *rdr);
 extern char *mk_t_allowedprotocols(struct s_auth *account);
+extern char *mk_t_allowedtimeframe(struct s_auth *account);
 extern void free_mk_t(char *value);
 
 #endif

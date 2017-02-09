@@ -323,6 +323,8 @@ int32_t cs_auth_client(struct s_client *client, struct s_auth *account, const ch
 {
 	int32_t rc = 0;
 	unsigned char md5tmp[MD5_DIGEST_LENGTH];
+	uint8_t i;
+	uint8_t j;
 	char buf[32];
 	char *t_crypt = "encrypted";
 	char *t_plain = "plain";
@@ -404,8 +406,15 @@ int32_t cs_auth_client(struct s_client *client, struct s_auth *account, const ch
 				client->last_srvid = NO_SRVID_VALUE;
 				client->expirationdate = account->expirationdate;
 				client->disabled = account->disabled;
-				client->allowedtimeframe[0] = account->allowedtimeframe[0];
-				client->allowedtimeframe[1] = account->allowedtimeframe[1];
+				client->allowedtimeframe_set=account->allowedtimeframe_set;
+				for(i=0;i<SIZE_SHORTDAY;i++)
+				{
+					for(j=0;j<24;j++)
+					{
+						client->allowedtimeframe[i][j][0]=account->allowedtimeframe[i][j][0];
+						client->allowedtimeframe[i][j][1]=account->allowedtimeframe[i][j][1];
+					}
+				}
 				if(account->firstlogin == 0) { account->firstlogin = time((time_t *)0); }
 				client->failban = account->failban;
 				client->c35_suppresscmd08 = account->c35_suppresscmd08;
@@ -499,6 +508,8 @@ void cs_reinit_clients(struct s_auth *new_accounts)
 {
 	struct s_auth *account;
 	unsigned char md5tmp[MD5_DIGEST_LENGTH];
+	uint8_t i;
+	uint8_t j;
 
 	struct s_client *cl;
 	for(cl = first_client->next; cl; cl = cl->next)
@@ -519,8 +530,15 @@ void cs_reinit_clients(struct s_auth *new_accounts)
 					cl->aureader_list   = account->aureader_list;
 					cl->autoau = account->autoau;
 					cl->expirationdate = account->expirationdate;
-					cl->allowedtimeframe[0] = account->allowedtimeframe[0];
-					cl->allowedtimeframe[1] = account->allowedtimeframe[1];
+					cl->allowedtimeframe_set=account->allowedtimeframe_set;
+					for(i=0;i<SIZE_SHORTDAY;i++)
+					{
+						for(j=0;j<24;j++)
+						{
+							cl->allowedtimeframe[i][j][0]=account->allowedtimeframe[i][j][0];
+							cl->allowedtimeframe[i][j][1]=account->allowedtimeframe[i][j][1];
+						}
+					}
 					cl->ncd_keepalive = account->ncd_keepalive;
 					cl->c35_suppresscmd08 = account->c35_suppresscmd08;
 					cl->tosleep = (60 * account->tosleep);
