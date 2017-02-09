@@ -35,8 +35,20 @@ DESCRIPTIONS
        allowedprotocols = [camd33][,][camd35][,][cs357x][,][cs378x][,][newcamd][,][cccam][,][gbox][,][radegast]
 	  list of all allowed connection protocols, default:all connection protocols
 
-       allowedtimeframe = hh:mm-hh:mm
-	  account enabled from hh:mm to hh:mm, default:none
+       allowedtimeframe = DAY@HH:MM-HH:MM[,HH:MM-HH:MM][,HH:MM-HH:MM][;DAY@HH:MM-HH:MM[,HH:MM-HH:MM][,HH:MM-HH:MM]]
+                    where DAY=SUN,MON,TUE,WED,THU,FRI,SAT or ALL (for all possible days)
+                    
+	  account enabled from hh:mm to hh:mm for the specified day(s), default:none
+	  
+      comma (,) to separate times and semicolon(; ) to separate the different days.
+      You can use ALL@ if you want the same time frames for everyday.
+
+      Example:
+      allowedtimeframe = ALL@10:00-22:00;MON@00:00-02:00,02:45-04:37;FRI@00:00-10:00,22:00-24:00;SAT@00:00-24:00
+
+      If you use: DAY@22:00-05:00 this will be turned into DAY@00:00-05:00,22:00-24:00
+
+      ALL@ is always checked and used, so you can watch TV the whole day on FRIday in this exemple. There is no problem to overlap ALL@ in a day definition, like for SAT@ definition.
 
        max_connections = count
 	  maximum allowed connections per user when unique level will be adducted, default:1

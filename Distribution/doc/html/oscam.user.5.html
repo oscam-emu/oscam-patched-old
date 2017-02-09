@@ -74,9 +74,21 @@ list of all allowed connection protocols, default:all connection protocols
 
 <P>
 
-<B>allowedtimeframe</B> = <B>hh:mm</B>-<B>hh:mm</B>
+<B>allowedtimeframe</B> = <B>DAY@hh:mm-hh:mm[,hh:mm-hh:mm][,hh:mm-hh:mm][;DAY@hh:mm-hh:mm[,hh:mm-hh:mm][,hh:mm-hh:mm]]</B><BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+where <B>DAY</B> is <B>SUN,MON,TUE,WED,THU,FRI,SAT</B> or <B>ALL</B> (for all possible days)</B>
 <DL COMPACT><DT><DD>
-account enabled from hh:mm to hh:mm, default:none
+account enabled from hh:mm to hh:mm for the specified days, default:none<BR>
+<BR>
+comma (,) to separate times and semicolon(; ) to separate the different days.<BR>
+You can use ALL@ if you want the same time frames for everyday.<BR>
+<BR>
+Example:<BR>
+allowedtimeframe = ALL@10:00-22:00;MON@00:00-02:00,02:45-04:37;FRI@00:00-10:00,22:00-24:00;SAT@00:00-24:00<BR>
+<BR>
+If you use: DAY@22:00-05:00 this will be turned into DAY@00:00-05:00,22:00-24:00<BR>
+<BR>
+ALL@ is always checked and used, so you can watch TV the whole day on FRIday in this exemple. There is no problem to overlap ALL@ in a day definition, like for SAT@ definition.<BR>
 </DL>
 
 <P>

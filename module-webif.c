@@ -3146,16 +3146,11 @@ static char *send_oscam_user_config_edit(struct templatevars *vars, struct uripa
 	char buf [80];
 	strftime(buf, 80, "%Y-%m-%d", &timeinfo);
 	if(strcmp(buf, "1970-01-01")) { tpl_addVar(vars, TPLADD, "EXPDATE", buf); }
-
+	
 	//Allowed TimeFrame
-	if(account->allowedtimeframe[0] && account->allowedtimeframe[1])
-	{
-		tpl_printf(vars, TPLADD, "ALLOWEDTIMEFRAME", "%02d:%02d-%02d:%02d",
-				   account->allowedtimeframe[0] / 60,
-				   account->allowedtimeframe[0] % 60,
-				   account->allowedtimeframe[1] / 60,
-				   account->allowedtimeframe[1] % 60);
-	}
+	char *allowedtf = mk_t_allowedtimeframe(account);
+	tpl_printf(vars, TPLADD, "ALLOWEDTIMEFRAME", "%s", allowedtf);
+	free_mk_t(allowedtf);
 
 	//Group
 	char *value = mk_t_group(account->grp);

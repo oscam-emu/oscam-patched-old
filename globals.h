@@ -356,6 +356,8 @@ typedef unsigned char uchar;
 #define SAFE_ATTR_SETSTACKSIZE_NOLOG(a,b)
 #endif
 
+#define CHECK_BIT(var,pos) (((var) & (1<<(pos)))? 1 : 0)
+
 /* ===========================
  *         constants
  * =========================== */
@@ -601,6 +603,11 @@ enum {E2_GLOBAL = 0, E2_GROUP, E2_CAID, E2_IDENT, E2_CLASS, E2_CHID, E2_QUEUE, E
 #define CW_ALGO_AES128 2
 #define CW_ALGO_MODE_ECB 0
 #define CW_ALGO_MODE_CBC 1
+
+#define SIZE_SHORTDAY 8
+#define MAXALLOWEDTF 1001 // 10 allowed time frame slots for everyday + all [(3 + 1 + 10*(12) + 1)*8]
+extern const char *shortDay[SIZE_SHORTDAY];
+extern const char *weekdstr;
 
 /* ===========================
  *      Default Values
@@ -1173,7 +1180,8 @@ struct s_client
 	time_t          lastemm;
 	time_t          lastecm;
 	time_t          expirationdate;
-	int32_t         allowedtimeframe[2];
+	uint32_t        allowedtimeframe[SIZE_SHORTDAY][24][2]; //day[0-sun to 6-sat, 7-ALL],hours,minutes use as binary flags to reduce mem usage
+	uint8_t         allowedtimeframe_set; //flag for internal use to mention if allowed time frame is used
 	int8_t          c35_suppresscmd08;
 	uint8_t         c35_sleepsend;
 	int8_t          ncd_keepalive;
@@ -1772,7 +1780,8 @@ struct s_auth
 	char            *dyndns;
 	time_t          expirationdate;
 	time_t          firstlogin;
-	int32_t         allowedtimeframe[2];
+	uint32_t        allowedtimeframe[SIZE_SHORTDAY][24][2]; //day[0-sun to 6-sat, 7-ALL],hours,minutes use as binary flags to reduce mem usage
+	uint8_t         allowedtimeframe_set; //flag for internal use to mention if allowed time frame is used
 	int8_t          c35_suppresscmd08;
 	uint8_t         c35_sleepsend;
 	int8_t          ncd_keepalive;

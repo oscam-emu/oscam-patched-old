@@ -2091,18 +2091,26 @@ void get_cw(struct s_client *client, ECM_REQUEST *er)
 		{ er->rc = E_EXPDATE; }
 
 	// out of timeframe
-	if(client->allowedtimeframe[0] && client->allowedtimeframe[1])
+	if(client->allowedtimeframe_set)
 	{
 		struct tm acttm;
 		localtime_r(&now, &acttm);
-		int32_t curtime = (acttm.tm_hour * 60) + acttm.tm_min;
-		int32_t mintime = client->allowedtimeframe[0];
-		int32_t maxtime = client->allowedtimeframe[1];
-		if(!((mintime <= maxtime && curtime > mintime && curtime < maxtime) || (mintime > maxtime && (curtime > mintime || curtime < maxtime))))
+		int32_t curday = acttm.tm_wday;
+		char *dest = strstr(weekdstr,"ALL");
+		int32_t all_idx = (dest - weekdstr)/3;
+		uint8_t allowed=0;
+		
+		// checkout if current time is allowed in the current day
+		allowed = CHECK_BIT(client->allowedtimeframe[curday][acttm.tm_hour][acttm.tm_min/30], (acttm.tm_min % 30));
+		
+		// or checkout if current time is allowed for all days
+		allowed |= CHECK_BIT(client->allowedtimeframe[all_idx][acttm.tm_hour][acttm.tm_min/30], (acttm.tm_min % 30));
+		
+		if(!(allowed))
 		{
 			er->rc = E_EXPDATE;
 		}
-		cs_log_dbg(D_TRACE, "Check Timeframe - result: %d, start: %d, current: %d, end: %d\n", er->rc, mintime, curtime, maxtime);
+		cs_log_dbg(D_TRACE, "Check Timeframe - result: %d, day:%s time: %02dH%02d, allowed: %s\n", er->rc, shortDay[curday], acttm.tm_hour, acttm.tm_min, allowed ? "true" : "false");
 	}
 
 	// user disabled
