@@ -4,7 +4,33 @@
 			<TR><TH COLSPAN="2">Edit Global Config</TH></TR>
 			<TR><TD><A>Serverip:</A></TD><TD><input name="serverip" class="medium" type="text" maxlength="15" value="##SERVERIP##"></TD></TR>
 			<TR><TD><A>Nice:</A></TD><TD><input name="nice" class="short" type="text" maxlength="3" value="##NICE##"></TD></TR>
-			<TR><TD><A>Net prio:</A></TD><TD><input name="netprio" class="short" type="text" maxlength="3" value="##NETPRIO##"></TD></TR>
+			<TR><TD><A>Net prio:</A></TD>
+				<TD>
+					<select name="netprio">
+						<option value="0" ##NETPRIO0##>0 - IPP=0; DSCP=CS0 (default)</option>
+						<option value="1" ##NETPRIO1##>1 - IPP=1; DSCP=CS1</option>
+						<option value="2" ##NETPRIO2##>2 - IPP=1; DSCP=AF11</option>
+						<option value="3" ##NETPRIO3##>3 - IPP=1; DSCP=AF12</option>
+						<option value="4" ##NETPRIO4##>4 - IPP=1; DSCP=AF13</option>
+						<option value="5" ##NETPRIO5##>5 - IPP=2; DSCP=CS2</option>
+						<option value="6" ##NETPRIO6##>6 - IPP=2; DSCP=AF21</option>
+						<option value="7" ##NETPRIO7##>7 - IPP=2; DSCP=AF22</option>
+						<option value="8" ##NETPRIO8##>8 - IPP=2; DSCP=AF23</option>
+						<option value="9" ##NETPRIO9##>9 - IPP=3; DSCP=CS3</option>
+						<option value="10" ##NETPRIO10##>10 - IPP=3; DSCP=AF31</option>
+						<option value="11" ##NETPRIO11##>11 - IPP=3; DSCP=AF32</option>
+						<option value="12" ##NETPRIO12##>12 - IPP=3; DSCP=AF33</option>
+						<option value="13" ##NETPRIO13##>13 - IPP=4; DSCP=CS4</option>
+						<option value="14" ##NETPRIO14##>14 - IPP=4; DSCP=AF41</option>
+						<option value="15" ##NETPRIO15##>15 - IPP=4; DSCP=AF42</option>
+						<option value="16" ##NETPRIO16##>16 - IPP=4; DSCP=AF43</option>
+						<option value="17" ##NETPRIO17##>17 - IPP=5; DSCP=CS5</option>
+						<option value="18" ##NETPRIO18##>18 - IPP=5; DSCP=EF</option>
+						<option value="19" ##NETPRIO19##>19 - IPP=6; DSCP=CS6</option>
+						<option value="20" ##NETPRIO20##>20 - IPP=7; DSCP=CS7</option>
+					</select>
+				</TD>
+			</TR>
 			<TR><TD><A>Bind wait:</A></TD><TD><input name="bindwait" class="withunit short" type="text" maxlength="5" value="##BINDWAIT##"> s</TD></TR>
 			<TR><TD><A>Resolver:</A></TD>
 				<TD>

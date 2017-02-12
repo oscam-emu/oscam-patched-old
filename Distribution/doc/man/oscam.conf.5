@@ -227,9 +227,33 @@ bind service to specified IP address, default:none
 value to wait for bind request to complete, default:120
 .RE
 .PP
-\fBnetprio\fP = \fBpriority\fP
+\fBnetprio\fP = \fB0\fP|\fB1\fP|\fB2\fP|\fB3\fP|\fB4\fP|\fB5\fP|\fB6\fP|\fB7\fP|\fB8\fP|\fB9\fP|\fB10\fP|\fB11\fP|\fB12\fP|\fB13\fP|\fB14\fP|\fB15\fP|\fB16\fP|\fB17\fP|\fB18\fP|\fB19\fP|\fB20\fP
 .RS 3n
-network priority, default:system given
+value for network priority:
+IPP value will be applied to SO_PRIORITY (system internal prioritization)
+DSCP value will be applied to IP_TOS/IPV6_TCLASS (the TOS field in the IP packet header)
+
+   \fB0\fP = IPP=0; DSCP=CS0 (default)
+   \fB1\fP = IPP=1; DSCP=CS1
+   \fB2\fP = IPP=1; DSCP=AF11
+   \fB3\fP = IPP=1; DSCP=AF12
+   \fB4\fP = IPP=1; DSCP=AF13
+   \fB5\fP = IPP=2; DSCP=CS2
+   \fB6\fP = IPP=2; DSCP=AF21
+   \fB7\fP = IPP=2; DSCP=AF22
+   \fB8\fP = IPP=2; DSCP=AF23
+   \fB9\fP = IPP=3; DSCP=CS3
+  \fB10\fP = IPP=3; DSCP=AF31
+  \fB11\fP = IPP=3; DSCP=AF32
+  \fB12\fP = IPP=3; DSCP=AF33
+  \fB13\fP = IPP=4; DSCP=CS4
+  \fB14\fP = IPP=4; DSCP=AF41
+  \fB15\fP = IPP=4; DSCP=AF42
+  \fB16\fP = IPP=4; DSCP=AF43
+  \fB17\fP = IPP=5; DSCP=CS5
+  \fB18\fP = IPP=5; DSCP=EF
+  \fB19\fP = IPP=6; DSCP=CS6
+  \fB20\fP = IPP=7; DSCP=CS7
 .RE
 .PP
 \fBresolvegethostbyname\fP = \fB0\fP|\fB1\fP

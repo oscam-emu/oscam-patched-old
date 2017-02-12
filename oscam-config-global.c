@@ -301,6 +301,7 @@ void global_fixups_fn(void *UNUSED(var))
 		SetPriorityClass(WinId, wprio);
 #endif
 	}
+	if(cfg.netprio <= 0 || cfg.netprio > 20) { cfg.netprio = 0; }
 	if(cfg.max_log_size != 0 && cfg.max_log_size <= 10) { cfg.max_log_size = 10; }
 #ifdef WITH_LB
 	if(cfg.lb_save > 0 && cfg.lb_save < 100) { cfg.lb_save = 100; }
