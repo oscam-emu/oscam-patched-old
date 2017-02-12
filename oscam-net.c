@@ -245,8 +245,120 @@ void cs_getIPv6fromHost(const char *hostname, struct in6_addr *addr, struct sock
 
 int set_socket_priority(int fd, int priority)
 {
-#ifdef SO_PRIORITY
-	return priority ? setsockopt(fd, SOL_SOCKET, SO_PRIORITY, (void *)&priority, sizeof(int *)) : -1;
+#if defined(IP_TOS) || defined(SO_PRIORITY)
+	if (priority == 0) { return -1; }	// default value, therefore leave it untouched (IPP=0; DSCP=CS0)
+	
+	int ret = 0;
+	int cos = 0;
+	int tos = 0x00;
+
+	switch (priority) {
+		case 1:		// IPP=1; DSCP=CS1
+			cos = 1;
+			tos = 0x20;
+			break;
+		case 2:		// IPP=1; DSCP=AF11
+			cos = 1;
+			tos = 0x28;
+			break;
+		case 3:		// IPP=1; DSCP=AF12
+			cos = 1;
+			tos = 0x30;
+			break;
+		case 4:		// IPP=1; DSCP=AF13
+			cos = 1;
+			tos = 0x38;
+			break;
+		case 5:		// IPP=2; DSCP=CS2
+			cos = 2;
+			tos = 0x40;
+			break;
+		case 6:		// IPP=2; DSCP=AF21
+			cos = 2;
+			tos = 0x48;
+			break;
+		case 7:		// IPP=2; DSCP=AF22
+			cos = 2;
+			tos = 0x50;
+			break;
+		case 8:		// IPP=2; DSCP=AF23
+			cos = 2;
+			tos = 0x58;
+			break;
+		case 9:		// IPP=3; DSCP=CS3
+			cos = 3;
+			tos = 0x60;
+			break;
+		case 10:	// IPP=3; DSCP=AF31
+			cos = 3;
+			tos = 0x68;
+			break;
+		case 11:	// IPP=3; DSCP=AF32
+			cos = 3;
+			tos = 0x70;
+			break;
+		case 12:	// IPP=3; DSCP=AF33
+			cos = 3;
+			tos = 0x78;
+			break;
+		case 13:	// IPP=4; DSCP=CS4
+			cos = 4;
+			tos = 0x80;
+			break;
+		case 14:	// IPP=4; DSCP=AF41
+			cos = 4;
+			tos = 0x88;
+			break;
+		case 15:	// IPP=4; DSCP=AF42
+			cos = 4;
+			tos = 0x90;
+			break;
+		case 16:	// IPP=4; DSCP=AF43
+			cos = 4;
+			tos = 0x98;
+			break;
+		case 17:	// IPP=5; DSCP=CS5
+			cos = 5;
+			tos = 0xa0;
+			break;
+		case 18:	// IPP=5; DSCP=EF
+			cos = 5;
+			tos = 0xb8;
+			break;
+		case 19:	// IPP=6; DSCP=CS6
+			cos = 6;
+			tos = 0xc0;
+			break;
+		case 20:	// IPP=7; DSCP=CS7
+			cos = 7;
+			tos = 0xe0;
+			break;
+	}
+
+# ifdef IP_TOS
+	if (setsockopt(fd, IPPROTO_IP, IP_TOS, (void *)&tos, sizeof(tos)) < 0) {
+		cs_log("Setting IP_TOS failed, errno=%d, %s", errno, strerror(errno));
+	} else {
+		ret = ret ^ 0x01;
+	}
+#  if  defined(IPV6SUPPORT) && defined(IPV6_TCLASS)
+	if (setsockopt(fd, IPPROTO_IPV6, IPV6_TCLASS, (void *)&tos, sizeof(tos)) < 0) {
+		cs_log("Setting IPV6_TCLASS failed, errno=%d, %s", errno, strerror(errno));
+	} else {
+		ret = ret ^ 0x02;
+	}
+#  endif
+# endif
+
+# ifdef SO_PRIORITY
+	if (setsockopt(fd, SOL_SOCKET, SO_PRIORITY, (void *)&cos, sizeof(cos)) < 0) {
+		cs_log("Setting SO_PRIORITY failed, errno=%d, %s", errno, strerror(errno));
+	} else {
+		ret = ret ^ 0x04;
+	}
+# endif
+
+	return ret;
 #else
 	(void)fd;
 	(void)priority;
@@ -524,7 +636,7 @@ void set_so_reuseport(int fd) {
 int32_t start_listener(struct s_module *module, struct s_port *port)
 {
 	int32_t ov = 1, timeout, is_udp, i;
-	char ptxt[2][32];
+	char ptxt[2][45];
 	struct SOCKADDR sad; // structure to hold server's address
 	socklen_t sad_len;
 
@@ -611,8 +723,10 @@ int32_t start_listener(struct s_module *module, struct s_port *port)
 
 	set_so_reuseport(port->fd);
 
-	if(set_socket_priority(port->fd, cfg.netprio) > -1)
-		{ snprintf(ptxt[1], sizeof(ptxt[1]), ", prio=%d", cfg.netprio); }
+	int prio_ret = set_socket_priority(port->fd, cfg.netprio);
+	if (prio_ret > -1) {
+		snprintf(ptxt[1], sizeof(ptxt[1]), ", prio=%d [%s%s%s ]", cfg.netprio, prio_ret&0x04 ? " SO_PRIORITY" : "", prio_ret&0x01 ? " IP_TOS" : "", prio_ret&0x02 ? " IPV6_TCLASS" : "");
+	}
 
 	if(!is_udp)
 	{

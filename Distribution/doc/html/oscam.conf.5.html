@@ -306,9 +306,33 @@ value to wait for bind request to complete, default:120
 
 <P>
 
-<B>netprio</B> = <B>priority</B>
+<B>netprio</B> = <B>0</B>|<B>1</B>|<B>2</B>|<B>3</B>|<B>4</B>|<B>5</B>|<B>6</B>|<B>7</B>|<B>8</B>|<B>9</B>|<B>10</B>|<B>11</B>|<B>12</B>|<B>13</B>|<B>14</B>|<B>15</B>|<B>16</B>|<B>17</B>|<B>18</B>|<B>19</B>|<B>20</B>
 <DL COMPACT><DT><DD>
-network priority, default:system given
+value for network priority:
+<BR>IPP value will be applied to SO_PRIORITY (system internal prioritization)
+<BR>DSCP value will be applied to IP_TOS/IPV6_TCLASS (the TOS field in the IP packet header)
+<P>
+<BR>&nbsp;<B>&nbsp;&nbsp;0</B>&nbsp;=&nbsp;IPP=0;&nbsp;DSCP=CS0&nbsp;(default)
+<BR>&nbsp;<B>&nbsp;&nbsp;1</B>&nbsp;=&nbsp;IPP=1;&nbsp;DSCP=CS1
+<BR>&nbsp;<B>&nbsp;&nbsp;2</B>&nbsp;=&nbsp;IPP=1;&nbsp;DSCP=AF11
+<BR>&nbsp;<B>&nbsp;&nbsp;3</B>&nbsp;=&nbsp;IPP=1;&nbsp;DSCP=AF12
+<BR>&nbsp;<B>&nbsp;&nbsp;4</B>&nbsp;=&nbsp;IPP=1;&nbsp;DSCP=AF13
+<BR>&nbsp;<B>&nbsp;&nbsp;5</B>&nbsp;=&nbsp;IPP=2;&nbsp;DSCP=CS2
+<BR>&nbsp;<B>&nbsp;&nbsp;6</B>&nbsp;=&nbsp;IPP=2;&nbsp;DSCP=AF21
+<BR>&nbsp;<B>&nbsp;&nbsp;7</B>&nbsp;=&nbsp;IPP=2;&nbsp;DSCP=AF22
+<BR>&nbsp;<B>&nbsp;&nbsp;8</B>&nbsp;=&nbsp;IPP=2;&nbsp;DSCP=AF23
+<BR>&nbsp;<B>&nbsp;&nbsp;9</B>&nbsp;=&nbsp;IPP=3;&nbsp;DSCP=CS3
+<BR>&nbsp;<B>10</B>&nbsp;=&nbsp;IPP=3;&nbsp;DSCP=AF31
+<BR>&nbsp;<B>11</B>&nbsp;=&nbsp;IPP=3;&nbsp;DSCP=AF32
+<BR>&nbsp;<B>12</B>&nbsp;=&nbsp;IPP=3;&nbsp;DSCP=AF33
+<BR>&nbsp;<B>13</B>&nbsp;=&nbsp;IPP=4;&nbsp;DSCP=CS4
+<BR>&nbsp;<B>14</B>&nbsp;=&nbsp;IPP=4;&nbsp;DSCP=AF41
+<BR>&nbsp;<B>15</B>&nbsp;=&nbsp;IPP=4;&nbsp;DSCP=AF42
+<BR>&nbsp;<B>16</B>&nbsp;=&nbsp;IPP=4;&nbsp;DSCP=AF43
+<BR>&nbsp;<B>17</B>&nbsp;=&nbsp;IPP=5;&nbsp;DSCP=CS5
+<BR>&nbsp;<B>18</B>&nbsp;=&nbsp;IPP=5;&nbsp;DSCP=EF
+<BR>&nbsp;<B>19</B>&nbsp;=&nbsp;IPP=6;&nbsp;DSCP=CS6
+<BR>&nbsp;<B>20</B>&nbsp;=&nbsp;IPP=7;&nbsp;DSCP=CS7
 </DL>
 
 <P>

@@ -626,7 +626,10 @@ static char *send_oscam_config_global(struct templatevars *vars, struct uriparam
 		{ tpl_addVar(vars, TPLADD, "SERVERIP", cs_inet_ntoa(cfg.srvip)); }
 	tpl_printf(vars, TPLADD, "NICE", "%d", cfg.nice);
 	tpl_printf(vars, TPLADD, "BINDWAIT", "%d", cfg.bindwait);
-	tpl_printf(vars, TPLADD, "NETPRIO", "%d", cfg.netprio);
+
+	tpl_printf(vars, TPLADD, "TMP", "NETPRIO%d", cfg.netprio);
+	tpl_addVar(vars, TPLADD, tpl_getVar(vars, "TMP"), "selected");
+
 	tpl_printf(vars, TPLADD, "PIDFILE", "%s", ESTR(cfg.pidfile));
 
 
