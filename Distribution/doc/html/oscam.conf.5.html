@@ -1442,9 +1442,23 @@ send message to peers in seconds, default:300
 
 <P>
 
+<B>log_hello</B> = <B>0</B>|<B>1</B>
+<DL COMPACT><DT><DD>
+1 = log hello messages, default:1
+</DL>
+
+<P>
+
+<B>dis_attack_txt</B> = <B>0</B>|<B>1</B>
+<DL COMPACT><DT><DD>
+1 = disable attack.txt, default:0
+</DL>
+
+<P>
+
 <B>gsms_disable</B> = <B>0</B>|<B>1</B>
 <DL COMPACT><DT><DD>
-1 = disable gbox short message service (GSMS),default:0
+1 = disable gbox short message service (GSMS), default:1
 <P>
 sending a messeage: /tmp/gsms.txt: &lt;box ID&gt; &lt;1=mormal message|2=OSD/TV message&gt; 
 &lt;message 6 to 127 characters&gt;, status will be stored in '/tmp/gsms.ack' 

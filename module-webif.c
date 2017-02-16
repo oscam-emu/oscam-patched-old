@@ -1144,6 +1144,7 @@ static char *send_oscam_config_gbox(struct templatevars *vars, struct uriparams 
 	if(cfg.ccc_reshare == 1)  { tpl_addVar(vars, TPLADD, "GBOXCCCRESHARE", "checked"); }
 	if(cfg.log_hello == 1)  { tpl_addVar(vars, TPLADD, "GBOXLOGHELLO", "checked"); }
 	if(cfg.gsms_dis == 1)  { tpl_addVar(vars, TPLADD, "GBOXGSMSDISABLE", "checked"); }
+	if(cfg.dis_attack_txt == 1)  { tpl_addVar(vars, TPLADD, "GBOXDISATTACKTXT", "checked"); }
 	if(cfg.gbox_tmp_dir != NULL) { tpl_addVar(vars, TPLADD, "GBOXTMPDIR", cfg.gbox_tmp_dir); }
 	char *value1 = mk_t_gbox_proxy_card();	
 	tpl_addVar(vars, TPLAPPEND, "GBOXPROXYCARD", value1);

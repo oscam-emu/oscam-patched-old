@@ -759,9 +759,15 @@ DESCRIPTIONS
 
        gbox_reconnect = time
 	  send message to peers in seconds, default:300
+	  
+       log_hello = 0|1
+	  1 = log hello messages ,default:1
+	  
+       dis_attack_txt = 0|1
+	  1 = disable creation of file attack.txt ,default:0
 
        gsms_disable = 0|1
-	  1 = disable gbox short message service (GSMS),default:0
+	  1 = disable gbox short message service (GSMS),default:1
 
 	  sending  a  messeage:  /tmp/gsms.txt:  <box  ID>  <1=mormal  message|2=OSD/TV  message>  <message  6	to 127 characters>, status will be stored in
 	  '/tmp/gsms.ack' respective 'gsms.nack', receiving a message: The message will be stored in /tmp/gsms.log
