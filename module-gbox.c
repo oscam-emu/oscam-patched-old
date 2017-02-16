@@ -107,6 +107,7 @@ unsigned char *GboxCPU( unsigned char a ) {
 
 static void write_attack_file (struct s_client *cli, uint8_t txt_id, uint16_t rcvd_id )
 {
+	if (cfg.dis_attack_txt) {return;}
 	char tsbuf[28];
 	time_t walltime = cs_time();
 	cs_ctime_r(&walltime, tsbuf);

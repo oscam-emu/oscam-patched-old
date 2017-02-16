@@ -2090,6 +2090,7 @@ struct s_config
 	uint8_t         gbox_my_cpu_api;
 	uint8_t         gsms_dis;
 	uint8_t         log_hello;
+	uint8_t         dis_attack_txt;
 	char            *gbox_tmp_dir; 
 	uint8_t         ccc_reshare;
 	uint16_t        gbox_ignored_peer[GBOX_MAX_IGNORED_PEERS];

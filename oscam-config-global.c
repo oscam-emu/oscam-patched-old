@@ -1121,6 +1121,7 @@ static const struct config_list gbox_opts[] =
 	DEF_OPT_FUNC("my_cpu_api"	, OFS(gbox_my_cpu_api)	, gbox_my_cpu_api_fn),
 	DEF_OPT_UINT8("ccc_reshare"	, OFS(ccc_reshare)	, 0),
 	DEF_OPT_UINT8("gsms_disable"	, OFS(gsms_dis)		, 1),
+	DEF_OPT_UINT8("dis_attack_txt"	, OFS(dis_attack_txt)	, 0),
 	DEF_OPT_UINT8("log_hello"	, OFS(log_hello)	, 1),
 	DEF_OPT_STR("tmp_dir"		, OFS(gbox_tmp_dir)	, NULL ),
 	DEF_OPT_FUNC("ignore_peer"	, OFS(gbox_ignored_peer), gbox_ignored_peer_fn ),

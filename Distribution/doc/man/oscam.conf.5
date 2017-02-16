@@ -1083,12 +1083,22 @@ set gbox CPU and API byte in hexadecimal, default:40
 .PP
 \fBgbox_reconnect\fP = \fBtime\fP
 .RS 3n
-send message to peers in seconds, default:300
+send hello message to peers in seconds, default:300
+.RE
+.PP
+\fBlog_hello\fP = \fB0\fP|\fB1\fP
+.RS 3n
+1 = log hello messages, default:1
+.RE
+.PP
+\fBdis_attack_txt\fP = \fB0\fP|\fB1\fP
+.RS 3n
+1 = disable creation of attack.txt, default:0
 .RE
 .PP
 \fBgsms_disable\fP = \fB0\fP|\fB1\fP
 .RS 3n
-1 = disable gbox short message service (GSMS),default:0
+1 = disable gbox short message service (GSMS),default:1
 
 sending a messeage: /tmp/gsms.txt: <box ID> <1=mormal message|2=OSD/TV message> 
 <message 6 to 127 characters>, status will be stored in '/tmp/gsms.ack' 
