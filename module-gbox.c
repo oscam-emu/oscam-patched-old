@@ -27,17 +27,23 @@
 #define HELLO_KEEPALIVE_TIME	120 //send hello to peer every 2 min in case no ecm received
 #define STATS_WRITE_TIME	300 //write stats file every 5 min
 #define MAX_GBOX_CARDS 1024  //send max. 1024 to peer
-#define LOCALS_CHECK_TIME 30 //check local cards every 30 sec
 
 #define LOCAL_GBOX_MAJOR_VERSION	0x02
 
 static struct gbox_data local_gbox;
 static int8_t local_gbox_initialized = 0;
 static uint8_t local_cards_initialized = 0;
+static uint8_t local_card_change_detected = 0;
 static time_t last_stats_written;
-static time_t last_locals_checked;
 
 static int32_t gbox_send_ecm(struct s_client *cli, ECM_REQUEST *er);
+
+void gbx_local_card_changed(void)
+{
+	cs_log_dbg(D_READER, "Local card change detected");
+	local_card_change_detected = 1;
+	return;
+}
 
 char *get_gbox_tmp_fname(char *fext)
 {
@@ -1262,10 +1268,11 @@ static int8_t gbox_check_header_recvd(struct s_client *cli, struct s_client *pro
 	}
 	if(!peer) { return -1; }
 
-	if ((time(NULL) - last_locals_checked) > LOCALS_CHECK_TIME)
+	if (local_card_change_detected)
 	{ 
+		local_card_change_detected = 0;
 		gbox_local_cards(proxy->reader, &cli->ttab);
-		last_locals_checked = time(NULL);
+		cs_log("Local Cards updated");
 	}
 
 	if(!peer->authstat)
@@ -1654,7 +1661,6 @@ static int8_t init_local_gbox(void)
 	}
 
 	last_stats_written = time(NULL);
-	last_locals_checked = time(NULL);
 	gbox_write_version();
 	start_sms_sender();
 	return local_gbox_initialized;

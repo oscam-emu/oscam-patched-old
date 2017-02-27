@@ -169,9 +169,11 @@ int8_t gbox_message_header(uchar *buf, uint16_t cmd, uint32_t peer_password, uin
 void gbox_free_cards_pending(ECM_REQUEST *er);
 void gbox_send_good_night(void);
 void gbox_send_goodbye(struct s_client *cli);
+extern void gbx_local_card_changed(void);
 #else
 static inline void gbox_free_cards_pending(ECM_REQUEST *UNUSED(er)) { }
 static inline void gbox_send_good_night(void) { }
+static inline void gbx_local_card_changed(void) { }
 #endif
 
 #endif
