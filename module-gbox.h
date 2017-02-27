@@ -44,7 +44,7 @@
 #define FILE_ATTACK_INFO        "attack.txt"
 #define FILE_GBOX_PEER_ONL      "share.onl"
 #define FILE_STATS              "stats.info"
-#define FILE_MSG_OSD            "msg.osd"
+#define FILE_MSG_INFO           "msg.info"
 #define FILE_LOCAL_CARDS_INFO   "sc.info"
 
 #define	MSGID_GOODNIGHT         0
@@ -55,7 +55,8 @@
 #define	MSGID_LOSTCONNECT       5
 #define	MSGID_ATTACK            6
 #define	MSGID_IPCHANGE          7
-#define	MSGID_UNKNOWNMSG        8
+#define	MSGID_GBOXONL           8
+#define	MSGID_UNKNOWNMSG        9
 
 #define GBOX_STAT_HELLOL        0
 #define GBOX_STAT_HELLOS        1
