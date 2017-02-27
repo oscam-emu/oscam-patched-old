@@ -133,8 +133,9 @@ static bool use_srvid2 = false;
 #define MNU_GBX_FSMSNACK    	26
 #define MNU_GBX_FSTAINF     	27
 #define MNU_GBX_FEXPINF     	28
+#define MNU_GBX_INFOLOG     	29
 
-#define MNU_CFG_TOTAL_ITEMS 	29 // sum of items above. Use it for "All inactive" in function calls too.
+#define MNU_CFG_TOTAL_ITEMS 	30 // sum of items above. Use it for "All inactive" in function calls too.
 
 static void set_status_info_var(struct templatevars *vars, char *varname, int no_data, char *fmt, double value) {
 	if (no_data)
@@ -6333,6 +6334,7 @@ static char *send_oscam_files(struct templatevars * vars, struct uriparams * par
 		{ "gsms.nack",       MNU_GBX_FSMSNACK,  FTYPE_GBOX },     // id 26
 		{ "stats.info",      MNU_GBX_FSTAINF,   FTYPE_GBOX },     // id 27
 		{ "expired.info",    MNU_GBX_FEXPINF,   FTYPE_GBOX },     // id 28
+		{ "info.log",        MNU_GBX_INFOLOG,   FTYPE_GBOX },     // id 29
 #endif
 		{ NULL, 0, 0 },
 	};
