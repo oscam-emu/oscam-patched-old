@@ -111,7 +111,7 @@ unsigned char *GboxCPU( unsigned char a ) {
 	return(cfg.gbox_my_cpu_api);
 }
 
-static void write_attack_file (struct s_client *cli, uint8_t txt_id, uint16_t rcvd_id )
+static void write_attack_file (struct s_client *cli, uint8_t txt_id, uint16_t rcvd_id)
 {
 	if (cfg.dis_attack_txt) {return;}
 	char tsbuf[28];
@@ -125,15 +125,15 @@ static void write_attack_file (struct s_client *cli, uint8_t txt_id, uint16_t rc
 		cs_log("Couldn't open %s: %s", fname, strerror(errno));
 		return;
 	}
-	if(txt_id == 0)
+	if(txt_id == GBOX_ATTACK_LOCAL_PW)
 	{fprintf(fhandle, "ATTACK ALERT FROM %04X  %s - peer sends wrong local password - %s", rcvd_id, cs_inet_ntoa(cli->ip), tsbuf);}
-	if(txt_id == 1)
+	if(txt_id == GBOX_ATTACK_PEER_IGNORE)
 	{fprintf(fhandle, "ATTACK ALERT FROM %04X  %s - peer is ignored - %s", rcvd_id, cs_inet_ntoa(cli->ip), tsbuf);}
-	if(txt_id == 2)
+	if(txt_id == GBOX_ATTACK_PEER_PW)
 	{fprintf(fhandle, "ATTACK ALERT FROM %04X  %s - peer sends unknown peer password - %s", rcvd_id, cs_inet_ntoa(cli->ip), tsbuf);}
-	if(txt_id == 3)
+	if(txt_id == GBOX_ATTACK_AUTH_FAIL)
 	{fprintf(fhandle, "ATTACK ALERT FROM %04X  %s - authentification failed - %s", rcvd_id, cs_inet_ntoa(cli->ip), tsbuf);}
-	if(txt_id == 4)
+	if(txt_id == GBOX_ATTACK_ECM_BLOCKED)
 	{fprintf(fhandle, "ATTACK ALERT FROM %04X  %s - ECM is blocked - %s", rcvd_id, cs_inet_ntoa(cli->ip), tsbuf);}
 	fclose(fhandle);
 	return;
@@ -167,6 +167,13 @@ static void write_msg_info (struct s_client *cli, uint8_t msg_id, uint8_t txt_id
 			}
 			pclose(p);
 	}
+	return;
+}
+
+static void handle_attack(struct s_client *cli, uint8_t txt_id, uint16_t rcvd_id)
+{
+	write_attack_file(cli, txt_id, rcvd_id);
+	write_msg_info(cli, MSGID_ATTACK, txt_id, rcvd_id);
 	return;
 }
 
@@ -844,8 +851,7 @@ static int8_t gbox_incoming_ecm(struct s_client *cli, uchar *data, int32_t n)
 				   data[(((data[19] & 0x0f) << 8) | data[20]) + 22];
 	if (is_blocked_peer(requesting_peer)) 
 	{ 
-		write_attack_file(cli, 4, requesting_peer);
-		write_msg_info(cli, MSGID_ATTACK, 4, requesting_peer);
+		handle_attack(cli, GBOX_ATTACK_ECM_BLOCKED, requesting_peer);
 		cs_log("ECM from peer %04X blocked by config", requesting_peer);
 		return -1;
 	}
@@ -1200,15 +1206,13 @@ static int8_t gbox_check_header_recvd(struct s_client *cli, struct s_client *pro
 			//cs_log_dbg(D_READER,"my_received pw: %08X - peer_recvd pw: %08X - peer_recvd_id: %04X ", my_received_pw, peer_received_pw, peer_recvd_id);
 			if (check_peer_ignored(peer_recvd_id))
 			{
-				write_attack_file(cli, 1, peer_recvd_id);
-				write_msg_info(cli, MSGID_ATTACK, 1, peer_recvd_id);
+				handle_attack(cli, GBOX_ATTACK_PEER_IGNORE, peer_recvd_id);
 				cs_log("Peer blocked by conf - ignoring gbox peer_id: %04X",  peer_recvd_id);
 				return -1;
 			}
 			if (!validate_peerpass(peer_received_pw))
 			{
-				write_attack_file(cli, 2, peer_recvd_id);
-				write_msg_info(cli, MSGID_ATTACK, 2, peer_recvd_id);
+				handle_attack(cli, GBOX_ATTACK_PEER_PW, peer_recvd_id);
 				cs_log("peer: %04X - peerpass: %08X unknown -> check [reader] section",  peer_recvd_id, peer_received_pw);
 				return -1;
 			}
@@ -1216,8 +1220,7 @@ static int8_t gbox_check_header_recvd(struct s_client *cli, struct s_client *pro
 			{
 				if (gbox_auth_client(cli, peer_received_pw) < 0)
 				{
-					write_attack_file(cli, 3, peer_recvd_id);
-					write_msg_info(cli, MSGID_ATTACK, 3, peer_recvd_id); 
+					handle_attack(cli, GBOX_ATTACK_AUTH_FAIL, peer_recvd_id);
 					cs_log ("Authentication failed. Check config ...");
 					return -1;
 				}
@@ -1253,8 +1256,7 @@ static int8_t gbox_check_header_recvd(struct s_client *cli, struct s_client *pro
 	{
 		cs_log("-> ATTACK ALERT from IP %s - peer sends wrong local password", cs_inet_ntoa(cli->ip));
 		cs_log_dbg(D_READER,"-> received data: %s", cs_hexdump(0, data, n, tmp, sizeof(tmp)));
-		write_attack_file(cli, 0, 0);
-		write_msg_info(cli, MSGID_ATTACK, 0, 0);
+		handle_attack(cli, GBOX_ATTACK_LOCAL_PW, 0);
 		return -1;
 	}
 	if (!proxy) { return -1; }
