@@ -71,6 +71,12 @@
 #define GBOX_PEER_OFFLINE	0
 #define GBOX_PEER_ONLINE	1
 
+#define GBOX_ATTACK_LOCAL_PW	0
+#define GBOX_ATTACK_PEER_IGNORE	1
+#define GBOX_ATTACK_PEER_PW	2
+#define GBOX_ATTACK_AUTH_FAIL	3
+#define GBOX_ATTACK_ECM_BLOCKED	4
+
 struct gbox_rbc_thread_args 
 {
     struct s_client *cli;
