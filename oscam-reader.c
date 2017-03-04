@@ -508,7 +508,7 @@ const char *reader_get_type_desc(struct s_reader *rdr, int32_t extended)
 	{
 		desc = "cccam";
 		if(extended && cccam_client_extended_mode(rdr->client)) desc = "cccam_ext";
-		if(cccam_client_multics_mode(rdr->client)) desc = "cccam_msc";
+		if(cccam_client_multics_mode(rdr->client)) desc = "cccam_mcs";
 	}
 	return desc;
 }
