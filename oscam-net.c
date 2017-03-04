@@ -249,8 +249,8 @@ int set_socket_priority(int fd, int priority)
 	if (priority == 0) { return -1; }	// default value, therefore leave it untouched (IPP=0; DSCP=CS0)
 	
 	int ret = 0;
-	int cos = 0;
-	int tos = 0x00;
+	int cos __attribute__ ((unused)) = 0;
+	int tos __attribute__ ((unused)) = 0x00;
 
 	switch (priority) {
 		case 1:		// IPP=1; DSCP=CS1
