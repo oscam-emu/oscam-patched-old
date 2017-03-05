@@ -512,7 +512,7 @@ int32_t chk_rsfilter(struct s_reader *reader, ECM_REQUEST *er)
 							  (reader->prid[i][3]));
 			cs_log_dbg(D_CLIENT, "trying server '%s' filter %04X@%06X",
 						  reader->device, caid, prid);
-			if(prid == er->prid)
+			if(prid == er->prid || !er->prid)
 			{
 				rc = 1;
 				cs_log_dbg(D_CLIENT, "%04X@%06X allowed by server '%s' filter %04X@%06X",
