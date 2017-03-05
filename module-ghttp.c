@@ -59,19 +59,25 @@ static bool _ssl_connect(struct s_client *client, int32_t fd)
 	if(context->ssl_handle == NULL)
 	{
 		ERR_print_errors_fp(stderr);
+#if OPENSSL_VERSION_NUMBER < 0x1010005fL
 		ERR_remove_state(0);
+#endif
 		return false;
 	}
 	if(!SSL_set_fd(context->ssl_handle, fd))
 	{
 		ERR_print_errors_fp(stderr);
+#if OPENSSL_VERSION_NUMBER < 0x1010005fL
 		ERR_remove_state(0);
+#endif
 		return false;
 	}
 	if(SSL_connect(context->ssl_handle) != 1)
 	{
 		ERR_print_errors_fp(stderr);
+#if OPENSSL_VERSION_NUMBER < 0x1010005fL
 		ERR_remove_state(0);
+#endif
 	}
 
 	if(context->ssl_handle)
@@ -95,7 +101,9 @@ int32_t ghttp_client_init(struct s_client *cl)
 	if(ghttp_ssl_context == NULL)
 	{
 		ERR_print_errors_fp(stderr);
+#if OPENSSL_VERSION_NUMBER < 0x1010005fL
 		ERR_remove_state(0);
+#endif
 	}
 #endif
 
