@@ -5,6 +5,7 @@
 #include "oscam-emm.h"
 #include "reader-common.h"
 
+struct bignum_st;
 struct cryptoworks_data
 {
 	BIGNUM          exp;
@@ -667,7 +668,7 @@ static int32_t cryptoworks_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 	{
 		return SKIPPED;
 	}
-	
+
 	rdr_log_dbg(reader, D_EMM, "%s(): type %d - response %02X %02X", __func__, ep->type, cta_res[0], cta_res[1]);
 	return ERROR;
 }
