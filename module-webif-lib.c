@@ -919,7 +919,10 @@ SSL_CTX *SSL_Webif_Init(void)
 
 out_err:
 	ERR_print_errors_fp(stderr);
+#if OPENSSL_VERSION_NUMBER < 0x1010005fL
+    // fix build "OpenSSL 1.1.0e  16 Feb 2017"
 	ERR_remove_state(0);
+#endif
 	SSL_CTX_free(ctx);
 	return NULL;
 }
