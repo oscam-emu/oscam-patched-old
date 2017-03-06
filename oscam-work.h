@@ -29,7 +29,8 @@ enum actions
 	ACTION_CLIENT_TIMEOUT      = 31,    // wc31
 	ACTION_ECM_ANSWER_READER   = 32,    // wc32
 	ACTION_ECM_ANSWER_CACHE    = 33,    // wc33
-	ACTION_CACHEEX1_DELAY      = 34     // wc34
+	ACTION_CACHEEX1_DELAY      = 34,    // wc34
+	ACTION_PEER_IDLE           = 35     // wc35
 };
 
 #define ACTION_CLIENT_FIRST 20 // This just marks where client actions start

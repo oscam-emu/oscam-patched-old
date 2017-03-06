@@ -1116,7 +1116,7 @@ static const struct config_list gbox_opts[] =
 	DEF_OPT_FUNC("port"		, OFS(gbox_port)	, gbox_port_fn),
 	DEF_OPT_STR("hostname"		, OFS(gbox_hostname)	, NULL),
 	DEF_OPT_FUNC("my_password"	, OFS(gbox_password)	, gbox_password_fn ),
-	DEF_OPT_INT32("gbox_reconnect"	, OFS(gbox_reconnect)	, DEFAULT_GBOX_RECONNECT),
+	DEF_OPT_UINT32("gbox_reconnect"	, OFS(gbox_reconnect)	, DEFAULT_GBOX_RECONNECT),
 	DEF_OPT_FUNC("my_vers"		, OFS(gbox_my_vers)	, gbox_my_vers_fn),
 	DEF_OPT_FUNC("my_cpu_api"	, OFS(gbox_my_cpu_api)	, gbox_my_cpu_api_fn),
 	DEF_OPT_UINT8("ccc_reshare"	, OFS(ccc_reshare)	, 0),

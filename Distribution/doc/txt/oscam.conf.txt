@@ -758,7 +758,7 @@ DESCRIPTIONS
 	  set gbox CPU and API byte in hexadecimal, default:40
 
        gbox_reconnect = time
-	  send message to peers in seconds, default:300
+	  send message to peers in seconds, default:180, min:60, max:300
 	  
        log_hello = 0|1
 	  1 = log hello messages ,default:1
