@@ -373,6 +373,10 @@ void *work_thread(void *ptr)
 				}
 				break;
 			}
+			case ACTION_PEER_IDLE:
+				if(module->s_peer_idle)
+					{ module->s_peer_idle(cl); }
+			break;
 			} // switch
 
 			__free_job_data(cl, data);
