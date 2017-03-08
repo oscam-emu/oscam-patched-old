@@ -3067,6 +3067,8 @@ void request_cw(struct s_client *client, ECM_REQUEST *er, int32_t demux_id, uint
 		demux[demux_id].demux_fd[filternum].lastresult = 0xFF;
 	}
 
+	er->adapter_index = demux[demux_id].adapter_index;
+
 	cs_log_dbg(D_DVBAPI, "Demuxer %d get controlword!", demux_id);
 	get_cw(client, er);
 
@@ -5892,6 +5894,7 @@ void dvbapi_send_dcw(struct s_client *client, ECM_REQUEST *er)
 		uint32_t nocw_write = 0; // 0 = write cw, 1 = dont write cw to hardware demuxer
 		if(demux[i].program_number == 0) { continue; }  // ignore empty demuxers
 		if(demux[i].program_number != er->srvid) { continue; }  // skip ecm response for other srvid
+		if(demux[i].adapter_index != er->adapter_index) { continue; }  // skip ecm recponse for different adapter
 
 #ifdef WITH_STAPI5
 		if(strcmp(dev_list[demux[i].dev_index].name, er->dev_name) != 0) { continue; }  // skip request if PTI device doesn't match request

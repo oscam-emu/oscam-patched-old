@@ -1084,6 +1084,9 @@ typedef struct ecm_request_t
 #endif
 	struct ecm_request_t    *parent;
 	struct ecm_request_t    *next;
+#ifdef HAVE_DVBAPI
+	uint8_t		adapter_index;
+#endif
 } ECM_REQUEST;
 
 

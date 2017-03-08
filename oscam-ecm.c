@@ -1332,6 +1332,9 @@ void chk_dcw(struct s_ecm_answer *ea)
 		ert->rcEx = 0;
 		ert->rc = ea->rc;
 		ert->grp |= eardr->grp;
+#ifdef HAVE_DVBAPI
+		ert->adapter_index = ea->er->adapter_index;
+#endif
 
 		break;
 	case E_INVALID:
