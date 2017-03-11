@@ -752,7 +752,7 @@ DESCRIPTIONS
 	  1 = enable CCCam reshare, default:0
 
        my_vers = version
-	  set gbox version in hexadecimal low byte, default:25
+	  set gbox version in hexadecimal low byte, default:2A
 
        my_cpu_api = byte
 	  set gbox CPU and API byte in hexadecimal, default:40

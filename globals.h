@@ -2076,7 +2076,7 @@ struct s_config
 	uint32_t        cc_recv_timeout;                // The poll() timeout parameter in ms. Default: DEFAULT_CC_RECV_TIMEOUT (2000 ms).
 #endif
 #ifdef MODULE_GBOX
-    #define         GBOX_MY_VERS_DEF       0x25
+    #define         GBOX_MY_VERS_DEF       0x2A
     #define         GBOX_MY_CPU_API_DEF    0x40
     #define        	GBOX_MAX_PROXY_CARDS   32
     #define        	GBOX_MAX_IGNORED_PEERS 16

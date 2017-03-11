@@ -63,8 +63,6 @@
 #define GBOX_STAT_HELLOL        0
 #define GBOX_STAT_HELLOS        1
 #define GBOX_STAT_HELLOR        2
-#define GBOX_STAT_HELLO3        3
-#define GBOX_STAT_HELLO4        4
 
 #define GBOX_DELETE_FROM_PEER	0
 #define GBOX_DELETE_WITH_ID	1

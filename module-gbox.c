@@ -47,7 +47,7 @@ void gbx_local_card_changed(void)
 
 char *get_gbox_tmp_fname(char *fext)
 {
-	static char gbox_tmpfile_buf[64] = { 0 };	
+	static char gbox_tmpfile_buf[64] = { 0 };
 	const char *slash = "/";
 	if(!cfg.gbox_tmp_dir)
 	{
@@ -1889,11 +1889,16 @@ void gbox_send_good_night(void)
 
 void gbox_send_goodbye(struct s_client *cli) // indication that requested ECM failed
 {
-	uchar outbuf[15];
-	struct gbox_peer *peer = cli->gbox;
-	gbox_message_header(outbuf, MSG_GOODBYE, peer->gbox.password, local_gbox.password);
-	cs_log_dbg(D_READER,"<- goodbye - requested ecm failed. Send info to requesting boxid: %04X", peer->gbox.id);
-	gbox_send(cli, outbuf, 10);
+		if (local_gbox.minor_version != 0x2A)
+		{
+			uchar outbuf[15];
+			struct gbox_peer *peer = cli->gbox;
+			gbox_message_header(outbuf, MSG_GOODBYE, peer->gbox.password, local_gbox.password);
+			cs_log_dbg(D_READER,"<- goodbye - requested ecm failed. Send info to requesting boxid: %04X", peer->gbox.id);
+			gbox_send(cli, outbuf, 10);
+		}
+		else
+		{ return; }
 }
 
 void module_gbox(struct s_module *ph)
