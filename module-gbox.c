@@ -988,7 +988,6 @@ static int32_t gbox_recv_chk(struct s_client *cli, uchar *dcw, int32_t *rc, ucha
 	//late answers from other peers,timing not possible
 	gbox_add_good_sid(id_card, data[34] << 8 | data[35], data[36], data[8] << 8 | data[9], GBOX_DEFAULT_CW_TIME);
 	cs_log_dbg(D_READER, "no task found for crc=%08x", crc);
-	gbox_send_goodbye(cli);
 	return -1;
 }
 
@@ -1010,7 +1009,6 @@ static int8_t gbox_cw_received(struct s_client *cli, uchar *data, int32_t n)
 			return 0;
 		}
 	}
-	gbox_send_goodbye(cli);	
 	return -1;
 }
 
@@ -1082,11 +1080,11 @@ int32_t gbox_recv_cmd_switch(struct s_client *proxy, uchar *data, int32_t n)
 	return 0;
 }
 
-static void gbox_local_cards(struct s_reader *reader, TUNTAB *ttab)
+static uint8_t gbox_add_local_cards(struct s_reader *reader, TUNTAB *ttab)
 {
 	int32_t i;
 	uint32_t prid = 0;
-	int8_t slot = 0;
+	uint8_t slot = 0;
 #ifdef MODULE_CCCAM
 	LL_ITER it, it2;
 	struct cc_card *card = NULL;
@@ -1176,6 +1174,7 @@ static void gbox_local_cards(struct s_reader *reader, TUNTAB *ttab)
 		}
 	}	//end add proxy reader cards
 	gbox_write_local_cards_info();
+	return slot;
 }	//end add local gbox cards
 
 //returns -1 in case of error, 1 if authentication was performed, 0 else
@@ -1185,6 +1184,7 @@ static int8_t gbox_check_header_recvd(struct s_client *cli, struct s_client *pro
 	if (proxy) { peer = proxy->gbox; }
 
 	char tmp[0x50];
+	uint8_t crd =0;
 	int32_t n = l;
 	uint8_t authentication_done = 0;
 	uint16_t peer_recvd_id = 0;
@@ -1229,7 +1229,9 @@ static int8_t gbox_check_header_recvd(struct s_client *cli, struct s_client *pro
 			if (!local_cards_initialized)
 				{ 
 				local_cards_initialized = 1;
-				gbox_local_cards(proxy->reader, &cli->ttab);
+				local_card_change_detected = 0;
+				crd = gbox_add_local_cards(proxy->reader, &cli->ttab);
+				cs_log("Local cards initialized - cards: %d", crd);
 				}
 				peer = proxy->gbox;
 			}
@@ -1273,8 +1275,8 @@ static int8_t gbox_check_header_recvd(struct s_client *cli, struct s_client *pro
 	if (local_card_change_detected)
 	{ 
 		local_card_change_detected = 0;
-		gbox_local_cards(proxy->reader, &cli->ttab);
-		cs_log("Local Cards updated");
+		crd = gbox_add_local_cards(proxy->reader, &cli->ttab);
+		cs_log("Local cards update - cards: %d", crd);
 	}
 
 	if(!peer->authstat)
