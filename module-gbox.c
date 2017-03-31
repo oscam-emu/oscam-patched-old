@@ -1221,7 +1221,7 @@ static int8_t gbox_check_header_recvd(struct s_client *cli, struct s_client *pro
 				if (gbox_auth_client(cli, peer_received_pw) < 0)
 				{
 					handle_attack(cli, GBOX_ATTACK_AUTH_FAIL, peer_recvd_id);
-					cs_log ("Authentication failed. Check config ...");
+					cs_log ("Peer %04X:%s authentication failed. Check user in [account] or {reader] section", peer_recvd_id, cs_inet_ntoa(cli->ip));
 					return -1;
 				}
 				authentication_done = 1;
