@@ -1908,7 +1908,7 @@ int32_t main(int32_t argc, char *argv[])
 	remove_versionfile();
 
 	stat_finish();
-	dvbapi_stop_all_descrambling();
+	dvbapi_stop_all_descrambling(0);
 	dvbapi_save_channel_cache();
 	emm_save_cache();
 	save_emmstat_to_file();
