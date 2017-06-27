@@ -209,7 +209,7 @@ static void coolapi_read_data(dmx_t *dmx, dmx_callback_data_t *data)
 	ret = coolapi_read(dmx, data);
 	SAFE_MUTEX_UNLOCK(&dmx->mutex);
 	if(ret > -1)
-		{ dvbapi_process_input(dmx->demux_id, dmx->filter_num, dmx->buffer, data->len); }
+		{ dvbapi_process_input(dmx->demux_id, dmx->filter_num, dmx->buffer, data->len, 0); }
 }
 
 static void dmx_callback(void *UNUSED(unk), dmx_t *dmx, int32_t type, dmx_callback_data_t *data)

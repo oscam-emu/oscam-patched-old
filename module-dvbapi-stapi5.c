@@ -98,7 +98,7 @@ static void stapi_off(void)
 	stapi_on = 0;
 	for(i = 0; i < MAX_DEMUX; i++)
 	{
-		dvbapi_stop_descrambling(i);
+		dvbapi_stop_descrambling(i, 0);
 		
 		if (tkd_desc_info[i].path_hndl != 0)
 		{
@@ -331,7 +331,7 @@ int32_t stapi_set_filter(int32_t demux_id, uint16_t pid, uchar *filter, uchar *m
 		cs_log_dbg(D_DVBAPI, "No matching S: line in oscam.dvbapi for pmtfile %s -> stop descrambling!", pmtfile);
 		snprintf(dest, sizeof(dest), "%s%s", TMPDIR, demux[demux_id].pmt_file);
 		unlink(dest); // remove obsolete pmt file
-		dvbapi_stop_descrambling(demux_id);
+		dvbapi_stop_descrambling(demux_id, 0);
 	}
 	return ret;
 }
@@ -590,7 +590,7 @@ static void *stapi_read_thread(void *sparam)
 						demux_id = i;
 						filter_num = j;
 
-						dvbapi_process_input(demux_id, filter_num, buf, DataSize);
+						dvbapi_process_input(demux_id, filter_num, buf, DataSize, 0);
 					}
 				}
 			}

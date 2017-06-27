@@ -380,7 +380,7 @@ static void coolapi_read_data(dmx_t *dmx, dmx_callback_data_t *data)
 				continue;
 			}
 
-			dvbapi_process_input(dmx->demux_id, n, buffer, data->len);
+			dvbapi_process_input(dmx->demux_id, n, buffer, data->len, 0);
 		}
 	}
 }
