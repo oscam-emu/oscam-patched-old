@@ -521,13 +521,19 @@ int32_t dvbapi_net_send(uint32_t request, int32_t socket_fd, uint32_t msgid, int
 		case DVBAPI_SERVER_INFO:
 		{
 			int16_t proto_version = htons(DVBAPI_PROTOCOL_VERSION);           //our protocol version
+			char capabilities[128] = "\x00"; // two zero characters
 			memcpy(&packet[size], &proto_version, 2);
 			size += 2;
 
 			unsigned char *info_len = &packet[size];   //info string length
 			size += 1;
 
-			*info_len = snprintf((char *) &packet[size], sizeof(packet) - size, "OSCam v%s, build r%s (%s)", CS_VERSION, CS_SVN_VERSION, CS_TARGET);
+			if (cfg.dvbapi_extended_cw_api == 1)
+			  strcat(capabilities, ",e1km");           //extended cw, mode follows key
+			if (cfg.dvbapi_extended_cw_api == 2)
+			  strcat(capabilities, ",e2");
+
+			*info_len = snprintf((char *) &packet[size], sizeof(packet) - size, "OSCam v%s, build r%s (%s); %s", CS_VERSION, CS_SVN_VERSION, CS_TARGET, capabilities + 1);
 			size += *info_len;
 			break;
 		}
