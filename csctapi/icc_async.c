@@ -725,10 +725,12 @@ static int32_t InitCard(struct s_reader *reader, ATR *atr, unsigned char FI, uin
 
 			if(reader->protocol_type != ATR_PROTOCOL_TYPE_T14)    //dont switch for T14
 			{
-					uint32_t baud_temp = (double)D * ICC_Async_GetClockRate(reader->cardmhz) / (double)Fi; // just a test
-					rdr_log(reader, "Setting baudrate to %d bps", baud_temp);
-					call(crdr_ops->set_baudrate(reader, baud_temp));
-					reader->current_baudrate = baud_temp;				
+				uint32_t baud_temp = (double)D * ICC_Async_GetClockRate(reader->cardmhz) / (double)Fi;
+				uint32_t baud_temp2 = (double)D * ICC_Async_GetClockRate(reader->mhz) / (double)Fi;
+				rdr_log(reader, "Setting baudrate to %d bps", baud_temp2);
+				// set_baudrate() increases/decreases baud_temp to baud_temp2 in case of over/underclocking
+				call(crdr_ops->set_baudrate(reader, baud_temp));
+				reader->current_baudrate = baud_temp2;
 			}
 		}
 	}
@@ -940,7 +942,7 @@ static int32_t InitCard(struct s_reader *reader, ATR *atr, unsigned char FI, uin
 			rdr_log(reader, "ATR Fsmax is %i MHz, clocking card to ATR Fsmax for smartreader cardspeed of %.2f MHz (specified in reader->mhz)",
 				atr_fs_table[FI] / 1000000, (float) reader->mhz / 100);
 		else 
-			rdr_log(reader, "ATR Fsmax is %i MHz, clocking card to wanted user cardspeed off %.2f MHz (specified in reader->mhz)",
+			rdr_log(reader, "ATR Fsmax is %i MHz, clocking card to wanted user cardclock of %.2f MHz (specified in reader->mhz)",
 				atr_fs_table[FI] / 1000000, (float) reader->mhz / 100); 
 	}
 
