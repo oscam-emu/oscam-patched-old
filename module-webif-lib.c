@@ -296,6 +296,8 @@ int32_t check_auth(char *authstring, char *method, char *path, IN_ADDR_T addr, c
 			}
 		}
 	}
+		if(!authok)
+		{	cs_log("unauthorized access from %s - invalid credentials", cs_inet_ntoa(addr)); }
 	return authok;
 }
 

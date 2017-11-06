@@ -7870,7 +7870,7 @@ static int32_t process_request(FILE * f, IN_ADDR_T in)
 		if(!ok)
 		{
 			send_error(f, 403, "Forbidden", NULL, "Access denied.", 0);
-			cs_log("unauthorized access from %s", cs_inet_ntoa(addr));
+			cs_log("unauthorized access from %s - invalid ip or dyndns", cs_inet_ntoa(addr));
 			return 0;
 		}
 
