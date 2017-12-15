@@ -120,7 +120,7 @@ void cc_xor(uint8_t *buf)
 void cc_cw_crypt(struct s_client *cl, uint8_t *cws, uint32_t cardid)
 {
 	struct cc_data *cc = cl->cc;
-	int64_t node_id;
+	uint64_t node_id;
 	uint8_t tmp;
 	int32_t i;
 
