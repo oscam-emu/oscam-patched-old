@@ -1280,7 +1280,7 @@ void chk_dcw(struct s_ecm_answer *ea)
 			ECM_REQUEST *er = ert;
 			debug_ecm(D_TRACE, "WARNING2: Different CWs %s from %s(%s)<>%s(%s): %s<>%s", buf,
 					  username(ea->reader ? ea->reader->client : ert->client), ip1,
-					  er->cacheex_src ? username(er->cacheex_src) : (ea->reader ? ea->reader->label : "unknown/csp"), ip2,
+					  er->cacheex_src ? username(er->cacheex_src) : (ert->selected_reader ? ert->selected_reader->label : "unknown/csp"), ip2,
 					  cw1, cw2);
 		}
 #endif
