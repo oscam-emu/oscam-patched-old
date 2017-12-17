@@ -508,62 +508,62 @@ static int8_t is_already_pending(LLIST *pending_cards, uint16_t peer_id, uint8_t
         return ret;
 }
 
-uint8_t gbox_get_cards_for_ecm(uchar *send_buf_1, int32_t cont_1, uint8_t max_cards, ECM_REQUEST *er, uint32_t *current_avg_card_time, uint16_t peer_id)
+uint8_t gbox_get_cards_for_ecm(uchar *send_buf, int32_t len2, uint8_t max_cards, ECM_REQUEST *er, uint32_t *current_avg_card_time, uint16_t peer_id)
 {
-        if (!send_buf_1 || !er)
-                { return 0; }
-                
-        uint8_t cont_card_1 = 0;
-        struct gbox_good_srvid *srvid_good = NULL;
-        struct gbox_bad_srvid *srvid_bad = NULL;
-        uint8_t enough = 0;              
-        uint8_t sid_verified = 0;
-        time_t time_since_lastcw;
+				if (!send_buf || !er)
+					{ return 0; }
 
-        //loop over good only
-        cs_readlock(__func__, &gbox_cards_lock);        
-        LL_ITER it = ll_iter_create(gbox_cards);
-        LL_ITER it2;
-        struct gbox_card *card;
-                                
-        while((card = ll_iter_next(&it)))
-        {
-                if(card->origin_peer && card->origin_peer->gbox.id == peer_id && card->type == GBOX_CARD_TYPE_GBOX &&
-                        gbox_get_caid(card->caprovid) == er->caid && gbox_get_provid(card->caprovid) == er->prid && !is_already_pending(er->gbox_cards_pending, card->id.peer, card->id.slot))
-                {
-                        sid_verified = 0;
+				uint8_t nb_matching_crds = 0;
+				struct gbox_good_srvid *srvid_good = NULL;
+				struct gbox_bad_srvid *srvid_bad = NULL;
+				uint8_t enough = 0;
+				uint8_t sid_verified = 0;
+				time_t time_since_lastcw;
 
-                        //check if sid is good
-                        it2 = ll_iter_create(card->goodsids);
-                        while((srvid_good = ll_iter_next(&it2)))
-                        {
-                                if(srvid_good->srvid.provid_id == er->prid && srvid_good->srvid.sid == er->srvid)
-                                {
-                                        if (!enough || *current_avg_card_time > card->average_cw_time)
-                                        {
-                                                time_since_lastcw = llabs(srvid_good->last_cw_received - time(NULL));
-                                                *current_avg_card_time = card->average_cw_time;
-                                                if (enough)
-                                                        { cont_1 = cont_1 - 3; }
-                                                else
-                                                {
-                                                        cont_card_1++;
-                                                        if (time_since_lastcw < GBOX_SID_CONFIRM_TIME && er->gbox_ecm_status == GBOX_ECM_NOT_ASKED)
-                                                                { enough = 1; }
-                                                }
-                                                i2b_buf(2, card->id.peer, send_buf_1 + cont_1);
-                                                send_buf_1[cont_1 + 2] = card->id.slot;
-                                                cont_1 = cont_1 + 3;
-                                                sid_verified = 1;
-                                                break;
-                                        }
-                                }
-                        }
+				//loop over good only
+				cs_readlock(__func__, &gbox_cards_lock);
+				LL_ITER it = ll_iter_create(gbox_cards);
+				LL_ITER it2;
+				struct gbox_card *card;
 
-                        if(cont_card_1 == max_cards)
-                                { break; }
-                }
-        }
+				while((card = ll_iter_next(&it)))
+				{
+								if(card->origin_peer && card->origin_peer->gbox.id == peer_id && card->type == GBOX_CARD_TYPE_GBOX &&
+										gbox_get_caid(card->caprovid) == er->caid && gbox_get_provid(card->caprovid) == er->prid && !is_already_pending(er->gbox_cards_pending, card->id.peer, card->id.slot))
+								{
+												sid_verified = 0;
+
+												//check if sid is good
+												it2 = ll_iter_create(card->goodsids);
+												while((srvid_good = ll_iter_next(&it2)))
+												{
+																if(srvid_good->srvid.provid_id == er->prid && srvid_good->srvid.sid == er->srvid)
+																{
+																				if (!enough || *current_avg_card_time > card->average_cw_time)
+																				{
+																								time_since_lastcw = llabs(srvid_good->last_cw_received - time(NULL));
+																								*current_avg_card_time = card->average_cw_time;
+																								if (enough)
+																									{ len2 = len2 - 3; }
+																								else
+																								{
+																									nb_matching_crds++;
+																									if (time_since_lastcw < GBOX_SID_CONFIRM_TIME && er->gbox_ecm_status == GBOX_ECM_NOT_ASKED)
+																										{ enough = 1; }
+																								}
+																								i2b_buf(2, card->id.peer, send_buf + len2);
+																								send_buf[len2 + 2] = card->id.slot;
+																								len2 = len2 + 3;
+																								sid_verified = 1;
+																								break;
+																				}
+																}
+												}
+
+												if(nb_matching_crds == max_cards)
+													{ break; }
+								}
+				}
         cs_readunlock(__func__, &gbox_cards_lock);        
                                                                                               
         //loop over bad and unknown cards
@@ -609,10 +609,10 @@ uint8_t gbox_get_cards_for_ecm(uchar *send_buf_1, int32_t cont_1, uint8_t max_ca
                                 //sid is neither good nor bad
                                 if(sid_verified != 1)
                                 {
-                                        i2b_buf(2, card->id.peer, send_buf_1 + cont_1);
-                                        send_buf_1[cont_1 + 2] = card->id.slot;
-                                        cont_1 = cont_1 + 3;
-                                        cont_card_1++;
+                                        i2b_buf(2, card->id.peer, send_buf + len2);
+                                        send_buf[len2 + 2] = card->id.slot;
+                                        len2 = len2 + 3;
+                                        nb_matching_crds++;
 
                                         if (!sid_verified)
                                         {
@@ -632,12 +632,12 @@ uint8_t gbox_get_cards_for_ecm(uchar *send_buf_1, int32_t cont_1, uint8_t max_ca
                                 }
                         }
 
-                        if(cont_card_1 == max_cards)
+                        if(nb_matching_crds == max_cards)
                                 { break; }
                 }
         }
         cs_writeunlock(__func__, &gbox_cards_lock);        
-        return cont_card_1;
+        return nb_matching_crds;
 }
 
 #endif
