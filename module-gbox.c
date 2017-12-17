@@ -1018,7 +1018,7 @@ int32_t gbox_recv_cmd_switch(struct s_client *proxy, uchar *data, int32_t n)
 	uint16_t cmd = gbox_decode_cmd(data);
 	switch(cmd)
 	{
-	case MSG_BOXINFO:
+	case MSG_HERE:
 		cs_log("-> HERE? from %s %s",username(proxy), proxy->reader->device);	
 		gbox_send_hello(proxy, GBOX_STAT_HELLOR);
 		break;
@@ -1027,10 +1027,6 @@ int32_t gbox_recv_cmd_switch(struct s_client *proxy, uchar *data, int32_t n)
 		//msg goodbye is an indication from peer that requested ECM failed (not found/rejected...)
 		//TODO: implement on suitable place - rebroadcast ECM to other peers
 		write_msg_info(proxy, MSGID_GOODBYE, 0, 0);
-		break;
-	case MSG_UNKNWN:
-		cs_log("-> MSG_UNKNWN 48F9 from %s %s", username(proxy), proxy->reader->device);
-		write_msg_info(proxy, MSGID_UNKNOWNMSG, 0, 0);
 		break;
 	case MSG_GSMS:
 		if (!cfg.gsms_dis)
@@ -1070,6 +1066,7 @@ int32_t gbox_recv_cmd_switch(struct s_client *proxy, uchar *data, int32_t n)
 		break;
 	default:
 		cs_log("-> unknown command %04X received from %s %s", cmd, username(proxy), proxy->reader->device);
+		write_msg_info(proxy, MSGID_UNKNOWNMSG, 0, 0);
 		cs_log_dump_dbg(D_READER, data, n, "unknown data (%d bytes) receivrd from %s %s", n, username(proxy), proxy->reader->device);
 	} // end switch
 	if ((time(NULL) - last_stats_written) > STATS_WRITE_TIME)
@@ -1377,10 +1374,11 @@ static void gbox_send_dcw(struct s_client *cl, ECM_REQUEST *er)
 	}
 	i2b_buf(2, ere->gbox_peer, buf + 39);	//Target peer
 	if (er->rc == E_CACHE1 || er->rc == E_CACHE2 || er->rc == E_CACHEEX)
-		{ buf[41] = 0x03; }		//cache
+		{ buf[41] = 0x03; }		//source of cw -> cache
 	else
-		{ buf[41] = 0x01; }		//card, emu, needs probably further investigation
+		{ buf[41] = 0x01; }		//source of cw -> card, emu
 	buf[42] = 0x30;				//1st nibble unknown / 2nd nibble distance
+	//buf[42] = 0x30 | (ere->gbox_hops & 0x0f);
 	buf[43] = ere->gbox_unknown;		//meaning unknown, copied from ECM request
 
 	//This copies the routing info from ECM to answer.
@@ -1392,7 +1390,6 @@ static void gbox_send_dcw(struct s_client *cl, ECM_REQUEST *er)
 	cs_log("sending dcw to peer : %04x   data: %s", er->gbox_peer, cs_hexdump(0, buf, er->gbox_hops + 44, tmp, sizeof(tmp)));
 	*/
 	gbox_send(cli, buf, ere->gbox_hops + 44);
-
 	cs_log_dbg(D_READER, "<- CW (<- %d) to %04X  %s port:%d", ere->gbox_hops, ere->gbox_peer, cli->reader->label, cli->port);
 }
 /* // see r11270
@@ -1441,6 +1438,7 @@ void *gbox_rebroadcast_thread(struct gbox_rbc_thread_args *args)
 	return NULL;
 }
 */
+
 static int32_t gbox_send_ecm(struct s_client *cli, ECM_REQUEST *er)
 {
 	if(!cli || !er || !cli->reader)
@@ -1454,18 +1452,17 @@ static int32_t gbox_send_ecm(struct s_client *cli, ECM_REQUEST *er)
 	}
 
 	struct gbox_peer *peer = cli->gbox;
-	int32_t cont_1;
-
+		
 	if(!peer->filtered_cards)
 	{
-		cs_log_dbg(D_READER, "%s NO CARDS!", cli->reader->label);
+		cs_log_dbg(D_READER, "Send ECM failed, %s NO CARDS!", cli->reader->label);
 		write_ecm_answer(cli->reader, er, E_NOTFOUND, E2_CCCAM_NOCARD, NULL, NULL, 0, NULL);
 		return -1;
 	}
 
 	if(!peer->online)
 	{
-		cs_log_dbg(D_READER, "peer is OFFLINE!");
+		cs_log_dbg(D_READER, "Send ECM failed, peer is OFFLINE!");
 		write_ecm_answer(cli->reader, er, E_NOTFOUND, 0x27, NULL, NULL, 0, NULL);
 		//      gbox_send_hello(cli,0);
 		return -1;
@@ -1484,85 +1481,84 @@ static int32_t gbox_send_ecm(struct s_client *cli, ECM_REQUEST *er)
 		return 0;
 	}
 
-	uchar send_buf_1[1024];
-	int32_t len2;
+	uchar send_buf[1024];
+	int32_t buflen, len1;
 
 	if(!er->ecmlen) { return 0; }
 
-	len2 = er->ecmlen + 18;
+	len1 = er->ecmlen + 18; // length till end of ECM
 	er->gbox_crc = gbox_get_ecmchecksum(&er->ecm[0], er->ecmlen);
 
-	memset(send_buf_1, 0, sizeof(send_buf_1));
+	memset(send_buf, 0, sizeof(send_buf));
 
-	uint8_t cont_card_1 = 0;
-        uint8_t max_ecm_reached = 0;
-        uint32_t current_avg_card_time = 0;        
-        
-	gbox_message_header(send_buf_1, MSG_ECM , peer->gbox.password, local_gbox.password);
+	uint8_t nb_matching_crds = 0;
+	uint8_t max_ecm_reached = 0;
+	uint32_t current_avg_card_time = 0;
 
-	i2b_buf(2, er->pid, send_buf_1 + 10);
-	i2b_buf(2, er->srvid, send_buf_1 + 12);
-	send_buf_1[14] = 0x00;
-	send_buf_1[15] = 0x00;
+	gbox_message_header(send_buf, MSG_ECM , peer->gbox.password, local_gbox.password);
 
-	send_buf_1[16] = cont_card_1;
-	send_buf_1[17] = 0x00;
+	i2b_buf(2, er->pid, send_buf + 10);
+	i2b_buf(2, er->srvid, send_buf + 12);
+	send_buf[14] = 0x00;
+	send_buf[15] = 0x00;
 
-	memcpy(send_buf_1 + 18, er->ecm, er->ecmlen);
+	send_buf[16] = nb_matching_crds; //Number of cards the ECM should be forwarded to
+	send_buf[17] = 0x00;
 
-	i2b_buf(2, local_gbox.id, send_buf_1 + len2);
+	memcpy(send_buf + 18, er->ecm, er->ecmlen);
 
-	send_buf_1[len2 + 2] = cfg.gbox_my_vers;
-	send_buf_1[len2 + 3] = 0x00;
-	send_buf_1[len2 + 4] = gbox_get_my_cpu_api();
+	i2b_buf(2, local_gbox.id, send_buf + len1);
+
+	send_buf[len1 + 2] = cfg.gbox_my_vers;
+	send_buf[len1 + 3] = 0x00;
+	send_buf[len1 + 4] = gbox_get_my_cpu_api();
 
 	uint32_t caprovid = gbox_get_caprovid(er->caid, er->prid);
-	i2b_buf(4, caprovid, send_buf_1 + len2 + 5);
+	i2b_buf(4, caprovid, send_buf + len1 + 5);
 
-	send_buf_1[len2 + 9] = 0x00;
-	cont_1 = len2 + 10;
+	send_buf[len1 + 9] = 0x00;
+	buflen = len1 + 10;
 
-	cont_card_1 = gbox_get_cards_for_ecm(&send_buf_1[0], len2 + 10, cli->reader->gbox_maxecmsend, er, &current_avg_card_time, peer->gbox.id);
-	if (cont_card_1 == cli->reader->gbox_maxecmsend)
+	nb_matching_crds = gbox_get_cards_for_ecm(&send_buf[0], len1 + 10, cli->reader->gbox_maxecmsend, er, &current_avg_card_time, peer->gbox.id);
+	if (nb_matching_crds == cli->reader->gbox_maxecmsend)
 		{ max_ecm_reached = 1; }
-	cont_1 += cont_card_1 * 3;
+	buflen += nb_matching_crds * 3;
 	
-	if(!cont_card_1 && er->gbox_ecm_status == GBOX_ECM_NOT_ASKED)
+	if(!nb_matching_crds && er->gbox_ecm_status == GBOX_ECM_NOT_ASKED)
 	{
 		cs_log_dbg(D_READER, "no valid card found for CAID: %04X PROVID: %04X", er->caid, er->prid);
 		write_ecm_answer(cli->reader, er, E_NOTFOUND, E2_CCCAM_NOCARD, NULL, NULL, 0, NULL);
 		return -1;
 	}
-	if(cont_card_1)
+	if(nb_matching_crds)
 	{
-		send_buf_1[16] = cont_card_1;
+		send_buf[16] = nb_matching_crds;
 
-		//Hops
-		send_buf_1[cont_1] = 0;
-		cont_1++;		
+		//distance ECM
+		send_buf[buflen] = 0; //fix me! if ecm to be forwarded -> must add +1
+		buflen++;
 
-		memcpy(&send_buf_1[cont_1], gbox_get_my_checkcode(), 7);
-		cont_1 = cont_1 + 7;
-		memcpy(&send_buf_1[cont_1], peer->checkcode, 7);
-		cont_1 = cont_1 + 7;
+		memcpy(&send_buf[buflen], gbox_get_my_checkcode(), 7);
+		buflen = buflen + 7;
+		memcpy(&send_buf[buflen], peer->checkcode, 7);
+		buflen = buflen + 7;
 
-		cs_log_dbg(D_READER, "gbox sending ecm for %04X@%06X:%04X to %d cards -> %s", er->caid, er->prid , er->srvid, cont_card_1, cli->reader->label);
 		uint32_t i = 0;
 		struct gbox_card_pending *pending = NULL;
 		struct timeb t_now;             
 		cs_ftime(&t_now);
-		for (i = 0; i < cont_card_1; i++)
+		for (i = 0; i < nb_matching_crds; i++)
 		{	 			
 			if(!cs_malloc(&pending, sizeof(struct gbox_card_pending)))
 			{
 				cs_log("Can't allocate gbox card pending");
 				return -1;
 			}
-			pending->id.peer = (send_buf_1[len2+10+i*3] << 8) | send_buf_1[len2+11+i*3];
-			pending->id.slot = send_buf_1[len2+12+i*3];
+			pending->id.peer = (send_buf[len1+10+i*3] << 8) | send_buf[len1+11+i*3];
+			pending->id.slot = send_buf[len1+12+i*3];
 			pending->pending_time = comp_timeb(&t_now, &er->tps);
-			ll_append(er->gbox_cards_pending, pending);		
-			cs_log_dbg(D_READER, "gbox card %d: ID: %04X, Slot: %02X", i+1, (send_buf_1[len2+10+i*3] << 8) | send_buf_1[len2+11+i*3], send_buf_1[len2+12+i*3]); 
+			ll_append(er->gbox_cards_pending, pending);
+			cs_log_dbg(D_READER, "matching gbox card(s): %d, ID: %04X, Slot: %02X", i+1, (send_buf[len1+10+i*3] << 8) | send_buf[len1+11+i*3], send_buf[len1+12+i*3]); 
 		}
 	
 		LL_LOCKITER *li = ll_li_create(er->gbox_cards_pending, 0);
@@ -1578,10 +1574,12 @@ static int32_t gbox_send_ecm(struct s_client *cli, ECM_REQUEST *er)
 				{ er->gbox_ecm_status = GBOX_ECM_SENT; }
 			else
 				{ er->gbox_ecm_status = GBOX_ECM_SENT_ALL; }
-			cli->pending++;		
-		}	  	
-		gbox_send(cli, send_buf_1, cont_1);
+			cli->pending++;
+		}
+		cs_log_dbg(D_READER, "sending ecm for %04X@%06X sid: %04X to %d card(s) of %s", er->caid, er->prid , er->srvid, nb_matching_crds, cli->reader->label);
+		gbox_send(cli, send_buf, buflen);
 		cli->reader->last_s = time((time_t *) 0);
+
 /*	// see r11270
 		if(er->gbox_ecm_status < GBOX_ECM_ANSWERED)
 		{ 
@@ -1777,13 +1775,12 @@ static int32_t gbox_peer_init(struct s_client *cli)
 	return 0;
 }
 /*
-//static void gbox_send_HERE(struct s_client *cli)
-static void gbox_send_boxinfo(struct s_client *cli)
+static void gbox_send_HERE(struct s_client *cli)
 {
 	struct gbox_peer *peer = cli->gbox;
-	uchar outbuf[30];
+	uchar outbuf[32];
 	int32_t hostname_len = strlen(cfg.gbox_hostname);
-	gbox_message_header(outbuf, MSG_BOXINFO, peer->gbox.password, local_gbox.password);
+	gbox_message_header(outbuf, MSG_HERE, peer->gbox.password, local_gbox.password);
 	outbuf[0xA] = cfg.gbox_my_vers;
 	outbuf[0xB] = gbox_get_my_cpu_api();
 	memcpy(&outbuf[0xC], cfg.gbox_hostname, hostname_len);
@@ -1802,25 +1799,27 @@ static void gbox_peer_idle (struct s_client *cl)
 
 	if (proxy && proxy->gbox)
 	{ 
-		if (llabs(proxy->last - time(NULL)) > llabs(cl->lastecm - time(NULL)))
-			{ ptime_elapsed = llabs(cl->lastecm - time(NULL)); } 
-		else { ptime_elapsed = llabs(proxy->last - time(NULL)); }
+		etime_elapsed = llabs(cl->lastecm - time(NULL));
+		if (llabs(proxy->last - time(NULL)) > etime_elapsed )
+			{ ptime_elapsed = etime_elapsed; }
+		else 
+			{ ptime_elapsed = llabs(proxy->last - time(NULL)); }
+			
 		if (ptime_elapsed > (cfg.gbox_reconnect *2) && cl->gbox_peer_id != NO_GBOX_ID)
 		{
 			//gbox peer apparently died without saying goodnight
 			peer = proxy->gbox;
 			cs_writelock(__func__, &peer->lock);
-			cs_log_dbg(D_READER, "time since last proxy activity: %d sec => lost connection - taking peer %04X - %s offline", ptime_elapsed, cl->gbox_peer_id, username(cl));
 				if (peer->online)
 				{
 					cs_log("Lost connection to: %s  %s - taking peer %04X  %s offline",proxy->reader->device, cs_inet_ntoa(proxy->ip), cl->gbox_peer_id, username(cl));
+					cs_log_dbg(D_READER, "time since last proxy activity: %d sec > %d => lost connection - taking peer %04X - %s offline", ptime_elapsed, cfg.gbox_reconnect *2, cl->gbox_peer_id, username(cl));
 					write_msg_info(proxy, MSGID_LOSTCONNECT, 0, 0);
 					gbox_reinit_proxy(proxy);
 				}
 			cs_writeunlock(__func__, &peer->lock);
 		}
 
-		etime_elapsed = llabs(cl->lastecm - time(NULL));
 		if (etime_elapsed > cfg.gbox_reconnect && cl->gbox_peer_id != NO_GBOX_ID)
 		{
 			peer = proxy->gbox;
@@ -1828,15 +1827,15 @@ static void gbox_peer_idle (struct s_client *cl)
 
 				if (!(check_peer_ignored(cl->gbox_peer_id)))
 				{
-					if (!peer->online && !(ptime_elapsed > cfg.gbox_reconnect *5))
+					if (!peer->online && ptime_elapsed < cfg.gbox_reconnect *3)
 						{ 
-							cs_log_dbg(D_READER, "%04X - %s: time since last ecm: %d sec => trigger keepalive HELLOL", cl->gbox_peer_id, username(cl), etime_elapsed);
+							cs_log_dbg(D_READER, "%04X - %s -> offline - time since last ecm / proxy_act: %d sec / %d sec => trigger HELLOL", cl->gbox_peer_id, username(cl), etime_elapsed, ptime_elapsed);
 							gbox_send_hello(proxy, GBOX_STAT_HELLOL);
 							//gbox_send_HERE(proxy);
 						}
 					if (peer->online)
 						{ 
-							cs_log_dbg(D_READER, "%04X - %s: time since last ecm: %d sec => trigger keepalive HELLOS", cl->gbox_peer_id, username(cl), etime_elapsed);
+							cs_log_dbg(D_READER, "%04X - %s -> online - time since last ecm /proxy activity: %d sec / %d sec => trigger keepalive HELLOS", cl->gbox_peer_id, username(cl), etime_elapsed, ptime_elapsed);
 							gbox_send_hello(proxy, GBOX_STAT_HELLOS); 
 						}
 				}
