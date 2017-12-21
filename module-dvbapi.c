@@ -3167,6 +3167,7 @@ static void getDemuxOptions(int32_t demux_id, unsigned char *buffer, uint32_t *c
 		*demux_index = buffer[9]; // it is always 0 but you never know
 		*adapter_index = buffer[10]; // adapter index can be 0,1,2
 		*ca_mask = (1 << *adapter_index); // use adapter_index as ca_mask (used as index for ca_fd[] array)
+		if (buffer[21]==0x84 && buffer[22]==0x02) *pmtpid = b2i(2, buffer+23);
 	}
 }
 
