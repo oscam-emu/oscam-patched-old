@@ -400,6 +400,7 @@ int8_t get_caid_weight(ECM_REQUEST *er)
 					return 7;
 			}
 		case 0x1830:
+			return 15;
 		case 0x1843:
 		case 0x1834:
 		case 0x09C7:
