@@ -689,7 +689,12 @@ do
 		break
 	;;
 	'-r'|'--oscam-revision')
-		(svnversion -n . 2>/dev/null || printf 0) | sed 's/.*://; s/[^0-9]*$//; s/^$/0/'
+		revision=`(svnversion -n . 2>/dev/null || printf 0) | sed 's/.*://; s/[^0-9]*$//; s/^$/0/'`
+		if [ "$revision" = "0" ] 
+		then
+			which git > /dev/null 2>&1 && revision=`git log -1 --pretty=%B | grep git-svn-id | sed -n -e 's/^.*trunk@\([0-9]*\) .*$/\1/p'`
+		fi
+		echo $revision
 		break
 	;;
 	'-O'|'--detect-osx-sdk-version')
