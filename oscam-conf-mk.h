@@ -14,6 +14,7 @@ extern char *mk_t_cccam_port(void);
 extern char *mk_t_gbox_port(void);
 extern char *mk_t_gbox_proxy_card(void);
 extern char *mk_t_gbox_ignored_peer(void);
+extern char *mk_t_accept_remm_peer(void);
 extern char *mk_t_gbox_block_ecm(void);
 extern char *mk_t_gbox_dest_peers(void);
 extern char *mk_t_aeskeys(struct s_reader *rdr);

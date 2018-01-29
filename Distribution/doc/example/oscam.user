@@ -62,3 +62,10 @@ ident 	   = 0500:000000
 caid       = 0500
 numusers   = 1
 penalty    = 1
+
+# user for gbox reader
+
+[account]
+user       = gbox_client
+pwd        =
+group      = 3

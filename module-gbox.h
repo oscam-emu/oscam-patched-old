@@ -75,6 +75,7 @@
 #define GBOX_ATTACK_PEER_PW	2
 #define GBOX_ATTACK_AUTH_FAIL	3
 #define GBOX_ATTACK_ECM_BLOCKED	4
+#define GBOX_ATTACK_REMM_REQ_BLOCKED	5
 
 struct gbox_rbc_thread_args 
 {
@@ -144,28 +145,28 @@ struct gbox_peer
     uint8_t onlinestat;
     uint8_t authstat;
     uint8_t next_hello;
+    uint8_t gbox_rev;
     uchar ecm_idx;
     CS_MUTEX_LOCK lock;
     struct s_client *my_user;
     uint16_t filtered_cards;
     uint16_t total_cards;
+
 };
 
 struct gbox_ecm_request_ext
 {
-//    uint32_t        gbox_crc;       // rcrc for gbox, used to identify ECM
-//    uint16_t        gbox_ecm_id;
-//    uint8_t         gbox_ecm_ok;
     uint8_t	gbox_hops;
     uint16_t	gbox_peer;
     uint16_t	gbox_mypeer;
     uint8_t	gbox_slot;
     uint8_t	gbox_version;
-    uint8_t	gbox_unknown;   //byte between version and cpu info of
+    uint8_t	gbox_rev;
     uint8_t	gbox_type;
     uchar	gbox_routing_info[GBOX_MAXHOPS];
 };
 
+void handle_attack(struct s_client *cli, uint8_t txt_id, uint16_t rcvd_id);
 char *get_gbox_tmp_fname(char *fext);
 uint16_t gbox_get_local_gbox_id(void);
 uint32_t gbox_get_local_gbox_password(void);

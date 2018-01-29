@@ -266,6 +266,25 @@ char *mk_t_gbox_ignored_peer(void)
 	return value;
 }
 /*
+ * Creates a string ready to write as a token into config or WebIf for the gbox accept_remm_peer. You must free the returned value through free_mk_t().
+ */
+char *mk_t_accept_remm_peer(void)
+{
+	int32_t i, pos = 0, needed = GBOX_MAX_REMM_PEERS * 5 + 8;
+
+	char *value;
+	if(!cs_malloc(&value, needed)) { return ""; }
+	char *dot = "";
+	for(i = 0; i < GBOX_MAX_REMM_PEERS; i++)
+	{
+		if(!cfg.accept_remm_peer[i]) { break; }
+
+		pos += snprintf(value + pos, needed - pos, "%s%04hX", dot, cfg.accept_remm_peer[i]);
+		dot = ",";
+	}
+	return value;
+}
+/*
  * Creates a string ready to write as a token into config or WebIf for the gbox block ecm. You must free the returned value through free_mk_t().
  */
 char *mk_t_gbox_block_ecm(void)

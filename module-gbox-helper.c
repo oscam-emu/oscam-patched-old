@@ -72,22 +72,22 @@ static void gbox_convert_pw(uchar *password, uint32_t pw)
         }
 }
 
-uint32_t gbox_get_ecmchecksum(uchar *ecm, uint16_t ecmlen)
+uint32_t gbox_get_checksum(uchar *buf, uint16_t buflen)
 {
         uint8_t checksum[4];
         int32_t counter;
 
-        checksum[3] = ecm[0];
-        checksum[2] = ecm[1];
-        checksum[1] = ecm[2];
-        checksum[0] = ecm[3];
+        checksum[3] = buf[0];
+        checksum[2] = buf[1];
+        checksum[1] = buf[2];
+        checksum[0] = buf[3];
 
-        for(counter = 1; counter < (ecmlen / 4) - 4; counter++)
+        for(counter = 1; counter < (buflen / 4) - 4; counter++)
         {
-                checksum[3] ^= ecm[counter * 4];
-                checksum[2] ^= ecm[counter * 4 + 1];
-                checksum[1] ^= ecm[counter * 4 + 2];
-                checksum[0] ^= ecm[counter * 4 + 3];
+                checksum[3] ^= buf[counter * 4];
+                checksum[2] ^= buf[counter * 4 + 1];
+                checksum[1] ^= buf[counter * 4 + 2];
+                checksum[0] ^= buf[counter * 4 + 3];
         }
 
         return checksum[3] << 24 | checksum[2] << 16 | checksum[1] << 8 | checksum[0];

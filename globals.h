@@ -2078,11 +2078,12 @@ struct s_config
 #ifdef MODULE_GBOX
     #define         GBOX_MY_VERS_DEF       0x2A
     #define         GBOX_MY_CPU_API_DEF    0x40
-    #define        	GBOX_MAX_PROXY_CARDS   32
-    #define        	GBOX_MAX_IGNORED_PEERS 16
-    #define        	GBOX_MAX_BLOCKED_ECM   16
-    #define        	GBOX_MAX_DEST_PEERS    16
-    #define        	GBOX_MAX_MSG_TXT       127
+    #define         GBOX_MAX_PROXY_CARDS   32
+    #define         GBOX_MAX_IGNORED_PEERS 16
+    #define         GBOX_MAX_BLOCKED_ECM   16
+    #define         GBOX_MAX_REMM_PEERS    8
+    #define         GBOX_MAX_DEST_PEERS    16
+    #define         GBOX_MAX_MSG_TXT       127
 
 	uint16_t        gbox_port[CS_MAXPORTS];
 	char            *gbox_hostname;
@@ -2099,6 +2100,8 @@ struct s_config
 	uint8_t         ccc_reshare;
 	uint16_t        gbox_ignored_peer[GBOX_MAX_IGNORED_PEERS];
 	uint8_t         gbox_ignored_peer_num;
+	uint16_t        accept_remm_peer[GBOX_MAX_REMM_PEERS];
+	uint8_t         accept_remm_peer_num;
 	uint16_t        gbox_block_ecm[GBOX_MAX_BLOCKED_ECM];
 	uint8_t         gbox_block_ecm_num;
 	uint8_t			gbox_save_gsms;
