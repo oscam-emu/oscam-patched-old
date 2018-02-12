@@ -42,6 +42,9 @@ void AES_encrypt(const unsigned char *in, unsigned char *out,
 void AES_decrypt(const unsigned char *in, unsigned char *out,
 				 const AES_KEY *key);
 
+void AES_cbc_encrypt(const unsigned char *in, unsigned char *out,
+					 const unsigned long length, const AES_KEY *key,
+					 unsigned char *ivec, const int enc);
 #endif /* !HEADER_AES_H */
 
 #endif

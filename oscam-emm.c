@@ -50,7 +50,14 @@ static int8_t do_simple_emm_filter(struct s_reader *rdr, const struct s_cardsyst
 	unsigned int j, filter_count = 0;
 
 	// Call cardsystems emm filter
-	csystem->get_emm_filter(rdr, &dmx_filter, &filter_count);
+	if(rdr->typ == R_EMU)
+	{
+		return 1; //valid emm
+	}
+	else
+	{
+		csystem->get_emm_filter(rdr, &dmx_filter, &filter_count);
+	}
 
 	// Only check matching emmtypes:
 	uint8_t org_emmtype;
@@ -208,6 +215,24 @@ int32_t emm_reader_match(struct s_reader *reader, uint16_t caid, uint32_t provid
 		prid &= 0xFFFFF0;
 		rdr_log_dbg(reader, D_EMM, "reader auprovid = %06X fixup to %06X (ignoring last digit)", reader->auprovid, prid); 
 	}
+	
+#ifdef WITH_EMU
+	if(reader->typ == R_EMU)
+	{
+		FILTER* emu_provids = get_emu_prids_for_caid(reader, caid);
+		if(emu_provids != NULL)
+		{
+			for(i = 0; i < emu_provids->nprids; i++)
+			{
+				if(provid == emu_provids->prids[i])
+				{
+					return 1;
+				}
+			}
+		}
+		return 0;
+	}
+#endif
 	
 	if(prid == provid)
 	{
