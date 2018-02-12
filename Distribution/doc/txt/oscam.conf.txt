@@ -775,6 +775,9 @@ DESCRIPTIONS
        tmp_dir = path
 	  temporary directory for gbox, default:/tmp/.oscam
 
+       accept_remm_peer = peer-id1[,peer-id2]...
+     accept REMM requests from gbox peer(s), default:none
+
    The [scam] section
        port = port
 	  UDP port for scam server, default:0
@@ -800,7 +803,7 @@ DESCRIPTIONS
        priority = <CAID>:<provider ID>[,CAID:<provider ID>]... (detached by oscam.dvbapi, obsolete)
 	  CAIDs and provider IDs to be prioritized, default:CAIDs and provider IDs of local SCs will be prioritized
 
-       au = 0|1|2
+       au = 0|1
 	  AU mode:
 
 	   0 = disable AU (default)
