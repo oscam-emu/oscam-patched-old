@@ -32,7 +32,7 @@ void hdSurEncPhase2_D2_13_15(uint8_t *cws);
 // Version info
 uint32_t GetOSemuVersion(void)
 {
-	return atoi("$Version: 766 $"+10);
+	return atoi("$Version: 767 $"+10);
 }
 
 /*
@@ -3299,7 +3299,7 @@ static void PowervuHashMode01CustomMD5(uint8_t *data, uint8_t *hash)
 	uint32_t h[] = {0xEAD81D2E, 0xCE4DC6E9, 0xF9B5C301, 0x10325476}; // CUSTOM h0, h1, h2  STANDARD h3
 	uint32_t dataLongs[0x10];
 	
-	for(i = 0; i < 0x10; i++)
+	for (i = 0; i < 0x10; i++)
 	{
 		dataLongs[i] = (data[4 * i + 0] << 0) + (data[4 * i + 1] << 8) + (data[4 * i + 2] << 16) + (data[4 * i + 3] << 24);
 	}
@@ -3309,21 +3309,21 @@ static void PowervuHashMode01CustomMD5(uint8_t *data, uint8_t *hash)
 	c = h[2];
 	d = h[3];
 	
-	for(i = 0; i < 4; i++)
+	for (i = 0; i < 4; i++)
 	{
 		g = tIdxInit[i];
 		
-		for(j = 0; j < 16; j++)
+		for (j = 0; j < 16; j++)
 		{
-			if(i == 0)
+			if (i == 0)
 			{
 				f = (b & c) | (~b & d);
 			}
-			else if(i == 1)
+			else if (i == 1)
 			{
 				f = (b & d) | (~d & c);
 			}
-			else if(i == 2)
+			else if (i == 2)
 			{
 				f = (b ^ c ^ d);
 			}
@@ -3351,7 +3351,7 @@ static void PowervuHashMode01CustomMD5(uint8_t *data, uint8_t *hash)
 	h[2] += c;
 	h[3] += d;
 	
-	for(i = 0; i < 4; i++)
+	for (i = 0; i < 4; i++)
 	{
 		hash[4 * i + 0] = h[i] >> 0;
 		hash[4 * i + 1] = h[i] >> 8;
