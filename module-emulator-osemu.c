@@ -3280,7 +3280,7 @@ static void PowervuPadData(uint8_t *data, int len, uint8_t *dataPadded)
 static void PowervuHashMode01CustomMD5(uint8_t *data, uint8_t *hash)
 {
 	int i, j, s;
-	uint32_t a, b, c, d, f, g;
+	uint32_t a, b, c, d, f = 0, g;
 	
 	uint32_t T[] = {0x783E16F6, 0xC267AC13, 0xA2B17F12, 0x6B8A31A4, 0xF910654D, 0xB702DBCB, 0x266CEF60, 0x5145E47C,
 					0xB92E00D6, 0xE80A4A64, 0x8A07FA77, 0xBA7D89A9, 0xEBED8022, 0x653AAF2B, 0xF118B03B, 0x6CC16544,
@@ -3363,7 +3363,7 @@ static void PowervuHashMode01CustomMD5(uint8_t *data, uint8_t *hash)
 static void PowervuHashMode02(uint8_t *data, uint8_t *hash)
 {
 	int i;
-	uint32_t a, b, c, d, e, f, tmp;
+	uint32_t a, b, c, d, e, f = 0, tmp;
 	uint32_t h[] = {0x81887F3A, 0x36CCA480, 0x99056FB1, 0x79705BAE};
 	uint32_t dataLongs[0x50];
 
@@ -3418,8 +3418,8 @@ static void PowervuHashMode02(uint8_t *data, uint8_t *hash)
 static void PowervuHashMode03(uint8_t *data, uint8_t *hash)
 {
 	int i, j, k, s, s2, tmp;
-	uint32_t a, b, c, d, f, g;
-	uint32_t a2, b2, c2, d2, f2, g2;
+	uint32_t a, b, c, d, f = 0, g;
+	uint32_t a2, b2, c2, d2, f2 = 0, g2;
 
 	uint32_t T[] = { 0xC88F3F2E, 0x967506BA, 0xDA877A7B, 0x0DECCDFE };
 	uint32_t T2[] = { 0x01F42668, 0x39C7CDA5, 0xD490E2FE, 0x9965235D };
