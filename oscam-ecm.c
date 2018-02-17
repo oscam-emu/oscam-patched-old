@@ -1028,7 +1028,7 @@ int32_t send_dcw(struct s_client *client, ECM_REQUEST *er)
 	}
 #endif
 
-	if(cfg.double_check && er->rc == E_FOUND && er->selected_reader && is_double_check_caid(er))
+	if(cfg.double_check && er->rc < E_NOTFOUND && er->selected_reader && is_double_check_caid(er))
 	{
 		if(er->checked == 0)   //First CW, save it and wait for next one
 		{
@@ -1042,11 +1042,12 @@ int32_t send_dcw(struct s_client *client, ECM_REQUEST *er)
 			if(memcmp(er->cw_checked, er->cw, sizeof(er->cw)) == 0)
 			{
 				er->checked++;
-				cs_log("DOUBLE CHECKED! %d. CW by %s idx %d cpti %d", er->checked, er->selected_reader->label, er->idx, er->msgid);
+				cs_log("CW matched by %s total matches %d idx %d cpti %d", er->selected_reader->label, er->checked, er->idx, er->msgid);
 			}
 			else
 			{
-				cs_log("DOUBLE CHECKED NONMATCHING! %d. CW by %s idx %d cpti %d", er->checked, er->selected_reader->label, er->idx, er->msgid);
+				er->checked--;
+				cs_log("CW mismatch by %s total matches %d idx %d cpti %d", er->selected_reader->label, er->checked, er->idx, er->msgid);
 			}
 		}
 		if(er->checked < 2)    //less as two same cw? mark as pending!
