@@ -1333,9 +1333,6 @@ static int32_t gbox_recv(struct s_client *cli, uchar *buf, int32_t l)
 	if(tmp < 0)
 		{ return -1; }
 
-	//clients may timeout - dettach from peer's gbox/reader
-	cli->gbox = NULL;
-	cli->reader = NULL;
 	return 0;
 }
 
@@ -1858,7 +1855,7 @@ static int8_t gbox_send_peer_good_night(struct s_client *proxy)
 	uchar outbuf[64];
 	int32_t hostname_len = 0;
 	if (cfg.gbox_hostname)
-		hostname_len = strlen(cfg.gbox_hostname);
+		{ hostname_len = strlen(cfg.gbox_hostname); }
 	int32_t len = hostname_len + 22;
 	if(proxy->gbox && proxy->typ == 'p')
 	{
