@@ -257,7 +257,6 @@ void gbox_send_remm_req(struct s_client *cli, ECM_REQUEST *er)
 {
 	if (!cli || !cli->gbox || !er) { return; }
 	int32_t i;
-	time_t now;
 	uchar mbuf[1024];
 	struct s_client *cl = cur_client();
 	struct gbox_peer *peer = cli->gbox;
@@ -287,28 +286,33 @@ void gbox_send_remm_req(struct s_client *cli, ECM_REQUEST *er)
 	if(!au_caid && caid_is_bulcrypt(er->caid)) // Bulcrypt has 2 caids and aureader->caid can't be used. Use ECM_REQUEST caid for AU.
 		{ au_caid = er->caid; }
 
-	time(&now);
+	if(cl->lastcaid != er->caid)
+		{	cl->disable_counter = 0; }
+	
+	cl->lastcaid = er->caid;
+	cl->disable_counter++;
+
+	if (cl->disable_counter < 6) //delay 5 ecm
+		{ return; }
+
 	if(!memcmp(cl->lastserial, aureader->hexserial, 8))
 		{
-			if(llabs(now - cl->last) < 180)
-				{ return; }
+			cl->disable_counter = 0;
+			return;
 		}
 
 	memcpy(cl->lastserial, aureader->hexserial, 8);
-	cl->last = now;
 
 	if(au_caid)
-	{	cl->disable_counter = 0; }
-	else if(cl->disable_counter > 2)
-		{ return; }
+		{ cl->disable_counter = 0; }
 	else
-		{ cl->disable_counter++; }
+		{ return; }
 
 	memset(mbuf, 0, sizeof(mbuf));
-	
+
 	uint16_t local_gbox_id = gbox_get_local_gbox_id();
 	uint32_t local_gbox_pw = gbox_get_local_gbox_password();
-	
+
 	gbox_message_header(mbuf, MSG_REM_EMM, peer->gbox.password, local_gbox_pw);
 	mbuf[10] = MSGID_REMM_REQ;
 	i2b_buf(2, peer->gbox.id, mbuf + 11);
@@ -324,14 +328,9 @@ void gbox_send_remm_req(struct s_client *cli, ECM_REQUEST *er)
 			{ i2b_buf(4, er->prid, mbuf +17); }
 	}
 	else
-	{
-		i2b_buf(4, er->prid, mbuf +17);
-	}
+		{	i2b_buf(4, er->prid, mbuf +17);	}
 
-	i2b_buf(2, er->pid, mbuf +21);
-	
-	if(au_caid)
-	{
+		i2b_buf(2, er->pid, mbuf +21);
 		i2b_buf(2, au_caid, mbuf +23);
 		memcpy(mbuf +29, aureader->hexserial, 6);  // serial 6 bytes
 		mbuf[37] = aureader->nprov;
@@ -362,8 +361,7 @@ void gbox_send_remm_req(struct s_client *cli, ECM_REQUEST *er)
 			aureader->auprovid ? aureader->auprovid : b2i(4, aureader->prid[0]));
 		cs_log_dump_dbg(D_EMM, mbuf, 122, "<- send remm request, (data_len=%d):", 122);
 		gbox_send(cli, mbuf, 122);
-	}
-	return;
+		return;
 }
 
 int32_t gbox_send_remm_data(EMM_PACKET *ep)
