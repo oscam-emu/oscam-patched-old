@@ -24,7 +24,6 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
 /** \file
  * Generic types.
  */
@@ -37,17 +36,37 @@
 
 #include <stddef.h>
 
-#if defined(_MSC_VER)
+#ifdef _MSC_VER
 typedef unsigned tommy_uint32_t; /**< Generic uint32_t type. */
 typedef unsigned _int64 tommy_uint64_t; /**< Generic uint64_t type. */
 typedef size_t tommy_uintptr_t; /**< Generic uintptr_t type. */
+#ifdef _WIN64
+#define TOMMY_SIZE_BIT 64
+typedef unsigned _int64_t tommy_size_t; /**< Generic size_t type. */
+typedef _int64_t tommy_ssize_t; /**< Generic ssize_t type. */
+#else
+#define TOMMY_SIZE_BIT 32
+typedef unsigned tommy_size_t; /**< Generic size_t type. */
+typedef int tommy_ssize_t; /**< Generic ssize_t type. */
+#endif
 #else
 #include <stdint.h>
 typedef uint32_t tommy_uint32_t; /**< Generic uint32_t type. */
 typedef uint64_t tommy_uint64_t; /**< Generic uint64_t type. */
 typedef uintptr_t tommy_uintptr_t; /**< Generic uintptr_t type. */
+#if SIZE_MAX == UINT64_MAX
+#define TOMMY_SIZE_BIT 64
+typedef uint64_t tommy_size_t; /**< Generic size_t type. */
+typedef int64_t tommy_ssize_t; /**< Generic ssize_t type. */
+#elif SIZE_MAX == UINT32_MAX
+#define TOMMY_SIZE_BIT 32
+typedef uint32_t tommy_size_t; /**< Generic size_t type. */
+typedef int32_t tommy_ssize_t; /**< Generic ssize_t type. */
+#else
+#error Unsupported SIZE_MAX
 #endif
-typedef size_t tommy_size_t; /**< Generic size_t type. */
+#endif
+
 typedef ptrdiff_t tommy_ptrdiff_t; /**< Generic ptrdiff_t type. */
 typedef int tommy_bool_t; /**< Generic boolean type. */
 
@@ -58,13 +77,6 @@ typedef int tommy_bool_t; /**< Generic boolean type. */
  * To make the code more efficient, a full 32 bit integer is used.
  */
 typedef tommy_uint32_t tommy_uint_t;
-
-/**
- * Generic unsigned integer for counting objects.
- *
- * TommyDS doesn't support more than 2^32-1 objects.
- */
-typedef tommy_uint32_t tommy_count_t;
 
 /** \internal
  * Type cast required for the C++ compilation.
@@ -152,17 +164,17 @@ typedef tommy_uint32_t tommy_count_t;
 #endif
 
 /******************************************************************************/
-/* key */
+/* key/hash */
 
 /**
- * Key type used in indexed data structures to store the key or the hash value.
+ * Type used in indexed data structures to store the key of a object.
  */
-typedef tommy_uint32_t tommy_key_t;
+typedef tommy_size_t tommy_key_t;
 
 /**
- * Bits into the ::tommy_key_t type.
+ * Type used in hashtables to store the hash of a object.
  */
-#define TOMMY_KEY_BIT (sizeof(tommy_key_t) * 8)
+typedef tommy_size_t tommy_hash_t;
 
 /******************************************************************************/
 /* node */
@@ -194,17 +206,18 @@ typedef struct tommy_node_struct {
 	struct tommy_node_struct* prev;
 
 	/**
-	 * Pointer at the object containing the node.
+	 * Pointer to the object containing the node.
 	 * This field is initialized when inserting nodes into a data structure.
 	 */
 	void* data;
 
 	/**
-	 * Key used to store the node.
+	 * Index of the node.
+	 * With tries this field is used to store the key.
 	 * With hashtables this field is used to store the hash value.
 	 * With lists this field is not used.
 	 */
-	tommy_key_t key;
+	tommy_size_t index;
 } tommy_node;
 
 /******************************************************************************/
@@ -212,8 +225,8 @@ typedef struct tommy_node_struct {
 
 /**
  * Compare function for elements.
- * \param obj_a Pointer at the first object to compare.
- * \param obj_b Pointer at the second object to compare.
+ * \param obj_a Pointer to the first object to compare.
+ * \param obj_b Pointer to the second object to compare.
  * \return <0 if the first element is less than the second, ==0 equal, >0 if greather.
  *
  * This function is like the C strcmp().
@@ -241,13 +254,15 @@ typedef int tommy_compare_func(const void* obj_a, const void* obj_b);
 
 /**
  * Search function for elements.
- * \param arg Pointer at the value to search.
- * \param obj Pointer at the object to compare to.
+ * \param arg Pointer to the value to search as passed at the search function.
+ * \param obj Pointer to the object to compare to.
  * \return ==0 if the value matches the element. !=0 if different.
  *
- * Note that the first argument is a pointer to the value to search and
- * the second one is a pointer to the object to compare.
- * They are pointers of two different types.
+ * The first argument is a pointer to the value to search exactly
+ * as it's passed at the search function called.
+ * The second argument is a pointer to the object inside the hashtable to compare.
+ *
+ * The return value has to be 0 if the values are equal. != 0 if they are different.
  *
  * \code
  * struct object {
@@ -257,7 +272,10 @@ typedef int tommy_compare_func(const void* obj_a, const void* obj_b);
  *
  * int compare(const void* arg, const void* obj)
  * {
- *     return *(const int*)arg != ((const struct object*)obj)->value;
+ *     const int* value_to_find = arg;
+ *     const struct object* object_to_compare = obj;
+ *
+ *     return *value_to_find != object_to_compare->value;
  * }
  *
  * int value_to_find = 1;
@@ -274,7 +292,7 @@ typedef int tommy_search_func(const void* arg, const void* obj);
 
 /**
  * Foreach function.
- * \param obj Pointer at the object to iterate.
+ * \param obj Pointer to the object to iterate.
  *
  * A typical example is to use free() to deallocate all the objects in a list.
  * \code
@@ -285,8 +303,8 @@ typedef void tommy_foreach_func(void* obj);
 
 /**
  * Foreach function with an argument.
- * \param arg Pointer at a generic argument.
- * \param obj Pointer at the object to iterate.
+ * \param arg Pointer to a generic argument.
+ * \param obj Pointer to the object to iterate.
  */
 typedef void tommy_foreach_arg_func(void* arg, void* obj);
 
@@ -297,6 +315,10 @@ typedef void tommy_foreach_arg_func(void* arg, void* obj);
 #include <intrin.h>
 #pragma intrinsic(_BitScanReverse)
 #pragma intrinsic(_BitScanForward)
+#if TOMMY_SIZE_BIT == 64
+#pragma intrinsic(_BitScanReverse64)
+#pragma intrinsic(_BitScanForward64)
+#endif
 #endif
 
 /** \internal
@@ -329,9 +351,8 @@ tommy_inline tommy_uint_t tommy_ilog2_u32(tommy_uint32_t value)
 	unsigned long count;
 	_BitScanReverse(&count, value);
 	return count;
-/* Removed since current toolchain used for crosscompiling for Fritzbox 73XX and 74XX cant handle this!
 #elif defined(__GNUC__)
-	
+	/*
 	 * GCC implements __builtin_clz(x) as "__builtin_clz(x) = bsr(x) ^ 31"
 	 *
 	 * Where "x ^ 31 = 31 - x", but gcc does not optimize "31 - __builtin_clz(x)" to bsr(x),
@@ -339,8 +360,8 @@ tommy_inline tommy_uint_t tommy_ilog2_u32(tommy_uint32_t value)
 	 *
 	 * So we write "__builtin_clz(x) ^ 31" instead of "31 - __builtin_clz(x)",
 	 * to allow the double xor to be optimized out.
+	 */
 	return __builtin_clz(value) ^ 31;
-*/
 #else
 	/* Find the log base 2 of an N-bit integer in O(lg(N)) operations with multiply and lookup */
 	/* from http://graphics.stanford.edu/~seander/bithacks.html */
@@ -358,6 +379,29 @@ tommy_inline tommy_uint_t tommy_ilog2_u32(tommy_uint32_t value)
 	return TOMMY_DE_BRUIJN_INDEX_ILOG2[(tommy_uint32_t)(value * 0x07C4ACDDU) >> 27];
 #endif
 }
+
+#if TOMMY_SIZE_BIT == 64
+/**
+ * Bit scan reverse or integer log2 for 64 bits.
+ */
+tommy_inline tommy_uint_t tommy_ilog2_u64(tommy_uint64_t value)
+{
+#if defined(_MSC_VER)
+	unsigned long count;
+	_BitScanReverse64(&count, value);
+	return count;
+#elif defined(__GNUC__)
+	return __builtin_clzll(value) ^ 63;
+#else
+	uint32_t l = value & 0xFFFFFFFFU;
+	uint32_t h = value >> 32;
+	if (h)
+		return tommy_ilog2_u32(h) + 32;
+	else
+		return tommy_ilog2_u32(l);
+#endif
+}
+#endif
 
 /**
  * Bit scan forward or trailing zero count.
@@ -387,6 +431,29 @@ tommy_inline tommy_uint_t tommy_ctz_u32(tommy_uint32_t value)
 #endif
 }
 
+#if TOMMY_SIZE_BIT == 64
+/**
+ * Bit scan forward or trailing zero count for 64 bits.
+ */
+tommy_inline tommy_uint_t tommy_ctz_u64(tommy_uint64_t value)
+{
+#if defined(_MSC_VER)
+	unsigned long count;
+	_BitScanForward64(&count, value);
+	return count;
+#elif defined(__GNUC__)
+	return __builtin_ctzll(value);
+#else
+	uint32_t l = value & 0xFFFFFFFFU;
+	uint32_t h = value >> 32;
+	if (l)
+		return tommy_ctz_u32(l);
+	else
+		return tommy_ctz_u32(h) + 32;
+#endif
+}
+#endif
+
 /**
  * Rounds up to the next power of 2.
  * For the value 0, the result is undefined.
@@ -407,5 +474,45 @@ tommy_inline tommy_uint32_t tommy_roundup_pow2_u32(tommy_uint32_t value)
 
 	return value;
 }
+
+/**
+ * Rounds up to the next power of 2 for 64 bits.
+ */
+tommy_inline tommy_uint64_t tommy_roundup_pow2_u64(tommy_uint64_t value)
+{
+	--value;
+	value |= value >> 1;
+	value |= value >> 2;
+	value |= value >> 4;
+	value |= value >> 8;
+	value |= value >> 16;
+	value |= value >> 32;
+	++value;
+
+	return value;
+}
+
+/**
+ * Check if the specified word has a byte at 0.
+ * \return 0 or 1.
+ */
+tommy_inline int tommy_haszero_u32(tommy_uint32_t value)
+{
+	return ((value - 0x01010101) & ~value & 0x80808080) != 0;
+}
+
+/*
+ * Bit depth mapping.
+ */
+#if TOMMY_SIZE_BIT == 64
+#define tommy_ilog2 tommy_ilog2_u64
+#define tommy_ctz tommy_ctz_u64
+#define tommy_roundup_pow2 tommy_roundup_pow2_u64
+#else
+#define tommy_ilog2 tommy_ilog2_u32
+#define tommy_ctz tommy_ctz_u32
+#define tommy_roundup_pow2 tommy_roundup_pow2_u32
+#endif
+
 #endif
 
