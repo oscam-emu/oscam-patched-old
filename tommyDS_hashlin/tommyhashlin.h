@@ -157,24 +157,19 @@
  */
 typedef tommy_node tommy_hashlin_node;
 
-/** \internal
- * Max number of elements as a power of 2.
- */
-#define TOMMY_HASHLIN_BIT_MAX 32
-
 /**
  * Hashtable container type.
  * \note Don't use internal fields directly, but access the container only using functions.
  */
 typedef struct tommy_hashlin_struct {
-	tommy_hashlin_node** bucket[TOMMY_HASHLIN_BIT_MAX]; /**< Dynamic array of hash buckets. One list for each hash modulus. */
+	tommy_hashlin_node** bucket[TOMMY_SIZE_BIT]; /**< Dynamic array of hash buckets. One list for each hash modulus. */
+	tommy_size_t bucket_max; /**< Number of buckets. */
+	tommy_size_t bucket_mask; /**< Bit mask to access the buckets. */
+	tommy_size_t low_max; /**< Low order max value. */
+	tommy_size_t low_mask; /**< Low order mask value. */
+	tommy_size_t split; /**< Split position. */
+	tommy_size_t count; /**< Number of elements. */
 	tommy_uint_t bucket_bit; /**< Bits used in the bit mask. */
-	tommy_count_t bucket_max; /**< Number of buckets. */
-	tommy_count_t bucket_mask; /**< Bit mask to access the buckets. */
-	tommy_count_t low_max; /**< Low order max value. */
-	tommy_count_t low_mask; /**< Low order mask value. */
-	tommy_count_t split; /**< Split position. */
-	tommy_count_t count; /**< Number of elements. */
 	tommy_uint_t state; /**< Reallocation state. */
 } tommy_hashlin;
 
@@ -217,7 +212,7 @@ tommy_inline tommy_hashlin_node** tommy_hashlin_pos(tommy_hashlin* hashlin, tomm
 	tommy_uint_t bsr;
 
 	/* get the highest bit set, in case of all 0, return 0 */
-	bsr = tommy_ilog2_u32(pos | 1);
+	bsr = tommy_ilog2(pos | 1);
 
 	return &hashlin->bucket[bsr][pos];
 }
@@ -227,8 +222,8 @@ tommy_inline tommy_hashlin_node** tommy_hashlin_pos(tommy_hashlin* hashlin, tomm
  */
 tommy_inline tommy_hashlin_node** tommy_hashlin_bucket_ref(tommy_hashlin* hashlin, tommy_hash_t hash)
 {
-	tommy_count_t pos;
-	tommy_count_t high_pos;
+	tommy_size_t pos;
+	tommy_size_t high_pos;
 
 	pos = hash & hashlin->low_mask;
 	high_pos = hash & hashlin->bucket_mask;
@@ -280,7 +275,7 @@ tommy_inline void* tommy_hashlin_search(tommy_hashlin* hashlin, tommy_search_fun
 
 	while (i) {
 		/* we first check if the hash matches, as in the same bucket we may have multiples hash values */
-		if (i->key == hash && cmp(cmp_arg, i->data) == 0)
+		if (i->index == hash && cmp(cmp_arg, i->data) == 0)
 			return i->data;
 		i = i->next;
 	}
@@ -297,7 +292,8 @@ void* tommy_hashlin_remove_existing(tommy_hashlin* hashlin, tommy_hashlin_node* 
 /**
  * Calls the specified function for each element in the hashtable.
  *
- * You can use this function to deallocate all the elements inserted.
+ * You cannot add or remove elements from the inside of the callback,
+ * but can use it to deallocate them.
  *
  * \code
  * tommy_hashlin hashlin;
@@ -334,7 +330,7 @@ void tommy_hashlin_foreach_arg(tommy_hashlin* hashlin, tommy_foreach_arg_func* f
 /**
  * Gets the number of elements.
  */
-tommy_inline tommy_count_t tommy_hashlin_count(tommy_hashlin* hashlin)
+tommy_inline tommy_size_t tommy_hashlin_count(tommy_hashlin* hashlin)
 {
 	return hashlin->count;
 }
