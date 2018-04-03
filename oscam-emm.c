@@ -459,13 +459,13 @@ void do_emm(struct s_client *client, EMM_PACKET *ep)
 
 		if (aureader->fix_07 == 1 && ep->type == UNIQUE)
 		{
-			if((caid == 0x098C || caid == 0x09C4) && ep->emm[1] == 0x70 && (ep->emm[8] * 0x100 + ep->emm[9] != 0x200))
+			if((caid == 0x098D || caid == 0x098C || caid == 0x09C4) && ep->emm[1] == 0x70 && (ep->emm[8] * 0x100 + ep->emm[9] != 0x200))
 			{
 				rdr_log(aureader,"emmtype 0x%04X marked as unknown for caid 0x%04X", (ep->emm[8] * 0x100 + ep->emm[9]),caid);
 				ep->type = UNKNOWN;
 			}
 
-			if((caid == 0x098C || caid == 0x09C4) && ep->emm[1] == 0 && (ep->emm[4] * 0x100 + ep->emm[5] != 0x200))
+			if((caid == 0x098D || caid == 0x098C || caid == 0x09C4) && ep->emm[1] == 0 && (ep->emm[4] * 0x100 + ep->emm[5] != 0x200))
 			{
 				rdr_log(aureader,"emmtype 0x%04X marked as unknown for caid 0x%04X", (ep->emm[4] * 0x100 + ep->emm[5]),caid);
 				ep->type = UNKNOWN;
