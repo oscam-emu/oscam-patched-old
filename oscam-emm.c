@@ -484,13 +484,13 @@ void do_emm(struct s_client *client, EMM_PACKET *ep)
 
 		if (aureader->fix_07 == 1 && ep->type == UNIQUE)
 		{
-			if((caid == 0x098C || caid == 0x09C4) && ep->emm[1] == 0x70 && (ep->emm[8] * 0x100 + ep->emm[9] != 0x200))
+			if((caid == 0x098D || caid == 0x098C || caid == 0x09C4) && ep->emm[1] == 0x70 && (ep->emm[8] * 0x100 + ep->emm[9] != 0x200))
 			{
 				rdr_log(aureader,"emmtype 0x%04X marked as unknown for caid 0x%04X", (ep->emm[8] * 0x100 + ep->emm[9]),caid);
 				ep->type = UNKNOWN;
 			}
 
-			if((caid == 0x098C || caid == 0x09C4) && ep->emm[1] == 0 && (ep->emm[4] * 0x100 + ep->emm[5] != 0x200))
+			if((caid == 0x098D || caid == 0x098C || caid == 0x09C4) && ep->emm[1] == 0 && (ep->emm[4] * 0x100 + ep->emm[5] != 0x200))
 			{
 				rdr_log(aureader,"emmtype 0x%04X marked as unknown for caid 0x%04X", (ep->emm[4] * 0x100 + ep->emm[5]),caid);
 				ep->type = UNKNOWN;
@@ -562,7 +562,7 @@ void do_emm(struct s_client *client, EMM_PACKET *ep)
 
 		int32_t writeemm = 1; // 0= dont write emm, 1=write emm, default = write
 		
-		if(aureader->cachemm && !caid_is_irdeto(caid)) //Check emmcache early:
+		if(aureader->cachemm && !(caid_is_irdeto(caid) || caid_is_videoguard(caid))) //Check emmcache early:
 		{
 			unsigned char md5tmp[MD5_DIGEST_LENGTH];
 
@@ -622,7 +622,7 @@ int32_t reader_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 
 	cs_ftime(&tps);
 	uint16_t caid = b2i(2, ep->caid);
-	if(reader->cachemm && !caid_is_irdeto(caid))
+	if(reader->cachemm && !(caid_is_irdeto(caid) || caid_is_videoguard(caid)))
 	{
 		MD5(ep->emm, SCT_LEN(ep->emm), md5tmp);
 		int64_t gone = comp_timeb(&tps, &last_emm_clean);
