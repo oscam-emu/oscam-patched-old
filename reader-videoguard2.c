@@ -1230,7 +1230,7 @@ static int32_t videoguard2_do_ecm(struct s_reader *reader, const ECM_REQUEST *er
 					}
 				}	
 				
-				if (reader->caid == 0x98C){							//Only for Sky Germany 'V14' Card
+				if (reader->caid == 0x98C || reader->caid == 0x98D){							//Only for Sky Germany 'V14/V15' Card
 					if ((~buff_0F[5]&1) && ((buff_0F[5]>>3)&1)){ 	//case 0f_0x xx xx xx xx xx 08  >  0x08 = binary xxxx1xx0
 						rdr_log(reader, "classD3 ins54: no cw --> Card is paired! (Debug-ECM-Info: 0F_06 %02X %02X %02X %02X %02X %02X)",buff_0F[0],buff_0F[1],buff_0F[2],buff_0F[3],buff_0F[4],buff_0F[5]);
 					}
