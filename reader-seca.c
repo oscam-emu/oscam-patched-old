@@ -354,7 +354,7 @@ static int32_t seca_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, struc
 		}; //exit if fake 96 00 ecm
 		if(ret)
 		{
-			snprintf(ea->msglog, MSGLOGSIZE, "%s ins3c card res: %02x %02x", reader->label, cta_res[0] , cta_res[1]);
+			snprintf(ea->msglog, MSGLOGSIZE, "%.16s ins3c card res: %02x %02x", reader->label, cta_res[0] , cta_res[1]);
 			write_cmd(ins3a, NULL); //get cw
 			return ERROR;
 		}; //exit on other's then 96 00 or 93 02

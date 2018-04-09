@@ -795,10 +795,10 @@ int32_t send_dcw(struct s_client *client, ECM_REQUEST *er)
 		{ snprintf(schaninfo, sizeof(schaninfo) - 1, " - %s", channame); }
 
 	if(er->msglog[0])
-		{ snprintf(sreason, sizeof(sreason) - 1, " (%s)", er->msglog); }
+		{ snprintf(sreason, sizeof(sreason) - 1, " (%.26s)", er->msglog); }
 #ifdef CW_CYCLE_CHECK
 	if(er->cwc_msg_log[0])
-		{ snprintf(scwcinfo, sizeof(scwcinfo) - 1, " (%s)", er->cwc_msg_log); }
+		{ snprintf(scwcinfo, sizeof(scwcinfo) - 1, " (%.26s)", er->cwc_msg_log); }
 #endif
 
 	cs_ftime(&tpe);

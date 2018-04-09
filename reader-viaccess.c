@@ -1361,8 +1361,7 @@ static int32_t viaccess_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, s
 	
 	if ( hasE0 )
 	{	
-		if ( reader->initCA28 )
-		{
+		if ( reader->initCA28 ){
 			rdr_log_dbg(reader, D_READER, "Decrypting nano E0 encrypted cw.");
 			uint8_t returnedcw[16] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }; 
 			memcpy(returnedcw,ea->cw,16);
@@ -1375,13 +1374,11 @@ static int32_t viaccess_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, s
 			des(returnedcw+8, reader->key_schedule1, 0);  //decrypt
 			des(returnedcw+8, reader->key_schedule2, 1);  //crypt
 			des(returnedcw+8, reader->key_schedule1, 0);  //decrypt
-		
+
 			// returning value
-			memcpy(ea->cw,returnedcw, 16);      
-		}
-		else
-		{
-			snprintf(ea->msglog, MSGLOGSIZE, "Viaccess nano E0 detected, no valid boxkey and deskey defined: no decoding");			
+			memcpy(ea->cw,returnedcw, 16);
+		}else{
+			snprintf(ea->msglog, MSGLOGSIZE, "nano E0 detected, no valid boxkey / deskey defined: no decoding");
 		}
 	}
 	return (rc ? OK : ERROR);

@@ -667,7 +667,7 @@ void tpl_checkDiskRevisions(void)
 				{
 					continue;
 				}
-				snprintf(dirpath, 255, "%s%s", cfg.http_tpl, entry.d_name);
+				snprintf(dirpath, 255, "%.31s%.31s", cfg.http_tpl, entry.d_name);
 				if(stat(dirpath, &s) == 0)
 				{
 					if(s.st_mode & S_IFDIR)
@@ -676,7 +676,7 @@ void tpl_checkDiskRevisions(void)
 #ifdef WIN32
 								 "%s\\"
 #else
-								 "%s/"
+								 "%.253s/"
 #endif
 								 , entry.d_name);
 						tpl_checkOneDirDiskRevisions(subdir);

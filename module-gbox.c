@@ -158,7 +158,7 @@ static void write_msg_info (struct s_client *cli, uint8_t msg_id, uint8_t txt_id
 		}
 		else
 		{
-		snprintf(buf, sizeof(buf), "%s %d %s %s %s %d", fname, msg_id, username(cli), cli->reader->device, cs_inet_ntoa(cli->ip), misc);
+		snprintf(buf, sizeof(buf), "%.24s %d %.24s %.24s %s %d", fname, msg_id, username(cli), cli->reader->device, cs_inet_ntoa(cli->ip), misc);
 		cs_log_dbg(D_READER, "found driver %s - write msg (id = %d) related to %s %s", fname, msg_id, username(cli),cli->reader->device);
 		}
 		char *cmd = buf;
