@@ -8724,7 +8724,7 @@ void webif_client_init_lastreader(struct s_client * client, ECM_REQUEST * er, st
 		else if(er->rc == E_CACHEEX)
 			{ cs_strncpy(client->lastreader, "cache3", sizeof(client->lastreader)); }
 		else if(er->rc < E_NOTFOUND)
-			{ snprintf(client->lastreader, sizeof(client->lastreader) - 1, "%s (cache)", er_reader->label); }
+			{ snprintf(client->lastreader, sizeof(client->lastreader) - 1, "%.54s (cache)", er_reader->label); }
 		else
 			{ cs_strncpy(client->lastreader, stxt[er->rc], sizeof(client->lastreader)); }
 	}
