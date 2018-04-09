@@ -319,7 +319,7 @@ static int32_t conax_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, stru
 		rdr_log(reader, "conax RSA pairing - wrong size of data");
 		break;
 	case -3:
-		rdr_log(reader, "conax RSA pairing- wrong size of data for second round");
+		rdr_log(reader, "conax RSA pairing- wrong size of data for second round"); /* fallthrough */
 	case -4:
 		rdr_log(reader, "card has no right to decode this channel");
 		break;

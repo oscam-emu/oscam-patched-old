@@ -509,20 +509,17 @@ void __xxor(unsigned char *data, int32_t len, const unsigned char *v1, const uns
 	switch(len)   // looks ugly but the cpu don't crash!
 	{
 	case 16:
-		for(i = 8; i < 16; ++i)
-		{
+		for(i = 8; i < 16; ++i){
 			data[i] = v1[i] ^ v2[i];
-		}
+		} /* fallthrough */
 	case 8:
-		for(i = 4; i < 8; ++i)
-		{
+		for(i = 4; i < 8; ++i){
 			data[i] = v1[i] ^ v2[i];
-		}
+		} /* fallthrough */
 	case 4:
-		for(i = 0; i < 4; ++i)
-		{
+		for(i = 0; i < 4; ++i){
 			data[i] = v1[i] ^ v2[i];
-		}
+		} /* fallthrough */
 		break;
 	default:
 		while(len--) { *data++ = *v1++ ^ *v2++; }

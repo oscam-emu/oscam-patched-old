@@ -96,14 +96,14 @@
         c+=n; \
         l1=l2=0; \
         switch (n) { \
-        case 8: l2 =((unsigned long)(*(--(c))))    ; \
-        case 7: l2|=((unsigned long)(*(--(c))))<< 8; \
-        case 6: l2|=((unsigned long)(*(--(c))))<<16; \
-        case 5: l2|=((unsigned long)(*(--(c))))<<24; \
-        case 4: l1 =((unsigned long)(*(--(c))))    ; \
-        case 3: l1|=((unsigned long)(*(--(c))))<< 8; \
-        case 2: l1|=((unsigned long)(*(--(c))))<<16; \
-        case 1: l1|=((unsigned long)(*(--(c))))<<24; \
+        case 8: l2 =((unsigned long)(*(--(c))))    ; /* fallthrough */ \
+        case 7: l2|=((unsigned long)(*(--(c))))<< 8; /* fallthrough */ \
+        case 6: l2|=((unsigned long)(*(--(c))))<<16; /* fallthrough */ \
+        case 5: l2|=((unsigned long)(*(--(c))))<<24; /* fallthrough */ \
+        case 4: l1 =((unsigned long)(*(--(c))))    ; /* fallthrough */ \
+        case 3: l1|=((unsigned long)(*(--(c))))<< 8; /* fallthrough */ \
+        case 2: l1|=((unsigned long)(*(--(c))))<<16; /* fallthrough */ \
+        case 1: l1|=((unsigned long)(*(--(c))))<<24; /* fallthrough */ \
         } \
     }
 
@@ -111,13 +111,13 @@
 #define l2nn(l1,l2,c,n) { \
         c+=n; \
         switch (n) { \
-        case 8: *(--(c))=(unsigned char)(((l2)    )&0xff); \
-        case 7: *(--(c))=(unsigned char)(((l2)>> 8)&0xff); \
-        case 6: *(--(c))=(unsigned char)(((l2)>>16)&0xff); \
-        case 5: *(--(c))=(unsigned char)(((l2)>>24)&0xff); \
-        case 4: *(--(c))=(unsigned char)(((l1)    )&0xff); \
-        case 3: *(--(c))=(unsigned char)(((l1)>> 8)&0xff); \
-        case 2: *(--(c))=(unsigned char)(((l1)>>16)&0xff); \
+        case 8: *(--(c))=(unsigned char)(((l2)    )&0xff); /* fallthrough */ \
+        case 7: *(--(c))=(unsigned char)(((l2)>> 8)&0xff); /* fallthrough */ \
+        case 6: *(--(c))=(unsigned char)(((l2)>>16)&0xff); /* fallthrough */ \
+        case 5: *(--(c))=(unsigned char)(((l2)>>24)&0xff); /* fallthrough */ \
+        case 4: *(--(c))=(unsigned char)(((l1)    )&0xff); /* fallthrough */ \
+        case 3: *(--(c))=(unsigned char)(((l1)>> 8)&0xff); /* fallthrough */ \
+        case 2: *(--(c))=(unsigned char)(((l1)>>16)&0xff); /* fallthrough */ \
         case 1: *(--(c))=(unsigned char)(((l1)>>24)&0xff); \
         } \
     }
@@ -148,14 +148,14 @@
         c+=n; \
         l1=l2=0; \
         switch (n) { \
-        case 8: l2 =((unsigned long)(*(--(c))))<<24; \
-        case 7: l2|=((unsigned long)(*(--(c))))<<16; \
-        case 6: l2|=((unsigned long)(*(--(c))))<< 8; \
-        case 5: l2|=((unsigned long)(*(--(c))));     \
-        case 4: l1 =((unsigned long)(*(--(c))))<<24; \
-        case 3: l1|=((unsigned long)(*(--(c))))<<16; \
-        case 2: l1|=((unsigned long)(*(--(c))))<< 8; \
-        case 1: l1|=((unsigned long)(*(--(c))));     \
+        case 8: l2 =((unsigned long)(*(--(c))))<<24; /* fallthrough */ \
+        case 7: l2|=((unsigned long)(*(--(c))))<<16; /* fallthrough */ \
+        case 6: l2|=((unsigned long)(*(--(c))))<< 8; /* fallthrough */ \
+        case 5: l2|=((unsigned long)(*(--(c))));     /* fallthrough */ \
+        case 4: l1 =((unsigned long)(*(--(c))))<<24; /* fallthrough */ \
+        case 3: l1|=((unsigned long)(*(--(c))))<<16; /* fallthrough */ \
+        case 2: l1|=((unsigned long)(*(--(c))))<< 8; /* fallthrough */ \
+        case 1: l1|=((unsigned long)(*(--(c))));     /* fallthrough */ \
         } \
     }
 
@@ -163,14 +163,14 @@
 #define l2cn(l1,l2,c,n) { \
         c+=n; \
         switch (n) { \
-        case 8: *(--(c))=(unsigned char)(((l2)>>24)&0xff); \
-        case 7: *(--(c))=(unsigned char)(((l2)>>16)&0xff); \
-        case 6: *(--(c))=(unsigned char)(((l2)>> 8)&0xff); \
-        case 5: *(--(c))=(unsigned char)(((l2)    )&0xff); \
-        case 4: *(--(c))=(unsigned char)(((l1)>>24)&0xff); \
-        case 3: *(--(c))=(unsigned char)(((l1)>>16)&0xff); \
-        case 2: *(--(c))=(unsigned char)(((l1)>> 8)&0xff); \
-        case 1: *(--(c))=(unsigned char)(((l1)    )&0xff); \
+        case 8: *(--(c))=(unsigned char)(((l2)>>24)&0xff); /* fallthrough */ \
+        case 7: *(--(c))=(unsigned char)(((l2)>>16)&0xff); /* fallthrough */ \
+        case 6: *(--(c))=(unsigned char)(((l2)>> 8)&0xff); /* fallthrough */ \
+        case 5: *(--(c))=(unsigned char)(((l2)    )&0xff); /* fallthrough */ \
+        case 4: *(--(c))=(unsigned char)(((l1)>>24)&0xff); /* fallthrough */ \
+        case 3: *(--(c))=(unsigned char)(((l1)>>16)&0xff); /* fallthrough */ \
+        case 2: *(--(c))=(unsigned char)(((l1)>> 8)&0xff); /* fallthrough */ \
+        case 1: *(--(c))=(unsigned char)(((l1)    )&0xff); /* fallthrough */ \
         } \
     }
 

@@ -63,15 +63,11 @@
  */
 
 static int32_t Protocol_T0_Case2E(struct s_reader *reader, unsigned char *command, uint16_t command_len, unsigned char *rsp, uint16_t *lr);
-
 static int32_t Protocol_T0_Case3E(struct s_reader *reader, unsigned char *command, unsigned char *rsp, uint16_t *lr);
-
 static int32_t Protocol_T0_Case4E(struct s_reader *reader, unsigned char *command, uint16_t command_len, unsigned char *rsp, uint16_t *lr);
-
 static int32_t Protocol_T0_ExchangeTPDU(struct s_reader *reader, unsigned char *command, uint16_t command_len, unsigned char *rsp, uint16_t *lr);
 
-static int32_t APDU_Cmd_Case(unsigned char *command, uint16_t command_len)
-{
+static int32_t APDU_Cmd_Case(unsigned char *command, uint16_t command_len){
 	unsigned char B1;
 	uint16_t B2B3;
 	uint32_t L;
@@ -127,16 +123,16 @@ int32_t Protocol_T0_Command(struct s_reader *reader, unsigned char *command, uin
 	switch(cmd_case)
 	{
 	case APDU_CASE_2E:
-		return Protocol_T0_Case2E(reader, command, command_len, rsp, lr);
+		return Protocol_T0_Case2E(reader, command, command_len, rsp, lr); /* fallthrough */
 	case APDU_CASE_3E:
-		return Protocol_T0_Case3E(reader, command, rsp, lr);
+		return Protocol_T0_Case3E(reader, command, rsp, lr); /* fallthrough */
 	case APDU_CASE_4E:
-		return Protocol_T0_Case4E(reader, command, command_len, rsp, lr);
+		return Protocol_T0_Case4E(reader, command, command_len, rsp, lr); /* fallthrough */
 	case APDU_CASE_4S:
-		command_len--; //FIXME this should change 4S to 2S/3S command
-	case APDU_CASE_2S:
+		command_len--; /* fallthrough */ //FIXME this should change 4S to 2S/3S command
+	case APDU_CASE_2S: /* fallthrough */
 	case APDU_CASE_3S:
-		return Protocol_T0_ExchangeTPDU(reader, command, command_len, rsp, lr);
+		return Protocol_T0_ExchangeTPDU(reader, command, command_len, rsp, lr); /* fallthrough */
 	default:
 		rdr_log_dbg(reader, D_IFD, "Protocol: T=0: Invalid APDU");
 		return ERROR;
