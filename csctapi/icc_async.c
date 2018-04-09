@@ -209,10 +209,12 @@ int32_t ICC_Async_CardWrite(struct s_reader *reader, unsigned char *command, uin
 	uint16_t type = 0;
 	do
 	{
-		switch(reader->protocol_type)
-		{
-			if(try > 1)
-					rdr_log(reader, "Warning: needed try nr %i, next ECM has some delay", try);
+		if(try > 1){
+			rdr_log(reader, "Warning: needed try nr %i, next ECM has some delay", try);
+		}
+
+		switch(reader->protocol_type){
+
 		case ATR_PROTOCOL_TYPE_T0:
 			ret = Protocol_T0_Command(reader, command, command_len, rsp, lr);
 			type = 0;

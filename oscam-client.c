@@ -91,11 +91,10 @@ const char *client_get_proto(struct s_client *cl)
 		break;
 #endif
 	case 'c':
-		if(cccam_client_extended_mode(cl))
-		{
+		if(cccam_client_extended_mode(cl)){
 			ctyp = "cccam_ext";
 			break;
-		}
+		} /* fallthrough */
 	default:
 		ctyp = get_module(cl)->desc;
 	}
@@ -436,7 +435,7 @@ int32_t cs_auth_client(struct s_client *client, struct s_auth *account, const ch
 				ac_init_client(client, account);
 			}
 		}
-	}
+	} /* fallthrough */
 
 	case -1:   // anonymous grant access
 	{

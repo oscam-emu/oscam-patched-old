@@ -1443,7 +1443,7 @@ static int32_t viaccess_get_emm_type(EMM_PACKET *ep, struct s_reader *rdr)
 				{ return 1; }
 			
 			return (!memcmp(&rdr->sa[0][0], ep->hexserial, 3));
-		}
+		} /* fallthrough */
 
 	default:
 		ep->type = UNKNOWN;
