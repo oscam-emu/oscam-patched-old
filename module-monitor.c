@@ -562,7 +562,7 @@ static void monitor_send_login(void)
 	struct s_client *cur_cl = cur_client();
 	struct monitor_data *module_data = cur_cl->module_data;
 	if(module_data->auth && cur_cl->account)
-		{ snprintf(buf, sizeof(buf), "[A-0000]1|%s logged in\n", cur_cl->account->usr); }
+		{ snprintf(buf, sizeof(buf), "[A-0000]1|%.42s logged in\n", cur_cl->account->usr); }
 	else
 		{ cs_strncpy(buf, "[A-0000]0|not logged in\n", sizeof(buf)); }
 	monitor_send_info(buf, 1);

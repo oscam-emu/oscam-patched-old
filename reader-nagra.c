@@ -640,10 +640,12 @@ static int32_t ParseDataType(struct s_reader *reader, unsigned char dt, unsigned
 			// tier_date(b2i(2, cta_res+13)-0x7f7, de, 15);
 			rdr_log(reader, "|%04X|%04X    |%s  |%s  |", id, chid, ds, de);
 			addProvider(reader, cta_res);
-		}
+		} /* fallthrough */
 	case 0x08:
 	case 0x88:
-		if(cta_res[11] == 0x49) { decryptDT08(reader, cta_res); }
+		if(cta_res[11] == 0x49){
+			decryptDT08(reader, cta_res);
+		} /* fallthrough */
 	default:
 		return OK;
 	}

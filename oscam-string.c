@@ -9,12 +9,9 @@ bool cs_malloc(void *result, size_t size)
 {
 	void **tmp = result;
 	*tmp = malloc(size);
-	if(*tmp == NULL)
-	{
+	if(*tmp == NULL){
 		fprintf(stderr, "%s: ERROR: Can't allocate %zu bytes!", __func__, size);
-	}
-	else
-	{
+	}else{
 		memset(*tmp, 0, size);
 	}
 	return !!*tmp;
@@ -29,8 +26,7 @@ bool cs_realloc(void *result, size_t size)
 {
 	void **tmp = result, **tmp2 = result;
 	*tmp = realloc(*tmp, size);
-	if(*tmp == NULL)
-	{
+	if(*tmp == NULL){
 		fprintf(stderr, "%s: ERROR: Can't allocate %zu bytes!", __func__, size);
 		NULLFREE(*tmp2);
 	}
@@ -43,8 +39,7 @@ char *cs_strdup(const char *str)
 	char *newstr;
 	if(!str)
 		{ return NULL; }
-	if(cs_malloc(&newstr, strlen(str) + 1))
-	{
+	if(cs_malloc(&newstr, strlen(str) + 1)){
 		strncpy(newstr, str, strlen(str));
 		return newstr;
 	}
@@ -57,8 +52,7 @@ char *cs_strdup(const char *str)
    num should be the real size of char array (do not subtract -1). */
 void cs_strncpy(char *destination, const char *source, size_t num)
 {
-	if(!source)
-	{
+	if(!source){
 		destination[0] = '\0';
 		return;
 	}
@@ -75,8 +69,7 @@ void cs_strncpy(char *destination, const char *source, size_t num)
 char *strtolower(char *txt)
 {
 	char *p;
-	for(p = txt; *p; p++)
-	{
+	for(p = txt; *p; p++){
 		if(isupper((uchar)*p))
 			{ *p = tolower((uchar) * p); }
 	}
@@ -87,8 +80,7 @@ char *strtolower(char *txt)
 char *strtoupper(char *txt)
 {
 	char *p;
-	for(p = txt; *p; p++)
-	{
+	for(p = txt; *p; p++){
 		if(islower((uchar)*p))
 			{ *p = toupper((uchar) * p); }
 	}
@@ -99,8 +91,7 @@ char *trim(char *txt)
 {
 	int32_t l;
 	char *p1, *p2;
-	if(*txt == ' ')
-	{
+	if(*txt == ' '){
 		for(p1 = p2 = txt; (*p1 == ' ') || (*p1 == '\t') || (*p1 == '\n') || (*p1 == '\r'); p1++)
 			{ ; }
 		while(*p1)
@@ -108,8 +99,7 @@ char *trim(char *txt)
 		*p2 = '\0';
 	}
 	l = strlen(txt);
-	if(l > 0)
-	{
+	if(l > 0){
 		for(p1 = txt + l - 1; l > 0 && ((*p1 == ' ') || (*p1 == '\t') || (*p1 == '\n') || (*p1 == '\r')); *p1-- = '\0', l--)
 			{ ; }
 	}
@@ -139,11 +129,8 @@ char *remove_white_chars(char *txt)
 
 	if(NULL != p1)
 	{
-		while('\0' != *p1)
-		{
-			if((' '  != *p1) && ('\t' != *p1) &&
-					('\n' != *p1) && ('\r' != *p1))
-			{
+		while('\0' != *p1){
+			if((' '  != *p1) && ('\t' != *p1) && ('\n' != *p1) && ('\r' != *p1)){
 				*p2++ = *p1;
 			}
 			p1++;
@@ -317,7 +304,7 @@ uchar *i2b_buf(int32_t n, uint32_t i, uchar *b)
 	case 3:
 		b[0] = (i >> 16) & 0xff;
 		b[1] = (i >> 8) & 0xff;
-		b[2] = (i) & 0xff;
+		b[2] = (i) & 0xff; /* fallthrough */
 	case 4:
 		b[0] = (i >> 24) & 0xff;
 		b[1] = (i >> 16) & 0xff;
