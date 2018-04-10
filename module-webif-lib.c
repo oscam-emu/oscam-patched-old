@@ -784,12 +784,12 @@ struct CRYPTO_dynlock_value
 };
 
 /* function really needs unsigned long to prevent compiler warnings... */
-static unsigned long SSL_id_function(void)
+unsigned long SSL_id_function(void)
 {
 	return ((unsigned long) pthread_self());
 }
 
-static void SSL_locking_function(int32_t mode, int32_t type, const char *file, int32_t line)
+void SSL_locking_function(int32_t mode, int32_t type, const char *file, int32_t line)
 {
 	if(mode & CRYPTO_LOCK)
 	{
@@ -803,7 +803,7 @@ static void SSL_locking_function(int32_t mode, int32_t type, const char *file, i
 	if(file || line) { return; }
 }
 
-static struct CRYPTO_dynlock_value *SSL_dyn_create_function(const char *file, int32_t line)
+struct CRYPTO_dynlock_value *SSL_dyn_create_function(const char *file, int32_t line)
 {
 	struct CRYPTO_dynlock_value *l;
 	if(!cs_malloc(&l, sizeof(struct CRYPTO_dynlock_value)))
@@ -821,7 +821,7 @@ static struct CRYPTO_dynlock_value *SSL_dyn_create_function(const char *file, in
 	return l;
 }
 
-static void SSL_dyn_lock_function(int32_t mode, struct CRYPTO_dynlock_value *l, const char *file, int32_t line)
+void SSL_dyn_lock_function(int32_t mode, struct CRYPTO_dynlock_value *l, const char *file, int32_t line)
 {
 	if(mode & CRYPTO_LOCK)
 	{
@@ -835,7 +835,7 @@ static void SSL_dyn_lock_function(int32_t mode, struct CRYPTO_dynlock_value *l, 
 	if(file || line) { return; }
 }
 
-static void SSL_dyn_destroy_function(struct CRYPTO_dynlock_value *l, const char *file, int32_t line)
+void SSL_dyn_destroy_function(struct CRYPTO_dynlock_value *l, const char *file, int32_t line)
 {
 	pthread_mutex_destroy(&l->mutex);
 	NULLFREE(l);
