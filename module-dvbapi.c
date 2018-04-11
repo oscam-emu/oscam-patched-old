@@ -3159,6 +3159,7 @@ static void getDemuxOptions(int32_t demux_id, unsigned char *buffer, uint32_t *c
 		*demux_index = buffer[20]; // with STONE 1.0.4 always 0x00
 		*adapter_index = buffer[21]; // with STONE 1.0.4 adapter index can be 0,1,2
 		*ca_mask = (1 << *adapter_index); // use adapter_index as ca_mask (used as index for ca_fd[] array)
+		if (buffer[21]==0x84 && buffer[22]==0x02) *pmtpid = b2i(2, buffer+23);
 	}
 
 	if((cfg.dvbapi_boxtype == BOXTYPE_PC || cfg.dvbapi_boxtype == BOXTYPE_PC_NODMX || cfg.dvbapi_boxtype == BOXTYPE_SAMYGO)
