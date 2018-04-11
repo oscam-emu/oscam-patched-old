@@ -351,8 +351,8 @@ tommy_inline tommy_uint_t tommy_ilog2_u32(tommy_uint32_t value)
 	unsigned long count;
 	_BitScanReverse(&count, value);
 	return count;
-#elif defined(__GNUC__)
-	/*
+	/* #elif defined(__GNUC__)
+	 *
 	 * GCC implements __builtin_clz(x) as "__builtin_clz(x) = bsr(x) ^ 31"
 	 *
 	 * Where "x ^ 31 = 31 - x", but gcc does not optimize "31 - __builtin_clz(x)" to bsr(x),
