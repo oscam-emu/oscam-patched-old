@@ -39,7 +39,7 @@
 #endif
 #include <limits.h>
 #include <stddef.h>
-
+#define LZO_CFG_NO_CONFIG_CHECK 1
 
 /***********************************************************************
 // LZO requires a conforming <limits.h>
