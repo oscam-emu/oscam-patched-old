@@ -16,10 +16,20 @@
  * and each level
  */
 
+//remove spaces at the end of lines
+
 //one empty line between functions
 const char *idea_options(void){
 <------>if (sizeof(short) != sizeof(IDEA_INT)) // please do not use shortenings
 <------>{
+<------><-->return ("idea(int)");
+<------>} else {
+<------><-->return ("idea(short)");
+<------>}
+}
+
+//alternative usual notation
+<------>if (sizeof(short) != sizeof(IDEA_INT)) { // please do not use shortenings
 <------><-->return ("idea(int)");
 <------>} else {
 <------><-->return ("idea(short)");
