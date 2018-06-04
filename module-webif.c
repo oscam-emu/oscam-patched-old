@@ -6685,7 +6685,7 @@ static bool process_single_emm(struct templatevars * vars, struct s_reader * rdr
 	{
 		char emmdata[1025] = {'\0'};     /*1024 + '\0'*/
 		unsigned char emmhex[513] = {'\0'};
-		char buff[5] = {'\0'};
+		char buff[7] = {'\0'};
 		uint16_t len = 0;
 		cs_strncpy(emmdata, ep, sizeof(emmdata));
 		remove_white_chars(emmdata);
