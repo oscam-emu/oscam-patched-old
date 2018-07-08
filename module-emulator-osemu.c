@@ -4389,7 +4389,7 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, emu_stream_client_key_data *cdata)
 	int8_t ret = 1;
 	uint16_t ecmLen = GetEcmLen(ecm);
 	uint32_t ecmCrc32;
-	uint8_t nanoCmd, nanoChecksum, keyType, fixedKey, oddKey, bid, csaUsed, modeCW, offsetBody;
+	uint8_t nanoCmd, nanoChecksum, keyType, fixedKey, oddKey, bid, csaUsed, modeCW = 0, offsetBody;
 	uint16_t nanoLen;
 	uint32_t channelId, ecmSrvid, keyIndex;
 	uint32_t i, j, k;
