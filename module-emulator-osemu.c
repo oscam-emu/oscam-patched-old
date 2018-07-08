@@ -4403,7 +4403,7 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, emu_stream_client_key_data *cdata)
 	uint8_t seedEcmCw[0x10];
 	uint8_t hashModeCw = 0, needsUnmasking, xorMode;
 	uint8_t unmaskedEcm[ecmLen];
-	char tmpBuffer1[512];
+	//char tmpBuffer1[512];
 #ifdef WITH_EMU
 	uint8_t *dwp;
 	emu_stream_cw_item *cw_item;
@@ -4420,14 +4420,16 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, emu_stream_client_key_data *cdata)
 	
 	needsUnmasking = (ecm[3] & 0xF0) == 0x50;
 	
-	cs_log("ecm1:%s", cs_hexdump(0, ecm, ecmLen, tmpBuffer1, sizeof(tmpBuffer1)));
+	//cs_log_dbg(D_ATR, "ecm1: %s", cs_hexdump(0, ecm, ecmLen, tmpBuffer1, sizeof(tmpBuffer1))); // Already there with debug level 2
 	
 	if (needsUnmasking)
 	{
 		hashModeCw = PowervuUnmaskEcm(ecm, seedEcmCw, &modeCW);
 	}
 	
-	//cs_log("pv needsUnmasking=%d,ecm2:%s", needsUnmasking, cs_hexdump(0, ecm, ecmLen, tmpBuffer1, sizeof(tmpBuffer1)));
+	//cs_log_dbg(D_ATR, "needsUnmasking=%d", needsUnmasking);
+	//cs_log_dbg(D_ATR, "ecm2: %s", cs_hexdump(0, ecm, ecmLen, tmpBuffer1, sizeof(tmpBuffer1)));
+
 	memcpy(unmaskedEcm, ecm, ecmLen);
 
 	ecmCrc32 = b2i(4, ecm+ecmLen-4);
@@ -4523,7 +4525,8 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, emu_stream_client_key_data *cdata)
 			keyRef1 = 0;
 			keyRef2 = 0;
 			
-			cs_log("csaUsed=%d,xorMode=%d,ecmSrvid=%d,hashModeCw=%d,modeCW=%d", csaUsed,xorMode,ecmSrvid,hashModeCw,modeCW);
+			cs_log_dbg(D_ATR, "csaUsed=%d, xorMode=%d, ecmSrvid=%d, hashModeCw=%d, modeCW=%d",
+						csaUsed, xorMode, ecmSrvid, hashModeCw, modeCW);
 			
 			do
 			{
@@ -4615,7 +4618,10 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, emu_stream_client_key_data *cdata)
 						}
 					}
 				}
-				//cs_log("pv csaUsed=%d,cw:%s cdata=%x,cw_ex=%x", csaUsed, cs_hexdump(3, cw[0], 8, tmpBuffer1, sizeof(tmpBuffer1)),(unsigned int)cdata,(unsigned int)cw_ex);
+
+				//cs_log_dbg(D_ATR, "csaUsed=%d, cw: %s cdata=%x, cw_ex=%x",
+				//			csaUsed, cs_hexdump(3, cw[0], 8, tmpBuffer1, sizeof(tmpBuffer1)),
+				//			(unsigned int)cdata, (unsigned int)cw_ex);
 				
 #ifdef WITH_EMU
 				if(update_global_key)
