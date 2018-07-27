@@ -5286,7 +5286,7 @@ static void *dvbapi_main_local(void *cli)
 		type[0] = 1;
 	}
 
-#if defined WITH_COOLAPI || defined WITH_COOLAPI2
+#if defined WITH_COOLAPI || defined WITH_COOLAPI2 || defined WITH_NEUTRINO
 	system("pzapit -rz");
 #endif
 	cs_ftime(&start); // register start time
