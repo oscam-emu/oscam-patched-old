@@ -380,21 +380,23 @@ static void write_versionfile(bool use_stdout)
 	fprintf(fp, "Box type:       %s (%s)\n", boxtype_get(), boxname_get());
 	fprintf(fp, "PID:            %d\n", getppid());
 	fprintf(fp, "TempDir:        %s\n", cs_tmpdir);
-	fprintf(fp, "ConfigDir:      %s\n", cs_confdir);
-#ifdef WEBIF
-	fprintf(fp, "WebifPort:      %d\n", cfg.http_port);
-#endif
 #ifdef MODULE_GBOX
 	if(cfg.gbox_tmp_dir == NULL)
 	{
-		fprintf(fp, "\nGBox tmp_dir:   not defined using: %s\n", cs_tmpdir);
+		fprintf(fp, "GBox tmp_dir:   not defined using: %s\n", cs_tmpdir);
 	}
 	else
 	{
-		fprintf(fp, "\nGBox tmp_dir:   %s\n", cfg.gbox_tmp_dir);
+		fprintf(fp, "GBox tmp_dir:   %s\n", cfg.gbox_tmp_dir);
 	}
-	fprintf(fp, "                value read during start up, not refreshed if changed later in webif!\n");
 #endif
+	
+	fprintf(fp, "ConfigDir:      %s\n", cs_confdir);
+
+#ifdef WEBIF
+	fprintf(fp, "WebifPort:      %d\n", cfg.http_port);
+#endif
+
 	fprintf(fp, "\n");
 	write_conf(WEBIF, "Web interface support");
 	write_conf(WEBIF_LIVELOG, "LiveLog support");
@@ -410,6 +412,7 @@ static void write_versionfile(bool use_stdout)
 		write_conf(WITH_COOLAPI2, "DVB API with COOLAPI2 support");
 		write_conf(WITH_STAPI, "DVB API with STAPI support");
 		write_conf(WITH_STAPI5, "DVB API with STAPI5 support");
+		write_conf(WITH_NEUTRINO, "DVB API with NEUTRINO support");
 		write_conf(READ_SDT_CHARSETS, "DVB API read-sdt charsets");
 	}
 	write_conf(IRDETO_GUESSING, "Irdeto guessing");

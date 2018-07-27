@@ -9,6 +9,7 @@
 #if defined(__linux__) || defined(__CYGWIN__)
 #define HAVE_DVBAPI 1
 #endif
+//#define WITH_NEUTRINO 1
 #define READ_SDT_CHARSETS 1
 #define CLOCKFIX 1
 #define IRDETO_GUESSING 1
