@@ -447,6 +447,7 @@ char *tpl_getUnparsedTpl(const char *name, int8_t removeHeader, const char *subd
 											check_conf(READER_DRE, ptr2);
 											check_conf(READER_IRDETO, ptr2);
 											check_conf(READER_NAGRA, ptr2);
+											check_conf(READER_NAGRA_MERLIN, ptr2);
 											check_conf(READER_SECA, ptr2);
 											check_conf(READER_TONGFANG, ptr2);
 											check_conf(READER_VIACCESS, ptr2);

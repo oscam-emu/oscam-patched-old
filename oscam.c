@@ -272,15 +272,12 @@ static void parse_cmdline_params(int argc, char **argv)
 		case 'B': // --pidfile
 			oscam_pidfile = optarg;
 			break;
-#if defined(WITH_STAPI) || defined(WITH_STAPI5)
 		case 'f': // --foreground
 			bg = 0;
 			break;
-#else
 		case 'b': // --daemon
 			bg = 1;
 			break;
-#endif
 		case 'c': // --config-dir
 			cs_strncpy(cs_confdir, optarg, sizeof(cs_confdir));
 			break;
@@ -452,6 +449,7 @@ static void write_versionfile(bool use_stdout)
 	{
 		fprintf(fp, "\n");
 		write_readerconf(READER_NAGRA, "Nagra");
+		write_readerconf(READER_NAGRA_MERLIN, "Nagra_Merlin");
 		write_readerconf(READER_IRDETO, "Irdeto");
 		write_readerconf(READER_CONAX, "Conax");
 		write_readerconf(READER_CRYPTOWORKS, "Cryptoworks");
@@ -500,7 +498,7 @@ static void remove_versionfile(void)
 #define report_emm_support(CONFIG_VAR, text) \
     do { \
         if (!config_enabled(CONFIG_VAR)) \
-            cs_log("Binary without %s module - no EMM processing for %s possible!", text, text); \
+            cs_log_dbg(D_TRACE, "Binary without %s module - no EMM processing for %s possible!", text, text); \
     } while(0)
 
 static void do_report_emm_support(void)
@@ -512,6 +510,7 @@ static void do_report_emm_support(void)
 	else
 	{
 		report_emm_support(READER_NAGRA, "Nagra");
+		report_emm_support(READER_NAGRA_MERLIN, "Nagra_Merlin");
 		report_emm_support(READER_IRDETO, "Irdeto");
 		report_emm_support(READER_CONAX, "Conax");
 		report_emm_support(READER_CRYPTOWORKS, "Cryptoworks");
@@ -1557,6 +1556,9 @@ static void run_tests(void) { }
 
 const struct s_cardsystem *cardsystems[] =
 {
+#ifdef READER_NAGRA_MERLIN
+	&reader_nagracak7,
+#endif
 #ifdef READER_NAGRA
 	&reader_nagra,
 #endif
@@ -1642,6 +1644,7 @@ const struct s_cardreader *cardreaders[] =
 #ifdef CARDREADER_STINGER
 	&cardreader_stinger,
 #endif
+
 	NULL
 };
 
