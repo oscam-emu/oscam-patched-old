@@ -34,4 +34,6 @@
 	void des_ede2_cbc_encrypt(uint8_t* data, const uint8_t* iv, const uint8_t* key1, const uint8_t* key2, int32_t len);
 	void des_ede2_cbc_decrypt(uint8_t* data, const uint8_t* iv, const uint8_t* key1, const uint8_t* key2, int32_t len);
 
+	void _3DES(uint8_t *data, uint8_t *key);
+
 #endif

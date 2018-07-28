@@ -36,7 +36,6 @@
 #include <termios.h>
 #include <inttypes.h>
 #include <sys/utsname.h>
-#include <sys/sysmacros.h>
 
 /*
  * The following hack is taken from Linux: include/linux/kconfig.h
@@ -362,7 +361,7 @@ typedef unsigned char uchar;
 /* ===========================
  *         constants
  * =========================== */
-#define CS_VERSION    "1.20-unstable_svn"
+#define CS_VERSION    "1.20_svn"
 #ifndef CS_SVN_VERSION
 #   define CS_SVN_VERSION "test"
 #endif
@@ -1479,6 +1478,31 @@ struct s_reader                                     //contains device info, read
 	FTAB            fallback_percaid;
 	FTAB            localcards;
 	FTAB            disablecrccws_only_for;         // ignore checksum for selected caid provid
+#ifdef READER_NAGRA_MERLIN
+	unsigned char   kdt05_00[216];
+	unsigned char   kdt05_10[208];
+	unsigned char   cardid[8];
+	unsigned char   edata[255];
+	unsigned char   dt5num;
+	unsigned char   out[255];
+	unsigned char   ideakey1[16];
+	unsigned char   block3[8];
+	unsigned char   v[8];
+	unsigned char   iout[8];
+	unsigned char   dtdata[0x10];
+	uint32_t        dword_83DBC;
+	unsigned char   data2[4];
+	unsigned char   cas7expo[0x11];
+	unsigned char   data[0x80];
+	unsigned char   step1[0x60];
+	unsigned char   step2[0x68];
+	unsigned char   step3[0x6c];
+	unsigned char   encrypted[0x68];
+	uchar           result[104];
+	uchar           stillencrypted[0x50];
+	uchar           resultrsa[0x50];
+	uint32_t        cas7_seq;
+#endif
 #ifdef CS_CACHEEX
 	CECSP           cacheex; //CacheEx Settings
 #endif
@@ -1515,6 +1539,10 @@ struct s_reader                                     //contains device info, read
 	uchar           card_atr[64];                   // ATR readed from card
 	int8_t          card_atr_length;                // length of ATR
 	int8_t          seca_nagra_card;                // seca nagra card 
+#ifdef READER_NAGRA_MERLIN
+	uint8_t         cas7_aes_key[32];
+	uint8_t         cas7_aes_iv[16];
+#endif
 	int32_t         atrlen;
 	SIDTABS         sidtabs;
 	SIDTABS         lb_sidtabs;
@@ -1522,8 +1550,8 @@ struct s_reader                                     //contains device info, read
 	int32_t         nprov;
 	uchar           prid[CS_MAXPROV][8];
 	uchar           sa[CS_MAXPROV][4];              // viaccess & seca
-	uint8_t			read_old_classes;               // viaccess
-	uint8_t			maturity;						// viaccess & seca maturity level
+	uint8_t         read_old_classes;               // viaccess
+	uint8_t         maturity;                       // viaccess & seca maturity level
 	uint16_t        caid;
 	uint16_t        b_nano;
 	uint16_t        s_nano;
@@ -2211,6 +2239,7 @@ struct s_config
 	IN_ADDR_T   scam_srvip;
 	struct s_ip *scam_allowed;
 #endif
+
 	int32_t    max_cache_time;  //seconds ecms are stored in ecmcwcache
 	int32_t    max_hitcache_time;  //seconds hits are stored in cspec_hitcache (to detect dyn wait_time)
 
