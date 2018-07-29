@@ -137,48 +137,53 @@
 #include "../oscam-string.h"
 #include "des.h"
 
-static const uint8_t weak_keys[16][8] = {
-		// weak keys
-		{0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01},
-		{0xFE,0xFE,0xFE,0xFE,0xFE,0xFE,0xFE,0xFE},
-		{0x1F,0x1F,0x1F,0x1F,0x1F,0x1F,0x1F,0x1F},
-		{0xE0,0xE0,0xE0,0xE0,0xE0,0xE0,0xE0,0xE0},
-		// semi-weak keys
-		{0x01,0xFE,0x01,0xFE,0x01,0xFE,0x01,0xFE},
-		{0xFE,0x01,0xFE,0x01,0xFE,0x01,0xFE,0x01},
-		{0x1F,0xE0,0x1F,0xE0,0x0E,0xF1,0x0E,0xF1},
-		{0xE0,0x1F,0xE0,0x1F,0xF1,0x0E,0xF1,0x0E},
-		{0x01,0xE0,0x01,0xE0,0x01,0xF1,0x01,0xF1},
-		{0xE0,0x01,0xE0,0x01,0xF1,0x01,0xF1,0x01},
-		{0x1F,0xFE,0x1F,0xFE,0x0E,0xFE,0x0E,0xFE},
-		{0xFE,0x1F,0xFE,0x1F,0xFE,0x0E,0xFE,0x0E},
-		{0x01,0x1F,0x01,0x1F,0x01,0x0E,0x01,0x0E},
-		{0x1F,0x01,0x1F,0x01,0x0E,0x01,0x0E,0x01},
-		{0xE0,0xFE,0xE0,0xFE,0xF1,0xFE,0xF1,0xFE},
-		{0xFE,0xE0,0xFE,0xE0,0xFE,0xF1,0xFE,0xF1}};
+static const uint8_t weak_keys[16][8] =
+{
+	// weak keys
+	{0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01},
+	{0xFE,0xFE,0xFE,0xFE,0xFE,0xFE,0xFE,0xFE},
+	{0x1F,0x1F,0x1F,0x1F,0x1F,0x1F,0x1F,0x1F},
+	{0xE0,0xE0,0xE0,0xE0,0xE0,0xE0,0xE0,0xE0},
+	// semi-weak keys
+	{0x01,0xFE,0x01,0xFE,0x01,0xFE,0x01,0xFE},
+	{0xFE,0x01,0xFE,0x01,0xFE,0x01,0xFE,0x01},
+	{0x1F,0xE0,0x1F,0xE0,0x0E,0xF1,0x0E,0xF1},
+	{0xE0,0x1F,0xE0,0x1F,0xF1,0x0E,0xF1,0x0E},
+	{0x01,0xE0,0x01,0xE0,0x01,0xF1,0x01,0xF1},
+	{0xE0,0x01,0xE0,0x01,0xF1,0x01,0xF1,0x01},
+	{0x1F,0xFE,0x1F,0xFE,0x0E,0xFE,0x0E,0xFE},
+	{0xFE,0x1F,0xFE,0x1F,0xFE,0x0E,0xFE,0x0E},
+	{0x01,0x1F,0x01,0x1F,0x01,0x0E,0x01,0x0E},
+	{0x1F,0x01,0x1F,0x01,0x0E,0x01,0x0E,0x01},
+	{0xE0,0xFE,0xE0,0xFE,0xF1,0xFE,0xF1,0xFE},
+	{0xFE,0xE0,0xFE,0xE0,0xFE,0xF1,0xFE,0xF1}
+};
 
-static const uint8_t odd_parity[] ={
- 		1,  1,  2,  2,  4,  4,  7,  7,  8,  8, 11, 11, 13, 13, 14, 14,
-		16, 16, 19, 19, 21, 21, 22, 22, 25, 25, 26, 26, 28, 28, 31, 31,
-		32, 32, 35, 35, 37, 37, 38, 38, 41, 41, 42, 42, 44, 44, 47, 47,
-		49, 49, 50, 50, 52, 52, 55, 55, 56, 56, 59, 59, 61, 61, 62, 62,
-		64, 64, 67, 67, 69, 69, 70, 70, 73, 73, 74, 74, 76, 76, 79, 79,
-		81, 81, 82, 82, 84, 84, 87, 87, 88, 88, 91, 91, 93, 93, 94, 94,
-		97, 97, 98, 98, 100,100,103,103,104,104,107,107,109,109,110,110,
-		112,112,115,115,117,117,118,118,121,121,122,122,124,124,127,127,
-		128,128,131,131,133,133,134,134,137,137,138,138,140,140,143,143,
-		145,145,146,146,148,148,151,151,152,152,155,155,157,157,158,158,
-		161,161,162,162,164,164,167,167,168,168,171,171,173,173,174,174,
-		176,176,179,179,181,181,182,182,185,185,186,186,188,188,191,191,
-		193,193,194,194,196,196,199,199,200,200,203,203,205,205,206,206,
-		208,208,211,211,213,213,214,214,217,217,218,218,220,220,223,223,
-		224,224,227,227,229,229,230,230,233,233,234,234,236,236,239,239,
-		241,241,242,242,244,244,247,247,248,248,251,251,253,253,254,254};
+static const uint8_t odd_parity[] =
+{
+	1,  1,  2,  2,  4,  4,  7,  7,  8,  8, 11, 11, 13, 13, 14, 14,
+	16, 16, 19, 19, 21, 21, 22, 22, 25, 25, 26, 26, 28, 28, 31, 31,
+	32, 32, 35, 35, 37, 37, 38, 38, 41, 41, 42, 42, 44, 44, 47, 47,
+	49, 49, 50, 50, 52, 52, 55, 55, 56, 56, 59, 59, 61, 61, 62, 62,
+	64, 64, 67, 67, 69, 69, 70, 70, 73, 73, 74, 74, 76, 76, 79, 79,
+	81, 81, 82, 82, 84, 84, 87, 87, 88, 88, 91, 91, 93, 93, 94, 94,
+	97, 97, 98, 98, 100,100,103,103,104,104,107,107,109,109,110,110,
+	112,112,115,115,117,117,118,118,121,121,122,122,124,124,127,127,
+	128,128,131,131,133,133,134,134,137,137,138,138,140,140,143,143,
+	145,145,146,146,148,148,151,151,152,152,155,155,157,157,158,158,
+	161,161,162,162,164,164,167,167,168,168,171,171,173,173,174,174,
+	176,176,179,179,181,181,182,182,185,185,186,186,188,188,191,191,
+	193,193,194,194,196,196,199,199,200,200,203,203,205,205,206,206,
+	208,208,211,211,213,213,214,214,217,217,218,218,220,220,223,223,
+	224,224,227,227,229,229,230,230,233,233,234,234,236,236,239,239,
+	241,241,242,242,244,244,247,247,248,248,251,251,253,253,254,254
+};
 
 static const uint8_t shifts2[16] = {0,0,1,1,1,1,1,1,0,1,1,1,1,1,1,0};
 
-static const uint32_t des_skb[8][64] = {
-		{
+static const uint32_t des_skb[8][64] =
+{
+	{
 		0x00000000,0x00000010,0x20000000,0x20000010,
 		0x00010000,0x00010010,0x20010000,0x20010010,
 		0x00000800,0x00000810,0x20000800,0x20000810,
@@ -195,7 +200,7 @@ static const uint32_t des_skb[8][64] = {
 		0x00090020,0x00090030,0x20090020,0x20090030,
 		0x00080820,0x00080830,0x20080820,0x20080830,
 		0x00090820,0x00090830,0x20090820,0x20090830,
-		},{
+	},{
 
 		0x00000000,0x02000000,0x00002000,0x02002000,
 		0x00200000,0x02200000,0x00202000,0x02202000,
@@ -213,7 +218,7 @@ static const uint32_t des_skb[8][64] = {
 		0x10200400,0x12200400,0x10202400,0x12202400,
 		0x10000404,0x12000404,0x10002404,0x12002404,
 		0x10200404,0x12200404,0x10202404,0x12202404,
-		},{
+	},{
 
 		0x00000000,0x00000001,0x00040000,0x00040001,
 		0x01000000,0x01000001,0x01040000,0x01040001,
@@ -231,7 +236,7 @@ static const uint32_t des_skb[8][64] = {
 		0x09000200,0x09000201,0x09040200,0x09040201,
 		0x08000202,0x08000203,0x08040202,0x08040203,
 		0x09000202,0x09000203,0x09040202,0x09040203,
-		},{
+	},{
 
 		0x00000000,0x00100000,0x00000100,0x00100100,
 		0x00000008,0x00100008,0x00000108,0x00100108,
@@ -249,7 +254,7 @@ static const uint32_t des_skb[8][64] = {
 		0x04020008,0x04120008,0x04020108,0x04120108,
 		0x04021000,0x04121000,0x04021100,0x04121100,
 		0x04021008,0x04121008,0x04021108,0x04121108,
-		},{
+	},{
 
 		0x00000000,0x10000000,0x00010000,0x10010000,
 		0x00000004,0x10000004,0x00010004,0x10010004,
@@ -267,7 +272,7 @@ static const uint32_t des_skb[8][64] = {
 		0x00101004,0x10101004,0x00111004,0x10111004,
 		0x20101000,0x30101000,0x20111000,0x30111000,
 		0x20101004,0x30101004,0x20111004,0x30111004,
-		},{
+	},{
 
 		0x00000000,0x08000000,0x00000008,0x08000008,
 		0x00000400,0x08000400,0x00000408,0x08000408,
@@ -285,7 +290,7 @@ static const uint32_t des_skb[8][64] = {
 		0x02000401,0x0A000401,0x02000409,0x0A000409,
 		0x02020001,0x0A020001,0x02020009,0x0A020009,
 		0x02020401,0x0A020401,0x02020409,0x0A020409,
-		},{
+	},{
 
 		0x00000000,0x00000100,0x00080000,0x00080100,
 		0x01000000,0x01000100,0x01080000,0x01080100,
@@ -303,7 +308,7 @@ static const uint32_t des_skb[8][64] = {
 		0x01200200,0x01200300,0x01280200,0x01280300,
 		0x00200210,0x00200310,0x00280210,0x00280310,
 		0x01200210,0x01200310,0x01280210,0x01280310,
-		},{
+	},{
 
 		0x00000000,0x04000000,0x00040000,0x04040000,
 		0x00000002,0x04000002,0x00040002,0x04040002,
@@ -321,9 +326,11 @@ static const uint32_t des_skb[8][64] = {
 		0x00000822,0x04000822,0x00040822,0x04040822,
 		0x00002820,0x04002820,0x00042820,0x04042820,
 		0x00002822,0x04002822,0x00042822,0x04042822,
-}};
+	}
+};
 
-static const uint32_t des_SPtrans[8][64] = {
+static const uint32_t des_SPtrans[8][64] =
+{
 	{
 		0x00820200, 0x00020000, 0x80800000, 0x80820200,
 		0x00800000, 0x80020200, 0x80020000, 0x80800000,
@@ -341,7 +348,7 @@ static const uint32_t des_SPtrans[8][64] = {
 		0x00800000, 0x80000200, 0x80020000, 0x00000000,
 		0x00020000, 0x00800000, 0x80800200, 0x00820200,
 		0x80000000, 0x80820000, 0x00000200, 0x80020200,
-		},{
+	},{
 
 		0x10042004, 0x00000000, 0x00042000, 0x10040000,
 		0x10000004, 0x00002004, 0x10002000, 0x00042000,
@@ -359,7 +366,7 @@ static const uint32_t des_SPtrans[8][64] = {
 		0x00000004, 0x10042004, 0x00042000, 0x10040000,
 		0x10040004, 0x00040000, 0x00002004, 0x10002000,
 		0x10002004, 0x00000004, 0x10040000, 0x00042000,
-		},{
+	},{
 
 		0x41000000, 0x01010040, 0x00000040, 0x41000040,
 		0x40010000, 0x01000000, 0x41000040, 0x00010040,
@@ -377,7 +384,7 @@ static const uint32_t des_SPtrans[8][64] = {
 		0x00010000, 0x01000040, 0x41000040, 0x00010040,
 		0x01000040, 0x00000000, 0x41010000, 0x40000040,
 		0x41000000, 0x40010040, 0x00000040, 0x01010000,
-		},{
+	},{
 
 		0x00100402, 0x04000400, 0x00000002, 0x04100402,
 		0x00000000, 0x04100000, 0x04000402, 0x00100002,
@@ -395,7 +402,7 @@ static const uint32_t des_SPtrans[8][64] = {
 		0x04100402, 0x00000002, 0x04000400, 0x00100402,
 		0x00100002, 0x00100400, 0x04100000, 0x04000402,
 		0x00000402, 0x04000000, 0x04000002, 0x04100400,
-		},{
+	},{
 
 		0x02000000, 0x00004000, 0x00000100, 0x02004108,
 		0x02004008, 0x02000100, 0x00004108, 0x02004000,
@@ -413,7 +420,7 @@ static const uint32_t des_SPtrans[8][64] = {
 		0x02004008, 0x02004100, 0x00000108, 0x00004000,
 		0x00004100, 0x02004008, 0x02000100, 0x00000108,
 		0x00000008, 0x00004108, 0x02004000, 0x02000008,
-		},{
+	},{
 
 		0x20000010, 0x00080010, 0x00000000, 0x20080800,
 		0x00080010, 0x00000800, 0x20000810, 0x00080000,
@@ -431,7 +438,7 @@ static const uint32_t des_SPtrans[8][64] = {
 		0x20000010, 0x20080000, 0x00080810, 0x00000000,
 		0x00000800, 0x20000010, 0x20000810, 0x20080800,
 		0x20080000, 0x00000810, 0x00000010, 0x20080010,
-		},{
+	},{
 
 		0x00001000, 0x00000080, 0x00400080, 0x00400001,
 		0x00401081, 0x00001001, 0x00001080, 0x00000000,
@@ -449,7 +456,7 @@ static const uint32_t des_SPtrans[8][64] = {
 		0x00000081, 0x00001000, 0x00401081, 0x00400000,
 		0x00401080, 0x00000001, 0x00001001, 0x00401081,
 		0x00400001, 0x00401080, 0x00401000, 0x00001001,
-		},{
+	},{
 
 		0x08200020, 0x08208000, 0x00008020, 0x00000000,
 		0x08008000, 0x00200020, 0x08200000, 0x08208020,
@@ -467,14 +474,15 @@ static const uint32_t des_SPtrans[8][64] = {
 		0x00208000, 0x00008020, 0x08008020, 0x08200000,
 		0x00000020, 0x08208000, 0x00208020, 0x00000000,
 		0x08000000, 0x08200020, 0x00008000, 0x00208020,
-	}};
+	}
+};
 
 static const int32_t DES_KEY_SZ=8;
 
 void des_set_odd_parity(uint8_t* key)
 {
 	int32_t i;
-	
+
 	for (i=0; i < DES_KEY_SZ; i++)
 		key[i]=odd_parity[key[i]&0xff];
 }
@@ -482,9 +490,10 @@ void des_set_odd_parity(uint8_t* key)
 int8_t check_parity(const uint8_t* key)
 {
 	int32_t i;
-	
-	for (i=0; i < DES_KEY_SZ; i++) {
-            if (key[i] != odd_parity[key[i]&0xff])
+
+	for (i=0; i < DES_KEY_SZ; i++)
+	{
+		if (key[i] != odd_parity[key[i]&0xff])
 			return 0;
 	}
 	return 1;
@@ -493,10 +502,13 @@ int8_t check_parity(const uint8_t* key)
 int8_t des_is_weak_key(const uint8_t* key)
 {
 	int32_t i, j;
-	
-	for (i=0; i < 16; i++) {
-		for(j=0;j < DES_KEY_SZ; j++) {
-			if (weak_keys[i][j] != key[j]) {
+
+	for (i=0; i < 16; i++)
+	{
+		for(j=0; j < DES_KEY_SZ; j++)
+		{
+			if (weak_keys[i][j] != key[j])
+			{
 				// not weak
 				continue;
 			}
@@ -507,7 +519,8 @@ int8_t des_is_weak_key(const uint8_t* key)
 	return 0;
 }
 
-static uint32_t Get32bits(const uint8_t* key, int32_t kindex) {
+static uint32_t Get32bits(const uint8_t* key, int32_t kindex)
+{
 	return(((key[kindex+3]&0xff)<<24) + ((key[kindex+2]&0xff)<<16) + ((key[kindex+1]&0xff)<<8) + (key[kindex]&0xff));
 }
 
@@ -517,81 +530,61 @@ int8_t des_set_key(const uint8_t* key, uint32_t* schedule)
 	int32_t inIndex;
 	int32_t kIndex;
 	int32_t i;
-
-	//if (!check_parity(key)) {
-   	//	return 0;
-	//}
-
-   	//if (des_is_weak_key(key)) {
-   	//	return 0;
-   	//}
-
 	inIndex=0;
 	kIndex=0;
-
 	c =Get32bits(key, inIndex);
 	d =Get32bits(key, inIndex+4);
-
 	t=(((d>>4)^c)&0x0f0f0f0f);
 	c^=t;
 	d^=(t<<4);
-
 	t=(((c<<(16-(-2)))^c)&0xcccc0000);
 	c=c^t^(t>>(16-(-2)));
-
 	t=((d<<(16-(-2)))^d)&0xcccc0000;
 	d=d^t^(t>>(16-(-2)));
-
 	t=((d>>1)^c)&0x55555555;
 	c^=t;
 	d^=(t<<1);
-
 	t=((c>>8)^d)&0x00ff00ff;
 	d^=t;
 	c^=(t<<8);
-
 	t=((d>>1)^c)&0x55555555;
 	c^=t;
 	d^=(t<<1);
-
 	d=	(((d&0x000000ff)<<16)| (d&0x0000ff00) |((d&0x00ff0000)>>16)|((c&0xf0000000)>>4));
 	c&=0x0fffffff;
-
-	for (i=0; i < 16; i++) {
-		if (shifts2[i]) {
+	for (i=0; i < 16; i++)
+	{
+		if (shifts2[i])
+		{
 			c=((c>>2)|(c<<26));
 			d=((d>>2)|(d<<26));
-		} else {
+		}
+		else
+		{
 			c=((c>>1)|(c<<27));
 			d=((d>>1)|(d<<27));
 		}
-
 		c&=0x0fffffff;
 		d&=0x0fffffff;
-
 		s=	des_skb[0][ (c    )&0x3f                ]|
 			des_skb[1][((c>> 6)&0x03)|((c>> 7)&0x3c)]|
 			des_skb[2][((c>>13)&0x0f)|((c>>14)&0x30)]|
 			des_skb[3][((c>>20)&0x01)|((c>>21)&0x06) |
-					  ((c>>22)&0x38)];
+						  ((c>>22)&0x38)];
 		t=	des_skb[4][ (d    )&0x3f                ]|
 			des_skb[5][((d>> 7)&0x03)|((d>> 8)&0x3c)]|
 			des_skb[6][ (d>>15)&0x3f                ]|
 			des_skb[7][((d>>21)&0x0f)|((d>>22)&0x30)];
-
 		schedule[kIndex++]=((t<<16)|(s&0x0000ffff))&0xffffffff;
-
 		s=((s>>16)|(t&0xffff0000));
-
 		s=(s<<4)|(s>>28);
-
 		schedule[kIndex++]=s&0xffffffff;
 	}
-	
 	return 1;
 }
 
-static uint32_t _lrotr(uint32_t i) {
+static uint32_t _lrotr(uint32_t i)
+{
 	return((i>>4) | ((i&0xff)<<28));
 }
 
@@ -630,19 +623,64 @@ static void des_encrypt_int(uint32_t* data, const uint32_t* ks, int8_t do_encryp
 	l&=0xffffffff;
 	r&=0xffffffff;
 
-	if (do_encrypt) {
-		for (i=0; i < 32; i+=8) {
-			{ u=(r^ks[i+0 ]); t=r^ks[i+0+1]; t=(_lrotr(t)); l^= des_SPtrans[1][(t )&0x3f]| des_SPtrans[3][(t>> 8)&0x3f]| des_SPtrans[5][(t>>16)&0x3f]| des_SPtrans[7][(t>>24)&0x3f]| des_SPtrans[0][(u )&0x3f]| des_SPtrans[2][(u>> 8)&0x3f]| des_SPtrans[4][(u>>16)&0x3f]| des_SPtrans[6][(u>>24)&0x3f]; };
-			{ u=(l^ks[i+2 ]); t=l^ks[i+2+1]; t=(_lrotr(t)); r^= des_SPtrans[1][(t )&0x3f]| des_SPtrans[3][(t>> 8)&0x3f]| des_SPtrans[5][(t>>16)&0x3f]| des_SPtrans[7][(t>>24)&0x3f]| des_SPtrans[0][(u )&0x3f]| des_SPtrans[2][(u>> 8)&0x3f]| des_SPtrans[4][(u>>16)&0x3f]| des_SPtrans[6][(u>>24)&0x3f]; };
-			{ u=(r^ks[i+4 ]); t=r^ks[i+4+1]; t=(_lrotr(t)); l^= des_SPtrans[1][(t )&0x3f]| des_SPtrans[3][(t>> 8)&0x3f]| des_SPtrans[5][(t>>16)&0x3f]| des_SPtrans[7][(t>>24)&0x3f]| des_SPtrans[0][(u )&0x3f]| des_SPtrans[2][(u>> 8)&0x3f]| des_SPtrans[4][(u>>16)&0x3f]| des_SPtrans[6][(u>>24)&0x3f]; };
-			{ u=(l^ks[i+6 ]); t=l^ks[i+6+1]; t=(_lrotr(t)); r^= des_SPtrans[1][(t )&0x3f]| des_SPtrans[3][(t>> 8)&0x3f]| des_SPtrans[5][(t>>16)&0x3f]| des_SPtrans[7][(t>>24)&0x3f]| des_SPtrans[0][(u )&0x3f]| des_SPtrans[2][(u>> 8)&0x3f]| des_SPtrans[4][(u>>16)&0x3f]| des_SPtrans[6][(u>>24)&0x3f]; };
+	if (do_encrypt)
+	{
+		for (i=0; i < 32; i+=8)
+		{
+			{
+				u=(r^ks[i+0 ]);
+				t=r^ks[i+0+1];
+				t=(_lrotr(t));
+				l^= des_SPtrans[1][(t )&0x3f]| des_SPtrans[3][(t>> 8)&0x3f]| des_SPtrans[5][(t>>16)&0x3f]| des_SPtrans[7][(t>>24)&0x3f]| des_SPtrans[0][(u )&0x3f]| des_SPtrans[2][(u>> 8)&0x3f]| des_SPtrans[4][(u>>16)&0x3f]| des_SPtrans[6][(u>>24)&0x3f];
+			};
+			{
+				u=(l^ks[i+2 ]);
+				t=l^ks[i+2+1];
+				t=(_lrotr(t));
+				r^= des_SPtrans[1][(t )&0x3f]| des_SPtrans[3][(t>> 8)&0x3f]| des_SPtrans[5][(t>>16)&0x3f]| des_SPtrans[7][(t>>24)&0x3f]| des_SPtrans[0][(u )&0x3f]| des_SPtrans[2][(u>> 8)&0x3f]| des_SPtrans[4][(u>>16)&0x3f]| des_SPtrans[6][(u>>24)&0x3f];
+			};
+			{
+				u=(r^ks[i+4 ]);
+				t=r^ks[i+4+1];
+				t=(_lrotr(t));
+				l^= des_SPtrans[1][(t )&0x3f]| des_SPtrans[3][(t>> 8)&0x3f]| des_SPtrans[5][(t>>16)&0x3f]| des_SPtrans[7][(t>>24)&0x3f]| des_SPtrans[0][(u )&0x3f]| des_SPtrans[2][(u>> 8)&0x3f]| des_SPtrans[4][(u>>16)&0x3f]| des_SPtrans[6][(u>>24)&0x3f];
+			};
+			{
+				u=(l^ks[i+6 ]);
+				t=l^ks[i+6+1];
+				t=(_lrotr(t));
+				r^= des_SPtrans[1][(t )&0x3f]| des_SPtrans[3][(t>> 8)&0x3f]| des_SPtrans[5][(t>>16)&0x3f]| des_SPtrans[7][(t>>24)&0x3f]| des_SPtrans[0][(u )&0x3f]| des_SPtrans[2][(u>> 8)&0x3f]| des_SPtrans[4][(u>>16)&0x3f]| des_SPtrans[6][(u>>24)&0x3f];
+			};
 		}
-	} else {
-		for (i=30; i > 0; i-=8) {
-			{ u=(r^ks[i-0 ]); t=r^ks[i-0+1]; t=(_lrotr(t)); l^= des_SPtrans[1][(t )&0x3f]| des_SPtrans[3][(t>> 8)&0x3f]| des_SPtrans[5][(t>>16)&0x3f]| des_SPtrans[7][(t>>24)&0x3f]| des_SPtrans[0][(u )&0x3f]| des_SPtrans[2][(u>> 8)&0x3f]| des_SPtrans[4][(u>>16)&0x3f]| des_SPtrans[6][(u>>24)&0x3f]; };
-			{ u=(l^ks[i-2 ]); t=l^ks[i-2+1]; t=(_lrotr(t)); r^= des_SPtrans[1][(t )&0x3f]| des_SPtrans[3][(t>> 8)&0x3f]| des_SPtrans[5][(t>>16)&0x3f]| des_SPtrans[7][(t>>24)&0x3f]| des_SPtrans[0][(u )&0x3f]| des_SPtrans[2][(u>> 8)&0x3f]| des_SPtrans[4][(u>>16)&0x3f]| des_SPtrans[6][(u>>24)&0x3f]; };
-			{ u=(r^ks[i-4 ]); t=r^ks[i-4+1]; t=(_lrotr(t)); l^= des_SPtrans[1][(t )&0x3f]| des_SPtrans[3][(t>> 8)&0x3f]| des_SPtrans[5][(t>>16)&0x3f]| des_SPtrans[7][(t>>24)&0x3f]| des_SPtrans[0][(u )&0x3f]| des_SPtrans[2][(u>> 8)&0x3f]| des_SPtrans[4][(u>>16)&0x3f]| des_SPtrans[6][(u>>24)&0x3f]; };
-			{ u=(l^ks[i-6 ]); t=l^ks[i-6+1]; t=(_lrotr(t)); r^= des_SPtrans[1][(t )&0x3f]| des_SPtrans[3][(t>> 8)&0x3f]| des_SPtrans[5][(t>>16)&0x3f]| des_SPtrans[7][(t>>24)&0x3f]| des_SPtrans[0][(u )&0x3f]| des_SPtrans[2][(u>> 8)&0x3f]| des_SPtrans[4][(u>>16)&0x3f]| des_SPtrans[6][(u>>24)&0x3f]; };
+	}
+	else
+	{
+		for (i=30; i > 0; i-=8)
+		{
+			{
+				u=(r^ks[i-0 ]);
+				t=r^ks[i-0+1];
+				t=(_lrotr(t));
+				l^= des_SPtrans[1][(t )&0x3f]| des_SPtrans[3][(t>> 8)&0x3f]| des_SPtrans[5][(t>>16)&0x3f]| des_SPtrans[7][(t>>24)&0x3f]| des_SPtrans[0][(u )&0x3f]| des_SPtrans[2][(u>> 8)&0x3f]| des_SPtrans[4][(u>>16)&0x3f]| des_SPtrans[6][(u>>24)&0x3f];
+			};
+			{
+				u=(l^ks[i-2 ]);
+				t=l^ks[i-2+1];
+				t=(_lrotr(t));
+				r^= des_SPtrans[1][(t )&0x3f]| des_SPtrans[3][(t>> 8)&0x3f]| des_SPtrans[5][(t>>16)&0x3f]| des_SPtrans[7][(t>>24)&0x3f]| des_SPtrans[0][(u )&0x3f]| des_SPtrans[2][(u>> 8)&0x3f]| des_SPtrans[4][(u>>16)&0x3f]| des_SPtrans[6][(u>>24)&0x3f];
+			};
+			{
+				u=(r^ks[i-4 ]);
+				t=r^ks[i-4+1];
+				t=(_lrotr(t));
+				l^= des_SPtrans[1][(t )&0x3f]| des_SPtrans[3][(t>> 8)&0x3f]| des_SPtrans[5][(t>>16)&0x3f]| des_SPtrans[7][(t>>24)&0x3f]| des_SPtrans[0][(u )&0x3f]| des_SPtrans[2][(u>> 8)&0x3f]| des_SPtrans[4][(u>>16)&0x3f]| des_SPtrans[6][(u>>24)&0x3f];
+			};
+			{
+				u=(l^ks[i-6 ]);
+				t=l^ks[i-6+1];
+				t=(_lrotr(t));
+				r^= des_SPtrans[1][(t )&0x3f]| des_SPtrans[3][(t>> 8)&0x3f]| des_SPtrans[5][(t>>16)&0x3f]| des_SPtrans[7][(t>>24)&0x3f]| des_SPtrans[0][(u )&0x3f]| des_SPtrans[2][(u>> 8)&0x3f]| des_SPtrans[4][(u>>16)&0x3f]| des_SPtrans[6][(u>>24)&0x3f];
+			};
 		}
 	}
 
@@ -713,20 +751,26 @@ static inline void xxor(uint8_t *data, int32_t len, const uint8_t *v1, const uin
 	switch(len)
 	{
 	case 16:
-		for(i = 8; i < 16; ++i){
+		for(i = 8; i < 16; ++i)
+		{
 			data[i] = v1[i] ^ v2[i];
-		}				/* fallthrough */
+		}
 	case 8:
-		for(i = 4; i < 8; ++i){
+		for(i = 4; i < 8; ++i)
+		{
 			data[i] = v1[i] ^ v2[i];
-		}				/* fallthrough */
+		}
 	case 4:
-		for(i = 0; i < 4; ++i){
+		for(i = 0; i < 4; ++i)
+		{
 			data[i] = v1[i] ^ v2[i];
-		}				/* fallthrough */
+		}
 		break;
 	default:
-		while(len--) { *data++ = *v1++ ^ *v2++; }
+		while(len--)
+		{
+			*data++ = *v1++ ^ *v2++;
+		}
 		break;
 	}
 }
@@ -734,13 +778,14 @@ static inline void xxor(uint8_t *data, int32_t len, const uint8_t *v1, const uin
 void des_ecb_encrypt(uint8_t* data, const uint8_t* key, int32_t len)
 {
 	uint32_t schedule[32];
-	int32_t i; 
-	
+	int32_t i;
+
 	des_set_key(key, schedule);
-	
+
 	len&=~7;
-	
-	for(i=0; i<len; i+=8) {
+
+	for(i=0; i<len; i+=8)
+	{
 		des(&data[i], schedule, 1);
 	}
 }
@@ -748,28 +793,30 @@ void des_ecb_encrypt(uint8_t* data, const uint8_t* key, int32_t len)
 void des_ecb_decrypt(uint8_t* data, const uint8_t* key, int32_t len)
 {
 	uint32_t schedule[32];
-	int32_t i; 
-	
+	int32_t i;
+
 	des_set_key(key, schedule);
-	
+
 	len&=~7;
 
-	for(i=0; i<len; i+=8) {
+	for(i=0; i<len; i+=8)
+	{
 		des(&data[i], schedule, 0);
 	}
 }
 
 void des_cbc_encrypt(uint8_t* data, const uint8_t* iv, const uint8_t* key, int32_t len)
 {
-	const uint8_t *civ = iv; 
+	const uint8_t *civ = iv;
 	uint32_t schedule[32];
-	int32_t i; 
+	int32_t i;
 
 	des_set_key(key, schedule);
-	
+
 	len&=~7;
 
-	for(i=0; i<len; i+=8) {
+	for(i=0; i<len; i+=8)
+	{
 		xxor(&data[i],8,&data[i],civ);
 		civ=&data[i];
 		des(&data[i], schedule, 1);
@@ -787,28 +834,30 @@ void des_cbc_decrypt(uint8_t* data, const uint8_t* iv, const uint8_t* key, int32
 	len&=~7;
 
 	memcpy(civ[n],iv,8);
-	for(i=0; i<len; i+=8,data+=8,n^=1) {
+	for(i=0; i<len; i+=8,data+=8,n^=1)
+	{
 		memcpy(civ[1-n],data,8);
-		des(data, schedule ,0);
+		des(data, schedule,0);
 		xxor(data,8,data,civ[n]);
 	}
 }
 
 void des_ede2_cbc_encrypt(uint8_t* data, const uint8_t* iv, const uint8_t* key1, const uint8_t* key2, int32_t len)
 {
-	const uint8_t *civ = iv; 
+	const uint8_t *civ = iv;
 	uint32_t schedule1[32], schedule2[32];
-	int32_t i; 
+	int32_t i;
 
 	des_set_key(key1, schedule1);
 	des_set_key(key2, schedule2);
 
 	len&=~7;
 
-	for(i=0; i<len; i+=8) {
+	for(i=0; i<len; i+=8)
+	{
 		xxor(&data[i],8,&data[i],civ);
 		civ=&data[i];
-		
+
 		des(&data[i], schedule1, 1);
 		des(&data[i], schedule2, 0);
 		des(&data[i], schedule1, 1);
@@ -823,15 +872,26 @@ void des_ede2_cbc_decrypt(uint8_t* data, const uint8_t* iv, const uint8_t* key1,
 
 	des_set_key(key1, schedule1);
 	des_set_key(key2, schedule2);
-	
+
 	len&=~7;
 
 	memcpy(civ[n],iv,8);
-	for(i=0; i<len; i+=8,data+=8,n^=1) {
+	for(i=0; i<len; i+=8,data+=8,n^=1)
+	{
 		memcpy(civ[1-n],data,8);
 		des(data, schedule1, 0);
 		des(data, schedule2, 1);
-		des(data, schedule1, 0);		
+		des(data, schedule1, 0);
 		xxor(data,8,data,civ[n]);
 	}
+}
+
+void _3DES(uint8_t *data, uint8_t *key)
+{
+	uint32_t ks1[32], ks2[32];
+	des_set_key(key, ks1);
+	des_set_key(key+8, ks2);
+	des(data, ks1, 0);
+	des(data, ks2, 1);
+	des(data, ks1, 0);
 }

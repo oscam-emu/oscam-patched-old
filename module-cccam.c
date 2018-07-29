@@ -2362,7 +2362,7 @@ int32_t cc_parse_msg(struct s_client *cl, uint8_t *buf, int32_t l)
 				cs_log_dbg(D_READER, "multics detected: %s!", getprefix());
 			}
 
-			cs_log_dbg(D_READER, "%s remove server %s running v%s (%s)", getprefix(), cs_hexdump(0,
+			cs_log_dbg(D_READER, "%s remote server %s running v%s (%s)", getprefix(), cs_hexdump(0,
 						  cc->peer_node_id, 8, tmp_dbg, sizeof(tmp_dbg)), cc->remote_version, cc->remote_build);
 
 			chk_peer_node_for_oscam(cc);

@@ -277,15 +277,12 @@ static void parse_cmdline_params(int argc, char **argv)
 		case 'B': // --pidfile
 			oscam_pidfile = optarg;
 			break;
-#if defined(WITH_STAPI) || defined(WITH_STAPI5)
 		case 'f': // --foreground
 			bg = 0;
 			break;
-#else
 		case 'b': // --daemon
 			bg = 1;
 			break;
-#endif
 		case 'c': // --config-dir
 			cs_strncpy(cs_confdir, optarg, sizeof(cs_confdir));
 			break;
@@ -385,21 +382,23 @@ static void write_versionfile(bool use_stdout)
 	fprintf(fp, "Box type:       %s (%s)\n", boxtype_get(), boxname_get());
 	fprintf(fp, "PID:            %d\n", getppid());
 	fprintf(fp, "TempDir:        %s\n", cs_tmpdir);
-	fprintf(fp, "ConfigDir:      %s\n", cs_confdir);
-#ifdef WEBIF
-	fprintf(fp, "WebifPort:      %d\n", cfg.http_port);
-#endif
 #ifdef MODULE_GBOX
 	if(cfg.gbox_tmp_dir == NULL)
 	{
-		fprintf(fp, "\nGBox tmp_dir:   not defined using: %s\n", cs_tmpdir);
+		fprintf(fp, "GBox tmp_dir:   not defined using: %s\n", cs_tmpdir);
 	}
 	else
 	{
-		fprintf(fp, "\nGBox tmp_dir:   %s\n", cfg.gbox_tmp_dir);
+		fprintf(fp, "GBox tmp_dir:   %s\n", cfg.gbox_tmp_dir);
 	}
-	fprintf(fp, "                value read during start up, not refreshed if changed later in webif!\n");
 #endif
+	
+	fprintf(fp, "ConfigDir:      %s\n", cs_confdir);
+
+#ifdef WEBIF
+	fprintf(fp, "WebifPort:      %d\n", cfg.http_port);
+#endif
+
 	fprintf(fp, "\n");
 	write_conf(WEBIF, "Web interface support");
 	write_conf(WEBIF_LIVELOG, "LiveLog support");
@@ -415,6 +414,7 @@ static void write_versionfile(bool use_stdout)
 		write_conf(WITH_COOLAPI2, "DVB API with COOLAPI2 support");
 		write_conf(WITH_STAPI, "DVB API with STAPI support");
 		write_conf(WITH_STAPI5, "DVB API with STAPI5 support");
+		write_conf(WITH_NEUTRINO, "DVB API with NEUTRINO support");
 		write_conf(READ_SDT_CHARSETS, "DVB API read-sdt charsets");
 	}
 	write_conf(IRDETO_GUESSING, "Irdeto guessing");
@@ -455,6 +455,7 @@ static void write_versionfile(bool use_stdout)
 	{
 		fprintf(fp, "\n");
 		write_readerconf(READER_NAGRA, "Nagra");
+		write_readerconf(READER_NAGRA_MERLIN, "Nagra_Merlin");
 		write_readerconf(READER_IRDETO, "Irdeto");
 		write_readerconf(READER_CONAX, "Conax");
 		write_readerconf(READER_CRYPTOWORKS, "Cryptoworks");
@@ -503,7 +504,7 @@ static void remove_versionfile(void)
 #define report_emm_support(CONFIG_VAR, text) \
     do { \
         if (!config_enabled(CONFIG_VAR)) \
-            cs_log("Binary without %s module - no EMM processing for %s possible!", text, text); \
+            cs_log_dbg(D_TRACE, "Binary without %s module - no EMM processing for %s possible!", text, text); \
     } while(0)
 
 static void do_report_emm_support(void)
@@ -515,6 +516,7 @@ static void do_report_emm_support(void)
 	else
 	{
 		report_emm_support(READER_NAGRA, "Nagra");
+		report_emm_support(READER_NAGRA_MERLIN, "Nagra_Merlin");
 		report_emm_support(READER_IRDETO, "Irdeto");
 		report_emm_support(READER_CONAX, "Conax");
 		report_emm_support(READER_CRYPTOWORKS, "Cryptoworks");
@@ -1560,6 +1562,9 @@ static void run_tests(void) { }
 
 const struct s_cardsystem *cardsystems[] =
 {
+#ifdef READER_NAGRA_MERLIN
+	&reader_nagracak7,
+#endif
 #ifdef READER_NAGRA
 	&reader_nagra,
 #endif
