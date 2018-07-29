@@ -10,6 +10,7 @@
 #if defined(__linux__) || defined(__CYGWIN__)
 #define HAVE_DVBAPI 1
 #endif
+//#define WITH_NEUTRINO 1
 #define READ_SDT_CHARSETS 1
 #define CLOCKFIX 1
 #define IRDETO_GUESSING 1
@@ -42,6 +43,7 @@
 #ifdef WITH_CARDREADER
 
 #define READER_NAGRA 1
+//#define READER_NAGRA_MERLIN 1
 #define READER_IRDETO 1
 #define READER_CONAX 1
 #define READER_CRYPTOWORKS 1

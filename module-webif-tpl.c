@@ -418,6 +418,7 @@ char *tpl_getUnparsedTpl(const char *name, int8_t removeHeader, const char *subd
 											check_conf(CS_ANTICASC, ptr2);
 											check_conf(CS_CACHEEX, ptr2);
 											check_conf(HAVE_DVBAPI, ptr2);
+											check_conf(WITH_NEUTRINO, ptr2);
 											check_conf(READ_SDT_CHARSETS, ptr2);
 											check_conf(CLOCKFIX, ptr2);
 											check_conf(IPV6SUPPORT, ptr2);
@@ -446,6 +447,7 @@ char *tpl_getUnparsedTpl(const char *name, int8_t removeHeader, const char *subd
 											check_conf(READER_DRE, ptr2);
 											check_conf(READER_IRDETO, ptr2);
 											check_conf(READER_NAGRA, ptr2);
+											check_conf(READER_NAGRA_MERLIN, ptr2);
 											check_conf(READER_SECA, ptr2);
 											check_conf(READER_TONGFANG, ptr2);
 											check_conf(READER_VIACCESS, ptr2);
