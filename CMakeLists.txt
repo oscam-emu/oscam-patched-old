@@ -551,6 +551,12 @@ if (HAVE_LIBCRYPTO)
     target_link_libraries (${exe_name} crypto)
 endif (HAVE_LIBCRYPTO)
 
+# some systems need libm for the nagra cak7 functions to work
+check_include_file("math.h" HAVE_LIBM)
+if(HAVE_LIBM)
+    target_link_libraries (${exe_name} m)
+endif(HAVE_LIBM)
+
 if (HAVE_PCSC)
 if (NOT OSCamOperatingSystem MATCHES "Mac OS X")
 if (NOT OSCamOperatingSystem MATCHES "Windows/Cygwin")
