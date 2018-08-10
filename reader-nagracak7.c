@@ -112,21 +112,23 @@ typedef struct{
 static int32_t ParseDataType(struct s_reader *reader, unsigned char dt, unsigned char *cta_res, uint16_t cta_lr)
 {
 	struct nagra_data *csystem_data = reader->csystem_data;
-	char ds[20], de[16];
+	char ds[20], de[16], da[16];
 	IDEA_KEY_SCHEDULE ks;
+	//rdr_log_dump_dbg(reader, D_READER, cta_res, cta_lr, "cta_res:");
 	switch(dt)
 	{
-
+	//case 0x0C:
 	case TIERS:
-		if((cta_res[13] >= 0x20) && (cta_lr != 0x10))
+		if((cta_res[13] >= 0x20) && (cta_lr != 0x10) && (reader->caid==0x1860 || reader->caid==0x186A))
 		{
+			csystem_data->tiers = b2i(2,cta_res +23);
 			uint16_t chid = csystem_data->tiers;
-			if(reader->caid==0x1860 || reader->caid == 0x1830 || reader->caid == 0x1843)
+			int32_t id = b2i(2,cta_res +19);
+			rdr_log_dbg(reader, D_READER, "Provid : %04X", id);
+			rdr_log_dbg(reader, D_READER, "ID : %04X", chid);
+			
+			if(reader->caid==0x1860)
 			{
-				int32_t id = b2i(2,cta_res +19);
-				csystem_data->tiers = b2i(2,cta_res +23);
-				rdr_log_dbg(reader, D_READER, "Provid : %04X", id);
-				rdr_log_dbg(reader, D_READER, "ID : %04X", chid);
 				cs_add_entitlement(
 							reader,
 							reader->caid,
@@ -141,9 +143,8 @@ static int32_t ParseDataType(struct s_reader *reader, unsigned char dt, unsigned
 				rdr_log(reader, "|%04X|%04X    |%s  |%s  |", id, chid, ds, de);
 				addProvider(reader, cta_res);
 			}
-			if(reader->caid==0x186A || reader->caid == 0x1882 )
+			if(reader->caid==0x186A)
 			{
-				int32_t id = (cta_res[19] * 256) | cta_res[20];
 				cs_add_entitlement(
 							reader,
 							reader->caid,
@@ -163,9 +164,12 @@ static int32_t ParseDataType(struct s_reader *reader, unsigned char dt, unsigned
 
 	//case 0x03:
 	case IRDINFO:
-		if(cta_res[13] == 0x4D || cta_res[13] == 0x50){
+		//if(cta_res[13] == 0x4D || cta_res[13] == 0x50 || cta_res[13] == 0x55)
+		if(cta_lr == 0x72)	
+		{
 			rdr_log_dump_dbg(reader, D_READER, cta_res+19, 2, "Provider ID :");
-			reader->card_valid_to=tier_date(b2ll(4, cta_res + 22)-0x7f7, ds, 15);
+			reader->card_valid_to=tier_date(b2ll(4, cta_res + 22)-0x7f7, da, 15);
+			rdr_log(reader, "Card expire date: %s", da);
 		}
 		break;
 
@@ -182,6 +186,7 @@ static int32_t ParseDataType(struct s_reader *reader, unsigned char dt, unsigned
 		memcpy(reader->sa[1], reader->sa[0], 4);
 		reader->nprov += 1;
 		reader->caid = (SYSTEM_NAGRA | cta_res[25]);
+		rdr_log_dbg(reader, D_READER, "CAID : %04X", reader->caid);
 		break;
 
 	//case 0x05:
