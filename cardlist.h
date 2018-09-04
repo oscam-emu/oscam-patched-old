@@ -191,7 +191,6 @@ void findatr(struct s_reader *reader)
 			if ( strncmp(current.atr, buf, kdg9.atrsize) == 0 )
 			{
 				memcpy(current.providername, kdg9.providername, strlen(kdg9.providername));
-				reader->deprecated = 1;
 				current.found = 1;
 				break;
 			}
