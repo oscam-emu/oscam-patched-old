@@ -10,7 +10,7 @@ struct known_cards
 }
 mtv = { "MTV UNLIMITED","3B 24 00 30 42 30 30",20 },
 srg = { "SRG v5","3F 77 18 00 00 C2 7A 44 02 68 90 00",35 },
-orfice = { "ORF ICE CW-Mode","3B 78 12 00 00 54 C4 03 00 8F F1 90 00",38 },
+orfice = { "ORF ICE","3B 78 12 00 00 54 C4 03 00 8F F1 90 00",38 },
 cdnl = { "CANAL DIGITAAL (NL)","3B F7 11 00 01 40 96 70 70 0A 0E 6C B6 D6",42 },
 kbw_v23 = { "Kabel-BW V23","3F FF 14 25 03 10 80 54 B0 01 69 FF 4A 50 70 00 00 4B 57 01 00 00",65 },
 kdg9 = { "Kabel Deutschland G0x","3F FD 11 25 02 50 00 03 33 B0 15 69 FF 4A 50 F0 80 03 4B 4C 03",62 },

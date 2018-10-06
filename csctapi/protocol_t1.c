@@ -67,7 +67,14 @@ static int32_t T1_Block_SendRBlock(struct s_reader *reader, uint8_t *block_data,
 {
 	int length = 4;
 
-	block_data[0] = T1_BLOCK_NAD;
+	if (reader->caid == 0X4ABF) // Redlight DGCRYPT
+	{
+		block_data[0] = 0x00;
+	}
+	else
+	{
+		block_data[0] = T1_BLOCK_NAD;
+	}
 	block_data[1] = type | ((nr << 4) & 0x10);
 	block_data[2] = 0x00;
 	block_data[3] = T1_Block_LRC(block_data, 3);
@@ -79,7 +86,14 @@ static int32_t T1_Block_SendSBlock(struct s_reader *reader, uint8_t *block_data,
 {
 	int length = 4 + len;
 
-	block_data[0] = T1_BLOCK_NAD;
+	if (reader->caid == 0X4ABF)
+	{
+		block_data[0] = 0x00;
+	}
+	else
+	{
+		block_data[0] = T1_BLOCK_NAD;
+	}
 	block_data[1] = type;
 	block_data[2] = len;
 	if(len != 0x00)
@@ -140,7 +154,14 @@ int32_t Protocol_T1_Command(struct s_reader *reader, unsigned char *command, uin
 
 	if(block_nad == 0)
 	{
-		block_nad = T1_BLOCK_NAD;
+		if (reader->caid == 0X4ABF)
+		{
+			block_data[0] = 0x00;
+		}
+		else
+		{
+			block_data[0] = T1_BLOCK_NAD;
+		}
 	}
 
 	if(command[1] == T1_BLOCK_S_IFS_REQ)
