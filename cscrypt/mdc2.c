@@ -37,7 +37,8 @@
         }
 
 
-OPENSSL_GLOBAL const DES_LONG DES_SPtrans[8][64] =
+//OPENSSL_GLOBAL const DES_LONG DES_SPtrans[8][64] =
+const DES_LONG DES_SPtrans[8][64] =
 {
 	{
 		/* nibble 0 */
