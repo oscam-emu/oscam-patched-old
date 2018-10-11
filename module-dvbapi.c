@@ -4686,7 +4686,25 @@ void dvbapi_process_input(int32_t demux_id, int32_t filter_num, uchar *buffer, i
 			dvbapi_stop_filternum(demux_id, filter_num, msgid);
 			return;
 		}
-		dvbapi_process_emm(demux_id, filter_num, buffer, sctlen);
+
+		// Fix to handle more than one irdeto emm packet	
+		uchar *pbuf = buffer;
+		int32_t done = 0;
+		int32_t unhandled = len;
+		while (len > done) 
+		{
+			pbuf += done;
+			sctlen = SCT_LEN(pbuf);
+
+			if(unhandled < 4 || (int32_t)sctlen > unhandled || sctlen > MAX_EMM_SIZE )
+				break;
+
+			dvbapi_process_emm(demux_id, filter_num, pbuf, sctlen);
+			
+			done += sctlen;
+			unhandled -= sctlen;	
+		}
+
 	}
 
 	if(filtertype == TYPE_SDT)
