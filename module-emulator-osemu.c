@@ -10,6 +10,10 @@
 #include <endian.h>
 #include <byteswap.h>
 
+#if defined(__ANDROID__)
+#define __bswap_32 bswap_32
+#endif
+
 #ifdef WITH_EMU
 #include "oscam-aes.h"
 #include "oscam-string.h"
