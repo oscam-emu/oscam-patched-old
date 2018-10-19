@@ -39,7 +39,7 @@ void hdSurEncPhase2_D2_13_15(uint8_t *cws);
 // Version info
 uint32_t GetOSemuVersion(void)
 {
-	return atoi("$Version: 772 $"+10);
+	return atoi("$Version: 773 $"+10);
 }
 
 /*
@@ -3569,6 +3569,8 @@ static void PowervuHashModes04to0ATables(uint8_t *data, uint8_t *hash, uint8_t *
 
 uint16_t table0F[] = { 0x45C7, 0x7115, 0x0761, 0x4705 };
 uint16_t table10[] = { 0x470F, 0x6C2B, 0x0FAD, 0xEAB3 };
+uint16_t table11[] = { 0x46B1, 0x66D1, 0x285D, 0xD259 };
+uint16_t table12[] = { 0x4B0B, 0x68D7, 0xAD5F, 0xBB4B };
 
 static void PowervuHashModes0Fto13Tables(uint8_t *data, uint8_t *hash, uint16_t *table)
 {
@@ -3662,6 +3664,14 @@ static void PowervuCreateHash(uint8_t *data, int len, uint8_t *hash, int mode)
 
 		case 16:
 			PowervuHashModes0Fto13Tables(dataPadded, hash, table10);
+			break;
+
+		case 17:
+			PowervuHashModes0Fto13Tables(dataPadded, hash, table11);
+			break;
+
+		case 18:
+			PowervuHashModes0Fto13Tables(dataPadded, hash, table12);
 			break;
 
 		default:
