@@ -39,7 +39,7 @@ void hdSurEncPhase2_D2_13_15(uint8_t *cws);
 // Version info
 uint32_t GetOSemuVersion(void)
 {
-	return atoi("$Version: 773 $"+10);
+	return atoi("$Version: 774 $"+10);
 }
 
 /*
@@ -4003,6 +4003,11 @@ static uint8_t PowervuUnmaskEcm(uint8_t *ecm, uint8_t *seedEcmCw, uint8_t *modeC
 	ecm[l + 1] = crc >> 16;
 	ecm[l + 2] = crc >> 8;
 	ecm[l + 3] = crc >> 0;
+	
+	for (i = 0; i < 0x0B; i++)
+	{
+		seedEcmCw[i] = ecm[startOffset + seedCwPos[i]];
+	}
 	
 	return hashModeCw;
 }
