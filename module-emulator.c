@@ -8,6 +8,9 @@
 #include "oscam-reader.h"
 #include "module-emulator-osemu.h"
 #include "module-emulator-stream.h"
+#include "module-emulator-drecrypt.h"
+#include "module-emulator-irdeto.h"
+#include "module-emulator-powervu.h"
 
 /*
  * Readers in OSCam consist of 2 basic parts.

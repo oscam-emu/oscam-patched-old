@@ -2,6 +2,10 @@
 
 #include "globals.h"
 #include "cscrypt/des.h"
+#include "ffdecsa/ffdecsa.h"
+#include "module-emulator-osemu.h"
+#include "module-emulator-stream.h"
+#include "module-emulator-powervu.h"
 
 #ifdef WITH_EMU
 #include "oscam-string.h"
@@ -11,10 +15,6 @@
 
 extern int32_t exit_oscam;
 #endif
-
-#include "ffdecsa/ffdecsa.h"
-#include "module-emulator-osemu.h"
-#include "module-emulator-stream.h"
 
 typedef struct
 {

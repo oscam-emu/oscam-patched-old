@@ -278,6 +278,15 @@ SRC-$(CONFIG_MODULE_CONSTCW) += module-constcw.c
 SRC-$(CONFIG_WITH_EMU) += module-emulator.c
 SRC-$(CONFIG_WITH_EMU) += module-emulator-osemu.c
 SRC-$(CONFIG_WITH_EMU) += module-emulator-stream.c
+SRC-$(CONFIG_WITH_EMU) += module-emulator-biss.c
+SRC-$(CONFIG_WITH_EMU) += module-emulator-cryptoworks.c
+SRC-$(CONFIG_WITH_EMU) += module-emulator-director.c
+SRC-$(CONFIG_WITH_EMU) += module-emulator-drecrypt.c
+SRC-$(CONFIG_WITH_EMU) += module-emulator-irdeto.c
+SRC-$(CONFIG_WITH_EMU) += module-emulator-nagravision.c
+SRC-$(CONFIG_WITH_EMU) += module-emulator-powervu.c
+SRC-$(CONFIG_WITH_EMU) += module-emulator-viaccess.c
+SRC-$(CONFIG_WITH_EMU) += module-emulator-videoguard.c
 SRC-$(CONFIG_WITH_EMU) += ffdecsa/ffdecsa.c
 UNAME := $(shell uname -s)
 ifneq ($(UNAME),Darwin)
