@@ -32,6 +32,8 @@
 #include "oscam-work.h"
 #ifdef MODULE_GBOX
 #include "module-gbox-sms.h"
+#include "module-gbox.h"
+#include "module-gbox-cards.h"
 #endif
 
 extern const struct s_cardreader *cardreaders[];
@@ -1766,7 +1768,20 @@ static char *send_oscam_reader(struct templatevars *vars, struct uriparams *para
 						rdr->enable = 0;
 					}
 				}
-				restart_cardreader(rdr, 1);
+
+				if(rdr->typ != R_GBOX)
+					{
+							restart_cardreader(rdr, 1);
+					}
+#ifdef MODULE_GBOX
+				else
+					{ 
+						restart_gbox_peer(rdr->label, 0, 0);
+						cs_log("gbox -> you must restart oscam so that setting becomes effective");
+					}
+#endif
+				cs_log("reader %s %s by WebIf", rdr->label, rdr->enable == 1 ? "enabled":"disabled");
+
 				if(write_server() != 0) { tpl_addMsg(vars, "Write Config failed!"); }
 			}
 		}
@@ -2106,7 +2121,20 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 
 		if(is_network_reader(rdr))    //physical readers make trouble if re-started
 		{
-			restart_cardreader(rdr, 1);
+			if(rdr)
+				{
+					if(rdr->typ != R_GBOX)
+						{ 
+							restart_cardreader(rdr, 1);
+						}
+#ifdef MODULE_GBOX
+					else
+						{
+							//cs_log("SAVE - single gbox reader %s restarted by WebIf", rdr->label); 
+							restart_gbox_peer(rdr->label, 0, 0);
+						}
+#endif
+				}
 		}
 
 		if(write_server() != 0) { tpl_addMsg(vars, "Write Config failed!"); } else { tpl_addMsg(vars, "Reader config updated and saved"); }
@@ -2896,7 +2924,10 @@ static char *send_oscam_reader_stats(struct templatevars *vars, struct uriparams
 		switch(rdr->card_status)
 		{
 		case NO_CARD:
-			txt = "OFF";
+			if(rdr->typ == R_GBOX)
+				{ txt = "ONL no crd"; }
+			else
+				{ txt = "OFF"; }
 			break;
 		case UNKNOWN:
 			txt = "UNKNOWN";
@@ -2905,11 +2936,19 @@ static char *send_oscam_reader_stats(struct templatevars *vars, struct uriparams
 			txt = "READER DEVICE ERROR";
 			break;
 		case CARD_NEED_INIT:
-			txt = "NEEDINIT";
+				if(rdr->typ == R_GBOX)
+				{	txt = "OFFLINE"; }
+				else
+				{ txt = "NEEDINIT"; }
 			break;
 		case CARD_INSERTED:
 			if(cl->typ == 'p')
-				{ txt = "CONNECTED"; }
+				{
+					if(rdr->typ == R_GBOX)
+						{ txt = "ONL w/crd"; }
+					else
+						{ txt = "CONNNECTED"; }
+				}
 			else
 				{ txt = "CARDOK"; }
 			break;
@@ -4763,7 +4802,16 @@ static char *send_oscam_status(struct templatevars * vars, struct uriparams * pa
 		struct s_reader *rdr = get_reader_by_label(getParam(params, "label"));
 		if(rdr)
 		{
-			add_job(rdr->client, ACTION_READER_RESTART, NULL, 0);
+			if(rdr->typ != R_GBOX)
+				{ 
+					add_job(rdr->client, ACTION_READER_RESTART, NULL, 0);
+				}
+#ifdef MODULE_GBOX
+			else
+				{
+					restart_gbox_peer(rdr->label, 0, 0);
+				}
+#endif
 			cs_log("Reader %s restarted by WebIF from %s", rdr->label, cs_inet_ntoa(GET_IP()));
 		}
 	}
@@ -4888,7 +4936,12 @@ static char *send_oscam_status(struct templatevars * vars, struct uriparams * pa
 			if(cl->typ == 'c')
 				{ user_count_all++; }
 			else if(cl->typ == 'p')
-				{ proxy_count_all++; if(cl->reader->card_status != CARD_INSERTED) { proxy_count_off++; } }
+				{ 
+					proxy_count_all++;
+					if((cl->reader->typ == R_GBOX && cl->reader->card_status != CARD_INSERTED && cl->reader->card_status != NO_CARD) || 
+							(cl->reader->typ != R_GBOX && cl->reader->card_status != CARD_INSERTED))
+						{ proxy_count_off++; }
+				}
 			else if(cl->typ == 'r')
 				{ reader_count_all++; if(cl->reader->card_status != CARD_INSERTED) { reader_count_off++; } }
 			else if(cl->typ == 's' || cl->typ == 'h')
@@ -5287,6 +5340,7 @@ static char *send_oscam_status(struct templatevars * vars, struct uriparams * pa
 						struct s_reader *rdr = cl->reader;
 						char *txt = "OK";
 						if(!rdr && (cl->typ == 'r' || cl->typ == 'p')) { txt = "UNKNOWN"; }
+
 						else if(cl->typ == 'r' || cl->typ == 'p')  //reader or proxy
 						{
 #ifdef WITH_LB
@@ -5307,7 +5361,10 @@ static char *send_oscam_status(struct templatevars * vars, struct uriparams * pa
 							switch(rdr->card_status)
 							{
 							case NO_CARD:
-								txt = "OFF";
+								if(rdr->typ == R_GBOX)
+									{ txt = "ONL"; }
+								else
+									{ txt = "OFF"; }
 								break;
 							case UNKNOWN:
 								txt = "UNKNOWN";
@@ -5316,22 +5373,23 @@ static char *send_oscam_status(struct templatevars * vars, struct uriparams * pa
 								txt = "READER DEVICE ERROR";
 								break;
 							case CARD_NEED_INIT:
+								if(rdr->typ == R_GBOX)
+									{ txt = "OFFLINE"; }
 #ifdef CS_CACHEEX
-								if (cl->reader->cacheex.mode > 0)
-								{
-									txt = "CCcam CacheEX";
-								}
+								else if (cl->reader->cacheex.mode > 0)
+									{ txt = "CCcam CacheEX"; }
+#endif
 								else
-								{
-#endif
-									txt = "NEEDINIT";
-#ifdef CS_CACHEEX
-								}
-#endif
+									{ txt = "NEEDINIT"; }
 								break;
 							case CARD_INSERTED:
 								if(cl->typ == 'p')
-									{ txt = "CONNECTED"; }
+									{
+										if(rdr->typ == R_GBOX)
+											{ txt = "ONL"; }
+										else
+											{ txt = "CONNNECTED"; }
+									}
 								else
 									{ txt = "CARDOK"; }
 								break;
@@ -5341,7 +5399,21 @@ static char *send_oscam_status(struct templatevars * vars, struct uriparams * pa
 							default:
 								txt = "UNDEF";
 							}
+#ifdef MODULE_GBOX
+							if(rdr->typ == R_GBOX)
+								{
+									struct gbox_peer *peer = cl->gbox;
+									char gbx_txt[32];
+									memset(gbx_txt, 0, sizeof(gbx_txt));
+									if(!strcmp(txt, "OFFLINE"))
+										{ snprintf(gbx_txt, sizeof(gbx_txt), "%s | ID: %04X", txt, peer->gbox.id); }
+									else
+										{ snprintf(gbx_txt, sizeof(gbx_txt), "%s | crd: %d | ID: %04X", txt, gbox_count_peer_cards(peer->gbox.id), peer->gbox.id); }
+									txt = gbx_txt;
+								}
+#endif
 						}
+
 						tpl_addVar(vars, TPLADD, "CLIENTCON", txt);
 
 						if(rdr && (cl->typ == 'r'))  //reader
