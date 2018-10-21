@@ -1,6 +1,9 @@
 #define MODULE_LOG_PREFIX "emu"
 
 #include "globals.h"
+
+#ifdef WITH_EMU
+
 #include "cscrypt/bn.h"
 #include "cscrypt/des.h"
 #include "cscrypt/idea.h"
@@ -287,3 +290,5 @@ int8_t Nagra2ECM(uint8_t *ecm, uint8_t *dw)
 	}
 	return 0;
 }
+
+#endif // WITH_EMU

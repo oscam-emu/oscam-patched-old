@@ -1,6 +1,9 @@
 #define MODULE_LOG_PREFIX "emu"
 
 #include "globals.h"
+
+#ifdef WITH_EMU
+
 #include "oscam-string.h"
 #include "cscrypt/bn.h"
 #include "module-emulator-osemu.h"
@@ -61,7 +64,7 @@ void set_emu_keyfile_path(const char *path)
 	emu_keyfile_path[strlen(path)] = 0;
 }
 
-int32_t CharToBin(uint8_t *out, const char *in, uint32_t inLen)
+int8_t CharToBin(uint8_t *out, const char *in, uint32_t inLen)
 {
 	uint32_t i, tmp;
 	for(i=0; i<inLen/2; i++) {
@@ -229,7 +232,7 @@ static void WriteKeyToFile(char identifier, uint32_t provider, const char *keyNa
 	fclose(file);
 }
 
-int32_t SetKey(char identifier, uint32_t provider, char *keyName, uint8_t *orgKey, uint32_t keyLength,
+int8_t SetKey(char identifier, uint32_t provider, char *keyName, uint8_t *orgKey, uint32_t keyLength,
 				uint8_t writeKey, char *comment, struct s_reader *rdr)
 {
 	uint32_t i, j;
@@ -438,7 +441,7 @@ int32_t SetKey(char identifier, uint32_t provider, char *keyName, uint8_t *orgKe
 	return 1;
 }
 
-int32_t FindKey(char identifier, uint32_t provider, uint32_t providerIgnoreMask, char *keyName, uint8_t *key,
+int8_t FindKey(char identifier, uint32_t provider, uint32_t providerIgnoreMask, char *keyName, uint8_t *key,
 				uint32_t maxKeyLength, uint8_t isCriticalKey, uint32_t keyRef, uint8_t matchLength, uint32_t *getProvider)
 {
 	uint32_t i;
@@ -517,7 +520,7 @@ int32_t FindKey(char identifier, uint32_t provider, uint32_t providerIgnoreMask,
 	return 0;
 }
 
-int32_t UpdateKey(char identifier, uint32_t provider, char *keyName, uint8_t *key, uint32_t keyLength, uint8_t writeKey, char *comment)
+int8_t UpdateKey(char identifier, uint32_t provider, char *keyName, uint8_t *key, uint32_t keyLength, uint8_t writeKey, char *comment)
 {
 	uint32_t keyRef = 0;
 	uint8_t *tmpKey = (uint8_t*)malloc(sizeof(uint8_t)*keyLength);
@@ -881,7 +884,7 @@ int8_t isValidDCW(uint8_t *dw)
 	return 1;
 }
 
-const char* GetProcessECMErrorReason(int8_t result)
+static const char* GetProcessECMErrorReason(int8_t result)
 {
 	switch(result) {
 	case 0:
@@ -921,13 +924,8 @@ const char* GetProcessECMErrorReason(int8_t result)
 8  ECM checksum error
 9  ICG error
 */
-#ifdef WITH_EMU
 int8_t ProcessECM(struct s_reader *rdr, int16_t ecmDataLen, uint16_t caid, uint32_t provider, const uint8_t *ecm,
 				  uint8_t *dw, uint16_t srvid, uint16_t ecmpid, EXTENDED_CW* cw_ex)
-#else
-int8_t ProcessECM(struct s_reader *rdr, int16_t ecmDataLen, uint16_t caid, uint32_t provider, const uint8_t *ecm,
-				  uint8_t *dw, uint16_t srvid, uint16_t ecmpid)
-#endif
 {
 	int8_t result = 1, i;
 	uint8_t ecmCopy[EMU_MAX_ECM_LEN];
@@ -971,11 +969,7 @@ int8_t ProcessECM(struct s_reader *rdr, int16_t ecmDataLen, uint16_t caid, uint3
 		result = BissECM(rdr, ecm, ecmDataLen, dw, srvid, ecmpid);
 	}
 	else if((caid >> 8) == 0x0E) {
-#ifdef WITH_EMU
 		result = PowervuECM(ecmCopy, dw, srvid, NULL, cw_ex);
-#else
-		result = PowervuECM(ecmCopy, dw, NULL);
-#endif
 	}
 	else if(caid == 0x4AE1) {
 		result = Drecrypt2ECM(provider, ecmCopy, dw);
@@ -998,7 +992,7 @@ int8_t ProcessECM(struct s_reader *rdr, int16_t ecmDataLen, uint16_t caid, uint3
 	return result;
 }
 
-const char* GetProcessEMMErrorReason(int8_t result)
+static const char* GetProcessEMMErrorReason(int8_t result)
 {
 	switch(result) {
 	case 0:
@@ -1060,3 +1054,5 @@ int8_t ProcessEMM(struct s_reader *rdr, uint16_t caid, uint32_t provider, const 
 
 	return result;
 }
+
+#endif // WITH_EMU

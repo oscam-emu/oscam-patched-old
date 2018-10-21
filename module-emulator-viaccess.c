@@ -1,27 +1,20 @@
 #define MODULE_LOG_PREFIX "emu"
 
 #include "globals.h"
-#include "cscrypt/des.h"
-#include "module-emulator-osemu.h"
 
 #ifdef WITH_EMU
+
+#include "cscrypt/des.h"
+#include "module-emulator-osemu.h"
+#include "module-newcamd-des.h"
 #include "oscam-aes.h"
 #include "oscam-string.h"
-#include "oscam-config.h"
-#include "oscam-conf-chk.h"
-#include "oscam-time.h"
-#include "module-newcamd-des.h"
-#include "reader-dre-common.h"
+
 // from reader-viaccess.c:
 void hdSurEncPhase1_D2_0F_11(uint8_t *CWs);
 void hdSurEncPhase2_D2_0F_11(uint8_t *CWs);
 void hdSurEncPhase1_D2_13_15(uint8_t *cws);
 void hdSurEncPhase2_D2_13_15(uint8_t *cws);
-#else
-#include "cscrypt/viades.h"
-#include "via3surenc.h"
-#include "dre2overcrypt.h"
-#endif
 
 // Viaccess EMU
 static int8_t GetViaKey(uint8_t *buf, uint32_t ident, char keyName, uint32_t keyIndex, uint32_t keyLength, uint8_t isCriticalKey)
@@ -885,3 +878,5 @@ int8_t ViaccessEMM(uint8_t *emm, uint32_t *keysAdded)
 	}
 	return 0;
 }
+
+#endif // WITH_EMU

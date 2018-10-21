@@ -1,39 +1,13 @@
 #define MODULE_LOG_PREFIX "emu"
 
 #include "globals.h"
-#include "module-emulator-osemu.h"
-
-//#include "ffdecsa/ffdecsa.h"
-//#include "cscrypt/bn.h"
-#include "cscrypt/des.h"
-//#include "cscrypt/idea.h"
-//#include "cscrypt/md5.h"
-//#include "oscam-aes.h"
-//#include "oscam-string.h"
-//#include "oscam-config.h"
-//#include "oscam-conf-chk.h"
-//#include "oscam-time.h"
-//#include "module-newcamd-des.h"
-//#include "reader-dre-common.h"
 
 #ifdef WITH_EMU
-#include "oscam-aes.h"
+
+#include "cscrypt/des.h"
+#include "module-emulator-osemu.h"
 #include "oscam-string.h"
-#include "oscam-config.h"
-#include "oscam-conf-chk.h"
-#include "oscam-time.h"
-#include "module-newcamd-des.h"
 #include "reader-dre-common.h"
-// from reader-viaccess.c:
-void hdSurEncPhase1_D2_0F_11(uint8_t *CWs);
-void hdSurEncPhase2_D2_0F_11(uint8_t *CWs);
-void hdSurEncPhase1_D2_13_15(uint8_t *cws);
-void hdSurEncPhase2_D2_13_15(uint8_t *cws);
-#else
-#include "cscrypt/viades.h"
-#include "via3surenc.h"
-#include "dre2overcrypt.h"
-#endif
 
 // Drecrypt EMU
 static void DREover(const uint8_t *ECMdata, uint8_t *dw)
@@ -518,7 +492,7 @@ int8_t Drecrypt2EMM(struct s_reader *rdr, uint32_t provId, uint8_t *emm, uint32_
 	return result;
 }
 
-int32_t GetDrecryptHexserials(uint16_t caid, uint32_t provid, uint8_t *hexserials, int32_t length, int32_t *count)
+int8_t GetDrecryptHexserials(uint16_t caid, uint32_t provid, uint8_t *hexserials, int32_t length, int32_t *count)
 {
 	uint32_t i;
 	KeyDataContainer *KeyDB = GetKeyContainer('D');
@@ -555,3 +529,5 @@ int32_t GetDrecryptHexserials(uint16_t caid, uint32_t provid, uint8_t *hexserial
 
 	return 1;
 }
+
+#endif // WITH_EMU

@@ -1,9 +1,12 @@
 #define MODULE_LOG_PREFIX "emu"
 
 #include "globals.h"
-#include "oscam-string.h"
+
+#ifdef WITH_EMU
+
 #include "cscrypt/des.h"
 #include "module-emulator-osemu.h"
+#include "oscam-string.h"
 
 static inline void xxor(uint8_t *data, int32_t len, const uint8_t *v1, const uint8_t *v2)
 {
@@ -443,7 +446,7 @@ int8_t Irdeto2EMM(uint16_t caid, uint8_t *oemm, uint32_t *keysAdded)
 	return 1;
 }
 
-int32_t GetIrdeto2Hexserial(uint16_t caid, uint8_t *hexserial)
+int8_t GetIrdeto2Hexserial(uint16_t caid, uint8_t *hexserial)
 {
 	uint32_t i, len;
 	KeyDataContainer *KeyDB;
@@ -475,3 +478,5 @@ int32_t GetIrdeto2Hexserial(uint16_t caid, uint8_t *hexserial)
 
 	return 0;
 }
+
+#endif // WITH_EMU

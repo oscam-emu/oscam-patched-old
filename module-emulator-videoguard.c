@@ -1,6 +1,9 @@
 #define MODULE_LOG_PREFIX "emu"
 
 #include "globals.h"
+
+#ifdef WITH_EMU
+
 #include "cscrypt/md5.h"
 #include "module-emulator-osemu.h"
 
@@ -80,3 +83,5 @@ int8_t SoftNDSECM(uint16_t caid, uint8_t *ecm, uint8_t *dw)
 
 	return 0;
 }
+
+#endif // WITH_EMU

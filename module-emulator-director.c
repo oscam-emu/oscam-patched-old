@@ -1,10 +1,13 @@
 #define MODULE_LOG_PREFIX "emu"
 
 #include "globals.h"
-#include "oscam-aes.h"
-#include "oscam-string.h"
+
+#ifdef WITH_EMU
+
 #include "cscrypt/des.h"
 #include "module-emulator-osemu.h"
+#include "oscam-aes.h"
+#include "oscam-string.h"
 
 // Tandberg EMU
 static uint16_t TandbergChecksum(uint8_t *data, uint8_t length)
@@ -596,3 +599,5 @@ int8_t TandbergEMM(uint8_t *emm, uint32_t *keysAdded)
 	
 	return ret;
 }
+
+#endif // WITH_EMU

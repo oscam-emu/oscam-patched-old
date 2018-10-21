@@ -1,5 +1,7 @@
-#ifndef EMULATOR_H_
-#define EMULATOR_H_
+#ifndef MODULE_EMULATOR_H_
+#define MODULE_EMULATOR_H_
+
+#ifdef WITH_EMU
 
 #define EMU_MAX_CHAR_KEYNAME 12
 #define EMU_KEY_FILENAME "SoftCam.Key"
@@ -36,9 +38,6 @@ extern KeyDataContainer PowervuKeys;
 extern KeyDataContainer DreKeys;
 extern KeyDataContainer TandbergKeys;
 extern uint8_t viasat_const[];
-
-uint32_t GetOSemuVersion(void);
-
 extern char *emu_keyfile_path;
 
 void set_emu_keyfile_path(const char *path);
@@ -52,58 +51,43 @@ void read_emu_keymemory(struct s_reader *rdr);
 void read_emu_eebin(const char *path, const char *name);
 void read_emu_deskey(uint8_t *dreOverKey, uint8_t len);
 
-int32_t CharToBin(uint8_t *out, const char *in, uint32_t inLen);
-
-/* Error codes
-0  OK
-1  ECM not supported
-2  Key not found
-3  Nano80 problem
-4  Corrupt data
-5  CW not found
-6  CW checksum error
-7  Out of memory
-8  ECM checksum error
-9  ICG error
-*/
-#ifdef WITH_EMU
-int8_t ProcessECM(struct s_reader *rdr, int16_t ecmDataLen, uint16_t caid, uint32_t provider,
-				  const uint8_t *ecm, uint8_t *dw, uint16_t srvid, uint16_t ecmpid, EXTENDED_CW* cw_ex);
-#else
-int8_t ProcessECM(struct s_reader *rdr, int16_t ecmDataLen, uint16_t caid, uint32_t provider,
-				  const uint8_t *ecm, uint8_t *dw, uint16_t srvid, uint16_t ecmpid);
-#endif
-
-const char* GetProcessECMErrorReason(int8_t result);
-
-/* Error codes
-0  OK
-1  EMM not supported
-2  Key not found
-3  Nano80 problem
-4  Corrupt data
-5
-6  Checksum error
-7  Out of memory
-*/
-int8_t ProcessEMM(struct s_reader *rdr, uint16_t caid, uint32_t provider, const uint8_t *emm, uint32_t *keysAdded);
-
-const char* GetProcessEMMErrorReason(int8_t result);
-
-#ifdef WITH_EMU
-int32_t FindKey(char identifier, uint32_t provider, uint32_t providerIgnoreMask, char *keyName, uint8_t *key,
-				uint32_t maxKeyLength, uint8_t isCriticalKey, uint32_t keyRef, uint8_t matchLength, uint32_t *getProvider);
-
-int32_t SetKey(char identifier, uint32_t provider, char *keyName, uint8_t *orgKey, uint32_t keyLength,
-				uint8_t writeKey, char *comment, struct s_reader *rdr);
-
-int32_t UpdateKey(char identifier, uint32_t provider, char *keyName, uint8_t *key, uint32_t keyLength, uint8_t writeKey, char *comment);
-
-#endif
-
+uint32_t GetOSemuVersion(void);
 inline uint16_t GetEcmLen(const uint8_t *ecm);
 int8_t isValidDCW(uint8_t *dw);
+int8_t CharToBin(uint8_t *out, const char *in, uint32_t inLen);
 void Date2Str(char *dateStr, uint8_t len, int8_t offset, uint8_t format);
 KeyDataContainer *GetKeyContainer(char identifier);
 
-#endif
+/*
+ * Error codes for ProccessECM and ProccessEMM functions
+ * 0 - OK
+ * 1 - ECM / EMM not supported
+ * 2 - ECM / EMM key not found
+ * 3 - Nano80 problem
+ * 4 - Corrupt data
+ * 5 - CW not found
+ * 6 - CW checksum error
+ * 7 - Out of memory
+ * 8 - ECM / EMM checksum error
+ * 9 - ICG error
+*/
+
+int8_t ProcessECM(struct s_reader *rdr, int16_t ecmDataLen, uint16_t caid, uint32_t provider,
+				const uint8_t *ecm, uint8_t *dw, uint16_t srvid, uint16_t ecmpid, EXTENDED_CW* cw_ex);
+
+int8_t ProcessEMM(struct s_reader *rdr, uint16_t caid, uint32_t provider, const uint8_t *emm,
+				uint32_t *keysAdded);
+
+int8_t FindKey(char identifier, uint32_t provider, uint32_t providerIgnoreMask, char *keyName,
+				uint8_t *key, uint32_t maxKeyLength, uint8_t isCriticalKey, uint32_t keyRef,
+				uint8_t matchLength, uint32_t *getProvider);
+
+int8_t SetKey(char identifier, uint32_t provider, char *keyName, uint8_t *orgKey, uint32_t keyLength,
+				uint8_t writeKey, char *comment, struct s_reader *rdr);
+
+int8_t UpdateKey(char identifier, uint32_t provider, char *keyName, uint8_t *key, uint32_t keyLength,
+				uint8_t writeKey, char *comment);
+
+#endif // WITH_EMU
+
+#endif // MODULE_EMULATOR_H_

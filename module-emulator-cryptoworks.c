@@ -1,6 +1,9 @@
 #define MODULE_LOG_PREFIX "emu"
 
 #include "globals.h"
+
+#ifdef WITH_EMU
+
 #include "cscrypt/des.h"
 #include "module-emulator-osemu.h"
 
@@ -527,3 +530,5 @@ int8_t CryptoworksECM(uint32_t caid, uint8_t *ecm, uint8_t *cw)
 
 	return 5;
 }
+
+#endif // WITH_EMU

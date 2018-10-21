@@ -1,8 +1,11 @@
 #define MODULE_LOG_PREFIX "emu"
 
 #include "globals.h"
-#include "oscam-string.h"
+
+#ifdef WITH_EMU
+
 #include "module-emulator-osemu.h"
+#include "oscam-string.h"
 
 static void BissUnifyOrbitals(uint32_t *namespace)
 {
@@ -524,3 +527,5 @@ int8_t BissECM(struct s_reader *rdr, const uint8_t *ecm, int16_t ecmDataLen, uin
 
 	return 2;
 }
+
+#endif // WITH_EMU

@@ -1,15 +1,15 @@
 #define MODULE_LOG_PREFIX "emu"
 
 #include "globals.h"
-#include "oscam-string.h"
-#include "oscam-time.h"
+
+#ifdef WITH_EMU
+
 #include "cscrypt/des.h"
 #include "ffdecsa/ffdecsa.h"
 #include "module-emulator-osemu.h"
-#include "module-emulator-stream.h"
-
-#include <endian.h>
-#include <byteswap.h>
+#include "module-emulator-streamserver.h"
+#include "oscam-string.h"
+#include "oscam-time.h"
 
 #if defined(__ANDROID__)
 #define __bswap_32 bswap_32
@@ -1271,11 +1271,7 @@ static void PowervuCalculateCw(uint8_t seedType, uint8_t *seed, uint8_t csaUsed,
 	}
 }
 
-#ifdef WITH_EMU
 int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_key_data *cdata, EXTENDED_CW* cw_ex)
-#else
-int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, emu_stream_client_key_data *cdata)
-#endif
 {
 	int8_t ret = 1;
 	uint16_t ecmLen = GetEcmLen(ecm);
@@ -1295,14 +1291,12 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, emu_stream_client_key_data *cdata)
 	uint8_t hashModeCw = 0, needsUnmasking, xorMode;
 	uint8_t unmaskedEcm[ecmLen];
 	//char tmpBuffer1[512];
-#ifdef WITH_EMU
 	uint8_t *dwp;
 	emu_stream_cw_item *cw_item;
 	int8_t update_global_key = 0;
 	int8_t update_global_keys[EMU_STREAM_SERVER_MAX_CONNECTIONS];
 	
 	memset(update_global_keys, 0, sizeof(update_global_keys));
-#endif
 	
 	if(ecmLen < 7)
 	{
@@ -1453,7 +1447,6 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, emu_stream_client_key_data *cdata)
 			
 			memcpy(seedBase, ecm+i+6+2, 4);
 			
-#ifdef WITH_EMU	
 			if(cdata == NULL)
 			{
 				SAFE_MUTEX_LOCK(&emu_fixed_key_srvid_mutex);
@@ -1469,9 +1462,6 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, emu_stream_client_key_data *cdata)
 			}
 			
 			if(cdata != NULL || update_global_key || cw_ex != NULL)
-#else	
-			if(cdata != NULL)
-#endif
 			{
 				// Calculate all seeds
 				for(j = 0; j < 8; j++)
@@ -1489,11 +1479,8 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, emu_stream_client_key_data *cdata)
 			
 			memcpy(baseCw, ecm+i+6+8, 7);
 			
-#ifdef WITH_EMU
 			calculateAllCws = cdata != NULL || update_global_key || cw_ex != NULL;
-#else
-			calculateAllCws = cdata != NULL;
-#endif
+
 			if(calculateAllCws)
 			{
 				// Calculate all cws
@@ -1514,7 +1501,6 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, emu_stream_client_key_data *cdata)
 				//			csaUsed, cs_hexdump(3, cw[0], 8, tmpBuffer1, sizeof(tmpBuffer1)),
 				//			(unsigned int)cdata, (unsigned int)cw_ex);
 				
-#ifdef WITH_EMU
 				if(update_global_key)
 				{
 					for(j = 0; j < EMU_STREAM_SERVER_MAX_CONNECTIONS; j++)
@@ -1535,9 +1521,8 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, emu_stream_client_key_data *cdata)
 					}
 				}
 				
-				if(cdata != NULL) 
+				if(cdata != NULL)
 				{
-#endif
 					for(j = 0; j < 8; j++)
 					{
 						if(csaUsed)
@@ -1562,7 +1547,6 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, emu_stream_client_key_data *cdata)
 							cdata->pvu_csa_used = 0;
 						}
 					}
-#ifdef WITH_EMU
 				}
 				
 				if(cw_ex != NULL)
@@ -1641,7 +1625,6 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, emu_stream_client_key_data *cdata)
 						}
 					}
 				}
-#endif		
 			}
 			else
 			{
@@ -1862,7 +1845,7 @@ int8_t PowervuEMM(uint8_t *emm, uint32_t *keysAdded)
 	return 0;
 }
 
-int32_t GetPowervuHexserials(uint16_t srvid, uint8_t hexserials[][4], int32_t length, int32_t* count)
+int8_t GetPowervuHexserials(uint16_t srvid, uint8_t hexserials[][4], int32_t length, int32_t* count)
 {
 	//srvid == 0xFFFF -> get all
 	
@@ -1925,3 +1908,5 @@ int32_t GetPowervuHexserials(uint16_t srvid, uint8_t hexserials[][4], int32_t le
 
 	return 1;
 }
+
+#endif // WITH_EMU
