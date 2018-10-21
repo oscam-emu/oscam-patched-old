@@ -4,7 +4,7 @@
 #include "oscam-string.h"
 #include "cscrypt/bn.h"
 #include "module-emulator-osemu.h"
-#include "module-emulator-stream.h"
+#include "module-emulator-streamserver.h"
 #include "module-emulator-biss.h"
 #include "module-emulator-cryptoworks.h"
 #include "module-emulator-director.h"

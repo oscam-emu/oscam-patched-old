@@ -1,20 +1,18 @@
 #define MODULE_LOG_PREFIX "emu"
 
 #include "globals.h"
+
+#ifdef WITH_EMU
+
 #include "cscrypt/des.h"
 #include "ffdecsa/ffdecsa.h"
 #include "module-emulator-osemu.h"
-#include "module-emulator-stream.h"
+#include "module-emulator-streamserver.h"
 #include "module-emulator-powervu.h"
-
-#ifdef WITH_EMU
-#include "oscam-string.h"
 #include "oscam-config.h"
-#include "oscam-time.h"
 #include "oscam-net.h"
-
-extern int32_t exit_oscam;
-#endif
+#include "oscam-string.h"
+#include "oscam-time.h"
 
 typedef struct
 {
@@ -34,7 +32,6 @@ static uint8_t emu_stream_server_mutex_init = 0;
 static pthread_mutex_t emu_stream_server_mutex;
 static int32_t glistenfd, gconncount = 0, gconnfd[EMU_STREAM_SERVER_MAX_CONNECTIONS];
 
-#ifdef WITH_EMU
 pthread_mutex_t emu_fixed_key_srvid_mutex;
 uint16_t emu_stream_cur_srvid[EMU_STREAM_SERVER_MAX_CONNECTIONS];
 int8_t stream_server_has_ecm[EMU_STREAM_SERVER_MAX_CONNECTIONS];
@@ -42,7 +39,6 @@ int8_t stream_server_has_ecm[EMU_STREAM_SERVER_MAX_CONNECTIONS];
 pthread_mutex_t emu_fixed_key_data_mutex[EMU_STREAM_SERVER_MAX_CONNECTIONS];
 emu_stream_client_key_data emu_fixed_key_data[EMU_STREAM_SERVER_MAX_CONNECTIONS];
 LLIST *ll_emu_stream_delayed_keys[EMU_STREAM_SERVER_MAX_CONNECTIONS];
-#endif
 
 static void SearchTsPackets(uint8_t *buf, uint32_t bufLength, uint16_t *packetSize, uint16_t *startOffset)
 {
@@ -310,11 +306,7 @@ static void ParseECMData(emu_stream_client_data *cdata)
 		|| ((cdata->ecm_nb - data[0xb]) > 5))
 	{
 		cdata->ecm_nb = data[0xb];
-#ifdef WITH_EMU
 		PowervuECM(data, dcw, cdata->srvid, &cdata->key, NULL);
-#else
-		PowervuECM(data, dcw, &cdata->key);
-#endif
 	}
 }
 
@@ -395,9 +387,7 @@ static void ParseTSPackets(emu_stream_client_data *data, uint8_t *stream_buf, ui
 		
 		if(data->ecm_pid && pid == data->ecm_pid)
 		{
-#ifdef WITH_EMU
 			stream_server_has_ecm[data->connid] = 1;
-#endif
 			
 			// set to null pid
 			stream_buf[i+1] |= 0x1f; 
@@ -419,7 +409,6 @@ static void ParseTSPackets(emu_stream_client_data *data, uint8_t *stream_buf, ui
 		
 		oddKeyUsed = scramblingControl == 0xC0 ? 1 : 0;
 		
-#ifdef WITH_EMU
 		if(!stream_server_has_ecm[data->connid])
 		{
 			keydata = &emu_fixed_key_data[data->connid];
@@ -428,11 +417,8 @@ static void ParseTSPackets(emu_stream_client_data *data, uint8_t *stream_buf, ui
 		}
 		else
 		{
-#endif
 			keydata = &data->key;
-#ifdef WITH_EMU
 		}
-#endif
 		
 		if(keydata->pvu_csa_used)
 		{
@@ -569,12 +555,10 @@ static void ParseTSPackets(emu_stream_client_data *data, uint8_t *stream_buf, ui
 			stream_buf[i+3] &= 0x3F;
 		}
 		
-#ifdef WITH_EMU
 		if(!stream_server_has_ecm[data->connid])
 		{
 			SAFE_MUTEX_UNLOCK(&emu_fixed_key_data_mutex[data->connid]);
 		}
-#endif
 	}
 }
 
@@ -632,14 +616,12 @@ static void stream_client_disconnect(emu_stream_client_conn_data *conndata)
 {
 	int32_t i;
 	
-#ifdef WITH_EMU
 	SAFE_MUTEX_LOCK(&emu_fixed_key_srvid_mutex);
 	emu_stream_cur_srvid[conndata->connid] = NO_SRVID_VALUE;
 	stream_server_has_ecm[conndata->connid] = 0;
 	SAFE_MUTEX_UNLOCK(&emu_fixed_key_srvid_mutex);
-#endif
-	
 	SAFE_MUTEX_LOCK(&emu_stream_server_mutex);
+
 	for(i=0; i<EMU_STREAM_SERVER_MAX_CONNECTIONS; i++)
 	{
 		if(gconnfd[i] == conndata->connfd)
@@ -758,12 +740,10 @@ static void *stream_client_handler(void *arg)
 		return NULL;
 	}
 
-#ifdef WITH_EMU
 	SAFE_MUTEX_LOCK(&emu_fixed_key_srvid_mutex);
 	emu_stream_cur_srvid[conndata->connid] = data->srvid;
 	stream_server_has_ecm[conndata->connid] = 0;
 	SAFE_MUTEX_UNLOCK(&emu_fixed_key_srvid_mutex);
-#endif
 
 	cs_log("Stream client %i request %s", conndata->connid, stream_path);
 
@@ -914,7 +894,6 @@ void *stream_server(void *UNUSED(a))
 		emu_stream_server_mutex_init = 1;
 	}
 	
-#ifdef WITH_EMU
 	SAFE_MUTEX_LOCK(&emu_fixed_key_srvid_mutex);
 	for(i=0; i<EMU_STREAM_SERVER_MAX_CONNECTIONS; i++)
 	{
@@ -922,7 +901,6 @@ void *stream_server(void *UNUSED(a))
 		stream_server_has_ecm[i] = 0;
 	}
 	SAFE_MUTEX_UNLOCK(&emu_fixed_key_srvid_mutex);
-#endif
 	
 	for(i=0; i<EMU_STREAM_SERVER_MAX_CONNECTIONS; i++)
 	{
@@ -1017,7 +995,6 @@ void *stream_server(void *UNUSED(a))
 	return NULL;
 }
 
-#ifdef WITH_EMU
 void *stream_key_delayer(void *UNUSED(arg))
 {
 	int32_t i, j;
@@ -1080,7 +1057,6 @@ void *stream_key_delayer(void *UNUSED(arg))
 	
 	return NULL;
 }
-#endif
 
 void stop_stream_server(void)
 {
@@ -1103,3 +1079,5 @@ void stop_stream_server(void)
 	shutdown(glistenfd, 2);
 	close(glistenfd);
 }
+
+#endif // WITH_EMU
