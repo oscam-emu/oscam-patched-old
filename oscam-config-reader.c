@@ -1,7 +1,6 @@
 #define MODULE_LOG_PREFIX "config"
 
 #include "globals.h"
-#include "module-gbox.h"
 #include "module-stat.h"
 #include "oscam-aes.h"
 #include "oscam-array.h"
@@ -13,6 +12,9 @@
 #include "oscam-lock.h"
 #include "oscam-reader.h"
 #include "oscam-string.h"
+#ifdef MODULE_GBOX
+#include "module-gbox.h"
+#endif
 
 #define cs_srvr "oscam.server"
 
@@ -1027,9 +1029,22 @@ static bool reader_check_setting(const struct config_list *UNUSED(clist), void *
 		{ return false; }
 #endif
 
+#ifdef MODULE_GBOX
+	// These are written only when the reader is GBOX
+	static const char *gbox_settings[] =
+	{
+		"gbox_max_distance", "gbox_max_ecm_send", "gbox_reshare", "cccam_reshare", 
+		0
+	};
+	if(reader->typ != R_GBOX)
+	{
+		if(in_list(setting, gbox_settings))
+			{ return false; }
+	}
+#endif
+
 	return true; // Write the setting
 }
-
 
 void chk_reader(char *token, char *value, struct s_reader *rdr)
 {

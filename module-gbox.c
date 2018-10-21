@@ -324,7 +324,7 @@ static int8_t gbox_reinit_proxy(struct s_client *proxy)
 	gbox_clear_peer(peer);
 	if (!proxy->reader) { return -1; }
 	proxy->reader->tcp_connected	= 0;
-	proxy->reader->card_status	= NO_CARD;
+	proxy->reader->card_status	= CARD_NEED_INIT;
 	proxy->reader->last_s	= proxy->reader->last_g = 0;
 
 	return 0;
@@ -474,21 +474,29 @@ void gbox_send_hello(struct s_client *proxy, uint8_t hello_stat)
         return;
 }
 
-void gbox_reconnect_client(uint16_t gbox_id)
+void gbox_reconnect_peer(struct s_client *cl)
 {
-	struct s_client *cl;
-	cs_readlock(__func__, &clientlist_lock);
-	for(cl = first_client; cl; cl = cl->next)
-	{
-		if(cl->gbox && cl->typ == 'p' && cl->gbox_peer_id == gbox_id)
-		{
+			struct gbox_peer *peer = cl->gbox;
 			hostname2ip(cl->reader->device, &SIN_GET_ADDR(cl->udp_sa));
 			SIN_GET_FAMILY(cl->udp_sa) = AF_INET;
 			SIN_GET_PORT(cl->udp_sa) = htons((uint16_t)cl->reader->r_port);
 			hostname2ip(cl->reader->device, &(cl->ip));
 			gbox_reinit_proxy(cl);
-			gbox_send_hello(cl, GBOX_STAT_HELLOL); //comment out line,if endless loops occur on LTE/DSL-Hybrid system @IP change
-		}
+			cs_log("reconnect %s  peer: %04X", username(cl), peer->gbox.id);
+			gbox_send_hello(cl, GBOX_STAT_HELLOL);
+			return;
+}
+
+void restart_gbox_peer(char *rdrlabel, uint8_t allrdr, uint16_t gbox_id)
+{
+	struct s_client *cl;
+	cs_readlock(__func__, &clientlist_lock);
+	for(cl = first_client; cl; cl = cl->next)
+	{
+		if(cl->gbox && cl->typ == 'p' && 
+			((rdrlabel && !strcmp(rdrlabel, cl->reader->label)) || 
+			allrdr || (gbox_id && cl->gbox_peer_id == gbox_id)))
+		{ gbox_reconnect_peer(cl); }
 	}
 	cs_readunlock(__func__, &clientlist_lock);
 }
@@ -500,7 +508,7 @@ static void *gbox_server(struct s_client *cli, uchar *UNUSED(b), int32_t l)
 		cs_log("gbox_server %s/%d", cli->reader->label, cli->port);
 //		gbox_check_header_recvd(cli, NULL, b, l);
 	}
-	return 0;
+	return NULL;
 }
 
 char *gbox_username(struct s_client *client)
@@ -1275,7 +1283,7 @@ static int8_t gbox_check_header_recvd(struct s_client *cli, struct s_client *pro
 	if (!IP_EQUAL(cli->ip, proxy->ip))
 	{ 
 		cs_log("IP change received - peer %04X. Previous IP = %s. Reconnecting...", cli->gbox_peer_id, cs_inet_ntoa(proxy->ip));
-		gbox_reconnect_client(cli->gbox_peer_id);
+		restart_gbox_peer(NULL, 0, cli->gbox_peer_id);
 		write_msg_info(cli, MSGID_IPCHANGE, 0, 0);
 		return -1;
 	}
