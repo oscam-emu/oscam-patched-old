@@ -14,6 +14,8 @@
 #include "oscam-string.h"
 #include "oscam-time.h"
 
+extern int32_t exit_oscam;
+
 typedef struct
 {
 	int32_t connfd;

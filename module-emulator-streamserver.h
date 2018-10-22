@@ -43,7 +43,6 @@ typedef struct
 	emu_stream_client_key_data key;
 } emu_stream_client_data;
 
-extern int32_t exit_oscam;
 extern char emu_stream_source_host[256];
 extern int32_t emu_stream_source_port;
 extern char *emu_stream_source_auth;
