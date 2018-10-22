@@ -21,7 +21,7 @@
 // Version info
 uint32_t GetOSemuVersion(void)
 {
-	return atoi("$Version: 774 $"+10);
+	return atoi("$Version: 775 $"+10);
 }
 
 /*
