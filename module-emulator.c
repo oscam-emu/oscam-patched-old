@@ -1,13 +1,18 @@
 #define MODULE_LOG_PREFIX "emu"
 
 #include "globals.h"
-#include "oscam-string.h"
-#include "oscam-config.h"
-#include "oscam-conf-chk.h"
-#include "oscam-time.h"
-#include "oscam-reader.h"
+
+#ifdef WITH_EMU
+
 #include "module-emulator-osemu.h"
-#include "module-emulator-stream.h"
+#include "module-emulator-streamserver.h"
+#include "module-emulator-drecrypt.h"
+#include "module-emulator-irdeto.h"
+#include "module-emulator-powervu.h"
+#include "oscam-conf-chk.h"
+#include "oscam-config.h"
+#include "oscam-reader.h"
+#include "oscam-string.h"
 
 /*
  * Readers in OSCam consist of 2 basic parts.
@@ -902,3 +907,5 @@ void add_emu_reader(void)
 
 	cs_log("OSCam-Emu version %d", GetOSemuVersion());
 }
+
+#endif // WITH_EMU

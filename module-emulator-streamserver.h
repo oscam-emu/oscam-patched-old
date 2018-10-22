@@ -1,5 +1,7 @@
-#ifndef EMU_STREAM_SERVER_H_
-#define EMU_STREAM_SERVER_H_
+#ifndef MODULE_EMULATOR_STREAMSERVER_H_
+#define MODULE_EMULATOR_STREAMSERVER_H_
+
+#ifdef WITH_EMU
 
 #define EMU_STREAM_SERVER_MAX_CONNECTIONS 8
 #define EMU_STREAM_MAX_AUDIO_SUB_TRACKS 16
@@ -41,6 +43,7 @@ typedef struct
 	emu_stream_client_key_data key;
 } emu_stream_client_data;
 
+extern int32_t exit_oscam;
 extern char emu_stream_source_host[256];
 extern int32_t emu_stream_source_port;
 extern char *emu_stream_source_auth;
@@ -52,7 +55,6 @@ extern int8_t stream_server_thread_init;
 void *stream_server(void *a);
 void stop_stream_server(void);
 
-#ifdef WITH_EMU
 typedef struct
 {
 	struct timeb write_time;
@@ -70,6 +72,7 @@ extern emu_stream_client_key_data emu_fixed_key_data[EMU_STREAM_SERVER_MAX_CONNE
 extern LLIST *ll_emu_stream_delayed_keys[EMU_STREAM_SERVER_MAX_CONNECTIONS];
 
 void *stream_key_delayer(void *arg);
-#endif
 
-#endif
+#endif // WITH_EMU
+
+#endif // MODULE_EMULATOR_STREAMSERVER_H_
