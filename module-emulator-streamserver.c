@@ -17,7 +17,7 @@
 typedef struct
 {
 	int32_t connfd;
-	int32_t connid;	
+	int32_t connid;
 } emu_stream_client_conn_data;
 
 int8_t stream_server_thread_init = 0;
@@ -374,14 +374,14 @@ static void ParseTSPackets(emu_stream_client_data *data, uint8_t *stream_buf, ui
 		if(pid == 0 && !data->pmt_pid)
 		{
 			ParseTSData(0x00, 0xFF, 16, &data->have_pat_data, data->pat_data, sizeof(data->pat_data), &data->pat_data_pos, payloadStart, 
-										stream_buf+i+offset, packetSize-offset, ParsePATData, data);		
+										stream_buf+i+offset, packetSize-offset, ParsePATData, data);
 			continue;
 		}
 		
 		if(!data->ecm_pid && pid == data->pmt_pid)
 		{
 			ParseTSData(0x02, 0xFF, 21, &data->have_pmt_data, data->pmt_data, sizeof(data->pmt_data), &data->pmt_data_pos, payloadStart, 
-										stream_buf+i+offset, packetSize-offset, ParsePMTData, data);	
+										stream_buf+i+offset, packetSize-offset, ParsePMTData, data);
 			continue;
 		}
 		
@@ -390,7 +390,7 @@ static void ParseTSPackets(emu_stream_client_data *data, uint8_t *stream_buf, ui
 			stream_server_has_ecm[data->connid] = 1;
 			
 			// set to null pid
-			stream_buf[i+1] |= 0x1f; 
+			stream_buf[i+1] |= 0x1f;
 			stream_buf[i+2]  = 0xff;
 			
 			ParseTSData(0x80, 0xFE, 3, &data->have_ecm_data, data->ecm_data, sizeof(data->ecm_data), &data->ecm_data_pos, payloadStart, 
