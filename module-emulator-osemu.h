@@ -52,7 +52,7 @@ void read_emu_eebin(const char *path, const char *name);
 void read_emu_deskey(uint8_t *dreOverKey, uint8_t len);
 
 uint32_t GetOSemuVersion(void);
-inline uint16_t GetEcmLen(const uint8_t *ecm);
+extern uint16_t GetEcmLen(const uint8_t *ecm);
 int8_t isValidDCW(uint8_t *dw);
 int8_t CharToBin(uint8_t *out, const char *in, uint32_t inLen);
 void Date2Str(char *dateStr, uint8_t len, int8_t offset, uint8_t format);
