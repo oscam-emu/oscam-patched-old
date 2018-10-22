@@ -19,9 +19,61 @@
 #include "module-emulator-videoguard.h"
 
 // Version info
+
 uint32_t GetOSemuVersion(void)
 {
-	return atoi("$Version: 775 $"+10);
+	return atoi("$Version: 775 $" + 10);
+}
+
+// Shared functions
+
+inline uint16_t GetEcmLen(const uint8_t *ecm)
+{
+	return (((ecm[1] & 0x0F) << 8) | ecm[2]) + 3;
+}
+
+int8_t isValidDCW(uint8_t *dw)
+{
+	if (((dw[0] + dw[1] + dw[2]) & 0xFF) != dw[3])
+	{
+		return 0;
+	}
+
+	if (((dw[4] + dw[5] + dw[6]) & 0xFF) != dw[7])
+	{
+		return 0;
+	}
+
+	return 1;
+}
+
+void Date2Str(char *dateStr, uint8_t len, int8_t offset, uint8_t format)
+{
+	// Creates a formatted date string for use in various functions.
+	// A positive or negative time offset (in hours) can be set as well
+	// as the format of the output string.
+
+	time_t rawtime;
+	struct tm timeinfo;
+
+	time(&rawtime);
+	rawtime += (time_t) offset * 60 * 60; // Add a positive or negative offset
+	localtime_r(&rawtime, &timeinfo);
+
+	switch (format)
+	{
+		case 1: // Use in WriteKeyToFile()
+			strftime(dateStr, len, "%c", &timeinfo);
+			break;
+
+		case 2: // Used in BissAnnotate()
+			strftime(dateStr, len, "%F @ %R", &timeinfo);
+			break;
+
+		case 3: // Used in SetKey(), BissAnnotate()
+			strftime(dateStr, len, "%y%m%d%H", &timeinfo);
+			break;
+	}
 }
 
 /*
@@ -36,7 +88,7 @@ uint32_t GetOSemuVersion(void)
  * includes info about the number of keys it contains ("KeyCount") and the maximum
  * number of keys it can store ("KeyMax").
  *
- * The "KeyData" structure on the other hand, stores the actual key information,
+ * The "KeyData" structure, on the other hand, stores the actual key information,
  * including the "identifier", "provider", "keyName", "key" and "keyLength". There
  * is also a "nextKey" pointer to a similar "KeyData" structure which is only used
  * for Irdeto multiple keys, in a linked list style structure. For all other CAS,
@@ -109,35 +161,6 @@ KeyDataContainer *GetKeyContainer(char identifier)
 		return &TandbergKeys;
 	default:
 		return NULL;
-	}
-}
-
-void Date2Str(char *dateStr, uint8_t len, int8_t offset, uint8_t format)
-{
-	// Creates a formatted date string for use in various functions.
-	// A positive or negative time offset (in hours) can be set as well
-	// as the format of the output string.
-
-	time_t rawtime;
-	struct tm timeinfo;
-
-	time(&rawtime);
-	rawtime += (time_t) offset * 60 * 60; // Add a positive or negative offset
-	localtime_r(&rawtime, &timeinfo);
-
-	switch (format)
-	{
-		case 1: // Use in WriteKeyToFile()
-			strftime(dateStr, len, "%c", &timeinfo);
-			break;
-
-		case 2: // Used in BissAnnotate()
-			strftime(dateStr, len, "%F @ %R", &timeinfo);
-			break;
-
-		case 3: // Used in SetKey(), BissAnnotate()
-			strftime(dateStr, len, "%y%m%d%H", &timeinfo);
-			break;
 	}
 }
 
@@ -858,30 +881,6 @@ void read_emu_deskey(uint8_t *dreOverKey, uint8_t len)
 	{
 		cs_log("DreCrypt overcrypt (ADEC) key has wrong length");
 	}
-}
-
-// Shared functions
-
-inline uint16_t GetEcmLen(const uint8_t *ecm)
-{
-	return (((ecm[1] & 0x0f)<< 8) | ecm[2]) +3;
-}
-
-int8_t isValidDCW(uint8_t *dw)
-{
-	if (((dw[0]+dw[1]+dw[2]) & 0xFF) != dw[3]) {
-		return 0;
-	}
-	if (((dw[4]+dw[5]+dw[6]) & 0xFF) != dw[7]) {
-		return 0;
-	}
-	if (((dw[8]+dw[9]+dw[10]) & 0xFF) != dw[11]) {
-		return 0;
-	}
-	if (((dw[12]+dw[13]+dw[14]) & 0xFF) != dw[15]) {
-		return 0;
-	}
-	return 1;
 }
 
 static const char* GetProcessECMErrorReason(int8_t result)

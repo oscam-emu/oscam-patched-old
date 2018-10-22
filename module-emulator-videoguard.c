@@ -89,10 +89,8 @@ int8_t SoftNDSECM(uint16_t caid, uint8_t *ecm, uint8_t *dw)
 		tDW[i] = digest[i + 8] ^ ecm[offsetCw + i];
 	}
 
-	if(((tDW[0]+tDW[1]+tDW[2])&0xFF)-tDW[3]) {
-		return 6;
-	}
-	if(((tDW[4]+tDW[5]+tDW[6])&0xFF)-tDW[7]) {
+	if (!isValidDCW(tDW))
+	{
 		return 6;
 	}
 

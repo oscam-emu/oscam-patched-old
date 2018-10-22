@@ -195,7 +195,7 @@ int8_t Drecrypt2ECM(uint32_t provId, uint8_t *ecm, uint8_t *dw)
 
 		Drecrypt2OverCW(overcryptId, ccw);
 
-		if (isValidDCW(ccw))
+		if (isValidDCW(ccw) && isValidDCW(ccw + 8))
 		{
 			memcpy(dw, ccw, 16);
 			return 0;
@@ -206,7 +206,7 @@ int8_t Drecrypt2ECM(uint32_t provId, uint8_t *ecm, uint8_t *dw)
 
 	DREover(ecm, ccw);
 
-	if (isValidDCW(ccw))
+	if (isValidDCW(ccw) && isValidDCW(ccw + 8))
 	{
 		DrecryptSwap(ccw);
 		memcpy(dw, ccw, 16);

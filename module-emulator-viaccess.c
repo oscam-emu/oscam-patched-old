@@ -569,7 +569,8 @@ static int8_t Via3Decrypt(uint8_t* source, uint8_t* dw, uint32_t ident, uint8_t 
 		if(doFinalMix) {
 			Via3FinalMix(dw);
 		}
-		if(!isValidDCW(dw)) {
+		if (!isValidDCW(dw) || !isValidDCW(dw + 8))
+		{
 			return 6;
 		}
 	}
