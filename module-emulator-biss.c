@@ -100,6 +100,7 @@ static void BissUnifyOrbitals(uint32_t *namespace)
 		case 3600 - 911: // Nimiq 6
 		{
 			pos = 3600 - 910; // Galaxy 17
+			break;
 		}
 
 		case 3600 - 870: // SES 2
