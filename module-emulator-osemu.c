@@ -940,13 +940,20 @@ int8_t ProcessECM(struct s_reader *rdr, int16_t ecmDataLen, uint16_t caid, uint3
 		ecmLen = GetEcmLen(ecm);
 	}
 
-	if(ecmLen > ecmDataLen) {
+	if (ecmLen != ecmDataLen)
+	{
+		cs_log_dbg(D_TRACE, "Actual ecm data length 0x%03X but ecm section length is 0x%03X",
+							ecmDataLen, ecmLen);
+		return 4;
+	}
+
+	if (ecmLen > EMU_MAX_ECM_LEN)
+	{
+		cs_log_dbg(D_TRACE, "Actual ecm data length 0x%03X but maximum supported ecm length is 0x%03X",
+							ecmDataLen, EMU_MAX_ECM_LEN);
 		return 1;
 	}
 
-	if(ecmLen > EMU_MAX_ECM_LEN) {
-		return 1;
-	}
 	memcpy(ecmCopy, ecm, ecmLen);
 
 	if((caid >> 8) == 0x0D) {
