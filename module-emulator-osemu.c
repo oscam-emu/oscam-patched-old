@@ -932,7 +932,7 @@ int8_t ProcessECM(struct s_reader *rdr, int16_t ecmDataLen, uint16_t caid, uint3
 
 	if(ecmDataLen < 3) {
 		// accept requests without ecm only for biss
-		if((caid>>8) != 0x26) {
+		if(!caid_is_biss(caid)) {
 			return 1;
 		}
 	}
@@ -956,36 +956,23 @@ int8_t ProcessECM(struct s_reader *rdr, int16_t ecmDataLen, uint16_t caid, uint3
 
 	memcpy(ecmCopy, ecm, ecmLen);
 
-	if((caid >> 8) == 0x0D) {
-		result = CryptoworksECM(caid, ecmCopy, dw);
-	}
-	else if((caid >> 8) == 0x09) {
-		result = SoftNDSECM(caid, ecmCopy, dw);
-	}
-	else if(caid == 0x0500) {
-		result = ViaccessECM(ecmCopy, dw);
-	}
-	else if((caid >> 8) == 0x18) {
-		result = Nagra2ECM(ecmCopy, dw);
-	}
-	else if((caid >> 8) == 0x06) {
-		result = Irdeto2ECM(caid, ecmCopy, dw);
-	}
-	else if((caid >> 8) == 0x26) {
-		result = BissECM(rdr, ecm, ecmDataLen, dw, srvid, ecmpid);
-	}
-	else if((caid >> 8) == 0x0E) {
-		result = PowervuECM(ecmCopy, dw, srvid, NULL, cw_ex);
-	}
-	else if(caid == 0x4AE1) {
-		result = Drecrypt2ECM(provider, ecmCopy, dw);
-	}
-	else if((caid >> 8) == 0x10) {
-		result = TandbergECM(ecmCopy, dw);
+	     if (caid_is_viaccess(caid))    result = ViaccessECM(ecmCopy, dw);
+	else if (caid_is_irdeto(caid))      result = Irdeto2ECM(caid, ecmCopy, dw);
+	else if (caid_is_videoguard(caid))  result = SoftNDSECM(caid, ecmCopy, dw);
+	else if (caid_is_cryptoworks(caid)) result = CryptoworksECM(caid, ecmCopy, dw);
+	else if (caid_is_powervu(caid))     result = PowervuECM(ecmCopy, dw, srvid, NULL, cw_ex);
+	else if (caid_is_director(caid))    result = TandbergECM(ecmCopy, dw);
+	else if (caid_is_nagra(caid))       result = Nagra2ECM(ecmCopy, dw);
+	else if (caid_is_biss(caid))        result = BissECM(rdr, ecm, ecmDataLen, dw, srvid, ecmpid);
+	else if (caid_is_dre(caid))         result = Drecrypt2ECM(provider, ecmCopy, dw);
+	else
+	{
+		result = 1;
+		cs_log("Ecm with caid 0x%04X is not supported", caid);
 	}
 
 	// fix dcw checksum
-	if(result == 0 && !((caid >> 8) == 0x0E)) {
+	if(result == 0 && !caid_is_powervu(caid)) {
 		for(i = 0; i < 16; i += 4) {
 			dw[i + 3] = ((dw[i] + dw[i + 1] + dw[i + 2]) & 0xff);
 		}
@@ -1038,22 +1025,17 @@ int8_t ProcessEMM(struct s_reader *rdr, uint16_t caid, uint32_t provider, const 
 	memcpy(emmCopy, emm, emmLen);
 	*keysAdded = 0;
 
-	if(caid==0x0500) {
-		result = ViaccessEMM(emmCopy, keysAdded);
+	     if (caid_is_viaccess(caid)) result = ViaccessEMM(emmCopy, keysAdded);
+	else if (caid_is_irdeto(caid))   result = Irdeto2EMM(caid, emmCopy, keysAdded);
+	else if (caid_is_powervu(caid))  result = PowervuEMM(emmCopy, keysAdded);
+	else if (caid_is_director(caid)) result = TandbergEMM(emmCopy, keysAdded);
+	else if (caid_is_dre(caid))      result = Drecrypt2EMM(rdr, provider, emmCopy, keysAdded);
+	else
+	{
+		result = 1;
+		cs_log("Emm with caid 0x%04X is not supported", caid);
 	}
-	else if((caid>>8)==0x06) {
-		result = Irdeto2EMM(caid, emmCopy, keysAdded);
-	}
-	else if((caid>>8)==0x0E) {
-		result = PowervuEMM(emmCopy, keysAdded);
-	}
-	else if(caid==0x4AE1) {
-		result = Drecrypt2EMM(rdr, provider, emmCopy, keysAdded);
-	}
-	else if((caid>>8)==0x10) {
-		result = TandbergEMM(emmCopy, keysAdded);
-	}
-	
+
 	if(result != 0) {
 		cs_log_dbg(D_EMM,"EMM failed: %s", GetProcessEMMErrorReason(result));
 	}
