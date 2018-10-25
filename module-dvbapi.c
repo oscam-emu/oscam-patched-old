@@ -3385,7 +3385,7 @@ int32_t dvbapi_parse_capmt(unsigned char *buffer, uint32_t length, int32_t connf
 	struct s_dvbapi_priority *addentry;
 
 	// pid limiter for PowerVu
-	if(demux[demux_id].ECMpids[0].CAID >> 8 == 0x0E)
+	if(caid_is_powervu(demux[demux_id].ECMpids[0].CAID))
 	{
 		max_pids = cfg.dvbapi_extended_cw_pids;
 	}
@@ -4438,7 +4438,7 @@ void dvbapi_process_input(int32_t demux_id, int32_t filter_num, uchar *buffer, i
 				return;
 			}
 
-			if(curpid->CAID >> 8 == 0x0E)
+			if(caid_is_powervu(curpid->CAID))
 			{
 				pvu_skip = 1;
 				
@@ -4739,7 +4739,7 @@ void dvbapi_process_input(int32_t demux_id, int32_t filter_num, uchar *buffer, i
 		}
 		
 #ifdef WITH_EMU
-		if((demux[demux_id].demux_fd[filter_num].caid>>8) == 0x10)
+		if(caid_is_director(demux[demux_id].demux_fd[filter_num].caid))
 		{
 			uint32_t i;
 			uint32_t emmhash;
@@ -6307,7 +6307,7 @@ void dvbapi_send_dcw(struct s_client *client, ECM_REQUEST *er)
 		delayer(er, delay);
 
 #ifdef WITH_EMU
-		if(er->caid>>8 != 0x0E || !cfg.emu_stream_relay_enabled)
+		if(!caid_is_powervu(er->caid) || !cfg.emu_stream_relay_enabled)
 #endif
 		switch(selected_api)
 		{

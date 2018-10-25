@@ -794,7 +794,7 @@ int32_t matching_reader(ECM_REQUEST *er, struct s_reader *rdr)
 	}
 
 	//Checking ident:
-	if(!(rdr->typ == R_EMU && (er->caid >> 8) == 0x26) && !chk_rfilter(er, rdr))
+	if(!(rdr->typ == R_EMU && caid_is_biss(er->caid)) && !chk_rfilter(er, rdr))
 	{
 		cs_log_dbg(D_TRACE, "r-filter reader %s", rdr->label);
 		return (0);
