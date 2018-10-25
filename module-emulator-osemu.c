@@ -932,7 +932,7 @@ int8_t ProcessECM(struct s_reader *rdr, int16_t ecmDataLen, uint16_t caid, uint3
 
 	if(ecmDataLen < 3) {
 		// accept requests without ecm only for biss
-		if((caid>>8) != 0x26 && caid != 0xFFFF) {
+		if((caid>>8) != 0x26) {
 			return 1;
 		}
 	}
@@ -971,7 +971,7 @@ int8_t ProcessECM(struct s_reader *rdr, int16_t ecmDataLen, uint16_t caid, uint3
 	else if((caid >> 8) == 0x06) {
 		result = Irdeto2ECM(caid, ecmCopy, dw);
 	}
-	else if((caid >> 8) == 0x26 || caid == 0xFFFF) {
+	else if((caid >> 8) == 0x26) {
 		result = BissECM(rdr, ecm, ecmDataLen, dw, srvid, ecmpid);
 	}
 	else if((caid >> 8) == 0x0E) {

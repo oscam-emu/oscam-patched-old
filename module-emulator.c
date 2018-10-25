@@ -38,7 +38,6 @@
 #define CS_OK     1
 #define CS_ERROR  0
 
-static uint8_t oneByte = 0x01;
 extern char cs_confdir[128];
 
 static void set_hexserial_to_version(struct s_reader *rdr)
@@ -150,8 +149,6 @@ static void refresh_entitlements(struct s_reader *rdr)
 		emu_add_entitlement(rdr, 0x2600, BissKeys.EmuKeys[i].provider, BissKeys.EmuKeys[i].key,
 							BissKeys.EmuKeys[i].keyName, BissKeys.EmuKeys[i].keyLength, 0);
 	}
-
-	emu_add_entitlement(rdr, 0xFFFF, 0, &oneByte, "00", 1, 1);
 	
 	for (i = 0; i < PowervuKeys.keyCount; i++)
 	{
@@ -720,7 +717,7 @@ static int32_t emu_get_emm_filter_adv(struct s_reader *rdr, struct s_csystem_emm
 const struct s_cardsystem reader_emu =
 {
 	.desc = "emu",
-	.caids = (uint16_t[]){ 0x0D, 0x09, 0x0500, 0x18, 0x06, 0x26, 0xFFFF, 0x0E, 0x4A, 0x10, 0 },
+	.caids = (uint16_t[]){ 0x0D, 0x09, 0x0500, 0x18, 0x06, 0x26, 0x0E, 0x4A, 0x10, 0 },
 	.do_ecm = emu_do_ecm,
 	.do_emm = emu_do_emm,
 	.card_info = emu_card_info,
@@ -858,7 +855,7 @@ void add_emu_reader(void)
 		strncpy(rdr->device, emuName, strlen(emuName));
 
 		// CAIDs
-		ctab = strdup("090F,0500,1801,0604,2600,FFFF,0E00,4AE1,1010");
+		ctab = strdup("090F,0500,1801,0604,2600,0E00,4AE1,1010");
 		chk_caidtab(ctab, &rdr->ctab);
 		NULLFREE(ctab);
 
@@ -868,7 +865,6 @@ void add_emu_reader(void)
 					  "1801:000000,007301,001101,002111;"
 					  "0604:000000;"
 					  "2600:000000;"
-					  "FFFF:000000;"
 					  "0E00:000000;"
 					  "4AE1:000011,000014,0000FE;"
 					  "1010:000000;"
