@@ -111,22 +111,10 @@ static void refresh_entitlements(struct s_reader *rdr)
 
 	cs_clear_entitlement(rdr);
 
-	for (i = 0; i < CwKeys.keyCount; i++)
-	{
-		emu_add_entitlement(rdr, CwKeys.EmuKeys[i].provider >> 8, CwKeys.EmuKeys[i].provider & 0xFF,
-							CwKeys.EmuKeys[i].key, CwKeys.EmuKeys[i].keyName, CwKeys.EmuKeys[i].keyLength, 0);
-	}
-
 	for (i = 0; i < ViKeys.keyCount; i++)
 	{
-		emu_add_entitlement(rdr, 0x500, ViKeys.EmuKeys[i].provider, ViKeys.EmuKeys[i].key,
+		emu_add_entitlement(rdr, 0x0500, ViKeys.EmuKeys[i].provider, ViKeys.EmuKeys[i].key,
 							ViKeys.EmuKeys[i].keyName, ViKeys.EmuKeys[i].keyLength, 0);
-	}
-
-	for (i = 0; i < NagraKeys.keyCount; i++)
-	{
-		emu_add_entitlement(rdr, 0x1801, NagraKeys.EmuKeys[i].provider, NagraKeys.EmuKeys[i].key,
-							NagraKeys.EmuKeys[i].keyName, NagraKeys.EmuKeys[i].keyLength, 0);
 	}
 
 	for (i = 0; i < IrdetoKeys.keyCount; i++)
@@ -151,28 +139,40 @@ static void refresh_entitlements(struct s_reader *rdr)
 	emu_add_entitlement(rdr, 0x090F, 0, viasat_const, "00", 64, 1);
 	emu_add_entitlement(rdr, 0x093E, 0, viasat_const, "00", 64, 1);
 
-	for (i = 0; i < BissKeys.keyCount; i++)
+	for (i = 0; i < CwKeys.keyCount; i++)
 	{
-		emu_add_entitlement(rdr, 0x2600, BissKeys.EmuKeys[i].provider, BissKeys.EmuKeys[i].key,
-							BissKeys.EmuKeys[i].keyName, BissKeys.EmuKeys[i].keyLength, 0);
+		emu_add_entitlement(rdr, CwKeys.EmuKeys[i].provider >> 8, CwKeys.EmuKeys[i].provider & 0xFF,
+							CwKeys.EmuKeys[i].key, CwKeys.EmuKeys[i].keyName, CwKeys.EmuKeys[i].keyLength, 0);
 	}
-	
+
 	for (i = 0; i < PowervuKeys.keyCount; i++)
 	{
 		emu_add_entitlement(rdr, 0x0E00, PowervuKeys.EmuKeys[i].provider, PowervuKeys.EmuKeys[i].key,
 							PowervuKeys.EmuKeys[i].keyName, PowervuKeys.EmuKeys[i].keyLength, 0);
 	}
 
-	for (i = 0; i < DreKeys.keyCount; i++)
-	{
-		emu_add_entitlement(rdr, 0x4AE1, DreKeys.EmuKeys[i].provider, DreKeys.EmuKeys[i].key,
-							DreKeys.EmuKeys[i].keyName, DreKeys.EmuKeys[i].keyLength, 0);
-	}
-
 	for (i = 0; i < TandbergKeys.keyCount; i++)
 	{
 		emu_add_entitlement(rdr, 0x1010, TandbergKeys.EmuKeys[i].provider, TandbergKeys.EmuKeys[i].key,
 							TandbergKeys.EmuKeys[i].keyName, TandbergKeys.EmuKeys[i].keyLength, 0);
+	}
+
+	for (i = 0; i < NagraKeys.keyCount; i++)
+	{
+		emu_add_entitlement(rdr, 0x1801, NagraKeys.EmuKeys[i].provider, NagraKeys.EmuKeys[i].key,
+							NagraKeys.EmuKeys[i].keyName, NagraKeys.EmuKeys[i].keyLength, 0);
+	}
+
+	for (i = 0; i < BissKeys.keyCount; i++)
+	{
+		emu_add_entitlement(rdr, 0x2600, BissKeys.EmuKeys[i].provider, BissKeys.EmuKeys[i].key,
+							BissKeys.EmuKeys[i].keyName, BissKeys.EmuKeys[i].keyLength, 0);
+	}
+
+	for (i = 0; i < DreKeys.keyCount; i++)
+	{
+		emu_add_entitlement(rdr, 0x4AE1, DreKeys.EmuKeys[i].provider, DreKeys.EmuKeys[i].key,
+							DreKeys.EmuKeys[i].keyName, DreKeys.EmuKeys[i].keyLength, 0);
 	}
 }
 
