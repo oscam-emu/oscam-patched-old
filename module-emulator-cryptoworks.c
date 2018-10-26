@@ -298,18 +298,6 @@ static void CW_DEC_ENC(uint8_t *d, uint8_t *k, uint8_t a,uint8_t m)
 	}
 }
 
-static void Cryptoworks3DES(uint8_t *data, uint8_t *key)
-{
-	uint32_t ks1[32], ks2[32];
-	
-	des_set_key(key, ks1);
-	des_set_key(key+8, ks2);
-	
-	des(data, ks1, 0);
-	des(data, ks2, 1);
-	des(data, ks1, 0);
-}
-
 static uint8_t CryptoworksProcessNano80(uint8_t *data, uint32_t caid, int32_t provider, uint8_t *opKey, uint8_t nanoLength, uint8_t nano80Algo)
 {
 	int32_t i, j;
@@ -334,7 +322,7 @@ static uint8_t CryptoworksProcessNano80(uint8_t *data, uint32_t caid, int32_t pr
 	else {
 		memcpy(key, opKey, 16);
 	}
-	Cryptoworks3DES(data, key);
+	_3DES(data, key);
 	memcpy(desKey, data, 8);
 
 	memcpy(data, dat1, 8);
@@ -346,14 +334,14 @@ static uint8_t CryptoworksProcessNano80(uint8_t *data, uint32_t caid, int32_t pr
 		memcpy(key, &opKey[8], 8);
 		memcpy(&key[8], opKey, 8);
 	}
-	Cryptoworks3DES(data, key);
+	_3DES(data, key);
 	memcpy(&desKey[8], data, 8);
 
 	for(i=8; i+7<nanoLength; i+=8) {
 		memcpy(dat1, &data[i], 8);
 		memcpy(dat2, dat1, 8);
 		memcpy(key, desKey, 16);
-		Cryptoworks3DES(dat1, key);
+		_3DES(dat1, key);
 		for(j=0; j<8; j++) {
 			dat1[j] ^= t[j];
 		}
