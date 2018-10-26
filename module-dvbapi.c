@@ -1479,7 +1479,6 @@ void dvbapi_start_emm_filter(int32_t demux_index)
 				{
 					csystem = get_cardsystem_by_caid(caid);	
 				}
-				
 				if(csystem)
 				{
 					if(caid != ncaid)
@@ -4444,8 +4443,9 @@ void dvbapi_process_input(int32_t demux_id, int32_t filter_num, uchar *buffer, i
 				
 				if(sctlen - 11 > buffer[9])
 				{
-					if(buffer[11 + buffer[9]] > curpid->pvu_counter || (curpid->pvu_counter == 255 && buffer[11 + buffer[9]] == 0)
-							|| ((curpid->pvu_counter - buffer[11 + buffer[9]]) > 5))
+					if(buffer[11 + buffer[9]] > curpid->pvu_counter
+						|| (curpid->pvu_counter == 255 && buffer[11 + buffer[9]] == 0)
+						|| ((curpid->pvu_counter - buffer[11 + buffer[9]]) > 5))
 					{
 						curpid->pvu_counter = buffer[11 + buffer[9]];
 						pvu_skip = 0;

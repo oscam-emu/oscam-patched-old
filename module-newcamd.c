@@ -961,7 +961,6 @@ static int8_t newcamd_auth_client(IN_ADDR_T ip, uint8_t *deskey)
 				mbuf[10] = aureader->dre36_force_group;
 			}
 #endif
-
 			mbuf[14] = pufilt->nprids;
 			for(j = 0; j < pufilt->nprids; j++)
 			{
@@ -1038,7 +1037,6 @@ static int8_t newcamd_auth_client(IN_ADDR_T ip, uint8_t *deskey)
 						}
 					}
 #endif
-					
 					if(!found)
 					{
 						mbuf[22 + 11 * j] = 0x00;

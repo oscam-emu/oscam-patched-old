@@ -143,7 +143,7 @@ void cardreader_poll_status(struct s_reader *reader)
 static int32_t reader_get_cardsystem(struct s_reader *reader, ATR *atr)
 {
 	int32_t i;
-	
+
 #ifdef WITH_EMU
 	if(reader->typ == R_EMU)
 	{
@@ -155,7 +155,7 @@ static int32_t reader_get_cardsystem(struct s_reader *reader, ATR *atr)
 		return (reader->csystem_active);
 	}
 #endif
-	
+
 	for(i = 0; cardsystems[i]; i++)
 	{
 		NULLFREE(reader->csystem_data);

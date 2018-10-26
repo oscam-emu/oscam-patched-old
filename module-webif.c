@@ -4544,7 +4544,8 @@ static char *send_oscam_entitlement(struct templatevars *vars, struct uriparams 
 					while((item = ll_iter_next(&itr)))
 					{
 #ifdef WITH_EMU
-						if(item->isKey) {
+						if(item->isKey)
+						{
 							tpl_addVar(vars, TPLADD, "ENTSTARTDATE", "");
 							tpl_addVar(vars, TPLADD, "ENTENDDATE", "");
 							cs_hexdump(0, item->key, item->keyLength, keyBuffer, sizeof(keyBuffer));
@@ -5059,7 +5060,7 @@ static char *send_oscam_status(struct templatevars * vars, struct uriparams * pa
 						filtered = (type == cl->typ);
 #endif
 #ifdef WITH_EMU
-                        if(type == 'e' && cl->typ == 'r' && cl->reader->typ == R_EMU) filtered = 1;
+						if(type == 'e' && cl->typ == 'r' && cl->reader->typ == R_EMU) filtered = 1;
 #endif
 					}
 				}
