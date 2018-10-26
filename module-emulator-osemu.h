@@ -51,7 +51,6 @@ void read_emu_keymemory(struct s_reader *rdr);
 void read_emu_eebin(const char *path, const char *name);
 void read_emu_deskey(uint8_t *dreOverKey, uint8_t len);
 
-uint32_t GetOSemuVersion(void);
 extern uint16_t GetEcmLen(const uint8_t *ecm);
 int8_t isValidDCW(uint8_t *dw);
 int8_t CharToBin(uint8_t *out, const char *in, uint32_t inLen);

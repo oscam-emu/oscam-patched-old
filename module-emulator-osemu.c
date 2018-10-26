@@ -18,13 +18,6 @@
 #include "module-emulator-viaccess.h"
 #include "module-emulator-videoguard.h"
 
-// Version info
-
-uint32_t GetOSemuVersion(void)
-{
-	return atoi("$Version: 775 $" + 10);
-}
-
 // Shared functions
 
 inline uint16_t GetEcmLen(const uint8_t *ecm)
@@ -34,14 +27,14 @@ inline uint16_t GetEcmLen(const uint8_t *ecm)
 
 int8_t isValidDCW(uint8_t *dw)
 {
-	if (((dw[0] + dw[1] + dw[2]) & 0xFF) != dw[3])
-	{
-		return 0;
-	}
+	uint8_t i;
 
-	if (((dw[4] + dw[5] + dw[6]) & 0xFF) != dw[7])
+	for (i = 0; i < 8; i+= 4)
 	{
-		return 0;
+		if (((dw[i] + dw[i + 1] + dw[i + 2]) & 0xFF) != dw[i + 3])
+		{
+			return 0;
+		}
 	}
 
 	return 1;
