@@ -391,12 +391,12 @@ typedef unsigned char uchar;
 // Support for multiple CWs per channel and other encryption algos
 #define WITH_EXTENDED_CW 1
 
-#if defined(READER_DRE) || defined(READER_DRECAS) || defined(READER_VIACCESS)
+#if defined(READER_DRE) || defined(READER_DRECAS) || defined(READER_VIACCESS) || defined(WITH_EMU)
 #define MAX_ECM_SIZE 1024
 #define MAX_EMM_SIZE 1024
 #else
-#define MAX_ECM_SIZE 1024
-#define MAX_EMM_SIZE 1024
+#define MAX_ECM_SIZE 596
+#define MAX_EMM_SIZE 512
 #endif
 
 #define CS_EMMCACHESIZE  1024 //nr of EMMs that each reader will cache
@@ -431,7 +431,7 @@ typedef unsigned char uchar;
 #define R_SMART     0x7 // Smartreader+
 #define R_PCSC      0x8 // PCSC
 #define R_DRECAS    0x9 // Reader DRECAS
-#define R_EMU       0x17 // Reader EMU
+#define R_EMU       0x17  // Reader EMU
 /////////////////// proxy readers after R_CS378X
 #define R_CAMD35    0x20  // Reader cascading camd 3.5x
 #define R_CAMD33    0x21  // Reader cascading camd 3.3x
@@ -2444,10 +2444,8 @@ static inline bool caid_is_viaccess(uint16_t caid) { return caid >> 8 == 0x05; }
 static inline bool caid_is_irdeto(uint16_t caid) { return caid >> 8 == 0x06; }
 static inline bool caid_is_videoguard(uint16_t caid) { return caid >> 8 == 0x09; }
 static inline bool caid_is_cryptoworks(uint16_t caid) { return caid >> 8 == 0x0D; }
-#ifdef WITH_EMU
 static inline bool caid_is_powervu(uint16_t caid) { return caid >> 8 == 0x0E; }
 static inline bool caid_is_director(uint16_t caid) { return caid >> 8 == 0x10; }
-#endif
 static inline bool caid_is_betacrypt(uint16_t caid) { return caid >> 8 == 0x17; }
 static inline bool caid_is_nagra(uint16_t caid) { return caid >> 8 == 0x18; }
 static inline bool caid_is_bulcrypt(uint16_t caid) { return caid == 0x5581 || caid == 0x4AEE; }

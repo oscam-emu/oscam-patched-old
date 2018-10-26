@@ -41,6 +41,7 @@ static int8_t cs_emmlen_is_blocked(struct s_reader *rdr, int16_t len)
 static int8_t do_simple_emm_filter(struct s_reader *rdr, const struct s_cardsystem *csystem, EMM_PACKET *ep, int8_t cl_dvbapi)
 {
 	if(is_network_reader(rdr)) { return 1; }  // dont evaluate on network readers, server with local reader will check it
+	if(rdr->typ == R_EMU) { return 1; } // don't evalutate on emu reader
 
 	//copied and enhanced from module-dvbapi.c
 	//dvbapi_start_emm_filter()
@@ -50,14 +51,7 @@ static int8_t do_simple_emm_filter(struct s_reader *rdr, const struct s_cardsyst
 	unsigned int j, filter_count = 0;
 
 	// Call cardsystems emm filter
-	if(rdr->typ == R_EMU)
-	{
-		return 1; //valid emm
-	}
-	else
-	{
-		csystem->get_emm_filter(rdr, &dmx_filter, &filter_count);
-	}
+	csystem->get_emm_filter(rdr, &dmx_filter, &filter_count);
 
 	// Only check matching emmtypes:
 	uint8_t org_emmtype;
