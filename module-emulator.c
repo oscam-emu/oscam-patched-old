@@ -831,7 +831,7 @@ void add_emu_reader(void)
 	struct s_reader *rdr;
 	int8_t haveEmuReader = 0;
 	char *emuName = "emulator";
-	char *ctab, *ftab, *emu_auproviders;
+	char *ctab, *ftab, *emu_auproviders, *disablecrccws_only_for;
 
 	// Check if emu [reader] entry already exists in oscam.server file and get it
 	itr = ll_iter_create(configured_readers);
@@ -895,6 +895,11 @@ void add_emu_reader(void)
 
 		// Add the "device" part to our emu reader
 		rdr->crdr = &cardreader_emu;
+
+		// Disable CW checksum test for PowerVu
+		disablecrccws_only_for = strdup("0E00:000000");
+		chk_ftab(disablecrccws_only_for, &rdr->disablecrccws_only_for);
+		NULLFREE(disablecrccws_only_for);
 
 		reader_fixups_fn(rdr);
 		ll_append(configured_readers, rdr);
