@@ -4551,12 +4551,7 @@ static char *send_oscam_entitlement(struct templatevars *vars, struct uriparams 
 							cs_hexdump(0, item->key, item->keyLength, keyBuffer, sizeof(keyBuffer));
 							tpl_addVar(vars, TPLADD, "ENTEXPIERED", "e_valid");
 							tpl_printf(vars, TPLADD, "ENTCAID", "%04X", item->caid);
-							if(item->caid == 0x2600) {
-								tpl_printf(vars, TPLADD, "ENTPROVID", "%08X", item->provid);
-							}
-							else {
-								tpl_printf(vars, TPLADD, "ENTPROVID", "%06X", item->provid);
-							}
+							tpl_printf(vars, TPLADD, "ENTPROVID", "%08X", item->provid);
 							tpl_addVar(vars, TPLADD, "ENTID", item->name);
 							tpl_addVar(vars, TPLADD, "ENTCLASS", keyBuffer);
 							if(item->isData) { tpl_addVar(vars, TPLADD, "ENTTYPE", "data"); }
