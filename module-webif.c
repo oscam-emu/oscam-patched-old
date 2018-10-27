@@ -3012,7 +3012,7 @@ static char *send_oscam_reader_stats(struct templatevars *vars, struct uriparams
 					if(rdr->typ == R_GBOX)
 						{ txt = "ONL w/crd"; }
 					else
-						{ txt = "CONNNECTED"; }
+						{ txt = "CONNECTED"; }
 				}
 			else
 				{ txt = "CARDOK"; }
@@ -5485,7 +5485,7 @@ static char *send_oscam_status(struct templatevars * vars, struct uriparams * pa
 										if(rdr->typ == R_GBOX)
 											{ txt = "ONL"; }
 										else
-											{ txt = "CONNNECTED"; }
+											{ txt = "CONNECTED"; }
 									}
 								else
 									{ txt = "CARDOK"; }
