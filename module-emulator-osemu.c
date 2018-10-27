@@ -958,11 +958,6 @@ int8_t ProcessECM(struct s_reader *rdr, int16_t ecmDataLen, uint16_t caid, uint3
 	else if (caid_is_nagra(caid))       result = Nagra2ECM(ecmCopy, dw);
 	else if (caid_is_biss(caid))        result = BissECM(rdr, ecm, ecmDataLen, dw, srvid, ecmpid);
 	else if (caid_is_dre(caid))         result = Drecrypt2ECM(provider, ecmCopy, dw);
-	else
-	{
-		result = 1;
-		cs_log("Ecm with caid 0x%04X is not supported", caid);
-	}
 
 	// fix dcw checksum
 	if(result == 0 && !caid_is_powervu(caid)) {
@@ -1023,11 +1018,6 @@ int8_t ProcessEMM(struct s_reader *rdr, uint16_t caid, uint32_t provider, const 
 	else if (caid_is_powervu(caid))  result = PowervuEMM(emmCopy, keysAdded);
 	else if (caid_is_director(caid)) result = TandbergEMM(emmCopy, keysAdded);
 	else if (caid_is_dre(caid))      result = Drecrypt2EMM(rdr, provider, emmCopy, keysAdded);
-	else
-	{
-		result = 1;
-		cs_log("Emm with caid 0x%04X is not supported", caid);
-	}
 
 	if(result != 0) {
 		cs_log_dbg(D_EMM,"EMM failed: %s", GetProcessEMMErrorReason(result));
