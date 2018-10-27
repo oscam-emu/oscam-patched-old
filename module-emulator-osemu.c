@@ -919,7 +919,7 @@ static const char* GetProcessECMErrorReason(int8_t result)
 int8_t ProcessECM(struct s_reader *rdr, int16_t ecmDataLen, uint16_t caid, uint32_t provider, const uint8_t *ecm,
 				  uint8_t *dw, uint16_t srvid, uint16_t ecmpid, EXTENDED_CW* cw_ex)
 {
-	int8_t result = 1, i;
+	int8_t result = 1;
 	uint8_t ecmCopy[EMU_MAX_ECM_LEN];
 	uint16_t ecmLen = 0;
 
@@ -958,13 +958,6 @@ int8_t ProcessECM(struct s_reader *rdr, int16_t ecmDataLen, uint16_t caid, uint3
 	else if (caid_is_nagra(caid))       result = Nagra2ECM(ecmCopy, dw);
 	else if (caid_is_biss(caid))        result = BissECM(rdr, ecm, ecmDataLen, dw, srvid, ecmpid);
 	else if (caid_is_dre(caid))         result = Drecrypt2ECM(provider, ecmCopy, dw);
-
-	// fix dcw checksum
-	if(result == 0 && !caid_is_powervu(caid)) {
-		for(i = 0; i < 16; i += 4) {
-			dw[i + 3] = ((dw[i] + dw[i + 1] + dw[i + 2]) & 0xff);
-		}
-	}
 
 	if(result != 0) {
 		cs_log("ECM failed: %s", GetProcessECMErrorReason(result));
