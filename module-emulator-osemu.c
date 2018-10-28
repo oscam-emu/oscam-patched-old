@@ -233,11 +233,11 @@ static void WriteKeyToFile(char identifier, uint32_t provider, const char *keyNa
 
 	if(comment)
 	{
-		snprintf(line, sizeof(line), "\n%c %.4X %s %s ; added by OSEmu %s %s\n", identifier, provider, keyName, keyValue, dateText, comment);
+		snprintf(line, sizeof(line), "\n%c %.4X %s %s ; added by OSEmu %s %s", identifier, provider, keyName, keyValue, dateText, comment);
 	}
 	else
 	{
-		snprintf(line, sizeof(line), "\n%c %.4X %s %s ; added by OSEmu %s\n", identifier, provider, keyName, keyValue, dateText);
+		snprintf(line, sizeof(line), "\n%c %.4X %s %s ; added by OSEmu %s", identifier, provider, keyName, keyValue, dateText);
 	}
 	
 	cs_log("Key written: %c %.4X %s %s", identifier, provider, keyName, keyValue);
