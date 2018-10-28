@@ -724,7 +724,7 @@ static int32_t emu_get_emm_filter_adv(struct s_reader *rdr, struct s_csystem_emm
 const struct s_cardsystem reader_emu =
 {
 	.desc = "emu",
-	.caids = (uint16_t[]){ 0x0D, 0x09, 0x0500, 0x18, 0x06, 0x26, 0x0E, 0x4A, 0x10, 0 },
+	.caids = (uint16_t[]){ 0x05, 0x06, 0x09, 0x0D, 0x0E, 0x10, 0x18, 0x26, 0x4A, 0 },
 	.do_ecm = emu_do_ecm,
 	.do_emm = emu_do_emm,
 	.card_info = emu_card_info,
@@ -862,25 +862,25 @@ void add_emu_reader(void)
 		strncpy(rdr->device, emuName, strlen(emuName));
 
 		// CAIDs
-		ctab = strdup("090F,0500,1801,0604,2600,0E00,4AE1,1010");
+		ctab = strdup("0500,0604,090F,0E00,1010,1801,2600,4AE1");
 		chk_caidtab(ctab, &rdr->ctab);
 		NULLFREE(ctab);
 
 		// Idents
-		ftab = strdup("090F:000000;"
-					  "0500:000000,023800,021110,007400,007800;"
-					  "1801:000000,007301,001101,002111;"
+		ftab = strdup("0500:000000,007400,007800,021110,023800;"
 					  "0604:000000;"
-					  "2600:000000;"
+					  "090F:000000;"
 					  "0E00:000000;"
-					  "4AE1:000011,000014,0000FE;"
 					  "1010:000000;"
+					  "1801:000000,001101,002111,007301;"
+					  "2600:000000;"
+					  "4AE1:000011,000014,0000FE;"
 					 );
 		chk_ftab(ftab, &rdr->ftab);
 		NULLFREE(ftab);
 
 		// AU providers
-		emu_auproviders = strdup("0604:010200;0E00:000000;4AE1:000011,000014,0000FE;1010:000000;");
+		emu_auproviders = strdup("0604:010200;0E00:000000;1010:000000;4AE1:000011,000014,0000FE;");
 		chk_ftab(emu_auproviders, &rdr->emu_auproviders);
 		NULLFREE(emu_auproviders);
 
