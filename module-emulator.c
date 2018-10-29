@@ -176,7 +176,7 @@ static void refresh_entitlements(struct s_reader *rdr)
 	}
 }
 
-static int32_t emu_do_ecm(struct s_reader *rdr, const struct ecm_request_t *er, struct s_ecm_answer *ea)
+static int32_t emu_do_ecm(struct s_reader *rdr, const ECM_REQUEST *er, struct s_ecm_answer *ea)
 {
 
 	if (!ProcessECM(rdr, er->ecmlen, er->caid, er->prid, er->ecm, ea->cw, er->srvid, er->pid, &ea->cw_ex))
@@ -187,7 +187,7 @@ static int32_t emu_do_ecm(struct s_reader *rdr, const struct ecm_request_t *er, 
 	return CS_ERROR;
 }
 
-static int32_t emu_do_emm(struct s_reader *rdr, struct emm_packet_t *emm)
+static int32_t emu_do_emm(struct s_reader *rdr, EMM_PACKET *emm)
 {
 	uint32_t keysAdded = 0;
 
