@@ -953,7 +953,7 @@ int8_t ProcessECM(struct s_reader *rdr, int16_t ecmDataLen, uint16_t caid, uint3
 	else if (caid_is_powervu(caid))     result = PowervuECM(ecmCopy, dw, srvid, NULL, cw_ex);
 	else if (caid_is_director(caid))    result = TandbergECM(ecmCopy, dw);
 	else if (caid_is_nagra(caid))       result = Nagra2ECM(ecmCopy, dw);
-	else if (caid_is_biss(caid))        result = BissECM(rdr, ecm, ecmDataLen, dw, srvid, ecmpid);
+	else if (caid_is_biss(caid))        result = BissECM(rdr, ecm, dw, srvid, ecmpid);
 	else if (caid_is_dre(caid))         result = Drecrypt2ECM(provider, ecmCopy, dw);
 
 	if (result != 0)

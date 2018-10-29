@@ -337,7 +337,7 @@ static int8_t BissGetKey(uint32_t provider, uint8_t *key, int8_t dateCoded, int8
 	}
 }
 
-int8_t BissECM(struct s_reader *rdr, const uint8_t *ecm, int16_t ecmDataLen, uint8_t *dw, uint16_t srvid, uint16_t ecmpid)
+int8_t BissECM(struct s_reader *rdr, const uint8_t *ecm, uint8_t *dw, uint16_t srvid, uint16_t ecmpid)
 {
 	// Oscam's fake ecm consists of [sid] [pmtpid] [pid1] [pid2] ... [pidx] [tsid] [onid] [namespace]
 	//
@@ -370,18 +370,13 @@ int8_t BissECM(struct s_reader *rdr, const uint8_t *ecm, int16_t ecmDataLen, uin
 	// date has passed, the key is not sent from BissGetKey(). This search method is only
 	// used in the namespace hash, universal hash and the default "All Feeds" key.
 
-	uint8_t ecmCopy[EMU_MAX_ECM_LEN];
-	uint16_t ecmLen = 0, pid = 0;
 	uint32_t i, ens = 0, hash = 0;
+	uint16_t pid = 0, ecmLen = GetEcmLen(ecm);
+	uint8_t ecmCopy[ecmLen];
 	char tmpBuffer1[17], tmpBuffer2[90] = "0", tmpBuffer3[90] = "0";
 
-	if (ecmDataLen >= 3)
-	{
-		ecmLen = GetEcmLen(ecm);
-	}
-
 	// First try using the unique namespace hash (enigma only)
-	if (ecmLen >= 13 && ecmLen <= ecmDataLen) // ecmLen >= 13, allow patching the ecmLen for r749 ecms
+	if (ecmLen >= 13) // ecmLen >= 13, allow patching the ecmLen for r749 ecms
 	{
 		memcpy(ecmCopy, ecm, ecmLen);
 		ens = b2i(4, ecm + ecmLen - 4); // Namespace will be the last 4 bytes
@@ -429,12 +424,11 @@ int8_t BissECM(struct s_reader *rdr, const uint8_t *ecm, int16_t ecmDataLen, uin
 			cs_log("Hey! Network buddy, you need to upgrade your OSCam-Emu");
 			ecmCopy[ecmLen] = 0xA0; // Patch ecm to look like r752+
 			ecmLen += 4;
-			ecmDataLen += 4;
 		}
 	}
 
 	// Try using the universal channel hash (namespace not available)
-	if (ecmLen >= 17 && ecmLen <= ecmDataLen) // ecmLen >= 17, length of r749 ecms has been patched to match r752+ ecms
+	if (ecmLen >= 17) // ecmLen >= 17, length of r749 ecms has been patched to match r752+ ecms
 	{
 		ens = b2i(4, ecmCopy + ecmLen - 4); // Namespace will be last 4 bytes
 
@@ -455,7 +449,7 @@ int8_t BissECM(struct s_reader *rdr, const uint8_t *ecm, int16_t ecmDataLen, uin
 	}
 
 	// Try using only [tsid][onid] (useful when many channels on a transpoder use the same key)
-	if (ecmLen >= 17 && ecmLen <= ecmDataLen) // ecmLen >= 17, length of r749 ecms has been patched to match r752+ ecms
+	if (ecmLen >= 17) // ecmLen >= 17, length of r749 ecms has been patched to match r752+ ecms
 	{
 		ens = b2i(4, ecmCopy + ecmLen - 4); // Namespace will be last 4 bytes
 
@@ -469,7 +463,6 @@ int8_t BissECM(struct s_reader *rdr, const uint8_t *ecm, int16_t ecmDataLen, uin
 		if ((ens & 0xE0000000) == 0xA0000000) // Strip [tsid] [onid] [namespace] on r752+ ecms
 		{
 			ecmLen -= 8;
-			ecmDataLen -= 8;
 		}
 	}
 
@@ -484,7 +477,7 @@ int8_t BissECM(struct s_reader *rdr, const uint8_t *ecm, int16_t ecmDataLen, uin
 	}
 
 	// Try to get the pid from oscam's fake ecm (only search [pid1] [pid2] ... [pidx] to be compatible with emu r748-)
-	if (ecmLen >= 7 && ecmLen <= ecmDataLen) // Use >= for radio channels with just one (audio) pid
+	if (ecmLen >= 7) // Use >= 7 for radio channels with just one (audio) pid
 	{
 		// Reverse search order: last pid in list first
 		// Better identifies channels where they share identical video pid but have variable counts of audio pids
