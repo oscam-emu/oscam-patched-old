@@ -916,22 +916,19 @@ static const char* GetProcessECMErrorReason(int8_t result)
 8  ECM checksum error
 9  ICG error
 */
-int8_t ProcessECM(struct s_reader *rdr, int16_t ecmDataLen, uint16_t caid, uint32_t provider, const uint8_t *ecm,
-				  uint8_t *dw, uint16_t srvid, uint16_t ecmpid, EXTENDED_CW* cw_ex)
-{
-	int8_t result = 1;
-	uint8_t ecmCopy[EMU_MAX_ECM_LEN];
-	uint16_t ecmLen = 0;
 
-	if(ecmDataLen < 3) {
-		// accept requests without ecm only for biss
-		if(!caid_is_biss(caid)) {
-			return 1;
-		}
+int8_t ProcessECM(struct s_reader *rdr, int16_t ecmDataLen, uint16_t caid, uint32_t provider,
+				const uint8_t *ecm, uint8_t *dw, uint16_t srvid, uint16_t ecmpid, EXTENDED_CW* cw_ex)
+{
+	if (ecmDataLen < 3)
+	{
+		cs_log_dbg(D_TRACE, "Received ecm data of zero length!");
+		return 4;
 	}
-	else {
-		ecmLen = GetEcmLen(ecm);
-	}
+
+	uint16_t ecmLen = GetEcmLen(ecm);
+	uint8_t ecmCopy[ecmLen];
+	int8_t result = 1;
 
 	if (ecmLen != ecmDataLen)
 	{
@@ -959,7 +956,8 @@ int8_t ProcessECM(struct s_reader *rdr, int16_t ecmDataLen, uint16_t caid, uint3
 	else if (caid_is_biss(caid))        result = BissECM(rdr, ecm, ecmDataLen, dw, srvid, ecmpid);
 	else if (caid_is_dre(caid))         result = Drecrypt2ECM(provider, ecmCopy, dw);
 
-	if(result != 0) {
+	if (result != 0)
+	{
 		cs_log("ECM failed: %s", GetProcessECMErrorReason(result));
 	}
 
