@@ -376,10 +376,12 @@ static int8_t TandbergParseEMMNanoTags(uint8_t* data, uint32_t length, uint8_t k
 						
 						blockIndex = tagData[1] & 0x03;
 						
+						SAFE_MUTEX_LOCK(&emu_key_data_mutex);
 						for(i = 0; i < 0x10; i++)
 						{
 							SetKey('T', (blockIndex << 4) + i, "MK01", tagDataDecrypted[i], 8, 0, NULL, NULL);
 						}
+						SAFE_MUTEX_UNLOCK(&emu_key_data_mutex);
 					}
 					break;
 					
@@ -405,10 +407,12 @@ static int8_t TandbergParseEMMNanoTags(uint8_t* data, uint32_t length, uint8_t k
 							des(tagData + 2 + (i*8), ks, 0);
 						}
 						
+						SAFE_MUTEX_LOCK(&emu_key_data_mutex);
 						for(i = 0; i < 0x10; i++)
 						{
 							SetKey('T', (blockIndex << 4) + i, "MK", tagData + 2 + (i*8), 8, 0, NULL, NULL);
 						}
+						SAFE_MUTEX_UNLOCK(&emu_key_data_mutex);
 					}
 					break;
 					
@@ -448,12 +452,14 @@ static int8_t TandbergParseEMMNanoTags(uint8_t* data, uint32_t length, uint8_t k
 							break;
 						}
 						
+						SAFE_MUTEX_LOCK(&emu_key_data_mutex);
 						if(UpdateKey('T', entitlementId, "01", tagData + 4 + 5, 8, 1, NULL))
 						{
 							(*keysAdded)++;
 							cs_hexdump(0, tagData + 4 + 5, 8, keyValue, sizeof(keyValue));
 							cs_log("Key found in EMM: T %.8X 01 %s", entitlementId, keyValue);
 						}
+						SAFE_MUTEX_UNLOCK(&emu_key_data_mutex);
 					}
 					break;
 					
@@ -480,12 +486,14 @@ static int8_t TandbergParseEMMNanoTags(uint8_t* data, uint32_t length, uint8_t k
 							break;
 						}
 						
+						SAFE_MUTEX_LOCK(&emu_key_data_mutex);
 						if(UpdateKey('T', entitlementId, "01", ecmKey, 8, 1, NULL))
 						{
 							(*keysAdded)++;
 							cs_hexdump(0, ecmKey, 8, keyValue, sizeof(keyValue));
 							cs_log("Key found in EMM: T %.8X 01 %s", entitlementId, keyValue);
 						}
+						SAFE_MUTEX_UNLOCK(&emu_key_data_mutex);
 					}
 					break;
 					

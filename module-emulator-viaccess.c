@@ -858,6 +858,7 @@ int8_t ViaccessEMM(uint8_t *emm, uint32_t *keysAdded)
 
 			if(haveNewD0) {
 				
+				SAFE_MUTEX_LOCK(&emu_key_data_mutex);
 				SetKey('V', ecmProvider, "D0", keyD0, 2, 1, NULL, NULL);
 				
 				for(j=0; j<ecmKeyCount; j++) {
@@ -869,6 +870,8 @@ int8_t ViaccessEMM(uint8_t *emm, uint32_t *keysAdded)
 					cs_hexdump(0, ecmKeys[j], 16, keyValue, sizeof(keyValue));
 					cs_log("Key found in EMM: V %06X %s %s", ecmProvider, keyName, keyValue);
 				}
+
+				SAFE_MUTEX_UNLOCK(&emu_key_data_mutex);
 			}
 			break;
 		}

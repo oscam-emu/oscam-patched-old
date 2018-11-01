@@ -39,6 +39,8 @@
 #define CS_ERROR  0
 
 extern char cs_confdir[128];
+static int8_t emu_key_data_mutex_init = 0;
+pthread_mutex_t emu_key_data_mutex;
 
 // Version info
 
@@ -216,6 +218,8 @@ static int32_t emu_do_emm(struct s_reader *rdr, EMM_PACKET *emm)
 
 static int32_t emu_card_info(struct s_reader *rdr)
 {
+	SAFE_MUTEX_LOCK(&emu_key_data_mutex);
+
 	// Delete keys from Emu's memory
 	clear_emu_keydata();
 
@@ -248,6 +252,8 @@ static int32_t emu_card_info(struct s_reader *rdr)
 	// Inform OSCam about all available keys.
 	// This is used for listing the "entitlements" in the webif's reader page.
 	refresh_entitlements(rdr);
+
+	SAFE_MUTEX_UNLOCK(&emu_key_data_mutex);
 
 	set_prids(rdr);
 
@@ -785,6 +791,13 @@ static int32_t emu_reader_init(struct s_reader *UNUSED(reader))
 		cs_log("Stream relay server initialized");
 	}
 
+	// Initialize mutex for exclusive access to key database and key file
+	if (!emu_key_data_mutex_init)
+	{
+		SAFE_MUTEX_INIT(&emu_key_data_mutex, NULL);
+		emu_key_data_mutex_init = 1;
+	}
+
 	return CR_OK;
 }
 
@@ -793,7 +806,9 @@ static int32_t emu_close(struct s_reader *UNUSED(reader))
 	cs_log("Reader is shutting down");
 
 	// Delete keys from Emu's memory
+	SAFE_MUTEX_LOCK(&emu_key_data_mutex);
 	clear_emu_keydata();
+	SAFE_MUTEX_UNLOCK(&emu_key_data_mutex);
 
 	return CR_OK;
 }

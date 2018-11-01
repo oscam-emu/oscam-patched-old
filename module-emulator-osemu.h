@@ -39,6 +39,7 @@ extern KeyDataContainer DreKeys;
 extern KeyDataContainer TandbergKeys;
 extern uint8_t viasat_const[];
 extern char *emu_keyfile_path;
+extern pthread_mutex_t emu_key_data_mutex;
 
 void set_emu_keyfile_path(const char *path);
 void clear_emu_keydata(void);

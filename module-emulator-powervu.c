@@ -1710,6 +1710,8 @@ static int32_t UpdateKeysByProviderMask(char identifier, uint32_t provider, uint
 		return 0;
 	}
 	
+	SAFE_MUTEX_LOCK(&emu_key_data_mutex);
+
 	while(FindKey(identifier, (provider & ~providerIgnoreMask), providerIgnoreMask, keyName, tmpKey, keyLength, 0, keyRef, 0, &foundProvider))
 	{
 		keyRef++;
@@ -1724,6 +1726,8 @@ static int32_t UpdateKeysByProviderMask(char identifier, uint32_t provider, uint
 			ret = 1;
 		}
 	}
+
+	SAFE_MUTEX_UNLOCK(&emu_key_data_mutex);
 
 	free(tmpKey);
 	return ret;

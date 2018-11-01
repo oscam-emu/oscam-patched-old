@@ -258,7 +258,9 @@ static int8_t Irdeto2DoEMMTypeOP(uint32_t ident, uint8_t *emm, uint8_t *keySeed,
 				if(l==0x13 && i<=startOffset+length-9-l) {
 					
 					snprintf(keyName, EMU_MAX_CHAR_KEYNAME, "%02X", emm[i+2]>>2);
+					SAFE_MUTEX_LOCK(&emu_key_data_mutex);
 					SetKey('I', ident, keyName, &emm[i+3], 16, 1, NULL, NULL);
+					SAFE_MUTEX_UNLOCK(&emu_key_data_mutex);
 					
 					(*keysAdded)++;
 					cs_hexdump(0, &emm[i+3], 16, keyValue, sizeof(keyValue));
@@ -324,7 +326,9 @@ static int8_t Irdeto2DoEMMTypePMK(uint32_t ident, uint8_t *emm, uint8_t *keySeed
 					for(j=0; j<2; j++) {
 						
 						snprintf(keyName, EMU_MAX_CHAR_KEYNAME, "M%01X", 3+j);
+						SAFE_MUTEX_LOCK(&emu_key_data_mutex);
 						SetKey('I', ident, keyName, &emm[i+3+j*16], 16, 1, NULL, NULL);
+						SAFE_MUTEX_UNLOCK(&emu_key_data_mutex);
 						
 						(*keysAdded)++;
 						cs_hexdump(0, &emm[i+3+j*16], 16, keyValue, sizeof(keyValue));

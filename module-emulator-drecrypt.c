@@ -388,7 +388,9 @@ static int8_t DrecryptProcessEMM(struct s_reader *rdr, uint32_t provId, uint8_t 
 	if (memcmp(&emm[key1offset], emm[keyidx] == 0x3b ? curECMkey3B : curECMkey56, 32) != 0)
 	{
 		memcpy(emm[keyidx] == 0x3b ? curECMkey3B : curECMkey56, &emm[key1offset], 32);
+		SAFE_MUTEX_LOCK(&emu_key_data_mutex);
 		SetKey('D', keyIdent, newKeyName, &emm[key1offset], 32, 0, NULL, NULL);
+		SAFE_MUTEX_UNLOCK(&emu_key_data_mutex);
 		(*keysAdded)++;
 
 		cs_hexdump(0, &emm[key1offset], 32, keyValue, sizeof(keyValue));
@@ -406,7 +408,9 @@ static int8_t DrecryptProcessEMM(struct s_reader *rdr, uint32_t provId, uint8_t 
 	if (memcmp(&emm[key2offset], emm[keyidx] == 0x3b ? curECMkey56 : curECMkey3B, 32) != 0)
 	{
 		memcpy(emm[keyidx] == 0x3b ? curECMkey56 : curECMkey3B, &emm[key2offset], 32);
+		SAFE_MUTEX_LOCK(&emu_key_data_mutex);
 		SetKey('D', keyIdent, newKeyName, &emm[key2offset], 32, 0, NULL, NULL);
+		SAFE_MUTEX_UNLOCK(&emu_key_data_mutex);
 		(*keysAdded)++;
 
 		cs_hexdump(0, &emm[key2offset], 32, keyValue, sizeof(keyValue));
