@@ -117,18 +117,19 @@ int8_t TandbergECM(uint8_t *ecm, uint8_t *dw)
 					dw[0] = encryptedData[0x05];
 					dw[1] = encryptedData[0x19];
 					dw[2] = encryptedData[0x1D];
-
+					dw[3] = (dw[0] + dw[1] + dw[2]) & 0xFF;
 					dw[4] = encryptedData[0x0B];
 					dw[5] = encryptedData[0x12];
 					dw[6] = encryptedData[0x1A];
-
+					dw[7] = (dw[4] + dw[5] + dw[6]) & 0xFF;
 					dw[8] = encryptedData[0x16];
 					dw[9] = encryptedData[0x03];
 					dw[10] = encryptedData[0x11];
-
+					dw[11] = (dw[8] + dw[9] + dw[10]) & 0xFF;
 					dw[12] = encryptedData[0x18];
 					dw[13] = encryptedData[0x10];
 					dw[14] = encryptedData[0x0E];
+					dw[15] = (dw[12] + dw[13] + dw[14]) & 0xFF;
 
 					return 0;
 				}
@@ -207,16 +208,20 @@ int8_t TandbergECM(uint8_t *ecm, uint8_t *dw)
 				dw[0] = encryptedData[0x05];
 				dw[1] = encryptedData[0x19];
 				dw[2] = encryptedData[0x1D];
+				dw[3] = (dw[0] + dw[1] + dw[2]) & 0xFF;
 				dw[4] = encryptedData[0x0B];
 				dw[5] = encryptedData[0x12];
 				dw[6] = encryptedData[0x1A];
+				dw[7] = (dw[4] + dw[5] + dw[6]) & 0xFF;
 				dw[8] = encryptedData[0x16];
 				dw[9] = encryptedData[0x03];
 				dw[10] = encryptedData[0x11];
+				dw[11] = (dw[8] + dw[9] + dw[10]) & 0xFF;
 				dw[12] = encryptedData[0x18];
 				dw[13] = encryptedData[0x10];
 				dw[14] = encryptedData[0x0E];
-				
+				dw[15] = (dw[12] + dw[13] + dw[14]) & 0xFF;
+
 				return 0;
 			}
 			
