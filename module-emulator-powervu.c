@@ -368,8 +368,10 @@ uint16_t table0F[] = { 0x45C7, 0x7115, 0x0761, 0x4705 };
 uint16_t table10[] = { 0x470F, 0x6C2B, 0x0FAD, 0xEAB3 };
 uint16_t table11[] = { 0x46B1, 0x66D1, 0x285D, 0xD259 };
 uint16_t table12[] = { 0x4B0B, 0x68D7, 0xAD5F, 0xBB4B };
+uint16_t table13[] = { 0x4E4F, 0x6AE1, 0xD321, 0xA6F7 };
+uint16_t table14[] = { 0x39DD, 0x65B9, 0x9103, 0xACF1 };
 
-static void PowervuHashModes0Fto13Tables(uint8_t *data, uint8_t *hash, uint16_t *table)
+static void PowervuHashModes0Fto14Tables(uint8_t *data, uint8_t *hash, uint16_t *table)
 {
 	uint32_t i = 0, c = 0, d = 0;
 	uint32_t h[4] = { 0, 0, 0, 0 };
@@ -456,19 +458,27 @@ static void PowervuCreateHash(uint8_t *data, int len, uint8_t *hash, int mode)
 			break;
 
 		case 15:
-			PowervuHashModes0Fto13Tables(dataPadded, hash, table0F);
+			PowervuHashModes0Fto14Tables(dataPadded, hash, table0F);
 			break;
 
 		case 16:
-			PowervuHashModes0Fto13Tables(dataPadded, hash, table10);
+			PowervuHashModes0Fto14Tables(dataPadded, hash, table10);
 			break;
 
 		case 17:
-			PowervuHashModes0Fto13Tables(dataPadded, hash, table11);
+			PowervuHashModes0Fto14Tables(dataPadded, hash, table11);
 			break;
 
 		case 18:
-			PowervuHashModes0Fto13Tables(dataPadded, hash, table12);
+			PowervuHashModes0Fto14Tables(dataPadded, hash, table12);
+			break;
+
+		case 19:
+			PowervuHashModes0Fto14Tables(dataPadded, hash, table13);
+			break;
+
+		case 20:
+			PowervuHashModes0Fto14Tables(dataPadded, hash, table14);
 			break;
 
 		default:
