@@ -9,8 +9,11 @@
 #include "oscam-aes.h"
 #include "oscam-string.h"
 
-// Tandberg EMU
-static uint16_t TandbergChecksum(uint8_t *data, uint8_t length)
+/*************************************************************************************************/
+
+// Shared functions
+
+static uint16_t DirectorChecksum(uint8_t *data, uint8_t length)
 {
 	// ECM and EMM checksum calculation
 	// 1. Combine data in 2 byte groups
@@ -32,7 +35,7 @@ static uint16_t TandbergChecksum(uint8_t *data, uint8_t length)
 	return checksum;
 }
 
-static int8_t GetTandbergKey(uint32_t keyIndex, char *keyName, uint8_t *key, uint32_t keyLength)
+static int8_t DirectorGetKey(uint32_t keyIndex, char *keyName, uint8_t *key, uint32_t keyLength)
 {
 	// keyIndex: ecm keys --> entitlementId
 	//			 emm keys --> aeskeyIndex
@@ -45,7 +48,14 @@ static int8_t GetTandbergKey(uint32_t keyIndex, char *keyName, uint8_t *key, uin
 	return FindKey('T', keyIndex, 0, keyName, key, keyLength, 1, 0, 0, NULL);
 }
 
-int8_t TandbergECM(uint8_t *ecm, uint8_t *dw)
+/*************************************************************************************************/
+
+/*
+ * Director ECM emulator
+ * Supported versions: v4, v5, v6 (not working correctly)
+*/
+
+int8_t DirectorEcm(uint8_t *ecm, uint8_t *dw)
 {
 	uint8_t nanoType, nanoLength;
 	uint8_t* nanoData;
@@ -74,7 +84,7 @@ int8_t TandbergECM(uint8_t *ecm, uint8_t *dw)
 		
 		// ECM validation
 		uint16_t payloadChecksum = (nanoData[nanoLength - 2] << 8) | nanoData[nanoLength - 1];
-		uint16_t calculatedChecksum = TandbergChecksum(nanoData, nanoLength - 2);
+		uint16_t calculatedChecksum = DirectorChecksum(nanoData, nanoLength - 2);
 		
 		if(calculatedChecksum != payloadChecksum)
 		{
@@ -95,7 +105,7 @@ int8_t TandbergECM(uint8_t *ecm, uint8_t *dw)
 				
 				entitlementId = b2i(4, nanoData);
 				
-				if(!GetTandbergKey(entitlementId, "01", ecmKey, 8))
+				if(!DirectorGetKey(entitlementId, "01", ecmKey, 8))
 				{
 					return 2;
 				}
@@ -160,7 +170,7 @@ int8_t TandbergECM(uint8_t *ecm, uint8_t *dw)
 					uint8_t aesKeyIndex = nanoMode & 0x1F; // 32 possible AES keys
 					uint8_t aesKey[16] = { 0 };
 
-					if(!GetTandbergKey(aesKeyIndex, "AES", aesKey, 16))
+					if(!DirectorGetKey(aesKeyIndex, "AES", aesKey, 16))
 					{
 						return 2;
 					}
@@ -182,7 +192,7 @@ int8_t TandbergECM(uint8_t *ecm, uint8_t *dw)
 				}
 			}
 
-			case 0xED: // ECM_TAG_CW_DESCRIPTOR
+			case 0xED: // Director v5 (September 2016)
 			{
 				if(nanoLength != 0x26)
 				{
@@ -192,7 +202,7 @@ int8_t TandbergECM(uint8_t *ecm, uint8_t *dw)
 				
 				entitlementId = b2i(4, nanoData);
 				
-				if(!GetTandbergKey(entitlementId, "01", ecmKey, 8))
+				if(!DirectorGetKey(entitlementId, "01", ecmKey, 8))
 				{
 					return 2;
 				}
@@ -225,7 +235,7 @@ int8_t TandbergECM(uint8_t *ecm, uint8_t *dw)
 				return 0;
 			}
 			
-			case 0xEE: // ECM_TAG_CW_DESCRIPTOR
+			case 0xEE: // Director v4
 			{
 				if(nanoLength != 0x16)
 				{
@@ -235,7 +245,7 @@ int8_t TandbergECM(uint8_t *ecm, uint8_t *dw)
 				
 				entitlementId = b2i(4, nanoData);
 				
-				if(!GetTandbergKey(entitlementId, "01", ecmKey, 8))
+				if(!DirectorGetKey(entitlementId, "01", ecmKey, 8))
 				{
 					return 2;
 				}
@@ -265,7 +275,13 @@ int8_t TandbergECM(uint8_t *ecm, uint8_t *dw)
 	return 1;
 }
 
-// Tandberg EMM EMU
+/*************************************************************************************************/
+
+/*
+ * Director EMM emulator
+ * Supported versions: v4, v5, v6 (same as v5)
+*/
+
 static uint8_t MixTable[] =
 {
 	0x12,0x78,0x4B,0x19,0x13,0x80,0x2F,0x84,
@@ -286,7 +302,7 @@ static uint8_t MixTable[] =
 	0x48,0x66,0x73,0x14,0x0E,0x1D,0x62,0x1C
 };
 
-void TandbergRotateBytes(unsigned char *in, int n)
+void DirectorRotateBytes(unsigned char *in, int n)
 {
 	if(n > 1)
 	{
@@ -301,9 +317,9 @@ void TandbergRotateBytes(unsigned char *in, int n)
 	}
 }
 
-static void TandbergECMKeyDecrypt(uint8_t* emmKey, uint8_t* tagData, uint8_t* ecmKey)
+static void DirectorDecryptEcmKey(uint8_t* emmKey, uint8_t* tagData, uint8_t* ecmKey)
 {
-	TandbergRotateBytes(emmKey, 8);
+	DirectorRotateBytes(emmKey, 8);
 	uint8_t iv[8] = { 0 };
 	uint8_t* payLoad = tagData + 4 + 5;
 	des_cbc_decrypt(payLoad, iv, emmKey, 16);
@@ -318,7 +334,7 @@ static void TandbergECMKeyDecrypt(uint8_t* emmKey, uint8_t* tagData, uint8_t* ec
 	ecmKey[7] = payLoad[0x08];
 }
 
-static int8_t TandbergParseEMMNanoTags(uint8_t* data, uint32_t length, uint8_t keyIndex, uint32_t *keysAdded)
+static int8_t DirectorParseEmmNanoTags(uint8_t* data, uint32_t length, uint8_t keyIndex, uint32_t *keysAdded)
 {
 	uint8_t tagType, tagLength, blockIndex;
 	uint32_t pos = 0, entitlementId;
@@ -362,7 +378,7 @@ static int8_t TandbergParseEMMNanoTags(uint8_t* data, uint32_t length, uint8_t k
 							break;
 						}
 						
-						if(!GetTandbergKey(keyIndex, "MK01", emmKey, 8))
+						if(!DirectorGetKey(keyIndex, "MK01", emmKey, 8))
 						{
 							break;
 						}
@@ -400,7 +416,7 @@ static int8_t TandbergParseEMMNanoTags(uint8_t* data, uint32_t length, uint8_t k
 						
 						blockIndex = tagData[1] & 0x03;
 						
-						if(!GetTandbergKey(keyIndex, "MK", emmKey, 8))
+						if(!DirectorGetKey(keyIndex, "MK", emmKey, 8))
 						{
 							break;
 						}
@@ -444,7 +460,7 @@ static int8_t TandbergParseEMMNanoTags(uint8_t* data, uint32_t length, uint8_t k
 						
 						entitlementId = b2i(4, tagData);
 						
-						if(!GetTandbergKey(keyIndex, "MK", emmKey, 8))
+						if(!DirectorGetKey(keyIndex, "MK", emmKey, 8))
 						{
 							break;
 						}
@@ -478,13 +494,13 @@ static int8_t TandbergParseEMMNanoTags(uint8_t* data, uint32_t length, uint8_t k
 						
 						entitlementId = b2i(4, tagData);
 						
-						if(!GetTandbergKey(keyIndex, "MK01", emmKey, 8))
+						if(!DirectorGetKey(keyIndex, "MK01", emmKey, 8))
 						{
 							break;
 						}
 						
 						uint8_t ecmKey[8] = { 0 };
-						TandbergECMKeyDecrypt(emmKey, tagData, ecmKey);
+						DirectorDecryptEcmKey(emmKey, tagData, ecmKey);
 						
 						if(ecmKey[7] != 0x00) // check if key looks valid (last byte 0x00)
 						{
@@ -520,7 +536,7 @@ static int8_t TandbergParseEMMNanoTags(uint8_t* data, uint32_t length, uint8_t k
 	return 0;
 }
 
-static int8_t TandbergParseEMMNanoData(uint8_t* data, uint32_t* nanoLength, uint32_t maxLength, uint8_t keyIndex, uint32_t *keysAdded)
+static int8_t DirectorParseEmmNanoData(uint8_t* data, uint32_t* nanoLength, uint32_t maxLength, uint8_t keyIndex, uint32_t *keysAdded)
 {
 	uint32_t pos = 0;
 	uint16_t sectionLength;
@@ -540,7 +556,7 @@ static int8_t TandbergParseEMMNanoData(uint8_t* data, uint32_t* nanoLength, uint
 		return 1;
 	}
 		
-	ret = TandbergParseEMMNanoTags(data + pos + 2, sectionLength, keyIndex, keysAdded);
+	ret = DirectorParseEmmNanoTags(data + pos + 2, sectionLength, keyIndex, keysAdded);
 		
 	pos += 2 + sectionLength;	
 	
@@ -548,7 +564,7 @@ static int8_t TandbergParseEMMNanoData(uint8_t* data, uint32_t* nanoLength, uint
 	return ret;
 }
 
-int8_t TandbergEMM(uint8_t *emm, uint32_t *keysAdded)
+int8_t DirectorEmm(uint8_t *emm, uint32_t *keysAdded)
 {
 	uint8_t keyIndex, ret = 0;
 	uint16_t emmLen = GetEcmLen(emm);
@@ -596,7 +612,7 @@ int8_t TandbergEMM(uint8_t *emm, uint32_t *keysAdded)
 		// so they do not affect the calculated checksum.
 		uint16_t payloadChecksum = (emm[pos + 2] << 8) | emm[pos + 3];
 		memset(emm + pos + 2, 0, 2);
-		uint16_t calculatedChecksum = TandbergChecksum(emm + 3, emmLen - 3);
+		uint16_t calculatedChecksum = DirectorChecksum(emm + 3, emmLen - 3);
 		
 		if(calculatedChecksum != payloadChecksum)
 		{
@@ -606,7 +622,7 @@ int8_t TandbergEMM(uint8_t *emm, uint32_t *keysAdded)
 		// End of EMM validation
 		
 		pos += 0x04;
-		ret = TandbergParseEMMNanoData(emm + pos, &nanoLength, emmLen - pos, keyIndex, keysAdded);
+		ret = DirectorParseEmmNanoData(emm + pos, &nanoLength, emmLen - pos, keyIndex, keysAdded);
 		pos += nanoLength;
 	}
 	
