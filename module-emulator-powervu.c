@@ -1314,7 +1314,7 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_k
 	
 	if(fletcher_crc32(ecm, ecmLen-4) != ecmCrc32)
 	{
-		return 8;
+		return 6;
 	}
 	ecmLen -= 4;
 	
@@ -1769,7 +1769,7 @@ int8_t PowervuEMM(uint8_t *emm, uint32_t *keysAdded)
 	//
 	//if(fletcher_crc32(emm, emmLen-4) != emmCrc32)
 	//{
-	//	return 8;
+	//	return 6;
 	//}
 	emmLen -= 4;
 

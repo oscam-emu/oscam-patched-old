@@ -89,7 +89,7 @@ int8_t DirectorEcm(uint8_t *ecm, uint8_t *dw)
 		if(calculatedChecksum != payloadChecksum)
 		{
 			cs_log("ECM checksum error (%.4X instead of %.4X)", calculatedChecksum, payloadChecksum);
-			return 8;
+			return 6;
 		}
 		// End of ECM validation
 		
@@ -617,7 +617,7 @@ int8_t DirectorEmm(uint8_t *emm, uint32_t *keysAdded)
 		if(calculatedChecksum != payloadChecksum)
 		{
 			cs_log("EMM checksum error (%.4X instead of %.4X)", calculatedChecksum, payloadChecksum);
-			return 8;
+			return 6;
 		}
 		// End of EMM validation
 		

@@ -201,7 +201,7 @@ int8_t Drecrypt2ECM(uint32_t provId, uint8_t *ecm, uint8_t *dw)
 			return 0;
 		}
 
-		return 9; // ICG error
+		return 8; // ICG error
 	}
 
 	DREover(ecm, ccw);
