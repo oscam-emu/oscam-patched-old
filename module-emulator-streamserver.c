@@ -644,13 +644,6 @@ static void stream_client_disconnect(emu_stream_client_conn_data *conndata)
 
 static void *stream_client_handler(void *arg)
 {
-#define EMU_DVB_MAX_TS_PACKETS 278
-#define EMU_DVB_BUFFER_SIZE_CSA 188*EMU_DVB_MAX_TS_PACKETS
-#define EMU_DVB_BUFFER_WAIT_CSA 188*(EMU_DVB_MAX_TS_PACKETS-128)
-#define EMU_DVB_BUFFER_SIZE_DES 188*32
-#define EMU_DVB_BUFFER_WAIT_DES 188*29
-#define EMU_DVB_BUFFER_SIZE EMU_DVB_BUFFER_SIZE_CSA
-
 	emu_stream_client_conn_data *conndata = (emu_stream_client_conn_data *)arg;
 	char *http_buf, stream_path[255], stream_path_copy[255];
 	int32_t streamfd;
