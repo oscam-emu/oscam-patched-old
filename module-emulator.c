@@ -46,7 +46,7 @@ pthread_mutex_t emu_key_data_mutex;
 
 static inline uint32_t GetOSemuVersion(void)
 {
-	return atoi("$Version: 775 $" + 10);
+	return atoi("$Version: 776 $" + 10);
 }
 
 static void set_hexserial_to_version(struct s_reader *rdr)
