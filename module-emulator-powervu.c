@@ -1842,16 +1842,14 @@ int8_t PowervuEMM(uint8_t *emm, uint32_t *keysAdded)
 	return 0;
 }
 
-int8_t GetPowervuHexserials(uint16_t srvid, uint8_t hexserials[][4], int32_t length, int32_t* count)
+int8_t PowervuGetHexserials(uint16_t srvid, uint8_t hexserials[][4], uint32_t maxCount, uint32_t *count)
 {
 	//srvid == 0xFFFF -> get all
 
-	uint32_t i, j;
-	uint32_t groupid;
-	int32_t len, k;
-	KeyDataContainer *KeyDB;
-	uint8_t tmp[4];
 	int8_t alreadyAdded;
+	uint8_t tmp[4];
+	uint32_t i, j, k, groupid, length;
+	KeyDataContainer *KeyDB;
 
 	KeyDB = GetKeyContainer('P');
 	if(KeyDB == NULL)
@@ -1859,7 +1857,7 @@ int8_t GetPowervuHexserials(uint16_t srvid, uint8_t hexserials[][4], int32_t len
 
 	(*count) = 0;
 
-	for(i=0; i<KeyDB->keyCount && (*count)<length ; i++) {
+	for(i=0; i<KeyDB->keyCount && (*count)<maxCount ; i++) {
 
 		if(KeyDB->EmuKeys[i].provider <= 0x0000FFFF) // skip au keys
 			{ continue; }
@@ -1869,21 +1867,21 @@ int8_t GetPowervuHexserials(uint16_t srvid, uint8_t hexserials[][4], int32_t len
 
 		groupid = KeyDB->EmuKeys[i].provider>>16;
 
-		for(j=0; j<KeyDB->keyCount && (*count)<length ; j++) {
+		for(j=0; j<KeyDB->keyCount && (*count)<maxCount ; j++) {
 
 			if(KeyDB->EmuKeys[j].provider != groupid) // search au key with groupip
 				{ continue; }
 
-			len = strlen(KeyDB->EmuKeys[j].keyName);
+			length = strlen(KeyDB->EmuKeys[j].keyName);
 
-			if(len < 3)
+			if(length < 3)
 				{ continue;}
 
-			if(len > 8)
-				{ len = 8; }
+			if(length > 8)
+				{ length = 8; }
 
 			memset(tmp, 0, 4);
-			CharToBin(tmp+(4-(len/2)), KeyDB->EmuKeys[j].keyName, len);
+			CharToBin(tmp+(4-(length/2)), KeyDB->EmuKeys[j].keyName, length);
 
 			for(k=0, alreadyAdded=0; k<*count; k++)
 			{

@@ -563,10 +563,10 @@ static int32_t emu_get_ird2_emm_filter(struct s_reader* rdr, struct s_csystem_em
 
 static int32_t emu_get_pvu_emm_filter(struct s_reader *UNUSED(rdr), struct s_csystem_emm_filter **emm_filters, unsigned int *filter_count, uint16_t UNUSED(caid), uint32_t UNUSED(provid), uint16_t srvid)
 {
-	uint8_t hexserials[16][4];
-	int32_t i, count = 0;
+	uint8_t hexserials[32][4];
+	uint32_t i, count = 0;
 
-	if(!GetPowervuHexserials(srvid, hexserials, 16, &count))
+	if(!PowervuGetHexserials(srvid, hexserials, 32, &count))
 		{ return CS_ERROR; }
 
 	if(*emm_filters == NULL)
