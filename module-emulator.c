@@ -499,8 +499,10 @@ static int32_t emu_get_ird2_emm_filter(struct s_reader* rdr, struct s_csystem_em
 	int8_t have_provid = 0, have_serial = 0;
 	int32_t i;
 
+	SAFE_MUTEX_LOCK(&emu_key_data_mutex);
 	if(GetIrdeto2Hexserial(caid, hexserial))
 		{ have_serial = 1; }
+	SAFE_MUTEX_UNLOCK(&emu_key_data_mutex);
 
 	emu_provids = get_emu_prids_for_caid(rdr, caid);
 	if(emu_provids != NULL && emu_provids->nprids > 0)
@@ -566,8 +568,10 @@ static int32_t emu_get_pvu_emm_filter(struct s_reader *UNUSED(rdr), struct s_csy
 	uint8_t hexserials[32][4];
 	uint32_t i, count = 0;
 
+	SAFE_MUTEX_LOCK(&emu_key_data_mutex);
 	if(!PowervuGetHexserials(srvid, hexserials, 32, &count))
 		{ return CS_ERROR; }
+	SAFE_MUTEX_UNLOCK(&emu_key_data_mutex);
 
 	if(*emm_filters == NULL)
 	{
@@ -608,8 +612,10 @@ static int32_t emu_get_dre2_emm_filter(struct s_reader *UNUSED(rdr), struct s_cs
 	uint8_t hexserials[16];
 	int32_t i, count = 0;
 
+	SAFE_MUTEX_LOCK(&emu_key_data_mutex);
 	if(!GetDrecryptHexserials(caid, provid, hexserials, 16, &count))
 		{ count = 0; }
+	SAFE_MUTEX_UNLOCK(&emu_key_data_mutex);
 
 	if(*emm_filters == NULL)
 	{
