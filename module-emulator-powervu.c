@@ -47,12 +47,12 @@ static uint8_t PowervuCrc8Calc(uint8_t *data, int len)
 							 0x3E, 0x39, 0x30, 0x37, 0x22, 0x25, 0x2C, 0x2B, 0x06, 0x01, 0x08, 0x0F, 0x1A, 0x1D, 0x14, 0x13,
 							 0xAE, 0xA9, 0xA0, 0xA7, 0xB2, 0xB5, 0xBC, 0xBB, 0x96, 0x91, 0x98, 0x9F, 0x8A, 0x8D, 0x84, 0x83,
 							 0xDE, 0xD9, 0xD0, 0xD7, 0xC2, 0xC5, 0xCC, 0xCB, 0xE6, 0xE1, 0xE8, 0xEF, 0xFA, 0xFD, 0xF4, 0xF3};
-	
+
 	for(i = 0; i < len; i++)
 	{
 		crc = crcTable[data[i] ^ crc];
 	}
-	
+
 	return crc;
 }
 
@@ -60,21 +60,21 @@ static void PowervuPadData(uint8_t *data, int len, uint8_t *dataPadded)
 {
 	int i;
 	uint8_t pad[] = {0x01, 0x02, 0x22, 0x04, 0x20, 0x2A, 0x1F, 0x03, 0x04, 0x06, 0x02, 0x0C, 0x2B, 0x2B, 0x01, 0x7B};
-	
+
 	for(i = 0; i < len; i++)
 	{
 		dataPadded[i] = data[i];
 	}
-	
+
 	dataPadded[len] = 0x01;
-	
+
 	for(i = len + 1; i < 0x2F; i++)
 	{
 		dataPadded[i] = 0x00;
 	}
-	
+
 	dataPadded[0x2F] = len;
-	
+
 	for(i = 0; i < 0x10; i++)
 	{
 		dataPadded[0x30 + i] = pad[i];
@@ -85,7 +85,7 @@ static void PowervuHashMode01CustomMD5(uint8_t *data, uint8_t *hash)
 {
 	int i, j, s;
 	uint32_t a, b, c, d, f = 0, g;
-	
+
 	uint32_t T[] = {0x783E16F6, 0xC267AC13, 0xA2B17F12, 0x6B8A31A4, 0xF910654D, 0xB702DBCB, 0x266CEF60, 0x5145E47C,
 					0xB92E00D6, 0xE80A4A64, 0x8A07FA77, 0xBA7D89A9, 0xEBED8022, 0x653AAF2B, 0xF118B03B, 0x6CC16544,
 					0x96EB6583, 0xF4E27E35, 0x1ABB119E, 0x068D3EF2, 0xDAEAA8A5, 0x3C312A3D, 0x59538388, 0xA100772F,
@@ -94,29 +94,29 @@ static void PowervuHashMode01CustomMD5(uint8_t *data, uint8_t *hash)
 					0xC348B30D, 0x081CE3AA, 0xA12220E7, 0x38C7EC79, 0xCBD8DD3A, 0x62B4FBA5, 0xAD2A63DB, 0xE4D0852E,
 					0x53DE980F, 0x9C8DDA59, 0xA6B4CEDE, 0xB48A7692, 0x0E2C46A4, 0xEB9367CB, 0x165D72EE, 0x75532B45,
 					0xB9CA8E97, 0x08C8837B, 0x966F917B, 0x527515B4, 0xF27A5E5D, 0xB71E6267, 0x7603D7E6, 0x9837DD69}; // CUSTOM T
-	
+
 	uint8_t r[] = {0x06, 0x0A, 0x0F, 0x15, 0x05, 0x09, 0x0E, 0x14, 0x04, 0x0B, 0x10, 0x17, 0x07, 0x0C, 0x11, 0x16}; // STANDARD REORDERED
-	
+
 	uint8_t tIdxInit[] = {0, 1, 5, 0}; // STANDARD
 	uint8_t tIdxIncr[] = {1, 5, 3, 7}; // STANDARD
-	
+
 	uint32_t h[] = {0xEAD81D2E, 0xCE4DC6E9, 0xF9B5C301, 0x10325476}; // CUSTOM h0, h1, h2  STANDARD h3
 	uint32_t dataLongs[0x10];
-	
+
 	for (i = 0; i < 0x10; i++)
 	{
 		dataLongs[i] = (data[4 * i + 0] << 0) + (data[4 * i + 1] << 8) + (data[4 * i + 2] << 16) + (data[4 * i + 3] << 24);
 	}
-	
+
 	a = h[0];
 	b = h[1];
 	c = h[2];
 	d = h[3];
-	
+
 	for (i = 0; i < 4; i++)
 	{
 		g = tIdxInit[i];
-		
+
 		for (j = 0; j < 16; j++)
 		{
 			if (i == 0)
@@ -135,26 +135,26 @@ static void PowervuHashMode01CustomMD5(uint8_t *data, uint8_t *hash)
 			{
 				f = (~d | b) ^ c;
 			}
-			
+
 			f = dataLongs[g] + a + T[16 * i + j] + f;
-			
+
 			s = r[4 * i + (j & 3)];
 			f = (f << s) | (f >> (32 - s));
-			
+
 			a = d;
 			d = c;
 			c = b;
 			b += f;
-			
+
 			g = (g + tIdxIncr[i]) & 0xF;
 		}
 	}
-	
+
 	h[0] += a;
 	h[1] += b;
 	h[2] += c;
 	h[3] += d;
-	
+
 	for (i = 0; i < 4; i++)
 	{
 		hash[4 * i + 0] = h[i] >> 0;
@@ -414,7 +414,7 @@ static void PowervuCreateHash(uint8_t *data, int len, uint8_t *hash, int mode)
 	uint8_t dataPadded[0x40];
 
 	PowervuPadData(data, len, dataPadded);
-	
+
 	switch(mode)
 	{
 		case 1:
@@ -656,7 +656,7 @@ uint8_t PowervuGetModeUnmask(uint8_t *extraData)
 static void PowervuCreateDataEcmEmm(uint8_t *emmEcm, uint8_t *pos, int lenHeader, int len, uint8_t *data)
 {
 	int i;
-	
+
 	for(i = 0; i < len; i++)
 	{
 		data[i] = emmEcm[lenHeader + pos[i]];
@@ -666,46 +666,46 @@ static void PowervuCreateDataEcmEmm(uint8_t *emmEcm, uint8_t *pos, int lenHeader
 static uint8_t PowervuCreateDataCw(uint8_t *seed, uint8_t lenSeed, uint8_t *baseCw, uint8_t val, uint8_t *seedEcmCw, uint8_t *data)
 {
 	int i;
-	
+
 	for(i = 0; i < lenSeed; i++)
 	{
 		data[i] = seed[i];
 	}
-	
+
 	for(i = 0; i < 7; i++)
 	{
 		data[lenSeed + i] = baseCw[i];
 	}
-	
+
 	data[lenSeed + 7] = val;
-	
+
 	for(i = 0; i < 16; i++)
 	{
 		data[lenSeed + 7 + 1 + i] = seedEcmCw[i];
 	}
-	
+
 	return lenSeed + 7 + 1 + 0x10;
 }
 
 static uint8_t PowervuUnmaskEcm(uint8_t *ecm, uint8_t *seedEcmCw, uint8_t *modeCW)
 {
 	int i, l;
-	
+
 	uint8_t sourcePos[] = {0x04, 0x05, 0x06, 0x07, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x17, 0x1C, 0x1D, 0x1F, 0x23,
 						   0x24, 0x25, 0x26, 0x27, 0x29, 0x2C, 0x2D, 0x2E};
 	uint8_t destPos[]   = {0x08, 0x09, 0x11, 0x18, 0x19, 0x1A, 0x1B, 0x1E, 0x20, 0x21, 0x22, 0x28, 0x2A, 0x2B, 0x2F, 0x30};
 	uint8_t seedCwPos[] = {0x07, 0x0A, 0x04, 0x0D, 0x05, 0x0E, 0x06, 0x0B, 0x10, 0x0C, 0x0F};
-	
+
 	uint8_t data[0x40];
 	uint8_t mask[0x10];
 	uint8_t hashModeEcm;
 	uint8_t hashModeCw;
 	uint32_t crc;
 	uint8_t modeUnmask;
-	
+
 	// Create seed for CW decryption
 	memset(seedEcmCw, 0, 0x10);
-	
+
 	int extraBytesLen = ecm[9];
 	int startOffset = extraBytesLen + 0x0A;
 
@@ -713,21 +713,21 @@ static uint8_t PowervuUnmaskEcm(uint8_t *ecm, uint8_t *seedEcmCw, uint8_t *modeC
 	{
 		seedEcmCw[i] = ecm[startOffset + seedCwPos[i]];
 	}
-	
+
 	*modeCW = 0;
 	if (extraBytesLen > 0)
 	{
 		*modeCW = PowervuGetModeCW(ecm + 0x0A);
 	}
-	
+
 	// Read hash mode CW
 	hashModeCw = ecm[28 + extraBytesLen] ^ PowervuCrc8Calc(seedEcmCw, 0x10);
-	
+
 	// Create mask for ECM decryption
 	PowervuCreateDataEcmEmm(ecm, sourcePos, startOffset, 0x18, data);
-	
+
 	hashModeEcm = ecm[8] ^ PowervuCrc8Calc(data, 0x18);
-	
+
 	modeUnmask = 0;
 	if (extraBytesLen > 0)
 	{
@@ -794,18 +794,18 @@ static uint8_t PowervuUnmaskEcm(uint8_t *ecm, uint8_t *seedEcmCw, uint8_t *modeC
 			ecm[startOffset + destPos[i]] ^= mask[i & 0x0F];
 		}
 	}
-	
+
 	// Fix header
 	ecm[3] &= 0x0F;
 	ecm[3] |= 0x30;
 	ecm[8]  = 0x00;
 	ecm[28 + extraBytesLen] = 0x00;
-	
+
 	// Fix CRC (optional)
 	l = (((ecm[1] << 8) + ecm[2]) & 0xFFF) + 3 - 4;
-	
+
 	crc = fletcher_crc32(ecm, l);
-	
+
 	ecm[l + 0] = crc >> 24;
 	ecm[l + 1] = crc >> 16;
 	ecm[l + 2] = crc >> 8;
@@ -815,7 +815,7 @@ static uint8_t PowervuUnmaskEcm(uint8_t *ecm, uint8_t *seedEcmCw, uint8_t *modeC
 	{
 		seedEcmCw[i] = ecm[startOffset + seedCwPos[i]];
 	}
-	
+
 	return hashModeCw;
 }
 
@@ -838,12 +838,12 @@ static void PowervuCreateCw(uint8_t *seed, uint8_t lenSeed, uint8_t *baseCw, uin
 								0xD0, 0xD0, 0xD3, 0xD3, 0xD5, 0xD5, 0xD6, 0xD6, 0xD9, 0xD9, 0xDA, 0xDA, 0xDC, 0xDC, 0xDF, 0xDF,
 								0xE0, 0xE0, 0xE3, 0xE3, 0xE5, 0xE5, 0xE6, 0xE6, 0xE9, 0xE9, 0xEA, 0xEA, 0xEC, 0xEC, 0xEF, 0xEF,
 								0xF1, 0xF1, 0xF2, 0xF2, 0xF4, 0xF4, 0xF7, 0xF7, 0xF8, 0xF8, 0xFB, 0xFB, 0xFD, 0xFD, 0xFE, 0xFE};
-	
+
 	uint8_t data[0x40];
 	uint8_t hash[0x10];
 	uint8_t lenData;
 	int i;
-	
+
 	if (modeCW == 0x03)
 	{
 		PowervuCreateDataCwMode03(seed, lenSeed, baseCw, val, ecmBody, data);
@@ -866,13 +866,13 @@ static void PowervuCreateCw(uint8_t *seed, uint8_t lenSeed, uint8_t *baseCw, uin
 	{
 		lenData = PowervuCreateDataCw(seed, lenSeed, baseCw, val, seedEcmCw, data);
 		PowervuCreateHash(data, lenData, hash, hashMode);
-	
+
 		for(i = 0; i < 8; i++)
 		{
 			cw[i] = hash[i];
 		}
 	}
-	
+
 	if(modeDesCsa == 0) // DES - Fix Parity Bits
 	{
 		for(i = 0; i < 8; i++)
@@ -890,12 +890,12 @@ static void PowervuCreateCw(uint8_t *seed, uint8_t lenSeed, uint8_t *baseCw, uin
 static int8_t GetPowervuKey(uint8_t *buf, uint32_t ident, char keyName, uint32_t keyIndex, uint32_t keyLength, uint8_t isCriticalKey, uint32_t keyRef)
 {
 	char keyStr[EMU_MAX_CHAR_KEYNAME];
-	
+
 	snprintf(keyStr, EMU_MAX_CHAR_KEYNAME, "%c%X", keyName, keyIndex);
 	if(FindKey('P', ident, 0xFFFF0000, keyStr, buf, keyLength, isCriticalKey, keyRef, 0, NULL)) {
 		return 1;
 	}
-	
+
 	return 0;
 }
 
@@ -936,7 +936,7 @@ static uint8_t PowervuSbox(uint8_t *input, uint8_t mode)
 {
 	uint8_t s_index, bit, last_index, last_bit;
 	uint8_t const *Sbox1, *Sbox2, *Sbox3, *Sbox4, *Sbox5, *Sbox6, *Sbox7, *Sbox8, *Sbox9;
-	
+
 	if(mode)
 	{
 		Sbox1 = PowerVu_A0_S_1;
@@ -961,39 +961,39 @@ static uint8_t PowervuSbox(uint8_t *input, uint8_t mode)
 		Sbox8 = PowerVu_00_S_8;
 		Sbox9 = PowerVu_00_S_9;
 	}
-	
+
 	bit = (GetBit(input[2],0)<<2) | (GetBit(input[3],4)<<1) | (GetBit(input[5],3));
 	s_index = (GetBit(input[0],0)<<3) | (GetBit(input[2],6)<<2) | (GetBit(input[2],4)<<1) | (GetBit(input[5],7));
 	last_bit = GetBit(Sbox1[s_index],7-bit);
-	
+
 	bit = (GetBit(input[5],0)<<2) | (GetBit(input[4],0)<<1) | (GetBit(input[6],2));
 	s_index = (GetBit(input[2],1)<<3) | (GetBit(input[2],2)<<2) | (GetBit(input[5],5)<<1) | (GetBit(input[5],1));
 	last_bit = last_bit | (GetBit(Sbox2[s_index],7-bit)<<1);
-	
+
 	bit = (GetBit(input[6],0)<<2) | (GetBit(input[1],7)<<1) | (GetBit(input[6],7));
 	s_index = (GetBit(input[1],3)<<3) | (GetBit(input[3],7)<<2) | (GetBit(input[1],5)<<1) | (GetBit(input[5],2));
 	last_bit = last_bit | (GetBit(Sbox3[s_index], 7-bit)<<2);
-	
+
 	bit = (GetBit(input[1],0)<<2) | (GetBit(input[2],7)<<1) | (GetBit(input[2],5));
 	s_index = (GetBit(input[6],3)<<3) | (GetBit(input[6],4)<<2) | (GetBit(input[6],6)<<1) | (GetBit(input[3],5));
 	last_index = GetBit(Sbox4[s_index], 7-bit);
-	
+
 	bit = (GetBit(input[3],3)<<2) | (GetBit(input[4],6)<<1) | (GetBit(input[3],2));
 	s_index = (GetBit(input[3],1)<<3) | (GetBit(input[4],5)<<2) | (GetBit(input[3],0)<<1) | (GetBit(input[4],7));
 	last_index = last_index | (GetBit(Sbox5[s_index], 7-bit)<<1);
-	
+
 	bit = (GetBit(input[5],4)<<2) | (GetBit(input[4],4)<<1) | (GetBit(input[1],2));
 	s_index = (GetBit(input[2],3)<<3) | (GetBit(input[6],5)<<2) | (GetBit(input[1],4)<<1) | (GetBit(input[4],1));
 	last_index = last_index | (GetBit(Sbox6[s_index], 7-bit)<<2);
-	
+
 	bit = (GetBit(input[0],6)<<2) | (GetBit(input[0],7)<<1) | (GetBit(input[0],4));
 	s_index = (GetBit(input[0],5)<<3) | (GetBit(input[0],3)<<2) | (GetBit(input[0],1)<<1) | (GetBit(input[0],2));
 	last_index = last_index | (GetBit(Sbox7[s_index], 7-bit)<<3);
-	
+
 	bit = (GetBit(input[4],2)<<2) | (GetBit(input[4],3)<<1) | (GetBit(input[1],1));
 	s_index = (GetBit(input[1],6)<<3) | (GetBit(input[6],1)<<2) | (GetBit(input[5],6)<<1) | (GetBit(input[3],6));
 	last_index = last_index | (GetBit(Sbox8[s_index], 7-bit)<<4);
-	
+
 	return (GetBit(Sbox9[last_index&0x1f],7-last_bit)&1) ? 1: 0;
 }
 
@@ -1002,27 +1002,27 @@ static void PowervuDecrypt(uint8_t *data, uint32_t length, uint8_t *key, uint8_t
 	uint32_t i;
 	int32_t j, k;
 	uint8_t curByte, tmpBit;
-	
+
 	for(i = 0; i < length; i++)
 	{
 		curByte = data[i];
-		
+
 		for(j = 7; j >= 0; j--)
 		{
 			data[i] = SetBit(data[i], j, (GetBit(curByte, j)^PowervuSbox(key, sbox))^GetBit(key[0], 7));
-			
+
 			tmpBit = GetBit(data[i], j)^(GetBit(key[6], 0));
 			if (tmpBit)
 			{
 				key[3] ^= 0x10;
 			}
-			
+
 			for (k = 6; k > 0; k--)
 			{
 				key[k] = (key[k]>>1) | (key[k-1]<<7);
 			}
 			key[0] = (key[0]>>1);
-			
+
 			key[0] = SetBit(key[0], 7, tmpBit);
 		}
 	}
@@ -1058,28 +1058,28 @@ static uint8_t PowervuGetConvcwIndex(uint8_t ecmTag)
 	{
 	case PVU_CONVCW_VID_ECM:
 		return PVU_CW_VID;
-	
+
 	case PVU_CONVCW_HSD_ECM:
 		return PVU_CW_HSD;
-	
+
 	case PVU_CONVCW_A1_ECM:
 		return PVU_CW_A1;
-	
+
 	case PVU_CONVCW_A2_ECM:
 		return PVU_CW_A2;
-	
+
 	case PVU_CONVCW_A3_ECM:
 		return PVU_CW_A3;
-	
+
 	case PVU_CONVCW_A4_ECM:
 		return PVU_CW_A4;
-	
+
 	case PVU_CONVCW_UTL_ECM:
 		return PVU_CW_UTL;
-	
+
 	case PVU_CONVCW_VBI_ECM:
 		return PVU_CW_VBI;
-	
+
 	default:
 		return PVU_CW_VBI;
 	}
@@ -1113,7 +1113,7 @@ static uint16_t PowervuGetSeedIV(uint8_t seedType, uint8_t *ecm)
 static uint8_t PowervuExpandSeed(uint8_t seedType, uint8_t *seed)
 {
 	uint8_t seedLength = 0, i;
-	
+
 	switch(seedType)
 	{
 	case PVU_CW_VID:
@@ -1133,7 +1133,7 @@ static uint8_t PowervuExpandSeed(uint8_t seedType, uint8_t *seed)
 	default:
 		return seedLength;
 	}
-	
+
 	for(i=seedLength; i<7; i++)
 	{
 		seed[i] = seed[i%seedLength];
@@ -1226,7 +1226,7 @@ static void PowervuCalculateCw(uint8_t seedType, uint8_t *seed, uint8_t csaUsed,
 			{
 				seed[k] ^= baseCw[k];
 			}
-			
+
 			cw[0] = seed[0] ^ convolvedCw[0];
 			cw[1] = seed[1] ^ convolvedCw[1];
 			cw[2] = seed[2] ^ convolvedCw[2];
@@ -1245,20 +1245,20 @@ static void PowervuCalculateCw(uint8_t seedType, uint8_t *seed, uint8_t csaUsed,
 					cw[k] = seed[k] ^ baseCw[k];
 				}
 			}
-			
+
 			if(xorMode == 1)
 			{
 				for(k = 0; k < 3; k++)
 				{
 					cw[k] = seed[k] ^ baseCw[k];
 				}
-				
+
 				for(k = 3; k < 7; k++)
 				{
 					cw[k] = baseCw[k];
 				}
 			}
-			
+
 			ExpandDesKey(cw);
 		}
 	}
@@ -1288,40 +1288,40 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_k
 	emu_stream_cw_item *cw_item;
 	int8_t update_global_key = 0;
 	int8_t update_global_keys[EMU_STREAM_SERVER_MAX_CONNECTIONS];
-	
+
 	memset(update_global_keys, 0, sizeof(update_global_keys));
-	
+
 	if(ecmLen < 7)
 	{
 		return 1;
 	}
-	
+
 	needsUnmasking = (ecm[3] & 0xF0) == 0x50;
-	
+
 	//cs_log_dbg(D_ATR, "ecm1: %s", cs_hexdump(0, ecm, ecmLen, tmpBuffer1, sizeof(tmpBuffer1))); // Already there with debug level 2
-	
+
 	if (needsUnmasking)
 	{
 		hashModeCw = PowervuUnmaskEcm(ecm, seedEcmCw, &modeCW);
 	}
-	
+
 	//cs_log_dbg(D_ATR, "needsUnmasking=%d", needsUnmasking);
 	//cs_log_dbg(D_ATR, "ecm2: %s", cs_hexdump(0, ecm, ecmLen, tmpBuffer1, sizeof(tmpBuffer1)));
 
 	memcpy(unmaskedEcm, ecm, ecmLen);
 
 	ecmCrc32 = b2i(4, ecm+ecmLen-4);
-	
+
 	if(fletcher_crc32(ecm, ecmLen-4) != ecmCrc32)
 	{
 		return 6;
 	}
 	ecmLen -= 4;
-	
+
 	for(i = 0; i < 8; i++) {
 		memset(convolvedCw[i], 0, 8);
 	}
-	
+
 	for(i = 3; i+3 < ecmLen; ) {
 		nanoLen = (((ecm[i] & 0x0f) << 8) | ecm[i+1]);
 		i += 2;
@@ -1333,35 +1333,35 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_k
 		if(i+nanoLen > ecmLen) {
 			return 1;
 		}
-		
+
 		switch (nanoCmd) {
 		case 0x27:
 			if(nanoLen < 15)
 			{
 				break;
 			}
-			
+
 			nanoChecksum = 0;
 			for(j = 4; j < 15; j++)
 			{
 				nanoChecksum += ecm[i+j];
 			}
-			
+
 			if(nanoChecksum != 0)
 			{
 				break;
 			}
-			
+
 			keyType = PowervuGetConvcwIndex(ecm[i+4]);
 			memcpy(convolvedCw[keyType], &ecm[i+6], 8);
 			break;
-		
+
 		default:
 			break;
 		}
 		i += nanoLen;
 	}
-	
+
 	for(i = 3; i+3 < ecmLen; ) {
 		nanoLen = (((ecm[i] & 0x0f) << 8) | ecm[i+1]);
 		i += 2;
@@ -1373,7 +1373,7 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_k
 		if(i+nanoLen > ecmLen) {
 			return 1;
 		}
-		
+
 		switch (nanoCmd) {
 		case 0x20:
 			if(nanoLen < 54)
@@ -1390,22 +1390,22 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_k
 			xorMode = GetBit(ecm[i+6], 0);
 			bid = (GetBit(ecm[i+7], 1) << 1) | GetBit(ecm[i+7], 0);
 			sbox = GetBit(ecm[i+6], 3);
-			
+
 			keyIndex = (fixedKey << 3) | (bid << 2) | oddKey;
 			channelId = b2i(2, ecm+i+23);
 			ecmSrvid = (channelId >> 4) | ((channelId & 0xF) << 12);
-			
+
 			decrypt_ok = 0;
-			
+
 			memcpy(ecmPart1, ecm+i+8, 14);
 			memcpy(ecmPart2, ecm+i+27, 27);
-			
+
 			keyRef1 = 0;
 			keyRef2 = 0;
-			
+
 			cs_log_dbg(D_ATR, "csaUsed=%d, xorMode=%d, ecmSrvid=%d, hashModeCw=%d, modeCW=%d",
 						csaUsed, xorMode, ecmSrvid, hashModeCw, modeCW);
-			
+
 			do
 			{
 				if(!GetPowervuKey(ecmKey, ecmSrvid, '0', keyIndex, 7, 0, keyRef1++))
@@ -1416,16 +1416,16 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_k
 						return 2;
 					}
 				}
-				
+
 				PowervuDecrypt(ecm+i+8, 14, ecmKey, sbox);
 				if((ecm[i+6] != ecm[i+6+7]) || (ecm[i+6+8] != ecm[i+6+15]))
 				{
 					memcpy(ecm+i+8, ecmPart1, 14);
 					continue;
 				}
-				
+
 				memcpy(tmpEcmKey, ecmKey, 7);
-				
+
 				PowervuDecrypt(ecm+i+27, 27, ecmKey, sbox);
 				if((ecm[i+23] != ecm[i+23+29]) || (ecm[i+23+1] != ecm[i+23+30]))
 				{
@@ -1433,13 +1433,13 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_k
 					memcpy(ecm+i+27, ecmPart2, 27);
 					continue;
 				}
-				
+
 				decrypt_ok = 1;
 			}
 			while(!decrypt_ok);
-			
+
 			memcpy(seedBase, ecm+i+6+2, 4);
-			
+
 			if(cdata == NULL)
 			{
 				SAFE_MUTEX_LOCK(&emu_fixed_key_srvid_mutex);
@@ -1449,11 +1449,11 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_k
 					{
 						update_global_key = 1;
 						update_global_keys[j] = 1;
-					}	
+					}
 				}
 				SAFE_MUTEX_UNLOCK(&emu_fixed_key_srvid_mutex);
 			}
-			
+
 			if(cdata != NULL || update_global_key || cw_ex != NULL)
 			{
 				// Calculate all seeds
@@ -1469,9 +1469,9 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_k
 				memcpy(ecmKey, tmpEcmKey, 7);
 				PowervuCalculateSeed(PVU_CW_VID, ecm+i, seedBase, ecmKey, seed[PVU_CW_VID], sbox);
 			}
-			
+
 			memcpy(baseCw, ecm+i+6+8, 7);
-			
+
 			calculateAllCws = cdata != NULL || update_global_key || cw_ex != NULL;
 
 			if(calculateAllCws)
@@ -1481,7 +1481,7 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_k
 				{
 					PowervuCalculateCw(j, seed[j], csaUsed, convolvedCw[j], cw[j], baseCw, seedEcmCw, hashModeCw,
 										needsUnmasking, xorMode, modeCW, unmaskedEcm + offsetBody);
-					
+
 					if(csaUsed)
 					{
 						for(k = 0; k < 8; k += 4) {
@@ -1493,7 +1493,7 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_k
 				//cs_log_dbg(D_ATR, "csaUsed=%d, cw: %s cdata=%x, cw_ex=%x",
 				//			csaUsed, cs_hexdump(3, cw[0], 8, tmpBuffer1, sizeof(tmpBuffer1)),
 				//			(unsigned int)cdata, (unsigned int)cw_ex);
-				
+
 				if(update_global_key)
 				{
 					for(j = 0; j < EMU_STREAM_SERVER_MAX_CONNECTIONS; j++)
@@ -1513,21 +1513,21 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_k
 						}
 					}
 				}
-				
+
 				if(cdata != NULL)
 				{
 					for(j = 0; j < 8; j++)
 					{
 						if(csaUsed)
-						{	
+						{
 							if(cdata->pvu_csa_ks[j] == NULL)
 								{ cdata->pvu_csa_ks[j] = get_key_struct(); }
-								
+
 							if(ecm[0] == 0x80)
 								{ set_even_control_word(cdata->pvu_csa_ks[j], cw[j]); }
 							else
 								{ set_odd_control_word(cdata->pvu_csa_ks[j], cw[j]); }
-							
+
 							cdata->pvu_csa_used = 1;
 						}
 						else
@@ -1536,16 +1536,16 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_k
 								{ des_set_key(cw[j], cdata->pvu_des_ks[j][0]); }
 							else
 								{ des_set_key(cw[j], cdata->pvu_des_ks[j][1]); }
-							
+
 							cdata->pvu_csa_used = 0;
 						}
 					}
 				}
-				
+
 				if(cw_ex != NULL)
-				{	
+				{
 					cw_ex->mode = CW_MODE_MULTIPLE_CW;
-					
+
 					if(csaUsed)
 					{
 						cw_ex->algo = CW_ALGO_CSA;
@@ -1556,17 +1556,17 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_k
 						cw_ex->algo = CW_ALGO_DES;
 						cw_ex->algo_mode = CW_ALGO_MODE_ECB;
 					}
-					
+
 					for(j = 0; j < 4; j++)
 					{
 						dwp = cw_ex->audio[j];
-						
+
 						memset(dwp, 0, 16);
-						
+
 						if(ecm[0] == 0x80)
 						{
 							memcpy(dwp, cw[PVU_CW_A1+j], 8);
-							
+
 							if(csaUsed)
 							{
 								for(k = 0; k < 8; k += 4)
@@ -1578,7 +1578,7 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_k
 						else
 						{
 							memcpy(&dwp[8], cw[PVU_CW_A1+j], 8);
-							
+
 							if(csaUsed)
 							{
 								for(k = 8; k < 16; k += 4)
@@ -1588,15 +1588,15 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_k
 							}
 						}
 					}
-					
+
 					dwp = cw_ex->data;
-					
+
 					memset(dwp, 0, 16);
-					
+
 					if(ecm[0] == 0x80)
 					{
 						memcpy(dwp, cw[PVU_CW_HSD], 8);
-						
+
 						if(csaUsed)
 						{
 							for(k = 0; k < 8; k += 4)
@@ -1608,7 +1608,7 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_k
 					else
 					{
 						memcpy(&dwp[8], cw[PVU_CW_HSD], 8);
-						
+
 						if(csaUsed)
 						{
 							for(k = 8; k < 16; k += 4)
@@ -1625,13 +1625,13 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_k
 				PowervuCalculateCw(PVU_CW_VID, seed[PVU_CW_VID], csaUsed, convolvedCw[PVU_CW_VID], cw[PVU_CW_VID], baseCw,
 									seedEcmCw, hashModeCw, needsUnmasking, xorMode, modeCW, unmaskedEcm + offsetBody);
 			}
-			
+
 			memset(dw, 0, 16);
-			
+
 			if(ecm[0] == 0x80)
 			{
 				memcpy(dw, cw[PVU_CW_VID], 8);
-				
+
 				if(csaUsed)
 				{
 					for(k = 0; k < 8; k += 4)
@@ -1643,7 +1643,7 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_k
 			else
 			{
 				memcpy(&dw[8], cw[PVU_CW_VID], 8);
-				
+
 				if(csaUsed)
 				{
 					for(k = 8; k < 16; k += 4)
@@ -1652,9 +1652,9 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_k
 					}
 				}
 			}
-			
+
 			return 0;
-		
+
 		default:
 			break;
 		}
@@ -1668,47 +1668,47 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_k
 static void PowervuUnmaskEmm(uint8_t *emm)
 {
 	int i, l;
-	
+
 	uint8_t sourcePos[] = {0x03, 0x0C, 0x0D, 0x11, 0x15, 0x18, 0x1D, 0x1F, 0x25, 0x2A, 0x32, 0x35, 0x3A, 0x3B, 0x3E,
 						   0x42, 0x47, 0x48, 0x53, 0x58, 0x5C, 0x61, 0x66, 0x69, 0x71, 0x72, 0x78, 0x7B, 0x81, 0x84};
-	
+
 	uint8_t destPos[] = {0x02, 0x08, 0x0B, 0x0E, 0x13, 0x16, 0x1E, 0x23, 0x28, 0x2B, 0x2F, 0x33, 0x38, 0x3C, 0x40,
 						 0x44, 0x4A, 0x4D, 0x54, 0x57, 0x5A, 0x63, 0x68, 0x6A, 0x70, 0x75, 0x76, 0x7D, 0x82, 0x85};
-	
+
 	uint8_t data[0x1E];
 	uint8_t hashModeEmm;
 	uint8_t mask[0x10];
 	uint32_t crc;
-	
+
 	// Create Mask for ECM decryption
 	PowervuCreateDataEcmEmm(emm, sourcePos, 0x13, 0x1E, data);
-	
+
 	hashModeEmm = emm[8] ^ PowervuCrc8Calc(data, 0x1E);
-	
+
 	PowervuCreateHash(data, 0x1E, mask, hashModeEmm);
-	
+
 	// Fix Header
 	emm[3] &= 0x0F;
 	emm[3] |= 0x10;
 	emm[8]  = 0x00;
-	
+
 	// Unmask Body
 	for(i = 0; i < 0x1E; i++)
 	{
 		emm[0x13 + destPos[i]] ^= mask[i & 0x0F];
 	}
-	
+
 	// Fix CRC (optional)
 	l = (((emm[1] << 8) + emm[2]) & 0xFFF) + 3 - 4;
 	crc = fletcher_crc32(emm, l);
-	
+
 	emm[l + 0] = crc >> 24;
 	emm[l + 1] = crc >> 16;
 	emm[l + 2] = crc >> 8;
 	emm[l + 3] = crc >> 0;
 }
 
-static int32_t UpdateKeysByProviderMask(char identifier, uint32_t provider, uint32_t providerIgnoreMask, char *keyName, uint8_t *key, 
+static int32_t UpdateKeysByProviderMask(char identifier, uint32_t provider, uint32_t providerIgnoreMask, char *keyName, uint8_t *key,
 													uint32_t keyLength, char *comment)
 {
 	int32_t ret = 0;
@@ -1719,18 +1719,18 @@ static int32_t UpdateKeysByProviderMask(char identifier, uint32_t provider, uint
 	{
 		return 0;
 	}
-	
+
 	SAFE_MUTEX_LOCK(&emu_key_data_mutex);
 
 	while(FindKey(identifier, (provider & ~providerIgnoreMask), providerIgnoreMask, keyName, tmpKey, keyLength, 0, keyRef, 0, &foundProvider))
 	{
 		keyRef++;
-		
+
 		if(memcmp(tmpKey, key, keyLength) == 0)
-		{	
+		{
 			continue;
 		}
-		
+
 		if(SetKey(identifier, foundProvider, keyName, key, keyLength, 1, comment, NULL))
 		{
 			ret = 1;
@@ -1757,13 +1757,13 @@ int8_t PowervuEMM(uint8_t *emm, uint32_t *keysAdded)
 	{
 		return 1;
 	}
-	
+
 	// Check if unmasking is needed
 	if((emm[3] & 0xF0) == 0x50)
 	{
 		PowervuUnmaskEmm(emm);
 	}
-	
+
 	// looks like checksum does not work for all EMMs
 	//emmCrc32 = b2i(4, emm+emmLen-4);
 	//
@@ -1775,7 +1775,7 @@ int8_t PowervuEMM(uint8_t *emm, uint32_t *keysAdded)
 
 	uniqueAddress = b2i(4, emm+12);
 	snprintf(keyName, EMU_MAX_CHAR_KEYNAME, "%.8X", uniqueAddress);
-	
+
 	do
 	{
 		if(!GetPowervuEmmKey(emmKey, 0, keyName, 7, 0, keyRef++, &groupId))
@@ -1783,27 +1783,27 @@ int8_t PowervuEMM(uint8_t *emm, uint32_t *keysAdded)
 			cs_log_dbg(D_EMM, "EMM error: AU key for UA %s is missing", keyName);
 			return 2;
 		}
-		
+
 		for(i=19; i+27<=emmLen; i+=27) {
 			emmInfo = emm[i];
-			
+
 			if(!GetBit(emmInfo, 7))
 			{
 				continue;
 			}
-			
+
 			//keyNb = emm[i] & 0x0F;
-			
+
 			memcpy(tmp, emm+i+1, 26);
 			memcpy(tmpEmmKey, emmKey, 7);
 			PowervuDecrypt(emm+i+1, 26, tmpEmmKey, 0);
-			
+
 			if((emm[13] != emm[i+24]) || (emm[14] != emm[i+25]) || (emm[15] != emm[i+26]))
 			{
 				memcpy(emm+i+1, tmp, 26);
 				memcpy(tmpEmmKey, emmKey, 7);
 				PowervuDecrypt(emm+i+1, 26, tmpEmmKey, 1);
-				
+
 				if((emm[13] != emm[i+24]) || (emm[14] != emm[i+25]) || (emm[15] != emm[i+26]))
 				{
 					memcpy(emm+i+1, tmp, 26);
@@ -1811,41 +1811,41 @@ int8_t PowervuEMM(uint8_t *emm, uint32_t *keysAdded)
 					continue;
 				}
 			}
-			
+
 			decryptOk = 1;
-			
+
 			emmType = emm[i+2] & 0x7F;
 			if(emmType > 1)
 			{
 				continue;
 			}
-			
+
 			snprintf(keyName, EMU_MAX_CHAR_KEYNAME, "%.2X", emmType);
 			snprintf(uaInfo, sizeof(uaInfo), "UA: %08X", uniqueAddress);
-			
+
 			if(emm[i+3] == 0 && emm[i+4] == 0)
 			{
 				cs_hexdump(0, &emm[i+3], 7, keyValue, sizeof(keyValue));
 				cs_log("Key found in EMM: P %.4X**** %s %s -> REJECTED (looks invalid) UA: %.8X", groupId, keyName, keyValue, uniqueAddress);
-				continue;	
+				continue;
 			}
-			
+
 			UpdateKeysByProviderMask('P', groupId<<16, 0x0000FFFF, keyName, &emm[i+3], 7, uaInfo);
-			
+
 			(*keysAdded)++;
 			cs_hexdump(0, &emm[i+3], 7, keyValue, sizeof(keyValue));
 			cs_log("Key found in EMM: P %.4X**** %s %s ; UA: %.8X", groupId, keyName, keyValue, uniqueAddress);
 		}
-		
+
 	} while(!decryptOk);
-	
+
 	return 0;
 }
 
 int8_t GetPowervuHexserials(uint16_t srvid, uint8_t hexserials[][4], int32_t length, int32_t* count)
 {
 	//srvid == 0xFFFF -> get all
-	
+
 	uint32_t i, j;
 	uint32_t groupid;
 	int32_t len, k;
@@ -1856,35 +1856,35 @@ int8_t GetPowervuHexserials(uint16_t srvid, uint8_t hexserials[][4], int32_t len
 	KeyDB = GetKeyContainer('P');
 	if(KeyDB == NULL)
 		{ return 0; }
-	
+
 	(*count) = 0;
 
 	for(i=0; i<KeyDB->keyCount && (*count)<length ; i++) {
-		
+
 		if(KeyDB->EmuKeys[i].provider <= 0x0000FFFF) // skip au keys
 			{ continue; }
 
 		if(srvid != 0xFFFF && (KeyDB->EmuKeys[i].provider & 0x0000FFFF) != srvid)
 			{ continue; }
-		
+
 		groupid = KeyDB->EmuKeys[i].provider>>16;
 
 		for(j=0; j<KeyDB->keyCount && (*count)<length ; j++) {
 
 			if(KeyDB->EmuKeys[j].provider != groupid) // search au key with groupip
 				{ continue; }
-			
+
 			len = strlen(KeyDB->EmuKeys[j].keyName);
-			
+
 			if(len < 3)
 				{ continue;}
-			
+
 			if(len > 8)
 				{ len = 8; }
-			
+
 			memset(tmp, 0, 4);
 			CharToBin(tmp+(4-(len/2)), KeyDB->EmuKeys[j].keyName, len);
-			
+
 			for(k=0, alreadyAdded=0; k<*count; k++)
 			{
 				if(!memcmp(hexserials[k], tmp, 4))
@@ -1893,14 +1893,14 @@ int8_t GetPowervuHexserials(uint16_t srvid, uint8_t hexserials[][4], int32_t len
 					break;
 				}
 			}
-			
+
 			if(!alreadyAdded)
 			{
 				memcpy(hexserials[*count], tmp, 4);
 				(*count)++;
 			}
 		}
-		
+
 	}
 
 	return 1;
