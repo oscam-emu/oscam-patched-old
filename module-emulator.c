@@ -276,7 +276,7 @@ int32_t emu_get_via3_emm_type(EMM_PACKET *ep, struct s_reader *rdr)
 	if(ep->emm[3] == 0x90 && ep->emm[4] == 0x03)
 	{
 		provid = b2i(3, ep->emm+5);
-		provid &=0xFFFFF0; 
+		provid &=0xFFFFF0;
 		i2b_buf(4, provid, ep->provid);
 	}
 
@@ -374,7 +374,7 @@ int32_t emu_get_pvu_emm_type(EMM_PACKET *ep, struct s_reader *rdr)
 		ep->type = UNKNOWN;
 		rdr_log_dbg(rdr, D_EMM, "UNKNOWN");
 	}
-	return 1;	
+	return 1;
 }
 
 int32_t emu_get_dre2_emm_type(EMM_PACKET *ep, struct s_reader *UNUSED(rdr))
@@ -429,30 +429,30 @@ static int32_t emu_get_emm_type(struct emm_packet_t *ep, struct s_reader *rdr)
 	{
 		case 0x05:
 			return emu_get_via3_emm_type(ep, rdr);
-		
+
 		case 0x06:
 			return emu_get_ird2_emm_type(ep, rdr);
-		
+
 		case 0x0E:
 			return emu_get_pvu_emm_type(ep, rdr);
-		
+
 		case 0x4A:
 			return emu_get_dre2_emm_type(ep, rdr);
-		
+
 		case 0x10:
 			return emu_get_tan_emm_type(ep, rdr);
-		
+
 		default:
 			break;
 	}
-	
+
 	return CS_ERROR;
 }
 
 FILTER* get_emu_prids_for_caid(struct s_reader *rdr, uint16_t caid)
 {
 	int32_t i;
-	
+
 	for(i = 0; i < rdr->emu_auproviders.nfilts; i++)
 	{
 		if(caid == rdr->emu_auproviders.filts[i].caid)
@@ -460,7 +460,7 @@ FILTER* get_emu_prids_for_caid(struct s_reader *rdr, uint16_t caid)
 			return &rdr->emu_auproviders.filts[i];
 		}
 	}
-	
+
 	return NULL;
 }
 
@@ -469,15 +469,15 @@ static int32_t emu_get_via3_emm_filter(struct s_reader *UNUSED(rdr), struct s_cs
 	if(*emm_filters == NULL)
 	{
 		const unsigned int max_filter_count = 1;
-		
+
 		if(!cs_malloc(emm_filters, max_filter_count * sizeof(struct s_csystem_emm_filter)))
 			{ return CS_ERROR; }
-		
+
 		struct s_csystem_emm_filter *filters = *emm_filters;
 		*filter_count = 0;
-		
+
 		int32_t idx = 0;
-		
+
 		filters[idx].type = EMM_GLOBAL;
 		filters[idx].enabled   = 1;
 		filters[idx].filter[0] = 0x8A;
@@ -485,10 +485,10 @@ static int32_t emu_get_via3_emm_filter(struct s_reader *UNUSED(rdr), struct s_cs
 		filters[idx].filter[3] = 0x80;
 		filters[idx].mask[3]   = 0x80;
 		idx++;
-		
+
 		*filter_count = idx;
 	}
-	
+
 	return CS_OK;
 }
 
@@ -498,7 +498,7 @@ static int32_t emu_get_ird2_emm_filter(struct s_reader* rdr, struct s_csystem_em
 	FILTER* emu_provids;
 	int8_t have_provid = 0, have_serial = 0;
 	int32_t i;
-	
+
 	if(GetIrdeto2Hexserial(caid, hexserial))
 		{ have_serial = 1; }
 
@@ -529,11 +529,11 @@ static int32_t emu_get_ird2_emm_filter(struct s_reader* rdr, struct s_csystem_em
 			memset(&filters[idx].mask[2], 0xFF, 3);
 			idx++;
 		}
-		
+
 		for(i=0; have_provid && i<emu_provids->nprids; i++)
 		{
 			i2b_buf(4, emu_provids->prids[i], prid);
-			
+
 			filters[idx].type = EMM_UNIQUE;
 			filters[idx].enabled   = 1;
 			filters[idx].filter[0] = 0x82;
@@ -543,7 +543,7 @@ static int32_t emu_get_ird2_emm_filter(struct s_reader* rdr, struct s_csystem_em
 			memcpy(&filters[idx].filter[2], &prid[1], 3);
 			memset(&filters[idx].mask[2], 0xFF, 3);
 			idx++;
-			
+
 			filters[idx].type = EMM_SHARED;
 			filters[idx].enabled   = 1;
 			filters[idx].filter[0] = 0x82;
@@ -554,10 +554,10 @@ static int32_t emu_get_ird2_emm_filter(struct s_reader* rdr, struct s_csystem_em
 			memset(&filters[idx].mask[2], 0xFF, 2);
 			idx++;
 		}
-		
+
 		*filter_count = idx;
 	}
-	
+
 	return CS_OK;
 }
 
@@ -565,21 +565,21 @@ static int32_t emu_get_pvu_emm_filter(struct s_reader *UNUSED(rdr), struct s_csy
 {
 	uint8_t hexserials[16][4];
 	int32_t i, count = 0;
-	
+
 	if(!GetPowervuHexserials(srvid, hexserials, 16, &count))
 		{ return CS_ERROR; }
-	
+
 	if(*emm_filters == NULL)
 	{
 		const unsigned int max_filter_count = count;
 		if(!cs_malloc(emm_filters, max_filter_count * sizeof(struct s_csystem_emm_filter)))
 			{ return CS_ERROR; }
-		
+
 		struct s_csystem_emm_filter *filters = *emm_filters;
 		*filter_count = 0;
-		
+
 		int32_t idx = 0;
-		
+
 		for(i=0; i<count; i++)
 		{
 			filters[idx].type = EMM_UNIQUE;
@@ -596,7 +596,7 @@ static int32_t emu_get_pvu_emm_filter(struct s_reader *UNUSED(rdr), struct s_csy
 			filters[idx].mask[13]   = 0xFF;
 			idx++;
 		}
-		
+
 		*filter_count = idx;
 	}
 
@@ -607,21 +607,21 @@ static int32_t emu_get_dre2_emm_filter(struct s_reader *UNUSED(rdr), struct s_cs
 {
 	uint8_t hexserials[16];
 	int32_t i, count = 0;
-	
+
 	if(!GetDrecryptHexserials(caid, provid, hexserials, 16, &count))
 		{ count = 0; }
-	
+
 	if(*emm_filters == NULL)
 	{
 		const unsigned int max_filter_count = 1 + count + 1;
 		if(!cs_malloc(emm_filters, max_filter_count * sizeof(struct s_csystem_emm_filter)))
 			{ return CS_ERROR; }
-		
+
 		struct s_csystem_emm_filter *filters = *emm_filters;
 		*filter_count = 0;
-		
+
 		int32_t idx = 0;
-		
+
 		if(provid == 0xFE)
 		{
 			filters[idx].type = EMM_GLOBAL;
@@ -630,7 +630,7 @@ static int32_t emu_get_dre2_emm_filter(struct s_reader *UNUSED(rdr), struct s_cs
 			filters[idx].mask[0]   = 0xFF;
 			idx++;
 		}
-		
+
 		for(i=0; i<count; i++)
 		{
 			filters[idx].type = EMM_SHARED;
@@ -641,22 +641,22 @@ static int32_t emu_get_dre2_emm_filter(struct s_reader *UNUSED(rdr), struct s_cs
 			filters[idx].mask[1]   = 0xFF;
 			idx++;
 		}
-		
+
 		//filters[idx].type = EMM_UNIQUE;
 		//filters[idx].enabled   = 1;
 		//filters[idx].filter[0] = 0x87;
 		//filters[idx].mask[0]   = 0xFF;
 		//idx++;
-		
+
 		filters[idx].type = EMM_UNIQUE;
 		filters[idx].enabled   = 1;
 		filters[idx].filter[0] = 0x88;
 		filters[idx].mask[0]   = 0xFF;
 		idx++;
-		
+
 		*filter_count = idx;
 	}
-	
+
 	return CS_OK;
 }
 
@@ -666,33 +666,33 @@ static int32_t emu_get_tan_emm_filter(struct s_reader *UNUSED(rdr), struct s_csy
 	{
 		const unsigned int max_filter_count = 2;
 		uint8_t buf[8];
-		
+
 		if(!FindKey('T', 0x40, 0, "MK", buf, 8, 0, 0, 0, NULL) && !FindKey('T', 0x40, 0, "MK01", buf, 8, 0, 0, 0, NULL))
 			{ return CS_ERROR; }
-		
+
 		if(!cs_malloc(emm_filters, max_filter_count * sizeof(struct s_csystem_emm_filter)))
 			{ return CS_ERROR; }
-		
+
 		struct s_csystem_emm_filter *filters = *emm_filters;
 		*filter_count = 0;
-		
+
 		int32_t idx = 0;
-		
+
 		filters[idx].type = EMM_GLOBAL;
 		filters[idx].enabled   = 1;
 		filters[idx].filter[0] = 0x82;
 		filters[idx].mask[0]   = 0xFF;
 		idx++;
-		
+
 		filters[idx].type = EMM_GLOBAL;
 		filters[idx].enabled   = 1;
 		filters[idx].filter[0] = 0x83;
 		filters[idx].mask[0]   = 0xFF;
 		idx++;
-		
+
 		*filter_count = idx;
-	}	
-	
+	}
+
 	return CS_OK;
 }
 
@@ -707,23 +707,23 @@ static int32_t emu_get_emm_filter_adv(struct s_reader *rdr, struct s_csystem_emm
 	{
 		case 0x05:
 			return emu_get_via3_emm_filter(rdr, emm_filters, filter_count, caid, provid);
-		
+
 		case 0x06:
 			return emu_get_ird2_emm_filter(rdr, emm_filters, filter_count, caid, provid);
-		
+
 		case 0x0E:
 			return emu_get_pvu_emm_filter(rdr, emm_filters, filter_count, caid, provid, srvid);
-		
+
 		case 0x4A:
 			return emu_get_dre2_emm_filter(rdr, emm_filters, filter_count, caid, provid);
-		
+
 		case 0x10:
 			return emu_get_tan_emm_filter(rdr, emm_filters, filter_count, caid, provid);
-		
+
 		default:
 			break;
 	}
-	
+
 	return CS_ERROR;
 }
 
