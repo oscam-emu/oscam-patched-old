@@ -4440,7 +4440,7 @@ void dvbapi_process_input(int32_t demux_id, int32_t filter_num, uchar *buffer, i
 			if(caid_is_powervu(curpid->CAID))
 			{
 				pvu_skip = 1;
-				
+
 				if(sctlen - 11 > buffer[9])
 				{
 					if(buffer[11 + buffer[9]] > curpid->pvu_counter
@@ -4452,10 +4452,9 @@ void dvbapi_process_input(int32_t demux_id, int32_t filter_num, uchar *buffer, i
 					}
 				}
 			}
-			
+
 			if((curpid->table == buffer[0] && !caid_is_irdeto(curpid->CAID)) || pvu_skip)  // wait for odd / even ecm change (only not for irdeto!)
 			{
-				
 				if(!(er = get_ecmtask()))
 				{
 					return;
@@ -4737,36 +4736,35 @@ void dvbapi_process_input(int32_t demux_id, int32_t filter_num, uchar *buffer, i
 			dvbapi_stop_filternum(demux_id, filter_num, msgid);
 			return;
 		}
-		
+
 #ifdef WITH_EMU
 		if(caid_is_director(demux[demux_id].demux_fd[filter_num].caid))
 		{
 			uint32_t i;
 			uint32_t emmhash;
-			
+
 			if(sctlen < 4)
 			{
 				return;
 			}
-			
+
 			for(i=0; i+2<sctlen; i++)
 			{
 				if(buffer[i] == 0xF0 && (buffer[i+2] == 0xE1 || buffer[i+2] == 0xE4))
 				{
 					emmhash = (buffer[3]<<8) | buffer[sctlen-2];
-					
+
 					if(demux[demux_id].demux_fd[filter_num].cadata == emmhash)
 					{
 						return;
 					}
-					
+
 					demux[demux_id].demux_fd[filter_num].cadata = emmhash;
-					
+
 					dvbapi_process_emm(demux_id, filter_num, buffer, sctlen);
 					return;
 				}
 			}
-			
 			return;
 		}
 #endif
