@@ -3,7 +3,7 @@
 
 #ifdef WITH_EMU
 
-int8_t BissECM(struct s_reader *rdr, const uint8_t *ecm, uint8_t *dw, uint16_t srvid, uint16_t ecmpid);
+int8_t BissEcm(struct s_reader *rdr, uint16_t caid, const uint8_t *ecm, uint8_t *dw, uint16_t srvid, uint16_t ecmpid);
 
 #endif // WITH_EMU
 

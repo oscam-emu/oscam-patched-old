@@ -2238,7 +2238,7 @@ void get_cw(struct s_client *client, ECM_REQUEST *er)
 	}
 
 	//checks for odd/even byte 
-	if(!caid_is_biss(er->caid) && !caid_is_fake(er->caid) && get_odd_even(er)==0){
+	if(!caid_is_biss_static(er->caid) && !caid_is_fake(er->caid) && get_odd_even(er)==0){
 		cs_log_dbg(D_TRACE, "warning: ecm with null odd/even byte from %s", (check_client(er->client)?er->client->account->usr:"-"));
 		er->rc = E_INVALID;
 	}
