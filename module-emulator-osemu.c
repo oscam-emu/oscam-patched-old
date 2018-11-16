@@ -55,7 +55,7 @@ void Date2Str(char *dateStr, uint8_t len, int8_t offset, uint8_t format)
 
 	switch (format)
 	{
-		case 1: // Use in WriteKeyToFile()
+		case 1: // Used in WriteKeyToFile()
 			strftime(dateStr, len, "%c", &timeinfo);
 			break;
 
@@ -63,7 +63,7 @@ void Date2Str(char *dateStr, uint8_t len, int8_t offset, uint8_t format)
 			strftime(dateStr, len, "%F @ %R", &timeinfo);
 			break;
 
-		case 3: // Used in SetKey(), BissAnnotate()
+		case 3: // Used in SetKey(), BissAnnotate(), BissGetKey()
 			strftime(dateStr, len, "%y%m%d%H", &timeinfo);
 			break;
 	}
