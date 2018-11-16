@@ -12,10 +12,6 @@
 #include "oscam-string.h"
 #include "oscam-time.h"
 
-#if defined(__ANDROID__)
-#define __bswap_32 bswap_32
-#endif
-
 static inline uint8_t GetBit(uint8_t byte, uint8_t bitnb)
 {
 	return ((byte & (1 << bitnb)) ? 1 : 0);
@@ -421,49 +417,38 @@ static void PowervuHashModes04to0ATables(uint8_t *data, uint8_t *hash, const uin
 	}
 }
 
-static const uint16_t table0F[] = { 0x45C7, 0x7115, 0x0761, 0x4705 };
-static const uint16_t table10[] = { 0x470F, 0x6C2B, 0x0FAD, 0xEAB3 };
-static const uint16_t table11[] = { 0x46B1, 0x66D1, 0x285D, 0xD259 };
-static const uint16_t table12[] = { 0x4B0B, 0x68D7, 0xAD5F, 0xBB4B };
-static const uint16_t table13[] = { 0x4E4F, 0x6AE1, 0xD321, 0xA6F7 };
-static const uint16_t table14[] = { 0x39DD, 0x65B9, 0x9103, 0xACF1 };
+static const uint8_t table0F[] = { 0xC7, 0x45, 0x15, 0x71, 0x61, 0x07, 0x05, 0x47 };
+static const uint8_t table10[] = { 0x0F, 0x47, 0x2B, 0x6C, 0xAD, 0x0F, 0xB3, 0xEA };
+static const uint8_t table11[] = { 0xB1, 0x46, 0xD1, 0x66, 0x5D, 0x28, 0x59, 0xD2 };
+static const uint8_t table12[] = { 0x0B, 0x4B, 0xD7, 0x68, 0x5F, 0xAD, 0x4B, 0xBB };
+static const uint8_t table13[] = { 0x4F, 0x4E, 0xE1, 0x6A, 0x21, 0xD3, 0xF7, 0xA6 };
+static const uint8_t table14[] = { 0xDD, 0x39, 0xB9, 0x65, 0x03, 0x91, 0xF1, 0xAC };
+static const uint8_t table15[] = { 0x3F, 0x50, 0xB5, 0x6F, 0x37, 0xC9, 0x13, 0x5D };
+static const uint8_t table16[] = { 0xF9, 0x5C, 0xFD, 0x72, 0x19, 0x42, 0x23, 0x6B };
 
-static void PowervuHashModes0Fto14Tables(uint8_t *data, uint8_t *hash, const uint16_t *table)
+static void PowervuHashModes0Fto18Tables(uint8_t *data, uint8_t *hash, const uint8_t *table)
 {
-	uint32_t i = 0, c = 0, d = 0;
-	uint32_t h[4] = { 0, 0, 0, 0 };
+	int i;
+	uint32_t t[4], tmp;
 
-	uint32_t c0 = table[0];
-	uint32_t c1 = table[1];
-	uint32_t c2 = table[2];
-	uint32_t c3 = table[3];
+	memset(hash, 0x00, 16);
+
+	t[0] = (table[1] << 8) + table[0];
+	t[1] = (table[3] << 8) + table[2];
+	t[2] = (table[5] << 8) + table[4];
+	t[3] = (table[7] << 8) + table[6];
 
 	for (i = 0; i < 60; i += 4)
 	{
-		c0 = ((c0 & 0xFFFF) * c2) + ((c0 >> 16) & 0x0000FFFF);
-		c1 = ((c1 & 0xFFFF) * c3) + ((c1 >> 16) & 0x0000FFFF);
+		t[0] = ((t[0] & 0xFFFF) * t[2]) + (t[0] >> 16);
+		t[1] = ((t[1] & 0xFFFF) * t[3]) + (t[1] >> 16);
+		tmp = t[0] + t[1];
 
-		c = c0 + c1;
-
-		#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-		d = __bswap_32(*(uint32_t *)(data + i));
-		#else
-		d =            *(uint32_t *)(data + i);
-		#endif
-		h[(i >> 2) & 0x3] = h[(i >> 2) & 0x3] ^ c ^ d;
+		hash[(i + 0) & 0x0F] = hash[(i + 0) & 0x0F] ^ data[i + 0] ^ (tmp >> 24);
+		hash[(i + 1) & 0x0F] = hash[(i + 1) & 0x0F] ^ data[i + 1] ^ (tmp >> 16);
+		hash[(i + 2) & 0x0F] = hash[(i + 2) & 0x0F] ^ data[i + 2] ^ (tmp >> 8);
+		hash[(i + 3) & 0x0F] = hash[(i + 3) & 0x0F] ^ data[i + 3] ^ (tmp >> 0);
 	}
-
-	#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-	*(uint32_t *)(hash + 0) = __bswap_32(h[0]);
-	*(uint32_t *)(hash + 4) = __bswap_32(h[1]);
-	*(uint32_t *)(hash + 8) = __bswap_32(h[2]);
-	*(uint32_t *)(hash + 12)= __bswap_32(h[3]);
-	#else
-	*(uint32_t *)(hash + 0) =           (h[0]);
-	*(uint32_t *)(hash + 4) =           (h[1]);
-	*(uint32_t *)(hash + 8) =           (h[2]);
-	*(uint32_t *)(hash + 12)=           (h[3]);
-	#endif
 }
 
 static void PowervuCreateHash(uint8_t *data, int len, uint8_t *hash, int mode)
@@ -515,27 +500,35 @@ static void PowervuCreateHash(uint8_t *data, int len, uint8_t *hash, int mode)
 			break;
 
 		case 15:
-			PowervuHashModes0Fto14Tables(dataPadded, hash, table0F);
+			PowervuHashModes0Fto18Tables(dataPadded, hash, table0F);
 			break;
 
 		case 16:
-			PowervuHashModes0Fto14Tables(dataPadded, hash, table10);
+			PowervuHashModes0Fto18Tables(dataPadded, hash, table10);
 			break;
 
 		case 17:
-			PowervuHashModes0Fto14Tables(dataPadded, hash, table11);
+			PowervuHashModes0Fto18Tables(dataPadded, hash, table11);
 			break;
 
 		case 18:
-			PowervuHashModes0Fto14Tables(dataPadded, hash, table12);
+			PowervuHashModes0Fto18Tables(dataPadded, hash, table12);
 			break;
 
 		case 19:
-			PowervuHashModes0Fto14Tables(dataPadded, hash, table13);
+			PowervuHashModes0Fto18Tables(dataPadded, hash, table13);
 			break;
 
 		case 20:
-			PowervuHashModes0Fto14Tables(dataPadded, hash, table14);
+			PowervuHashModes0Fto18Tables(dataPadded, hash, table14);
+			break;
+
+		case 21:
+			PowervuHashModes0Fto18Tables(dataPadded, hash, table15);
+			break;
+
+		case 22:
+			PowervuHashModes0Fto18Tables(dataPadded, hash, table16);
 			break;
 
 		default:
