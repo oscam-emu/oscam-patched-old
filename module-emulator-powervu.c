@@ -425,6 +425,8 @@ static const uint8_t table13[] = { 0x4F, 0x4E, 0xE1, 0x6A, 0x21, 0xD3, 0xF7, 0xA
 static const uint8_t table14[] = { 0xDD, 0x39, 0xB9, 0x65, 0x03, 0x91, 0xF1, 0xAC };
 static const uint8_t table15[] = { 0x3F, 0x50, 0xB5, 0x6F, 0x37, 0xC9, 0x13, 0x5D };
 static const uint8_t table16[] = { 0xF9, 0x5C, 0xFD, 0x72, 0x19, 0x42, 0x23, 0x6B };
+static const uint8_t table17[] = { 0xDF, 0x60, 0x93, 0x64, 0x33, 0x16, 0xB3, 0x8A };
+static const uint8_t table18[] = { 0x09, 0x64, 0x5F, 0x6B, 0xFB, 0x21, 0x19, 0xE4 };
 
 static void PowervuHashModes0Fto18Tables(uint8_t *data, uint8_t *hash, const uint8_t *table)
 {
@@ -529,6 +531,14 @@ static void PowervuCreateHash(uint8_t *data, int len, uint8_t *hash, int mode)
 
 		case 22:
 			PowervuHashModes0Fto18Tables(dataPadded, hash, table16);
+			break;
+
+		case 23:
+			PowervuHashModes0Fto18Tables(dataPadded, hash, table17);
+			break;
+
+		case 24:
+			PowervuHashModes0Fto18Tables(dataPadded, hash, table18);
 			break;
 
 		default:
