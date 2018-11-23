@@ -1542,6 +1542,20 @@ struct s_reader                                     //contains device info, read
 #ifdef READER_NAGRA_MERLIN
 	uint8_t         cas7_aes_key[32];
 	uint8_t         cas7_aes_iv[16];
+	uint8_t			mod1[112];
+	uint8_t         mod1_length;
+	uint8_t			data50[80];
+	uint8_t         data50_length;
+	uint8_t			mod50[80];
+	uint8_t         mod50_length;
+	uint8_t			key60[96];
+	uint8_t         key60_length;
+	uint8_t			exp60[96]; 
+	uint8_t         exp60_length;
+	uint8_t			nuid[4];
+	uint8_t         nuid_length;
+	uint8_t			cwekey[16];
+	uint8_t         cwekey_length;
 #endif
 	int32_t         atrlen;
 	SIDTABS         sidtabs;
