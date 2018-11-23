@@ -1,6 +1,6 @@
 #include "globals.h"
-#include <math.h>
 #ifdef READER_NAGRA_MERLIN
+#include "math.h"
 #include "cscrypt/bn.h"
 #include "cscrypt/idea.h"
 #include "cscrypt/sha256.h"
@@ -11,7 +11,6 @@
 #include "oscam-work.h"
 #include "cscrypt/des.h"
 #include "cscrypt/mdc2.h"
-#include "reader-nagracak7.h"
 
 const unsigned char exponent[] = {0x01, 0x00, 0x01};
 const unsigned char d00ff[]    = {0x00,0xff,0xff,0xFF};
@@ -193,7 +192,7 @@ static int32_t ParseDataType(struct s_reader *reader, unsigned char dt, unsigned
 	case SYSID:
 		memcpy(reader->edata,cta_res+26,0x70);
 		reader->dt5num=cta_res[20];
-		rsa_decrypt(reader->edata,0x70,reader->out,mod1,sizeof(mod1));
+		rsa_decrypt(reader->edata,0x70,reader->out,reader->mod1,reader->mod1_length);
 		if(reader->dt5num==0x00)
 		{
 			memcpy(reader->kdt05_00,&reader->out[18],0x5C+2);
@@ -349,7 +348,12 @@ void CAS7_getCamKey(struct s_reader *reader)
 	0xC0,0x57,0x2A,0x40,0xB7,0xFF,0x8A,0xBB,0x25,0x21,0xD7,0x50,0xE7,0x35,0xA1,0x85,0xCD,0xA6,0xD3,0xDE,0xB3,
 	0x3D,0x16,0xD4,0x94,0x76,0x8A,0x82,0x8C,0x70,0x25,0xD4,0x00,0xD0,0x64,0x8C,0x26,0xB9,0x5F,0x44,0xFF,0x73,
 	0x70,0xAB,0x43,0xF5,0x68,0xA2,0xB1,0xB5,0x8A,0x8E,0x02,0x5F,0x96,0x06,0xA8,0xC3,0x4F,0x15,0xCD,0x99,0xC2,
-	0x69,0xB8,0x35,0x68,0x11,0x4C,0x84,0x3E,0x94,0x1E,0x00,0x08,0x00,0x00,0xCC,0xCC,0xCC,0xCC};
+	0x69,0xB8,0x35,0x68,0x11,0x4C,0x00,0x00,0x00,0x00,0x00,0x08,0x00,0x00,0xCC,0xCC,0xCC,0xCC};
+	
+	if (reader->nuid_length == 4) {
+		memcpy(cmd0e+132, reader->nuid, reader->nuid_length);	// inject NUID
+	}
+	
 	do_cas7_cmd(reader,cta_res,&cta_lr,cmd0e,sizeof(cmd0e),0x20);
 	reader->dword_83DBC= (cta_res[18]<<24);
 	reader->dword_83DBC+=(cta_res[19]<<16);
@@ -375,9 +379,9 @@ void CAS7_getCamKey(struct s_reader *reader)
 	BIGNUM *bnE0 = BN_CTX_get(ctx0);
 	BIGNUM *bnCT0 = BN_CTX_get(ctx0);
 	BIGNUM *bnPT0 = BN_CTX_get(ctx0);
-	BN_bin2bn(&mod50[0], 0x50, bnN0);
+	BN_bin2bn(&reader->mod50[0], 0x50, bnN0);
 	BN_bin2bn(&reader->cas7expo[0], 0x11, bnE0);
-	BN_bin2bn(&data50[0], 0x50, bnCT0);
+	BN_bin2bn(&reader->data50[0], 0x50, bnCT0);
 	BN_mod_exp(bnPT0, bnCT0, bnE0, bnN0, ctx0);
 	memset(reader->data,0x00,sizeof(reader->data));
 	BN_bn2bin(bnPT0, reader->data+ (0x50- BN_num_bytes(bnPT0)));
@@ -398,8 +402,8 @@ void CAS7_getCamKey(struct s_reader *reader)
 	BIGNUM *bnE1 = BN_CTX_get(ctx1);
 	BIGNUM *bnCT1 = BN_CTX_get(ctx1);
 	BIGNUM *bnPT1 = BN_CTX_get(ctx1);
-	BN_bin2bn(&key60[0], 0x60, bnN1);
-	BN_bin2bn(&exp60[0], 0x60, bnE1);
+	BN_bin2bn(&reader->key60[0], 0x60, bnN1);
+	BN_bin2bn(&reader->exp60[0], 0x60, bnE1);
 	BN_bin2bn(&reader->step1[0], 0x60, bnCT1);
 	BN_mod_exp(bnPT1, bnCT1, bnE1, bnN1, ctx1);
 	BN_bn2bin(bnPT1, reader->data+ (0x60- BN_num_bytes(bnPT1)));
@@ -488,7 +492,7 @@ void CAS7_getCamKey(struct s_reader *reader)
 	BIGNUM *bnEs  = BN_CTX_get(ctxs);
 	BIGNUM *bnCTs = BN_CTX_get(ctxs);
 	BIGNUM *bnPTs = BN_CTX_get(ctxs);
-	BN_bin2bn(&mod50[0], sizeof(mod50), bnNs);
+	BN_bin2bn(&reader->mod50[0], reader->mod50_length, bnNs);
 	BN_bin2bn(&reader->cas7expo[0], 0x11, bnEs);
 	BN_bin2bn(&reader->stillencrypted[0], 0x50, bnCTs);
 	BN_mod_exp(bnPTs, bnCTs, bnEs, bnNs, ctxs);
@@ -655,14 +659,14 @@ static int32_t nagra7_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, str
 			memcpy(_cwe0,&cta_res[28],0x08);
 			memcpy(_cwe1,&cta_res[52],0x08);
 		}
-		if (array_has_nonzero_byte(_cwe_key, 128) > 0)
+		if (array_has_nonzero_byte(reader->cwekey, 128) > 0)
 		{
 			i = cta_res[24];
-			memcpy(_cwe_key, _cwe_key+(i*16), 16);
-			rdr_log_dump_dbg(reader, D_READER, _cwe_key, sizeof(_cwe_key), "Using CWPK-%d from config:",i);
+			memcpy(reader->cwekey, reader->cwekey+(i*16), 16);
+			rdr_log_dump_dbg(reader, D_READER, reader->cwekey, reader->cwekey_length, "Using CWPK-%d from config:",i);
 		}
-		_3DES(_cwe0,_cwe_key);
-		_3DES(_cwe1,_cwe_key);
+		_3DES(_cwe0,reader->cwekey);
+		_3DES(_cwe1,reader->cwekey);
 		int chkok=1;
 
 		if(((_cwe0[0]+_cwe0[1]+_cwe0[2])&0xFF)!=_cwe0[3])

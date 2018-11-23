@@ -2370,7 +2370,7 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 	{
 		for(i = 0; i < len; i++) { tpl_printf(vars, TPLAPPEND, "DESKEY", "%02X", rdr->des_key[i]); }
 	}
-
+	
 	// BoxKey
 	len = rdr->boxkey_length;
 	if(len > 0)
@@ -2378,6 +2378,64 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 		for(i = 0; i < len ; i++)
 			{ tpl_printf(vars, TPLAPPEND, "BOXKEY", "%02X", rdr->boxkey[i]); }
 	}
+
+#ifdef READER_NAGRA_MERLIN
+	// mod1 (CAK7)
+	len = rdr->mod1_length;
+	if(len > 0)
+	{
+		for(i = 0; i < len ; i++)
+			{ tpl_printf(vars, TPLAPPEND, "MOD1", "%02X", rdr->mod1[i]); }
+	}
+	
+	// data50 (CAK7)
+	len = rdr->data50_length;
+	if(len > 0)
+	{
+		for(i = 0; i < len ; i++)
+			{ tpl_printf(vars, TPLAPPEND, "DATA50", "%02X", rdr->data50[i]); }
+	}
+	
+	// mod50 (CAK7)
+	len = rdr->mod50_length;
+	if(len > 0)
+	{
+		for(i = 0; i < len ; i++)
+			{ tpl_printf(vars, TPLAPPEND, "MOD50", "%02X", rdr->mod50[i]); }
+	}
+	
+	// key60 (CAK7)
+	len = rdr->key60_length;
+	if(len > 0)
+	{
+		for(i = 0; i < len ; i++)
+			{ tpl_printf(vars, TPLAPPEND, "KEY60", "%02X", rdr->key60[i]); }
+	}
+	
+	// exp60 (CAK7)
+	len = rdr->exp60_length;
+	if(len > 0)
+	{
+		for(i = 0; i < len ; i++)
+			{ tpl_printf(vars, TPLAPPEND, "EXP60", "%02X", rdr->exp60[i]); }
+	}
+	
+	// nuid (CAK7)
+	len = rdr->nuid_length;
+	if(len > 0)
+	{
+		for(i = 0; i < len ; i++)
+			{ tpl_printf(vars, TPLAPPEND, "NUID", "%02X", rdr->nuid[i]); }
+	}
+
+	// cwekey (CAK7)
+	len = rdr->cwekey_length;
+	if(len > 0)
+	{
+		for(i = 0; i < len ; i++)
+			{ tpl_printf(vars, TPLAPPEND, "CWEKEY", "%02X", rdr->cwekey[i]); }
+	}
+#endif
 
 	// ins7E
 	if(rdr->ins7E[0x1A])
