@@ -766,7 +766,7 @@ static uint8_t PowervuUnmaskEcm(uint8_t *ecm, uint8_t *seedEcmCw, uint8_t *modeC
 {
 	int i, l;
 	uint8_t data[64], mask[16];
-	uint8_t hashModeEcm, hashModeCw, modeUnmask;
+	uint8_t hashModeEcm, hashModeCw, modeUnmask = 0;
 	uint32_t crc;
 
 	uint8_t sourcePos[] = { 0x04, 0x05, 0x06, 0x07, 0x0A, 0x0B, 0x0C, 0x0D,
@@ -803,7 +803,6 @@ static uint8_t PowervuUnmaskEcm(uint8_t *ecm, uint8_t *seedEcmCw, uint8_t *modeC
 
 	hashModeEcm = ecm[8] ^ PowervuCrc8Calc(data, 24);
 
-	modeUnmask = 0;
 	if (extraBytesLen > 0)
 	{
 		modeUnmask = PowervuGetModeUnmask(ecm + 10);
@@ -979,9 +978,9 @@ static void PowervuCreateCw(uint8_t *seed, uint8_t lenSeed, uint8_t *baseCw, uin
 	}
 }
 
-static inline int8_t PowervuGetEcmKey(uint8_t *key, uint16_t srvid, uint8_t index, uint32_t keyRef)
+static inline int8_t PowervuGetEcmKey(uint8_t *key, uint16_t srvid, uint8_t keyIndex, uint32_t keyRef)
 {
-	return FindKey('P', srvid, 0xFFFF0000, index == 1 ? "01" : "00", key, 7, 0, keyRef, 0, NULL);
+	return FindKey('P', srvid, 0xFFFF0000, keyIndex == 1 ? "01" : "00", key, 7, 0, keyRef, 0, NULL);
 }
 
 static inline int8_t PowervuGetEmmKey(uint8_t *key, char *uniqueAddress, uint32_t keyRef, uint32_t *groupId)
@@ -1852,14 +1851,14 @@ static void PowervuUnmaskEmm(uint8_t *emm)
 	emm[l + 3] = crc >> 0;
 }
 
-static int8_t PowervuUpdateEcmKeysByGroup(uint32_t groupId, uint8_t index, uint8_t *Key, uint32_t uniqueAddress)
+static int8_t PowervuUpdateEcmKeysByGroup(uint32_t groupId, uint8_t keyIndex, uint8_t *Key, uint32_t uniqueAddress)
 {
 	int8_t ret = 0;
 	uint8_t oldKey[7];
 	uint32_t foundProvider = 0, keyRef = 0;
 	char indexStr[3], uaInfo[13];
 
-	snprintf(indexStr, 3, "%02X", index);
+	snprintf(indexStr, 3, "%02X", keyIndex);
 	snprintf(uaInfo, 13, "UA: %08X", uniqueAddress);
 
 	SAFE_MUTEX_LOCK(&emu_key_data_mutex);
