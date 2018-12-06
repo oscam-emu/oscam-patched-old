@@ -11,16 +11,17 @@
 
 /*
  * Error codes for ProccessECM and ProccessEMM functions
- * 0 - OK
- * 1 - ECM / EMM not supported
- * 2 - ECM / EMM key not found
- * 3 - Nano80 error
- * 4 - Corrupt data
- * 5 - CW not found
- * 6 - CW / ECM / EMM checksum error
- * 7 - Out of memory
- * 8 - ICG error
- * 9 - Wrong provider
+ *  0 - OK
+ *  1 - ECM / EMM not supported
+ *  2 - ECM / EMM key not found
+ *  3 - Nano80 error
+ *  4 - Corrupt data
+ *  5 - CW not found
+ *  6 - CW / ECM / EMM checksum error
+ *  7 - Out of memory
+ *  8 - ICG error
+ *  9 - Wrong provider
+ * 10 - ECM key rejected
 */
 
 #define EMU_OK             0
@@ -33,6 +34,7 @@
 #define EMU_OUT_OF_MEMORY  7
 #define EMU_ICG_ERROR      8
 #define EMU_WRONG_PROVID   9
+#define EMU_KEY_REJECTED  10
 
 typedef struct KeyData KeyData;
 
