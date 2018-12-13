@@ -344,9 +344,13 @@ list_config() {
 	# Extra modules/libraries
 	enabled_any MODULE_GBOX WEBIF && echo "CONFIG_LIB_MINILZO=y" || echo "# CONFIG_LIB_MINILZO=n"
 	not_have_flag USE_LIBCRYPTO && echo "CONFIG_LIB_AES=y" || echo "# CONFIG_LIB_AES=n"
+	enabled READER_NAGRA_MERLIN && echo "CONFIG_LIB_AESCBC=y" || echo "# CONFIG_LIB_AESCBC=n"
+	enabled READER_NAGRA_MERLIN && echo "CONFIG_LIB_FASTAES=y" || echo "# CONFIG_LIB_FASTAES=n"
 	enabled MODULE_CCCAM && echo "CONFIG_LIB_RC6=y" || echo "# CONFIG_LIB_RC6=n"
 	not_have_flag USE_LIBCRYPTO && enabled MODULE_CCCAM && echo "CONFIG_LIB_SHA1=y" || echo "# CONFIG_LIB_SHA1=n"
-	enabled_any READER_DRE MODULE_SCAM READER_VIACCESS && echo "CONFIG_LIB_DES=y" || echo "# CONFIG_LIB_DES=n"
+	enabled READER_NAGRA_MERLIN && echo "CONFIG_LIB_SHA256=y" || echo "# CONFIG_LIB_SHA256=n"
+	enabled_any READER_DRE MODULE_SCAM READER_VIACCESS READER_NAGRA_MERLIN && echo "CONFIG_LIB_DES=y" || echo "# CONFIG_LIB_DES=n"
+	enabled READER_NAGRA_MERLIN && echo "CONFIG_LIB_MDC2=y" || echo "# CONFIG_LIB_MDC2=n"
 	enabled_any MODULE_CCCAM READER_NAGRA READER_NAGRA_MERLIN READER_SECA && echo "CONFIG_LIB_IDEA=y" || echo "# CONFIG_LIB_IDEA=n"
 	not_have_flag USE_LIBCRYPTO && enabled_any READER_CONAX READER_CRYPTOWORKS READER_NAGRA READER_NAGRA_MERLIN && echo "CONFIG_LIB_BIGNUM=y" || echo "# CONFIG_LIB_BIGNUM=n"
 }
