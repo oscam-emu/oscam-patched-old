@@ -1140,11 +1140,15 @@ static char *send_oscam_config_gbox(struct templatevars *vars, struct uriparams 
 	char *value0 = mk_t_gbox_port();
 	tpl_addVar(vars, TPLAPPEND, "PORT", value0);
 	free_mk_t(value0);
-	tpl_printf(vars, TPLADD, "GBOXPASSWORD", "%08X", cfg.gbox_password);
+	tpl_printf(vars, TPLADD, "MYGBOXPASSWORD", "%08X", cfg.gbox_password);
+	tpl_printf(vars, TPLADD, "MYGBOXID", "%04X", gbox_get_local_gbox_id());
 	tpl_printf(vars, TPLADD, "GBOXRECONNECT", "%d", cfg.gbox_reconnect);
 	tpl_printf(vars, TPLADD, "GBOXMYVERS", "%02X", cfg.gbox_my_vers);
 	tpl_printf(vars, TPLAPPEND, "GBOXMYCPUAPI", "%02X", cfg.gbox_my_cpu_api);
+#ifdef MODULE_CCCAM
 	if(cfg.ccc_reshare == 1)  { tpl_addVar(vars, TPLADD, "GBOXCCCRESHARE", "checked"); }
+	tpl_addVar(vars, TPLAPPEND, "CCCDEPENDINGCONFIG", tpl_getTpl(vars, "CCCAMRESHAREBIT"));
+#endif
 	if(cfg.log_hello == 1)  { tpl_addVar(vars, TPLADD, "GBOXLOGHELLO", "checked"); }
 	if(cfg.gsms_dis == 1)  { tpl_addVar(vars, TPLADD, "GBOXGSMSDISABLE", "checked"); }
 	if(cfg.dis_attack_txt == 1)  { tpl_addVar(vars, TPLADD, "GBOXDISATTACKTXT", "checked"); }
@@ -2765,7 +2769,20 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 	tpl_printf(vars, TPLADD, "GBOXMAXDISTANCE",   "%d", rdr->gbox_maxdist);
 	tpl_printf(vars, TPLADD, "GBOXMAXECMSEND",   "%d", rdr->gbox_maxecmsend);
 	tpl_printf(vars, TPLADD, "GBOXRESHARE",   "%d", rdr->gbox_reshare);
-	tpl_printf(vars, TPLADD, "GBOXCCCAMRESHARE",   "%d", rdr->gbox_cccam_reshare);
+
+	if(rdr->blockemm & 0x80)
+		{ 
+			tpl_addVar(vars, TPLADD, "REMMCNLDCHK", "checked"); 
+			tpl_printf(vars, TPLADD, "GBOXREMMPEER", "%04X", rdr->gbox_remm_peer);
+			tpl_addVar(vars, TPLADD, "REMMUNIQCHK", (rdr->blockemm & EMM_UNIQUE) ? "" : "checked");
+			tpl_addVar(vars, TPLADD, "REMMSHAREDCHK", (rdr->blockemm & EMM_SHARED) ? "" : "checked");
+			tpl_addVar(vars, TPLADD, "REMMGLOBALCHK", (rdr->blockemm & EMM_GLOBAL) ? "" : "checked");
+		}
+	if(rdr->gbox_gsms_peer)
+		{ 
+			tpl_printf(vars, TPLADD, "LASTGSMS", "%s", rdr->last_gsms);
+			tpl_printf(vars, TPLADD, "GBOXGSMSPEER", "%04X", rdr->gbox_gsms_peer);
+		}
 #endif
 
 #ifdef READER_DRECAS
@@ -2809,11 +2826,14 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 	case R_GHTTP:
 		tpl_addVar(vars, TPLAPPEND, "READERDEPENDINGCONFIG", tpl_getTpl(vars, "READERCONFIGGHTTPBIT"));
 		break;
-#ifdef MODULE_GBOX
 	case R_GBOX:
 		tpl_addVar(vars, TPLAPPEND, "READERDEPENDINGCONFIG", tpl_getTpl(vars, "READERCONFIGGBOXBIT"));
-		break;
+#ifdef MODULE_CCCAM
+		tpl_printf(vars, TPLADD, "GBOXCCCAMRESHARE", "%d", rdr->gbox_cccam_reshare);
+		tpl_addVar(vars, TPLAPPEND, "READERDEPENDINGCONFIG", tpl_getTpl(vars, "GBOXCCCAMRESHAREBIT"));
 #endif
+		tpl_addVar(vars, TPLAPPEND, "READERDEPENDINGCONFIG", tpl_getTpl(vars, "READERINFOGBOXREMM"));
+		break;
 	case R_NEWCAMD:
 		if(rdr->ncd_proto == NCD_525)
 		{
@@ -3005,7 +3025,7 @@ static char *send_oscam_reader_stats(struct templatevars *vars, struct uriparams
 					if(rdr->typ == R_GBOX)
 						{ txt = "ONL w/crd"; }
 					else
-						{ txt = "CONNNECTED"; }
+						{ txt = "CONNECTED"; }
 				}
 			else
 				{ txt = "CARDOK"; }
@@ -5446,7 +5466,7 @@ static char *send_oscam_status(struct templatevars * vars, struct uriparams * pa
 										if(rdr->typ == R_GBOX)
 											{ txt = "ONL"; }
 										else
-											{ txt = "CONNNECTED"; }
+											{ txt = "CONNECTED"; }
 									}
 								else
 									{ txt = "CARDOK"; }

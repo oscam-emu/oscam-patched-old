@@ -55,6 +55,7 @@ CONFIGCCCAM                   config/cccam.html                                 
 CONFIGCCCAMCTRL               config/cccam_control.html                                   MODULE_CCCSHARE
 CONFIGCONTENT                 config/config.html
 CONFIGDVBAPI                  config/dvbapi.html                                          HAVE_DVBAPI
+CCCAMRESHAREBIT               config/cccreshare.html                                      MODULE_GBOX
 CONFIGGBOX                    config/gbox.html                                            MODULE_GBOX
 CONFIGGLOBAL                  config/global.html
 ENABLELEDBIT                  config/global_enableledbit.html                             LEDSUPPORT
@@ -116,7 +117,7 @@ FILEMENUANTICASC              files/menu_anticasc.html                          
 FILEMENUCONSTCW               files/menu_constantcw.html                                  MODULE_CONSTCW
 FILEMENUDVBAPI                files/menu_dvbapi.html                                      HAVE_DVBAPI
 FILEMENUFAKECWS               files/menu_fakecws.html                                     CS_CACHEEX
-FILEMENUGBOX                  files/menu_gbox.html	                                  MODULE_GBOX
+FILEMENUGBOX                  files/menu_gbox.html	                                      MODULE_GBOX
 FILEMENUTWIN                  files/menu_twin.html                                        MODULE_SERIAL
 
 AUTOCONF                      ghttp/autoconf.html                                         MODULE_GHTTP
@@ -184,6 +185,8 @@ READERCONFIGCAMD35BIT         readerconfig/readerconfig_camd35bit.html          
 READERCONFIGCCCAMBIT          readerconfig/readerconfig_cccambit.html                     MODULE_CCCAM
 READERCONFIGCS378XBIT         readerconfig/readerconfig_cs378xbit.html                    MODULE_CAMD35_TCP
 READERCONFIGGBOXBIT           readerconfig/readerconfig_gboxbit.html                      MODULE_GBOX
+READERINFOGBOXREMM            readerconfig/readerinfo_gbox_remm.html                      MODULE_GBOX
+GBOXCCCAMRESHAREBIT           readerconfig/readerconfig_gboxcccresharebit.html            MODULE_GBOX
 READERCONFIGGHTTPBIT          readerconfig/readerconfig_ghttpbit.html                     MODULE_GHTTP
 READERCONFIGHOPBIT            readerconfig/readerconfig_hopbit.html                       MODULE_CCCAM
 READERCONFIGSTDHWREADERBIT    readerconfig/readerconfig_hwreader.html                     WITH_CARDREADER

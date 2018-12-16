@@ -147,13 +147,15 @@ void write_gsms_msg (struct s_client *cli, uchar *gsms, uint16_t type, uint16_t 
 	if(type == 0x30)
 		{
 		fprintf(fhandle, "Normal message received from %04X %s on %s%s\n\n",peer->gbox.id, cli->reader->device, tsbuf, gsms);
-		snprintf(rdr->last_gsms, sizeof(rdr->last_gsms), "%s %s", gsms, tsbuf); //added for easy handling of gsms by webif
+		rdr->gbox_gsms_peer = peer->gbox.id;
+		snprintf(rdr->last_gsms, sizeof(rdr->last_gsms), "%s %s", gsms, tsbuf); //for easy handling of gsms by webif
 		}
 	else if(type == 0x31)
 		{
 		fprintf(fhandle, "OSD message received from %04X %s on %s%s\n\n",peer->gbox.id, cli->reader->device, tsbuf, gsms);
 		write_gsms_to_osd_file(cli, gsms);
-		snprintf(rdr->last_gsms, sizeof(rdr->last_gsms), "%s %s", gsms, tsbuf); //added for easy handling of gsms by webif
+		rdr->gbox_gsms_peer = peer->gbox.id;
+		snprintf(rdr->last_gsms, sizeof(rdr->last_gsms), "%s %s", gsms, tsbuf); //for easy handling of gsms by webif
 		}
 	else 
 		{fprintf(fhandle, "Corrupted message received from %04X %s on %s%s\n\n",peer->gbox.id, cli->reader->device, tsbuf, gsms);}

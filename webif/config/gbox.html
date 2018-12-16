@@ -1,13 +1,30 @@
 		<input name="part" type="hidden" value="gbox">
 		<TABLE CLASS="config">
 			<TR><TH COLSPAN="2">Edit Gbox Config</TH></TR>
-			<TR><TD><A data-p="port_10">Port:</A></TD><TD>Maximum 32 UDP ports, comma-separated<BR><textarea name="port" rows="4" class="bt" maxlength="192">##PORT##</textarea><BR></TD></TR>
-			<TR><TD><A>Hostname:</A></TD><TD><input name="hostname" class="medium" type="text" maxlength="30" value="##HOSTNAME##"></TD></TR>
-			<TR><TD><A>Password:</A></TD><TD><input name="my_password"class="medium"  type="text" maxlength="8" value="##GBOXPASSWORD##">&nbsp;(8 hex chars)</TD></TR>
-			<TR><TD><A data-p="gbox_reconnect">Reconnect time:</A></TD><TD><input name="gbox_reconnect" class="withunit short" type="text" maxlength="4" value="##GBOXRECONNECT##">&nbsp;s - default:180, min:60, max:300</TD></TR>
-			<TR><TD><A data-p="my_vers">Version:</A></TD><TD><input name="my_vers" class="short" type="text" maxlength="2" value="##GBOXMYVERS##">&nbsp;default: 2A (2 hex chars)</TD></TR>
-			<TR><TD><A data-p="my_cpu_api">CPU API:</A></TD><TD><input name="my_cpu_api" class="short" type="text" maxlength="2" value="##GBOXMYCPUAPI##">&nbsp;default: 40 (2 hex chars)</TD></TR>
-			<TR><TD><A>CCcam reshare:</A></TD><TD><input name="ccc_reshare" type="hidden" value="0"><input name="ccc_reshare" type="checkbox" value="1" ##GBOXCCCRESHARE##></TD></TR>
+			<TR><TD><A data-p="port_10">My Port(s):</A></TD><TD>Maximum 32 UDP ports, comma-separated<BR><textarea name="port" rows="3" class="bt" maxlength="191">##PORT##</textarea><BR></TD></TR>
+			<TR><TD><A>My Hostname / IP:</A></TD><TD><input name="hostname" class="medium" type="text" maxlength="30" value="##HOSTNAME##"></TD></TR>
+			<TR><TD><A>My Password:</A></TD>
+				<TD CLASS="invisible">
+					<TABLE>
+						<TR>
+							<TD><input name="my_password"class="medium"  type="text" maxlength="8" value="##MYGBOXPASSWORD##">&nbsp;(8 hex chars)</TD>
+							<TD><A>My Id: </A><input name="myid" class="short" type="text" maxlength="4" value="##MYGBOXID##">&nbsp;info only, no subject to modify</TD>
+						</TR>
+					</TABLE>
+				</TD>
+			</TR>
+			<TR><TD><A data-p="gbox_reconnect">Reconnect time:</A></TD><TD><input name="gbox_reconnect" class="withunit short" type="text" maxlength="4" value="##GBOXRECONNECT##">&nbsp;sec - default:180, min:60, max:300</TD></TR>
+			<TR><TD><A>My Version:</A></TD>
+				<TD CLASS="invisible">
+					<TABLE>
+						<TR>
+							<TD><input name="my_vers" class="short" type="text" maxlength="2" value="##GBOXMYVERS##">&nbsp;default: 2A (2 hex chars)</TD>
+							<TD><A data-p="my_cpu_api">CPU API: </A><input name="my_cpu_api" class="short" type="text" maxlength="2" value="##GBOXMYCPUAPI##">&nbsp;default: 40 (2 hex chars)</TD>
+						</TR>
+					</TABLE>
+				</TD>
+			</TR>
+##CCCDEPENDINGCONFIG##
 			<TR><TD>Informations:</TD>
 				<TD CLASS="invisible">
 					<TABLE>
@@ -19,13 +36,12 @@
 					</TABLE>
 				</TD>
 			</TR>
-			<TR><TD><A>tmp dir:</A></TD><TD>By default it will use the same tmp folder as OSCam.<BR><input name="tmp_dir" type="text" maxlength="128" value="##GBOXTMPDIR##"></TD></TR>
-			<TR><TH COLSPAN="2">Custom sharing behavior:</TH></TR>
-			<TR><TD><A data-p="ignore_peer">Ignored peer(s):</A></TD><TD>Maximum 16 peers (4 hex chars each), comma-separated<BR><textarea name="ignore_peer" rows="2" class="bt" maxlength="81">##GBOXIGNOREDPEER##</textarea><BR></TD></TR>
-			<TR><TD><A data-p="block_ecm">Block ECM(s) peer(s):</A></TD><TD>Maximum 16 peers (4 hex chars each), comma-separated<BR><textarea name="block_ecm" rows="2" class="bt" maxlength="81">##GBOXBLOCKECM##</textarea><BR></TD></TR>
-			<TR><TD><A data-p="accept_remm_peer">Accept REMM from peer(s):</A></TD><TD>Maximum 8 peers (4 hex chars each), comma-separated<BR><textarea name="accept_remm_peer" rows="1" class="bt" maxlength="81">##GBOXACCEPTREMM##</textarea><BR></TD></TR>
-			<TR><TD><A data-p="proxy_card">Proxy cards:</A></TD><TD>Maximum 32 Cards (8 hex chars each), comma-separated<BR><textarea name="proxy_card" rows="6" class="bt" maxlength="288">##GBOXPROXYCARD##</textarea><BR></TD></TR>
-		<TR><TH COLSPAN="2">GBox Short Message Service</TH></TR>
+			<TR><TD><A data-p="tmp_dir">Gbox tmp dir:</A></TD><TD><input name="tmp_dir" type="text" maxlength="64" value="##GBOXTMPDIR##">&nbsp;default: Oscam tmp dir</TD></TR>
+			<TR><TD><A data-p="ignore_peer">Ignored peer(s):</A></TD><TD>Maximum 16 peers (4 hex chars each), comma-separated<BR><textarea name="ignore_peer" rows="1" class="bt" maxlength="79">##GBOXIGNOREDPEER##</textarea><BR></TD></TR>
+			<TR><TD><A data-p="block_ecm">Block ECM(s) peer(s):</A></TD><TD>Maximum 16 peers (4 hex chars each), comma-separated<BR><textarea name="block_ecm" rows="1" class="bt" maxlength="79">##GBOXBLOCKECM##</textarea><BR></TD></TR>
+			<TR><TD><A data-p="accept_remm_peer">Accept REMM from peer(s):</A></TD><TD><input name="accept_remm_peer" type="text" maxlength="39" value="##GBOXACCEPTREMM##">&nbsp;max 8 peers, comma-separated</TD></TR>
+			<TR><TD><A data-p="proxy_card">Proxy cards:</A></TD><TD>Maximum 32 Cards (8 hex chars each), comma-separated<BR><textarea name="proxy_card" rows="4" class="bt" maxlength="287">##GBOXPROXYCARD##</textarea><BR></TD></TR>
+		<TR><TH COLSPAN="2">GBox Short Message Service - Send GSMS</TH></TR>
 		<TR><TD><A data-p="gbox_save_gsms">Save this GSMS in conf:</A></TD><TD><input name="gbox_save_gsms" value="0" type="hidden"><input name="gbox_save_gsms" value="1" type="checkbox" ##GBOXSAVEGSMS##><label>You need to press save button to really save it!</label></TD></TR>
 		<TR><TD><A data-p="gbox_msg_type">Message type:</TD>
 			<TD><select name="gbox_msg_type">
@@ -35,13 +51,13 @@
 			</TD>
 		</TR>
 		<TR><TD><A data-p="gbox_dest_peers">Destination peer(s):</A></TD>
-			<TD>Maximum 16 peers (4 hex chars each), comma separated. For broadcast to all use FFFF.<BR>
-			<textarea name="gbox_dest_peers" rows="2" class="bt" maxlength="79">##GBOXMSGDESTPEERS##</textarea>
+			<TD>Maximum 16 peers, comma separated. For broadcast to all use FFFF.<BR>
+			<textarea name="gbox_dest_peers" rows="1" class="bt" maxlength="79">##GBOXMSGDESTPEERS##</textarea>
 			</TD>
 		</TR>
 		<TR><TD><A data-p="gbox_msg_txt">Text to send:</A></TD>
 			<TD>From 6 to 127 alphanumerical characters.<BR>
-			<textarea name="gbox_msg_txt" rows="3" class="bt" maxlength="127">##GBOXMSGTXT##</textarea>
+			<textarea name="gbox_msg_txt" rows="2" class="bt" maxlength="127">##GBOXMSGTXT##</textarea>
 			</TD>
 		</TR>
 		<TR><TD>Action for GSMS</TD>

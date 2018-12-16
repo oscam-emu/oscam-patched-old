@@ -1,6 +1,11 @@
-			<TR><TD><A data-p="user_2">User:</A></TD><TD><input name="user" class="longer" type="text" maxlength="30" value="##USERNAME##"></TD></TR>
-			<TR><TD><A data-p="password_2">Password:</A></TD><TD><input name="password" class="longer" type="text" maxlength="8" value="##PASSWORD##"></TD></TR>
-			<TR><TD><A>Max Distance:</A></TD><TD><input name="gbox_max_distance" class="short" type="text" maxlength="1" value="##GBOXMAXDISTANCE##"></TD></TR>
-			<TR><TD><A>Max Ecm Send:</A></TD><TD><input name="gbox_max_ecm_send" class="short" type="text" maxlength="1" value="##GBOXMAXECMSEND##"></TD></TR>
-			<TR><TD><A>GBox reshare:</A></TD><TD><input name="gbox_reshare" class="short" type="text" maxlength="1" value="##GBOXRESHARE##"></TD></TR>
-			<TR><TD><A>CCcam reshare:</A></TD><TD><input name="cccam_reshare" class="short" type="text" maxlength="1" value="##GBOXCCCAMRESHARE##"></TD></TR>
+			<TR><TD><A data-p="user_2">User:</A></TD><TD><input name="user" class="medium" type="text" maxlength="15" value="##USERNAME##"><label>&nbsp;You must also setup 'User' in oscam.user as [account]</label></TD></TR>
+			<TR><TD><A data-p="password_2">Peer Password:</A></TD><TD><input name="password" class="medium" type="text" maxlength="8" value="##PASSWORD##"></TD></TR>
+			<TR><TD><A>Gbox Sharing Settings:</A></TD>
+			<TD CLASS="invisible">
+					<TABLE>
+						<TR>
+							<TD><A>Max Peer Distance: </A></TD><TD><input name="gbox_max_distance" class="short" type="text" maxlength="1" value="##GBOXMAXDISTANCE##"></TD>
+							<TD><A>Max Ecm Send: </A></TD><TD><input name="gbox_max_ecm_send" class="short" type="text" maxlength="1" value="##GBOXMAXECMSEND##"></TD>
+							<TD><A>Locals reshare: </A></TD><TD><input name="gbox_reshare" class="short" type="text" maxlength="1" value="##GBOXRESHARE##"></TD>
+						</TR>
+					</TABLE>

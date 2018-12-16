@@ -1076,10 +1076,10 @@ static const struct config_list reader_opts[] =
 	DEF_OPT_SSTR("password"             , OFS(r_pwd),                   "", SIZEOF(r_pwd)),
 	DEF_OPT_SSTR("pincode"              , OFS(pincode),                 "none", SIZEOF(pincode)),
 #ifdef MODULE_GBOX
-	DEF_OPT_UINT8("gbox_max_distance"	, OFS(gbox_maxdist),		DEFAULT_GBOX_MAX_DIST),
-	DEF_OPT_UINT8("gbox_max_ecm_send"	, OFS(gbox_maxecmsend),		DEFAULT_GBOX_MAX_ECM_SEND),
-	DEF_OPT_UINT8("gbox_reshare"		, OFS(gbox_reshare),		DEFAULT_GBOX_RESHARE),
-	DEF_OPT_UINT8("cccam_reshare"		, OFS(gbox_cccam_reshare),	DEFAULT_GBOX_RESHARE),
+	DEF_OPT_UINT8("gbox_max_distance"   , OFS(gbox_maxdist),            DEFAULT_GBOX_MAX_DIST),
+	DEF_OPT_UINT8("gbox_max_ecm_send"   , OFS(gbox_maxecmsend),         DEFAULT_GBOX_MAX_ECM_SEND),
+	DEF_OPT_UINT8("gbox_reshare"        , OFS(gbox_reshare),            DEFAULT_GBOX_RESHARE),
+	DEF_OPT_UINT8("cccam_reshare"       , OFS(gbox_cccam_reshare),      DEFAULT_GBOX_RESHARE),
 #endif
 	DEF_OPT_STR("readnano"              , OFS(emmfile),                 NULL),
 	DEF_OPT_FUNC("services"             , OFS(sidtabs),                 reader_services_fn),
@@ -1222,7 +1222,7 @@ static bool reader_check_setting(const struct config_list *UNUSED(clist), void *
 	{
 		"readnano", "resetcycle", "smargopatch", "autospeed", "sc8in1_dtrrts_patch", "boxid","fix07",
 		"fix9993", "rsakey", "deskey", "ins7e", "ins7e11", "ins2e06", "force_irdeto", "needsemmfirst", "boxkey",
-		"atr", "detect", "nagra_read", "mhz", "cardmhz", "readtiers", "read_old_classes",
+		"atr", "detect", "nagra_read", "mhz", "cardmhz", "readtiers", "read_old_classes", "use_gpio",
 #ifdef READER_NAGRA_MERLIN
 		"mod1", "data50", "mod50", "key60", "exp60", "nuid", "cwekey",
 #endif
@@ -1255,7 +1255,7 @@ static bool reader_check_setting(const struct config_list *UNUSED(clist), void *
 	// These are not written in the config file
 	static const char *deprecated_settings[] =
 	{
-		"cooldowndelay", "cooldowntime", "mg-encrypted",
+		"cooldowndelay", "cooldowntime",
 		0
 	};
 	if(in_list(setting, deprecated_settings))
@@ -1299,7 +1299,7 @@ static bool reader_check_setting(const struct config_list *UNUSED(clist), void *
 	// These are written only when the reader is GBOX
 	static const char *gbox_settings[] =
 	{
-		"gbox_max_distance", "gbox_max_ecm_send", "gbox_reshare", "cccam_reshare", 
+		"gbox_max_distance", "gbox_max_ecm_send", "gbox_reshare", "cccam_reshare",
 		0
 	};
 	if(reader->typ != R_GBOX)

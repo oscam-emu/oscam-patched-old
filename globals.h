@@ -1744,11 +1744,13 @@ struct s_reader                                     //contains device info, read
 #endif
 
 #ifdef MODULE_GBOX
-	uint8_t		gbox_maxdist;
-	uint8_t		gbox_maxecmsend;
-	uint8_t		gbox_reshare;
-	uint8_t		gbox_cccam_reshare;
-	char		last_gsms[128];
+	uint8_t   gbox_maxdist;
+	uint8_t   gbox_maxecmsend;
+	uint8_t   gbox_reshare;
+	uint8_t   gbox_cccam_reshare;
+	char      last_gsms[128];
+	uint16_t  gbox_remm_peer;
+	uint16_t  gbox_gsms_peer;
 #endif
 
 #ifdef MODULE_PANDORA
