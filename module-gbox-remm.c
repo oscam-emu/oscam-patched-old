@@ -107,7 +107,7 @@ static uint8_t check_dvbapi_au_ready( void)
  #endif
 }
 
-static int8_t check_valid_remm_peer(uint16_t peer_id)
+uint8_t check_valid_remm_peer(uint16_t peer_id)
 {
 	if (cfg.accept_remm_peer_num > 0)
 	{
@@ -148,6 +148,7 @@ static void gbox_recvd_remm_req(struct s_client *cli, uchar *buf, int32_t n)
 		{ forward remm req to target client peer}
 */
 	struct s_reader *rdr = cli->reader;
+	rdr->gbox_remm_peer = peer->gbox.id;
 	rdr->last_g = time(NULL);  // last receive is now
 
 		rdr->auprovid = rprovid;
@@ -175,13 +176,16 @@ static void gbox_recvd_remm_req(struct s_client *cli, uchar *buf, int32_t n)
 		}
 
 			rdr->blockemm = 0;
+			rdr->blockemm |= (buf[117] == 1) ? 0 : 0x80; //remm marker bit
 			rdr->blockemm |= (buf[118] == 1) ? 0 : EMM_GLOBAL;
 			rdr->blockemm |= (buf[119] == 1) ? 0 : EMM_SHARED;
 			rdr->blockemm |= (buf[120] == 1) ? 0 : EMM_UNIQUE;
 			rdr->blockemm |= (buf[121] == 1) ? 0 : EMM_UNKNOWN;
 
-		cs_log("-> REMM REQ for caid %04X from peer %04X:%s", rdr->caid, peer->gbox.id, rdr->label);
-		
+		cs_log("-> received REMM REQ for type %s%s%s%s caid %04X from peer %04X:%s",
+			buf[120]==1 ? "UQ ":"", buf[119]==1 ? "SH ":"", buf[118]==1 ? "GL ":"", buf[121]==1 ? "UK":"",
+			rdr->caid, peer->gbox.id, rdr->label);
+
 		if (dvbapi_stat == 3 || dvbapi_stat == 5)
 			{ 
 				gbox_send_remm_ack_msg(cli, rdr->caid, rdr->auprovid, dvbapi_stat, PEER_AU_READY);
@@ -192,8 +196,8 @@ static void gbox_recvd_remm_req(struct s_client *cli, uchar *buf, int32_t n)
 				gbox_send_remm_ack_msg(cli, rdr->caid, rdr->auprovid, dvbapi_stat, PEER_AU_UNREADY);
 				cs_log_dbg(D_EMM,"dvbapi status: dvbapi_au: %1d - dvbapi_usr_autoau: %1d - dvbapi_usr_aulist: %1d",(dvbapi_stat & 1) ? 1 : 0, (dvbapi_stat & 2) ? 1 : 0, (dvbapi_stat & 4) ? 1 : 0 ); 
 			}
+		write_msg_info(cli, MSGID_REMM, 0, 1);
 }
-
 
 static void gbox_recvd_remm_data(struct s_client *cli, uchar *buf, int32_t buflen, int32_t emmlen)
 {
@@ -351,14 +355,19 @@ void gbox_send_remm_req(struct s_client *cli, ECM_REQUEST *er)
 			if(i >= 15) { break; }
 		}
 
-		mbuf[118] = 0; //(aureader->blockemm & EMM_GLOBAL && !(aureader->saveemm & EMM_GLOBAL)) ? 0 : 1;
+		mbuf[117] =  aureader->blockemm | 0x80; //set remm marker bit
+		if(au_caid == 0x0D96 || au_caid == 0x0D98 ) // these caids needs globals
+			{ mbuf[118] = (aureader->blockemm & EMM_GLOBAL && !(aureader->saveemm & EMM_GLOBAL)) ? 0 : 1; }
+		else
+			{ mbuf[118] = 0; }
 		mbuf[119] = (aureader->blockemm & EMM_SHARED && !(aureader->saveemm & EMM_SHARED)) ? 0 : 1;
 		mbuf[120] = (aureader->blockemm & EMM_UNIQUE && !(aureader->saveemm & EMM_UNIQUE)) ? 0 : 1;
-		mbuf[121] = (aureader->blockemm & EMM_UNKNOWN && !(aureader->saveemm & EMM_UNKNOWN)) ? 0 : 1;
+		mbuf[121] = 0; //(aureader->blockemm & EMM_UNKNOWN && !(aureader->saveemm & EMM_UNKNOWN)) ? 0 : 1;
 
-		cs_log("<- send REMM REQ to %s peer-id %04X for reader=%s, caid=%04X, auprovid=%06X",
-			username(cur_client()), peer->gbox.id, aureader->label, au_caid,
-			aureader->auprovid ? aureader->auprovid : b2i(4, aureader->prid[0]));
+		cs_log("<- %04X sends REMM REQ for type = %s%s%s%s to %s peer-id=%04X for reader=%s, caid=%04X", local_gbox_id,
+			mbuf[120]==1 ? "UQ ":"", mbuf[119]==1 ? "SH ":"", mbuf[118]==1 ? "GL ":"", mbuf[121]==1 ? "UK":"",
+			username(cur_client()), peer->gbox.id, aureader->label, au_caid );
+
 		cs_log_dump_dbg(D_EMM, mbuf, 122, "<- send remm request, (data_len=%d):", 122);
 		gbox_send(cli, mbuf, 122);
 		return;
