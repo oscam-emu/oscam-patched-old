@@ -1451,7 +1451,7 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_k
 	uint8_t ecmPart1[14], ecmPart2[27], unmaskedEcm[ecmLen], seedEcmCw[16];
 	uint8_t *dwp;
 
-	//char tmpBuffer1[512];
+	char tmpBuffer1[64];
 
 	emu_stream_cw_item *cw_item;
 	int8_t update_global_key = 0, ret = 1;
@@ -1671,6 +1671,9 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_k
 								cw[j][k + 3] = ((cw[j][k] + cw[j][k + 1] + cw[j][k + 2]) & 0xFF);
 							}
 						}
+
+						cs_log_dbg(D_ATR, "calculated cw %d: %s", j,
+										cs_hexdump(3, cw[j], 8, tmpBuffer1, sizeof(tmpBuffer1)));
 					}
 
 					//cs_log_dbg(D_ATR, "csaUsed=%d, cw: %s cdata=%x, cw_ex=%x",
@@ -1760,25 +1763,25 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_k
 							{
 								memcpy(dwp, cw[PVU_CW_A1+j], 8);
 
-								if (csaUsed)
+								/*if (csaUsed)
 								{
 									for (k = 0; k < 8; k += 4)
 									{
 										dwp[k + 3] = ((dwp[k] + dwp[k + 1] + dwp[k + 2]) & 0xFF);
 									}
-								}
+								}*/
 							}
 							else
 							{
 								memcpy(&dwp[8], cw[PVU_CW_A1+j], 8);
 
-								if (csaUsed)
+								/*if (csaUsed)
 								{
 									for (k = 8; k < 16; k += 4)
 									{
 										dwp[k + 3] = ((dwp[k] + dwp[k + 1] + dwp[k + 2]) & 0xFF);
 									}
-								}
+								}*/
 							}
 						}
 
@@ -1790,25 +1793,25 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_k
 						{
 							memcpy(dwp, cw[PVU_CW_HSD], 8);
 
-							if (csaUsed)
+							/*if (csaUsed)
 							{
 								for (k = 0; k < 8; k += 4)
 								{
 									dwp[k + 3] = ((dwp[k] + dwp[k + 1] + dwp[k + 2]) & 0xFF);
 								}
-							}
+							}*/
 						}
 						else
 						{
 							memcpy(&dwp[8], cw[PVU_CW_HSD], 8);
 
-							if (csaUsed)
+							/*if (csaUsed)
 							{
 								for (k = 8; k < 16; k += 4)
 								{
 									dwp[k + 3] = ((dwp[k] + dwp[k + 1] + dwp[k + 2]) & 0xFF);
 								}
-							}
+							}*/
 						}
 					}
 				}
@@ -1818,6 +1821,17 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_k
 					PowervuCalculateCw(PVU_CW_VID, seed[PVU_CW_VID], csaUsed, convolvedCw[PVU_CW_VID],
 										cw[PVU_CW_VID], baseCw, seedEcmCw, hashModeCw, needsUnmasking,
 										xorMode, modeCW, unmaskedEcm + offsetBody);
+
+					if (csaUsed)
+					{
+						for (k = 0; k < 8; k += 4)
+						{
+							cw[PVU_CW_VID][k + 3] = ((cw[PVU_CW_VID][k] + cw[PVU_CW_VID][k + 1] + cw[PVU_CW_VID][k + 2]) & 0xFF);
+						}
+					}
+
+					cs_log_dbg(D_ATR, "calculated video only cw: %s",
+									cs_hexdump(3, cw[PVU_CW_VID], 8, tmpBuffer1, sizeof(tmpBuffer1)));
 				}
 
 				memset(dw, 0, 16);
@@ -1826,25 +1840,25 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_k
 				{
 					memcpy(dw, cw[PVU_CW_VID], 8);
 
-					if (csaUsed)
+					/*if (csaUsed)
 					{
 						for (k = 0; k < 8; k += 4)
 						{
 							dw[k + 3] = ((dw[k] + dw[k + 1] + dw[k + 2]) & 0xFF);
 						}
-					}
+					}*/
 				}
 				else
 				{
 					memcpy(&dw[8], cw[PVU_CW_VID], 8);
 
-					if (csaUsed)
+					/*if (csaUsed)
 					{
 						for (k = 8; k < 16; k += 4)
 						{
 							dw[k + 3] = ((dw[k] + dw[k + 1] + dw[k + 2]) & 0xFF);
 						}
-					}
+					}*/
 				}
 
 				return EMU_OK;
