@@ -2828,7 +2828,7 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 		break;
 	case R_GBOX:
 		tpl_addVar(vars, TPLAPPEND, "READERDEPENDINGCONFIG", tpl_getTpl(vars, "READERCONFIGGBOXBIT"));
-#ifdef MODULE_CCCAM
+#if defined (MODULE_CCCAM) && defined (MODULE_GBOX)
 		tpl_printf(vars, TPLADD, "GBOXCCCAMRESHARE", "%d", rdr->gbox_cccam_reshare);
 		tpl_addVar(vars, TPLAPPEND, "READERDEPENDINGCONFIG", tpl_getTpl(vars, "GBOXCCCAMRESHAREBIT"));
 #endif
