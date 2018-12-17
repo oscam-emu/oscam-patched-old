@@ -308,30 +308,30 @@ void calc_cas7_exponent(uint32_t *dinit, unsigned char *out, uint8_t  len)
 
 	sub_6AD78(dinit);
 
-	int R4=0;
-	int R5=0;
+	int nR4=0;
+	int nR5=0;
 	while(true)
 	{
-		uint32_t R0=(uint32_t)*dinit;
-		int R3=R4+3;
-		R5+=4;
-		if(R3>len)break;
+		uint32_t nR0=(uint32_t)*dinit;
+		int nR3=nR4+3;
+		nR5+=4;
+		if(nR3>len)break;
 
-		out[R5-1]=((R0    )&0xFF);
-		out[R5-2]=((R0>> 8)&0xFF);
-		out[R5-3]=((R0>>16)&0xFF);
-		out[R5-4]=((R0>>24)&0xFF);
-		R4+=4;
+		out[nR5-1]=((nR0    )&0xFF);
+		out[nR5-2]=((nR0>> 8)&0xFF);
+		out[nR5-3]=((nR0>>16)&0xFF);
+		out[nR5-4]=((nR0>>24)&0xFF);
+		nR4+=4;
 		sub_6AD78(dinit);
 
 	}
 
-	uint32_t R0=(uint32_t)*dinit;
-	while(R4<len)
+	uint32_t nR0=(uint32_t)*dinit;
+	while(nR4<len)
 	{
-		out[R4]=R0&0xFF;
-		R4++;
-		R0>>=8;
+		out[nR4]=nR0&0xFF;
+		nR4++;
+		nR0>>=8;
 	}
 
 	out[0]&=0x03;

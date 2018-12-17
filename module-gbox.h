@@ -58,6 +58,7 @@
 #define	MSGID_IPCHANGE          7
 #define	MSGID_GBOXONL           8
 #define	MSGID_UNKNOWNMSG        9
+#define	MSGID_REMM             12
 
 #define GBOX_STAT_HELLOL        0
 #define GBOX_STAT_HELLOS        1
@@ -176,6 +177,7 @@ void gbox_free_cards_pending(ECM_REQUEST *er);
 void gbox_send_good_night(void);
 void gbox_send_goodbye(struct s_client *cli);
 void restart_gbox_peer(char *rdrlabel, uint8_t all, uint16_t gbox_id);
+void write_msg_info(struct s_client *cli, uint8_t msg_id, uint8_t txt_id, uint16_t misc);
 extern void gbx_local_card_changed(void);
 #else
 static inline void gbox_free_cards_pending(ECM_REQUEST *UNUSED(er)) { }

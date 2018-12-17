@@ -16,6 +16,7 @@
 void gbox_send_remm_req(struct s_client *cli, ECM_REQUEST *er);
 void gbox_recvd_remm_cmd_switch(struct s_client *cli, uchar *buf, int32_t n);
 int32_t gbox_send_remm_data(EMM_PACKET *ep);
+uint8_t check_valid_remm_peer(uint16_t peer_id);
 
 #endif
 

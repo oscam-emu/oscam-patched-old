@@ -214,9 +214,6 @@ DESCRIPTIONS
        password = password
 	  password for remote reader
 
-       mg-encrypted = D: { <IP|hostname> { <local port> <remote port> { <password> { <level> <level> }}}}[,<local MAC address>]
-	  mgcamd encrypted gbox line, default MAC address = eth0
-
        services = [!]services[,[!]<services>]...
 	  reader [de]assignment to service group, default=none
 
