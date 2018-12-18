@@ -199,7 +199,8 @@ static void ParsePATData(emu_stream_client_data *cdata)
 		if (cdata->srvid == srvid)
 		{
 			cdata->pmt_pid = b2i(2, data + i + 2) & 0x1FFF;
-			cs_log_dbg(D_READER, "Stream %i found pmt pid: 0x%04X (%i)",cdata->connid, cdata->pmt_pid, cdata->pmt_pid);
+			cs_log_dbg(D_READER, "Stream %i found pmt pid: 0x%04X (%i)",
+						cdata->connid, cdata->pmt_pid, cdata->pmt_pid);
 			break;
 		}
 	}
@@ -216,7 +217,8 @@ static void ParsePMTData(emu_stream_client_data *cdata)
 	cdata->pcr_pid = b2i(2, data + 8) & 0x1FFF;
 	if (cdata->pcr_pid != 0x1FFF)
 	{
-		cs_log_dbg(D_READER, "Stream %i found pcr pid: 0x%04X (%i)",cdata->connid, cdata->pcr_pid, cdata->pcr_pid);
+		cs_log_dbg(D_READER, "Stream %i found pcr pid: 0x%04X (%i)",
+					cdata->connid, cdata->pcr_pid, cdata->pcr_pid);
 	}
 
 	program_info_length = b2i(2, data + 10) & 0xFFF;
@@ -242,7 +244,8 @@ static void ParsePMTData(emu_stream_client_data *cdata)
 			if (caid_is_powervu(caid))
 			{
 				cdata->ecm_pid = b2i(2, data + i + 4) & 0x1FFF;
-				cs_log_dbg(D_READER, "Stream %i found ecm pid: 0x%04X (%i)", cdata->connid, cdata->ecm_pid, cdata->ecm_pid);
+				cs_log_dbg(D_READER, "Stream %i found ecm pid: 0x%04X (%i)",
+							cdata->connid, cdata->ecm_pid, cdata->ecm_pid);
 				break;
 			}
 		}
@@ -259,7 +262,8 @@ static void ParsePMTData(emu_stream_client_data *cdata)
 			|| stream_type == 0xEA)
 		{
 			cdata->video_pid = stream_pid;
-			cs_log_dbg(D_READER, "Stream %i found video pid: 0x%04X (%i)",cdata->connid, stream_pid, stream_pid);
+			cs_log_dbg(D_READER, "Stream %i found video pid: 0x%04X (%i)",
+						cdata->connid, stream_pid, stream_pid);
 		}
 
 		else if (stream_type == 0x03 || stream_type == 0x04 || stream_type == 0x05 || stream_type == 0x06
@@ -271,7 +275,8 @@ static void ParsePMTData(emu_stream_client_data *cdata)
 
 			cdata->audio_pids[cdata->audio_pid_count] = stream_pid;
 			cdata->audio_pid_count++;
-			cs_log_dbg(D_READER, "Stream %i found audio pid: 0x%04X (%i)", cdata->connid, stream_pid, stream_pid);
+			cs_log_dbg(D_READER, "Stream %i found audio pid: 0x%04X (%i)",
+						cdata->connid, stream_pid, stream_pid);
 		}
 	}
 }
@@ -291,7 +296,8 @@ static void ParseCATData(emu_stream_client_data *cdata)
 		if (caid_is_powervu(caid))
 		{
 			cdata->emm_pid = emm_pid;
-			cs_log_dbg(D_READER, "Stream %i found audio pid: 0x%04X (%i)", cdata->connid, emm_pid, emm_pid);
+			cs_log_dbg(D_READER, "Stream %i found emm pid: 0x%04X (%i)",
+						cdata->connid, emm_pid, emm_pid);
 			break;
 		}
 	}
@@ -375,7 +381,7 @@ static void ParseTSPackets(emu_stream_client_data *data, uint8_t *stream_buf, ui
 			if (emu_stream_emm_enabled && !data->emm_pid)
 			{
 				ParseTSData(0x01, 0xFF, 8, &data->have_cat_data, data->cat_data, sizeof(data->cat_data),
-							&data->cat_data_pos, payloadStart, stream_buf+i+offset, packetSize-offset, ParseCATData, data);
+							&data->cat_data_pos, payloadStart, stream_buf + i + offset, packetSize - offset, ParseCATData, data);
 				continue;
 			}
 		}
@@ -387,21 +393,21 @@ static void ParseTSPackets(emu_stream_client_data *data, uint8_t *stream_buf, ui
 			stream_buf[i + 2] = 0xFF;
 
 			ParseTSData(0x80, 0xF0, 3, &data->have_emm_data, data->emm_data, sizeof(data->emm_data),
-						&data->emm_data_pos, payloadStart, stream_buf+i+offset, packetSize-offset, ParseEMMData, data);
+						&data->emm_data_pos, payloadStart, stream_buf + i + offset, packetSize - offset, ParseEMMData, data);
 			continue;
 		}
 
 		if (pid == 0 && !data->pmt_pid)
 		{
 			ParseTSData(0x00, 0xFF, 16, &data->have_pat_data, data->pat_data, sizeof(data->pat_data),
-						&data->pat_data_pos, payloadStart, stream_buf+i+offset, packetSize-offset, ParsePATData, data);
+						&data->pat_data_pos, payloadStart, stream_buf + i + offset, packetSize - offset, ParsePATData, data);
 			continue;
 		}
 
 		if (!data->ecm_pid && pid == data->pmt_pid)
 		{
 			ParseTSData(0x02, 0xFF, 21, &data->have_pmt_data, data->pmt_data, sizeof(data->pmt_data),
-						&data->pmt_data_pos, payloadStart, stream_buf+i+offset, packetSize-offset, ParsePMTData, data);
+						&data->pmt_data_pos, payloadStart, stream_buf + i + offset, packetSize - offset, ParsePMTData, data);
 			continue;
 		}
 
@@ -414,7 +420,7 @@ static void ParseTSPackets(emu_stream_client_data *data, uint8_t *stream_buf, ui
 			stream_buf[i + 2] = 0xFF;
 
 			ParseTSData(0x80, 0xFE, 3, &data->have_ecm_data, data->ecm_data, sizeof(data->ecm_data),
-						&data->ecm_data_pos, payloadStart, stream_buf+i+offset, packetSize-offset, ParseECMData, data);
+						&data->ecm_data_pos, payloadStart, stream_buf + i + offset, packetSize - offset, ParseECMData, data);
 			continue;
 		}
 
@@ -448,7 +454,7 @@ static void ParseTSPackets(emu_stream_client_data *data, uint8_t *stream_buf, ui
 			{
 				csakeyV = keydata->pvu_csa_ks[PVU_CW_VID];
 
-				if (csakeyV !=NULL)
+				if (csakeyV != NULL)
 				{
 					cs = 0;
 					ce = 1;
@@ -539,7 +545,7 @@ static void ParseTSPackets(emu_stream_client_data *data, uint8_t *stream_buf, ui
 							csakeyA[k] = keydata->pvu_csa_ks[PVU_CW_A1 + k];
 							packetClusterA[k][csa[k]] = NULL;
 							decrypt_packets(csakeyA[k], packetClusterA[k]);
-							csa[k]=0;
+							csa[k] = 0;
 							scrambled_packetsA[k] = 0;
 						}
 					}
