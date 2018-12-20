@@ -1441,7 +1441,7 @@ static void PowervuCalculateCw(uint8_t seedType, uint8_t *seed, uint8_t csaUsed,
 	}
 }
 
-int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_key_data *cdata, EXTENDED_CW* cw_ex)
+int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_key_data *cdata, EXTENDED_CW *cw_ex)
 {
 	uint32_t i, j, k;
 	uint32_t ecmCrc32, keyRef1, keyRef2;
@@ -1449,14 +1449,14 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_k
 	uint16_t ecmLen = GetEcmLen(ecm);
 	uint16_t nanoLen, channelId, ecmSrvid;
 
-	uint8_t keyIndex, sbox, decrypt_ok, calculateAllCws, hashModeCw = 0, needsUnmasking, xorMode;
+	uint8_t keyIndex, sbox, decrypt_ok, calculateAll, hashModeCw = 0, needsUnmasking, xorMode;
 	uint8_t nanoCmd, nanoChecksum, keyType, fixedKey, oddKey, bid, csaUsed, modeCW = 0, offsetBody;
 
 	uint8_t ecmKey[7], tmpEcmKey[7], seedBase[4], baseCw[7], seed[8][8], cw[8][8], convolvedCw[8][8];
 	uint8_t ecmPart1[14], ecmPart2[27], unmaskedEcm[ecmLen], seedEcmCw[16];
-	uint8_t *dwp;
 
-	char tmpBuffer1[64];
+	//char tmpBuffer1[512];
+	char tmpBuffer2[17];
 
 	emu_stream_cw_item *cw_item;
 	int8_t update_global_key = 0, ret = 1;
@@ -1561,6 +1561,7 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_k
 		switch (nanoCmd)
 		{
 			case 0x20:
+			{
 				if (nanoLen < 54)
 				{
 					break;
@@ -1641,29 +1642,27 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_k
 					SAFE_MUTEX_UNLOCK(&emu_fixed_key_srvid_mutex);
 				}
 
-				if (cdata != NULL || update_global_key || cw_ex != NULL)
+				calculateAll = cdata != NULL || update_global_key || cw_ex != NULL;
+
+				if (calculateAll) // Calculate all seeds
 				{
-					// Calculate all seeds
+
 					for (j = 0; j < 8; j++)
 					{
 						memcpy(ecmKey, tmpEcmKey, 7);
 						PowervuCalculateSeed(j, ecm + i, seedBase, ecmKey, seed[j], sbox);
 					}
 				}
-				else
+				else // Calculate only video seed
 				{
-					// Calculate only video seed
 					memcpy(ecmKey, tmpEcmKey, 7);
-					PowervuCalculateSeed(PVU_CW_VID, ecm+i, seedBase, ecmKey, seed[PVU_CW_VID], sbox);
+					PowervuCalculateSeed(PVU_CW_VID, ecm + i, seedBase, ecmKey, seed[PVU_CW_VID], sbox);
 				}
 
 				memcpy(baseCw, ecm + i + 6 + 8, 7);
 
-				calculateAllCws = cdata != NULL || update_global_key || cw_ex != NULL;
-
-				if (calculateAllCws)
+				if (calculateAll) // Calculate all CWs
 				{
-					// Calculate all cws
 					for (j = 0; j < 8; j++)
 					{
 						PowervuCalculateCw(j, seed[j], csaUsed, convolvedCw[j], cw[j], baseCw, seedEcmCw,
@@ -1678,7 +1677,7 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_k
 						}
 
 						cs_log_dbg(D_ATR, "calculated cw %d: %s", j,
-										cs_hexdump(3, cw[j], 8, tmpBuffer1, sizeof(tmpBuffer1)));
+										cs_hexdump(0, cw[j], 8, tmpBuffer2, sizeof(tmpBuffer2)));
 					}
 
 					//cs_log_dbg(D_ATR, "csaUsed=%d, cw: %s cdata=%x, cw_ex=%x",
@@ -1760,69 +1759,32 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_k
 
 						for (j = 0; j < 4; j++)
 						{
-							dwp = cw_ex->audio[j];
-
-							memset(dwp, 0, 16);
+							memset(cw_ex->audio[j], 0, 16);
 
 							if (ecm[0] == 0x80)
 							{
-								memcpy(dwp, cw[PVU_CW_A1+j], 8);
-
-								/*if (csaUsed)
-								{
-									for (k = 0; k < 8; k += 4)
-									{
-										dwp[k + 3] = ((dwp[k] + dwp[k + 1] + dwp[k + 2]) & 0xFF);
-									}
-								}*/
+								memcpy(cw_ex->audio[j], cw[PVU_CW_A1 + j], 8);
 							}
 							else
 							{
-								memcpy(&dwp[8], cw[PVU_CW_A1+j], 8);
-
-								/*if (csaUsed)
-								{
-									for (k = 8; k < 16; k += 4)
-									{
-										dwp[k + 3] = ((dwp[k] + dwp[k + 1] + dwp[k + 2]) & 0xFF);
-									}
-								}*/
+								memcpy(&cw_ex->audio[j][8], cw[PVU_CW_A1 + j], 8);
 							}
 						}
 
-						dwp = cw_ex->data;
-
-						memset(dwp, 0, 16);
+						memset(cw_ex->data, 0, 16);
 
 						if (ecm[0] == 0x80)
 						{
-							memcpy(dwp, cw[PVU_CW_HSD], 8);
-
-							/*if (csaUsed)
-							{
-								for (k = 0; k < 8; k += 4)
-								{
-									dwp[k + 3] = ((dwp[k] + dwp[k + 1] + dwp[k + 2]) & 0xFF);
-								}
-							}*/
+							memcpy(cw_ex->data, cw[PVU_CW_HSD], 8);
 						}
 						else
 						{
-							memcpy(&dwp[8], cw[PVU_CW_HSD], 8);
-
-							/*if (csaUsed)
-							{
-								for (k = 8; k < 16; k += 4)
-								{
-									dwp[k + 3] = ((dwp[k] + dwp[k + 1] + dwp[k + 2]) & 0xFF);
-								}
-							}*/
+							memcpy(&cw_ex->data[8], cw[PVU_CW_HSD], 8);
 						}
 					}
 				}
-				else
+				else // Calculate only video CW
 				{
-					// Calculate only video cw
 					PowervuCalculateCw(PVU_CW_VID, seed[PVU_CW_VID], csaUsed, convolvedCw[PVU_CW_VID],
 										cw[PVU_CW_VID], baseCw, seedEcmCw, hashModeCw, needsUnmasking,
 										xorMode, modeCW, unmaskedEcm + offsetBody);
@@ -1836,7 +1798,7 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_k
 					}
 
 					cs_log_dbg(D_ATR, "calculated video only cw: %s",
-									cs_hexdump(3, cw[PVU_CW_VID], 8, tmpBuffer1, sizeof(tmpBuffer1)));
+									cs_hexdump(0, cw[PVU_CW_VID], 8, tmpBuffer2, sizeof(tmpBuffer2)));
 				}
 
 				memset(dw, 0, 16);
@@ -1844,29 +1806,14 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_k
 				if (ecm[0] == 0x80)
 				{
 					memcpy(dw, cw[PVU_CW_VID], 8);
-
-					/*if (csaUsed)
-					{
-						for (k = 0; k < 8; k += 4)
-						{
-							dw[k + 3] = ((dw[k] + dw[k + 1] + dw[k + 2]) & 0xFF);
-						}
-					}*/
 				}
 				else
 				{
 					memcpy(&dw[8], cw[PVU_CW_VID], 8);
-
-					/*if (csaUsed)
-					{
-						for (k = 8; k < 16; k += 4)
-						{
-							dw[k + 3] = ((dw[k] + dw[k + 1] + dw[k + 2]) & 0xFF);
-						}
-					}*/
 				}
 
 				return EMU_OK;
+			}
 
 			default:
 				break;
