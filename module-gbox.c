@@ -21,14 +21,6 @@
 #include "oscam-files.h"
 #include "module-gbox-remm.h"
 
-#define RECEIVE_BUFFER_SIZE	1024
-#define MIN_GBOX_MESSAGE_LENGTH	10 //CMD + pw + pw. TODO: Check if is really min
-#define MIN_ECM_LENGTH		8
-#define STATS_WRITE_TIME	300 //write stats file every 5 min
-#define MAX_GBOX_CARDS 1024  //send max. 1024 to peer
-
-#define LOCAL_GBOX_MAJOR_VERSION	0x02
-
 static struct gbox_data local_gbox;
 static int8_t local_gbox_initialized = 0;
 static uint8_t local_cards_initialized = 0;
@@ -74,41 +66,6 @@ uint32_t gbox_get_local_gbox_password(void)
 
 static uint8_t gbox_get_my_cpu_api (void)
 {
-/* For configurable later adapt according to these functions:
-unsigned char *GboxAPI( unsigned char a ) {
-	a = a & 7 ;
-	switch ( a ) { 
-		case 0 : strcpy ( s_24,"No API");
-                	break;  
-		case 1 : strcpy ( s_24,"API 1");
-                        break;  
-                case 2 : strcpy ( s_24,"API 2");
-                        break;  
-                case 3 : strcpy ( s_24,"API 3");
-                        break;  
-                case 4 : strcpy ( s_24,"IBM API");
-                        break;  
-                default : strcpy ( s_24," ");
-	}
-        return s_24 ;
-}
-                                                                                        
-unsigned char *GboxCPU( unsigned char a ) {
-	a = a & 112 ;
-        a = a >> 4 ;
-        switch ( a ) { 
-	        case 1 : strcpy ( s_23,"80X86 compatible CPU");
-        		break;  
-        	case 2 : strcpy ( s_23,"Motorola PowerPC MPC823 CPU");
-        		break;  
-        	case 3 : strcpy ( s_23,"IBM PowerPC STB CPU");
-        		break;  
-		default : strcpy ( s_23," ");
-	}
-	return s_23:
-}
-	return cfg.gbox_my_cpu_api;
-*/
 	return(cfg.gbox_my_cpu_api);
 }
 
@@ -244,7 +201,7 @@ void hostname2ip(char *hostname, IN_ADDR_T *ip)
 	cs_resolve(hostname, ip, NULL, NULL);
 }
 
-static uint16_t gbox_convert_password_to_id(uint32_t password)
+uint16_t gbox_convert_password_to_id(uint32_t password)
 {
 	return (((password >> 24) & 0xff) ^ ((password >> 8) & 0xff)) << 8 | (((password >> 16) & 0xff) ^ (password & 0xff));
 }
@@ -409,10 +366,10 @@ void gbox_send_hello_packet(struct s_client *cli, int8_t number, uchar *outbuf, 
 void gbox_send_hello(struct s_client *proxy, uint8_t hello_stat)
 {
         if (!proxy)
-        {
-                cs_log("Invalid call to gbox_send_hello with proxy");
-                return;
-        }
+         {
+            cs_log("Invalid proxy try to call 'gbox_send_hello'");
+            return;
+         }
         uint16_t nbcards = 0;
         uint16_t nbcards_cnt = 0;
         uint8_t packet;
@@ -423,10 +380,10 @@ void gbox_send_hello(struct s_client *proxy, uint8_t hello_stat)
         {
                 struct gbox_peer *peer = proxy->gbox;
                 if (!peer || !peer->my_user || !peer->my_user->account)
-                {
-                        cs_log("Invalid call to gbox_send_hello with peer");
-                        return;
-                }
+                 {
+                    cs_log("Invalid peer try to call 'gbox_send_hello'");
+                    return;
+                 }
                 memset(buf, 0, sizeof(buf));
                 struct gbox_card *card;
                 GBOX_CARDS_ITER *gci = gbox_cards_iter_create();
@@ -439,8 +396,12 @@ void gbox_send_hello(struct s_client *proxy, uint8_t hello_stat)
                         #ifdef MODULE_CCCAM 
                          (card->dist <= peer->my_user->account->cccmaxhops) &&
                         #endif
-                                (!card->origin_peer || (card->origin_peer && card->origin_peer->gbox.id != peer->gbox.id)))
-                        {
+                         (!card->origin_peer || (card->origin_peer && card->origin_peer->gbox.id != peer->gbox.id)))
+                          {
+
+                           if(card->type == GBOX_CARD_TYPE_GBOX || card->type == GBOX_CARD_TYPE_CCCAM)
+                             {
+                                //cs_log_dbg(D_READER,"send peer card %04X - level=%d crd-owner=%04X", card->caprovid >> 16, card->lvl, card->id.peer);                             	                           	
                                 *(++ptr) = card->caprovid >> 24;
                                 *(++ptr) = card->caprovid >> 16;
                                 *(++ptr) = card->caprovid >> 8;
@@ -448,29 +409,45 @@ void gbox_send_hello(struct s_client *proxy, uint8_t hello_stat)
                                 *(++ptr) = 1;       //note: original gbx is more efficient and sends all cards of one caid as package
                                 *(++ptr) = card->id.slot;
                                 *(++ptr) = ((card->lvl - 1) << 4) + card->dist + 1;
+                            }
+                           else if(proxy->reader->gbox_reshare > 0)
+                            {
+                                //cs_log_dbg(D_READER,"send local crd %04X reshare=%d crd-owner=%04X", card->caprovid >> 16, proxy->reader->gbox_reshare, card->id.peer); 
+                                *(++ptr) = card->caprovid >> 24;
+                                *(++ptr) = card->caprovid >> 16;
+                                *(++ptr) = card->caprovid >> 8;
+                                *(++ptr) = card->caprovid & 0xff;
+                                *(++ptr) = 1;
+                                *(++ptr) = card->id.slot;
+                                *(++ptr) = ((proxy->reader->gbox_reshare - 1) << 4) + card->dist + 1;
+                            }
+                           else
+                            {
+                              cs_log_dbg(D_READER,"WARNING: local card %04X will NOT be shared - !reshare=%d! crd-owner=%04X", card->caprovid >> 16, proxy->reader->gbox_reshare, card->id.peer);
+                              continue;
+                            }
                                 *(++ptr) = card->id.peer >> 8;
                                 *(++ptr) = card->id.peer & 0xff;
                                 nbcards++;
                                 nbcards_cnt++;
                                 if(nbcards_cnt == MAX_GBOX_CARDS ) 
-                                {
-                                 cs_log("max cards gbox_send_hello with peer reached");
-                                 break;
-                                }
+                                 {
+                                  cs_log("gbox_send_hello - max cards send to peer reached");
+                                  break;
+                                 }
                                 if(nbcards == 100)    //check if 100 is good or we need more sophisticated algorithm
-                                {
-                                        gbox_send_hello_packet(proxy, packet, buf, ptr, nbcards, hello_stat);
-                                        packet++;
-                                        nbcards = 0;
-                                        ptr = buf + 11;
-                                        memset(buf, 0, sizeof(buf));
-                                }
-                        }
-                }
+                                 {
+                                   gbox_send_hello_packet(proxy, packet, buf, ptr, nbcards, hello_stat);
+                                   packet++;
+                                   nbcards = 0;
+                                   ptr = buf + 11;
+                                   memset(buf, 0, sizeof(buf));
+                                 }
+                          }
+                } //while cards exist
                 gbox_cards_iter_destroy(gci);
-        } // end if local card exists
-        //last packet has bit 0x80 set
-        gbox_send_hello_packet(proxy, 0x80 | packet, buf, ptr, nbcards, hello_stat);
+        } // end if cards exists
+        gbox_send_hello_packet(proxy, 0x80 | packet, buf, ptr, nbcards, hello_stat); //last packet has bit 0x80 set
         return;
 }
 
@@ -797,6 +774,26 @@ int32_t gbox_cmd_hello_rcvd(struct s_client *cli, uchar *data, int32_t n)
 	}
 	else { peer->next_hello++; }
 	return 0;
+}
+
+uint8_t get_peer_onl_status(uint16_t peer_id)
+{
+	cs_readlock(__func__, &clientlist_lock);
+	struct s_client *cl;
+	for(cl = first_client; cl; cl = cl->next)
+	{
+		if(cl->gbox && cl->typ == 'p')
+		{
+			struct gbox_peer *peer = cl->gbox;
+			if((peer->gbox.id == peer_id) && peer->online)
+			{
+				cs_readunlock(__func__, &clientlist_lock);
+				return 1;
+			}
+		}
+	}
+		cs_readunlock(__func__, &clientlist_lock);
+		return 0;
 }
 
 static int8_t is_blocked_peer(uint16_t peer_id)
@@ -1144,21 +1141,20 @@ static uint8_t gbox_add_local_cards(struct s_reader *reader, TUNTAB *ttab)
 			{
 				for(i = 0; i < cl->reader->nprov; i++)
 				{
-					prid = cl->reader->prid[i][1] << 16 |
-						   cl->reader->prid[i][2] << 8 | cl->reader->prid[i][3];
-					gbox_add_card(local_gbox.id, gbox_get_caprovid(cl->reader->caid, prid), slot, reader->gbox_reshare, 0, GBOX_CARD_TYPE_LOCAL, NULL);
+					prid = cl->reader->prid[i][1] << 16 | cl->reader->prid[i][2] << 8 | cl->reader->prid[i][3];
+					gbox_add_card(local_gbox.id, gbox_get_caprovid(cl->reader->caid, prid), slot, DEFAULT_GBOX_RESHARE, 0, GBOX_CARD_TYPE_LOCAL, NULL);
 				}
 			}
 			else
 			{ 
-				gbox_add_card(local_gbox.id, gbox_get_caprovid(cl->reader->caid, 0), slot, reader->gbox_reshare, 0, GBOX_CARD_TYPE_LOCAL, NULL); 
+				gbox_add_card(local_gbox.id, gbox_get_caprovid(cl->reader->caid, 0), slot, DEFAULT_GBOX_RESHARE, 0, GBOX_CARD_TYPE_LOCAL, NULL); 
 				
 				//Check for Betatunnel on gbox account in oscam.user
 				if (chk_is_betatunnel_caid(cl->reader->caid) == 1 && ttab->ttdata && cl->reader->caid == ttab->ttdata[0].bt_caidto)
 				{
 					//For now only first entry in tunnel tab. No sense in iteration?
 					//Add betatunnel card to transmitted list
-					gbox_add_card(local_gbox.id, gbox_get_caprovid(ttab->ttdata[0].bt_caidfrom, 0), slot, reader->gbox_reshare, 0, GBOX_CARD_TYPE_BETUN, NULL);
+					gbox_add_card(local_gbox.id, gbox_get_caprovid(ttab->ttdata[0].bt_caidfrom, 0), slot, DEFAULT_GBOX_RESHARE, 0, GBOX_CARD_TYPE_BETUN, NULL);
 					cs_log_dbg(D_READER, "gbox created betatunnel card for caid: %04X->%04X", ttab->ttdata[0].bt_caidfrom, cl->reader->caid);
 				}
 			}
@@ -1204,8 +1200,8 @@ static uint8_t gbox_add_local_cards(struct s_reader *reader, TUNTAB *ttab)
 		for (i = 0; i < cfg.gbox_proxy_cards_num; i++) 
 		{
 			slot = gbox_next_free_slot(local_gbox.id);
-			gbox_add_card(local_gbox.id, cfg.gbox_proxy_card[i], slot, reader->gbox_reshare, 0, GBOX_CARD_TYPE_PROXY, NULL);
-			cs_log_dbg(D_READER,"add proxy card: slot %d %04X:%06X",slot, gbox_get_caid(cfg.gbox_proxy_card[i]), gbox_get_provid(cfg.gbox_proxy_card[i]));
+			gbox_add_card(local_gbox.id, cfg.gbox_proxy_card[i], slot, DEFAULT_GBOX_RESHARE, 0, GBOX_CARD_TYPE_PROXY, NULL);
+			cs_log_dbg(D_READER,"add proxy card: level %d slot %d %04X:%06X",reader->gbox_reshare, slot, gbox_get_caid(cfg.gbox_proxy_card[i]), gbox_get_provid(cfg.gbox_proxy_card[i]));
 		}
 	}	//end add proxy reader cards
 	gbox_write_local_cards_info();
@@ -1822,10 +1818,10 @@ static int32_t gbox_peer_init(struct s_client *cli)
 		{ cli->reader->gbox_maxdist = DEFAULT_GBOX_MAX_DIST; }
 
 	//value > GBOX_MAXHOPS not allowed in gbox network
-	if(!cli->reader->gbox_reshare || cli->reader->gbox_reshare > GBOX_MAXHOPS)
+	if(cli->reader->gbox_reshare > GBOX_MAXHOPS)
 		{ cli->reader->gbox_reshare = GBOX_MAXHOPS; }
 
-	if(!cli->reader->gbox_cccam_reshare || cli->reader->gbox_cccam_reshare > GBOX_MAXHOPS)
+	if(cli->reader->gbox_cccam_reshare > GBOX_MAXHOPS)
 		{ cli->reader->gbox_cccam_reshare = GBOX_MAXHOPS; }
 
 	return 0;
