@@ -257,26 +257,46 @@ static void ParsePMTData(emu_stream_client_data *cdata)
 		stream_pid = b2i(2, data + i + 1) & 0x1FFF;
 		es_info_length = b2i(2, data + i + 3) & 0xFFF;
 
-		if (stream_type == 0x01 || stream_type == 0x02 || stream_type == 0x10 || stream_type == 0x1B
-			|| stream_type == 0x24 || stream_type == 0x42 || stream_type == 0x80 || stream_type == 0xD1
-			|| stream_type == 0xEA)
+		switch (stream_type)
 		{
-			cdata->video_pid = stream_pid;
-			cs_log_dbg(D_READER, "Stream %i found video pid: 0x%04X (%i)",
-						cdata->connid, stream_pid, stream_pid);
-		}
+			case 0x01: // MPEG-1 video
+			case 0x02: // MPEG-2 video
+			case 0x10: // MPEG-4 video
+			case 0x1B: // AVC video
+			case 0x20: // MVC video
+			case 0x24: // HEVC video
+			case 0x25: // HEVC video
+			case 0x42: // Chinese video
+			case 0x80: // DigiCipher 2 video
+			case 0xD1: // Dirac video
+			case 0xEA: // VC-1 video
+			{
+				cdata->video_pid = stream_pid;
+				cs_log_dbg(D_READER, "Stream %i found video pid: 0x%04X (%i)",
+							cdata->connid, stream_pid, stream_pid);
+				break;
+			}
 
-		else if (stream_type == 0x03 || stream_type == 0x04 || stream_type == 0x05 || stream_type == 0x06
-				|| stream_type == 0x0F || stream_type == 0x11 || (stream_type >= 0x81 && stream_type <= 0x87)
-				|| stream_type == 0x8A)
-		{
-			if (cdata->audio_pid_count >= EMU_STREAM_MAX_AUDIO_SUB_TRACKS)
-				{ continue; }
+			case 0x03: // MPEG-1 part 3 audio (MP1, MP2, MP3)
+			case 0x04: // MPEG-2 part 3 audio (MP1, MP2, MP3)
+			case 0x06: // AC-3, Enhanced AC-3, AC-4, DTS, DTS-HD and DTS-UHD audio (DVB)
+			case 0x0F: // MPEG-2 part 7 audio (AAC)
+			case 0x11: // MPEG-4 part 3 audio (AAC, HE AAC and AAC v2)
+			case 0x1C: // MPEG-4 part 3 audio (DST, ALS, SLS)
+			case 0x2D: // MPEG-H part 3 audio (main stream)
+			case 0x2E: // MPEG-H part 3 audio (auxiliary stream)
+			case 0x81: // AC-3 audio (ATSC)
+			case 0x87: // Enhanced AC-3 audio (ATSC)
+			{
+				if (cdata->audio_pid_count >= EMU_STREAM_MAX_AUDIO_SUB_TRACKS)
+					{ continue; }
 
-			cdata->audio_pids[cdata->audio_pid_count] = stream_pid;
-			cdata->audio_pid_count++;
-			cs_log_dbg(D_READER, "Stream %i found audio pid: 0x%04X (%i)",
-						cdata->connid, stream_pid, stream_pid);
+				cdata->audio_pids[cdata->audio_pid_count] = stream_pid;
+				cdata->audio_pid_count++;
+				cs_log_dbg(D_READER, "Stream %i found audio pid: 0x%04X (%i)",
+							cdata->connid, stream_pid, stream_pid);
+				break;
+			}
 		}
 	}
 }

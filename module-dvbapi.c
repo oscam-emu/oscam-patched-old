@@ -6344,29 +6344,48 @@ void dvbapi_send_dcw(struct s_client *client, ECM_REQUEST *er)
 					{
 						stream_type = demux[i].STREAMpidsType[k];
 
-						// Video
-						if(stream_type == 0x01 || stream_type == 0x02 || stream_type == 0x10 || stream_type == 0x1B
-							|| stream_type == 0x24 || stream_type == 0x42 || stream_type == 0x80 || stream_type == 0xD1
-							|| stream_type == 0xEA)
+						switch(stream_type)
 						{
-							cw = er->cw;
-						}
-						// Audio
-						else if(stream_type == 0x03 || stream_type == 0x04 || stream_type == 0x06 || stream_type == 0x0F
-							|| stream_type == 0x11 || stream_type == 0x81 || (stream_type >= 0x83 && stream_type <= 0x87)
-							|| stream_type == 0x8A)
-						{
-							cw = er->cw_ex.audio[key_pos_a];
-
-							if(key_pos_a < 3)
+							case 0x01: // MPEG-1 video
+							case 0x02: // MPEG-2 video
+							case 0x10: // MPEG-4 video
+							case 0x1B: // AVC video
+							case 0x20: // MVC video
+							case 0x24: // HEVC video
+							case 0x25: // HEVC video
+							case 0x42: // Chinese video
+							case 0x80: // DigiCipher 2 video
+							case 0xD1: // Dirac video
+							case 0xEA: // VC-1 video
 							{
-								key_pos_a++;
+								cw = er->cw;
+								break;
 							}
-						}
-						// Data
-						else
-						{
-							cw = er->cw_ex.data;
+
+							case 0x03: // MPEG-1 part 3 audio (MP1, MP2, MP3)
+							case 0x04: // MPEG-2 part 3 audio (MP1, MP2, MP3)
+							case 0x06: // AC-3, Enhanced AC-3, AC-4, DTS, DTS-HD and DTS-UHD audio (DVB)
+							case 0x0F: // MPEG-2 part 7 audio (AAC)
+							case 0x11: // MPEG-4 part 3 audio (AAC, HE AAC and AAC v2)
+							case 0x1C: // MPEG-4 part 3 audio (DST, ALS, SLS)
+							case 0x2D: // MPEG-H part 3 audio (main stream)
+							case 0x2E: // MPEG-H part 3 audio (auxiliary stream)
+							case 0x81: // AC-3 audio (ATSC)
+							case 0x87: // Enhanced AC-3 audio (ATSC)
+							{
+								cw = er->cw_ex.audio[key_pos_a];
+								if(key_pos_a < 3)
+								{
+									key_pos_a++;
+								}
+								break;
+							}
+
+							default: // Data
+							{
+								cw = er->cw_ex.data;
+								break;
+							}
 						}
 
 						dvbapi_write_cw(i, cw, j, k, er->cw_ex.algo, er->cw_ex.algo_mode, er->msgid);
