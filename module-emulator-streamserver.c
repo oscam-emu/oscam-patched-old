@@ -283,10 +283,13 @@ static void ParsePMTData(emu_stream_client_data *cdata)
 			case 0x0F: // MPEG-2 part 7 audio (AAC)
 			case 0x11: // MPEG-4 part 3 audio (AAC, HE AAC and AAC v2)
 			case 0x1C: // MPEG-4 part 3 audio (DST, ALS, SLS)
-			case 0x2D: // MPEG-H part 3 audio (main stream)
-			case 0x2E: // MPEG-H part 3 audio (auxiliary stream)
+			case 0x2D: // MPEG-H part 3 3D audio (main stream)
+			case 0x2E: // MPEG-H part 3 3D audio (auxiliary stream)
 			case 0x81: // AC-3 audio (ATSC)
 			case 0x87: // Enhanced AC-3 audio (ATSC)
+			//case 0x88: // DTS-HD audio (ATSC 2.0) /* fixme: has ATSC 2.0 ever been used? */
+			//case 0x??: // AC-4 audio (ATSC 3.0) /* fixme: add the actual value when it gets published */
+			//case 0x??: // MPEG-H part 3 3D audio (ATSC 3.0) /* fixme: add the actual value when it gets published */
 			{
 				if (cdata->audio_pid_count >= EMU_STREAM_MAX_AUDIO_SUB_TRACKS)
 					{ continue; }
