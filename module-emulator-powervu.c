@@ -1638,7 +1638,7 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_k
 					SAFE_MUTEX_LOCK(&emu_fixed_key_srvid_mutex);
 					for (j = 0; j < EMU_STREAM_SERVER_MAX_CONNECTIONS; j++)
 					{
-						if(!stream_server_has_ecm[j] && emu_stream_cur_srvid[j] == srvid)
+						if (!stream_server_has_ecm[j] && emu_stream_cur_srvid[j] == srvid)
 						{
 							update_global_key = 1;
 							update_global_keys[j] = 1;
@@ -1651,7 +1651,6 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_k
 
 				if (calculateAll) // Calculate all seeds
 				{
-
 					for (j = 0; j < 8; j++)
 					{
 						memcpy(ecmKey, tmpEcmKey, 7);
@@ -1883,7 +1882,6 @@ static int8_t PowervuUpdateEcmKeysByGroup(uint32_t groupId, uint8_t keyIndex, ui
 	snprintf(uaInfo, 13, "UA: %08X", uniqueAddress);
 
 	SAFE_MUTEX_LOCK(&emu_key_data_mutex);
-
 	while (FindKey('P', groupId << 16 & 0xFFFF0000, 0x0000FFFF, indexStr, oldKey, 7, 0, keyRef, 0, &foundProvider))
 	{
 		keyRef++;
