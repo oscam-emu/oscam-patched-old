@@ -366,6 +366,50 @@ static void ParseEcmData(emu_stream_client_data *cdata)
 
 static void ParseTsPackets(emu_stream_client_data *data, uint8_t *stream_buf, uint32_t bufLength, uint16_t packetSize)
 {
+	uint8_t payloadStart;
+	uint16_t pid, offset;
+	uint32_t i, tsHeader;
+
+	for (i = 0; i < bufLength; i += packetSize)
+	{
+		tsHeader = b2i(4, stream_buf + i);
+		pid = (tsHeader & 0x1FFF00) >> 8;
+		payloadStart = (tsHeader & 0x400000) >> 22;
+
+		if (tsHeader & 0x20)
+		{
+			offset = 4 + stream_buf[i + 4] + 1;
+		}
+		else
+		{
+			offset = 4;
+		}
+
+		if (packetSize - offset < 1)
+			{ continue; }
+
+		if (pid == 0x0000 && data->have_pat_data != 1) // Search the PAT for the PMT pid
+		{
+			ParseTsData(0x00, 0xFF, 16, &data->have_pat_data, data->pat_data, sizeof(data->pat_data),
+						&data->pat_data_pos, payloadStart, stream_buf + i + offset, packetSize - offset, ParsePatData, data);
+			continue;
+		}
+
+		if (pid == data->pmt_pid && data->have_pmt_data != 1) // Search the PMT for PCR, ECM, Video and Audio pids
+		{
+			ParseTsData(0x02, 0xFF, 21, &data->have_pmt_data, data->pmt_data, sizeof(data->pmt_data),
+						&data->pmt_data_pos, payloadStart, stream_buf + i + offset, packetSize - offset, ParsePmtData, data);
+			continue;
+		}
+
+		// We have bot PAT and PMT data - No need to search the rest of the packets
+		if (data->have_pat_data == 1 && data->have_pmt_data == 1)
+			{ break; }
+	}
+}
+
+static void DescrambleTsPacketsPowervu(emu_stream_client_data *data, uint8_t *stream_buf, uint32_t bufLength, uint16_t packetSize)
+{
 	int8_t oddKeyUsed;
 
 	uint8_t scramblingControl, payloadStart, oddeven;
@@ -404,21 +448,18 @@ static void ParseTsPackets(emu_stream_client_data *data, uint8_t *stream_buf, ui
 		if (packetSize - offset < 1)
 			{ continue; }
 
-		if (pid == 1)
+		if (emu_stream_emm_enabled && pid == 0x0001 && data->have_cat_data != 1) // Search the CAT for EMM pids
 		{
 			// set to null pid
 			stream_buf[i + 1] |= 0x1F;
 			stream_buf[i + 2] = 0xFF;
 
-			if (emu_stream_emm_enabled && !data->emm_pid)
-			{
-				ParseTsData(0x01, 0xFF, 8, &data->have_cat_data, data->cat_data, sizeof(data->cat_data),
-							&data->cat_data_pos, payloadStart, stream_buf + i + offset, packetSize - offset, ParseCatData, data);
-				continue;
-			}
+			ParseTsData(0x01, 0xFF, 8, &data->have_cat_data, data->cat_data, sizeof(data->cat_data),
+						&data->cat_data_pos, payloadStart, stream_buf + i + offset, packetSize - offset, ParseCatData, data);
+			continue;
 		}
 
-		if (emu_stream_emm_enabled && data->emm_pid && pid == data->emm_pid)
+		if (emu_stream_emm_enabled && data->emm_pid && pid == data->emm_pid) // Process the EMM data
 		{
 			// set to null pid
 			stream_buf[i + 1] |= 0x1F;
@@ -429,21 +470,7 @@ static void ParseTsPackets(emu_stream_client_data *data, uint8_t *stream_buf, ui
 			continue;
 		}
 
-		if (pid == 0 && !data->pmt_pid)
-		{
-			ParseTsData(0x00, 0xFF, 16, &data->have_pat_data, data->pat_data, sizeof(data->pat_data),
-						&data->pat_data_pos, payloadStart, stream_buf + i + offset, packetSize - offset, ParsePatData, data);
-			continue;
-		}
-
-		if (!data->ecm_pid && pid == data->pmt_pid)
-		{
-			ParseTsData(0x02, 0xFF, 21, &data->have_pmt_data, data->pmt_data, sizeof(data->pmt_data),
-						&data->pmt_data_pos, payloadStart, stream_buf + i + offset, packetSize - offset, ParsePmtData, data);
-			continue;
-		}
-
-		if (data->ecm_pid && pid == data->ecm_pid)
+		if (data->ecm_pid && pid == data->ecm_pid) // Process the ECM data
 		{
 			stream_server_has_ecm[data->connid] = 1;
 
@@ -924,7 +951,15 @@ static void *stream_client_handler(void *arg)
 				{
 					packetCount = ((bytesRead - startOffset) / packetSize);
 
-					ParseTsPackets(data, stream_buf + startOffset, packetCount * packetSize, packetSize);
+					// We have both PAT and PMT data - We can start descrambling
+					if (data->have_pat_data == 1 && data->have_pmt_data == 1)
+					{
+						DescrambleTsPacketsPowervu(data, stream_buf + startOffset, packetCount * packetSize, packetSize);
+					}
+					else // Search PAT and PMT packets for service information
+					{
+						ParseTsPackets(data, stream_buf + startOffset, packetCount * packetSize, packetSize);
+					}
 
 					clientStatus = send(conndata->connfd, stream_buf + startOffset, packetCount * packetSize, 0);
 
