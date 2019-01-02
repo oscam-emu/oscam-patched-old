@@ -871,6 +871,7 @@ static const struct config_list streamrelay_opts[] =
 	DEF_OPT_UINT32("stream_ecm_delay"         , OFS(emu_stream_ecm_delay),            600),
 	DEF_OPT_INT8("stream_relay_enabled"       , OFS(emu_stream_relay_enabled),        1),
 	DEF_OPT_INT8("stream_emm_enabled"         , OFS(emu_stream_emm_enabled),          1),
+	DEF_OPT_FUNC("stream_relay_ctab"          , OFS(emu_stream_relay_ctab),           check_caidtab_fn),
 	DEF_LAST_OPT
 };
 #else

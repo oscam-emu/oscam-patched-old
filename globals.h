@@ -2283,6 +2283,7 @@ struct s_config
 	uint32_t    emu_stream_ecm_delay;
 	int8_t      emu_stream_relay_enabled;
 	int8_t      emu_stream_emm_enabled;
+	CAIDTAB     emu_stream_relay_ctab;              // use the stream server for these caids
 #endif
 
 	int32_t    max_cache_time;  //seconds ecms are stored in ecmcwcache

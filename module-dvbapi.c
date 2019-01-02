@@ -6305,7 +6305,7 @@ void dvbapi_send_dcw(struct s_client *client, ECM_REQUEST *er)
 		delayer(er, delay);
 
 #ifdef WITH_EMU
-		if(!caid_is_powervu(er->caid) || !cfg.emu_stream_relay_enabled)
+		if(!chk_ctab_ex(er->caid, &cfg.emu_stream_relay_ctab) || !cfg.emu_stream_relay_enabled)
 #endif
 		switch(selected_api)
 		{

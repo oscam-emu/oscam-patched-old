@@ -13,6 +13,7 @@
 #include "oscam-net.h"
 #include "oscam-string.h"
 #include "oscam-time.h"
+#include "oscam-chk.h"
 
 extern int32_t exit_oscam;
 
@@ -954,7 +955,18 @@ static void *stream_client_handler(void *arg)
 					// We have both PAT and PMT data - We can start descrambling
 					if (data->have_pat_data == 1 && data->have_pmt_data == 1)
 					{
-						DescrambleTsPacketsPowervu(data, stream_buf + startOffset, packetCount * packetSize, packetSize);
+						if (chk_ctab_ex(data->caid, &cfg.emu_stream_relay_ctab))
+						{
+							if (caid_is_powervu(data->caid))
+							{
+								DescrambleTsPacketsPowervu(data, stream_buf + startOffset, packetCount * packetSize, packetSize);
+							}
+						}
+						else
+						{
+							cs_log_dbg(D_READER, "Stream client %i caid %04X not enabled in stream relay config",
+										conndata->connid, data->caid);
+						}
 					}
 					else // Search PAT and PMT packets for service information
 					{

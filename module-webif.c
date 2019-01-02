@@ -1232,6 +1232,8 @@ static char *send_oscam_config_scam(struct templatevars *vars, struct uriparams 
 
 static char *send_oscam_config_streamrelay(struct templatevars *vars, struct uriparams *params)
 {
+	char *value;
+
 	setActiveSubMenu(vars, MNU_CFG_STREAMRELAY);
 
 	webif_save_config("streamrelay", vars, params);
@@ -1250,6 +1252,10 @@ static char *send_oscam_config_streamrelay(struct templatevars *vars, struct uri
 
 	tpl_printf(vars, TPLADD, "TMP", "STREAMEMMENABLEDSELECTED%d", cfg.emu_stream_emm_enabled);
 	tpl_addVar(vars, TPLADD, tpl_getVar(vars, "TMP"), "selected");
+
+	value = mk_t_caidtab(&cfg.emu_stream_relay_ctab);
+	tpl_addVar(vars, TPLADD, "STREAM_RELAY_CTAB", value);
+	free_mk_t(value);
 
 	return tpl_getTpl(vars, "CONFIGSTREAMRELAY");
 }

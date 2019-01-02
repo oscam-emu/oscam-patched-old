@@ -4,11 +4,12 @@
 			<TR><TD><A>Mode (requires OSCam restart)</A></TD>
 				<TD>
 					<select name="stream_relay_enabled">
-						<option value="0" ##STREAMRELAYENABLEDSELECTED0##>0 - disabled (use direct DVB-Api decryption)</option>
-						<option value="1" ##STREAMRELAYENABLEDSELECTED1##>1 - enabled (use Stream Relay)</option>
+						<option value="0" ##STREAMRELAYENABLEDSELECTED0##>0 - disabled</option>
+						<option value="1" ##STREAMRELAYENABLEDSELECTED1##>1 - enabled</option>
 					</select>
 				</TD>
 			</TR>
+			<TR><TD><A>Caid:</A></TD><TD><input name="stream_relay_ctab" type="text" maxlength="160" value="##STREAM_RELAY_CTAB##"></TD></TR>
 			<TR><TD><A>Source Stream Host:</A></TD><TD><input name="stream_source_host" type="text" maxlength="15" value="##STREAM_SOURCE_HOST##"></TD></TR>
 			<TR><TD><A>Source Stream Port:</A></TD><TD><input name="stream_source_port" class="short" type="text" maxlength="5" value="##STREAM_SOURCE_PORT##"></TD></TR>
 			<TR><TD><A>Source Stream User:</A></TD><TD><input name="stream_source_auth_user" type="text" value="##STREAM_SOURCE_AUTH_USER##"></TD></TR>
