@@ -39,6 +39,7 @@ typedef struct
 	uint16_t ecm_data_pos;
 	uint16_t emm_data_pos;
 	uint16_t srvid;
+	uint16_t caid;
 	uint16_t pmt_pid;
 	uint16_t ecm_pid;
 	uint16_t emm_pid;

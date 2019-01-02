@@ -78,7 +78,7 @@ static void SearchTsPackets(uint8_t *buf, uint32_t bufLength, uint16_t *packetSi
 
 typedef void (*ts_data_callback)(emu_stream_client_data *cdata);
 
-static void ParseTSData(uint8_t table_id, uint8_t table_mask, uint8_t min_table_length, int8_t *flag,
+static void ParseTsData(uint8_t table_id, uint8_t table_mask, uint8_t min_table_length, int8_t *flag,
 						uint8_t *data, uint16_t data_length, uint16_t *data_pos, int8_t payloadStart,
 						uint8_t *buf, int32_t len, ts_data_callback func, emu_stream_client_data *cdata)
 {
@@ -183,7 +183,7 @@ static void ParseTSData(uint8_t table_id, uint8_t table_mask, uint8_t min_table_
 	*flag = 1;
 }
 
-static void ParsePATData(emu_stream_client_data *cdata)
+static void ParsePatData(emu_stream_client_data *cdata)
 {
 	int32_t i;
 	uint8_t *data = cdata->pat_data;
@@ -206,7 +206,7 @@ static void ParsePATData(emu_stream_client_data *cdata)
 	}
 }
 
-static void ParsePMTData(emu_stream_client_data *cdata)
+static void ParsePmtData(emu_stream_client_data *cdata)
 {
 	int32_t i;
 	uint8_t *data = cdata->pmt_data;
@@ -241,8 +241,9 @@ static void ParsePMTData(emu_stream_client_data *cdata)
 		{
 			caid = b2i(2, data + i + 2);
 
-			if (caid_is_powervu(caid))
+			if (caid_is_powervu(caid)) // add all supported caids here
 			{
+				if (cdata->caid == NO_CAID_VALUE) { cdata->caid = caid; }
 				cdata->ecm_pid = b2i(2, data + i + 4) & 0x1FFF;
 				cs_log_dbg(D_READER, "Stream %i found ecm pid: 0x%04X (%i)",
 							cdata->connid, cdata->ecm_pid, cdata->ecm_pid);
@@ -304,42 +305,43 @@ static void ParsePMTData(emu_stream_client_data *cdata)
 	}
 }
 
-static void ParseCATData(emu_stream_client_data *cdata)
+static void ParseCatData(emu_stream_client_data *cdata)
 {
 	uint8_t *data = cdata->cat_data;
 	uint32_t i;
 
 	for (i = 8; i < (b2i(2, data + 1) & 0xFFF) - 1; i += data[i + 1] + 2)
 	{
-		if (data[i] != 0x09) { continue; }
+		if (data[i] != 0x09)
+			{ continue; }
 
 		uint16_t caid = b2i(2, data + i + 2);
-		uint16_t emm_pid = b2i(2, data + i + 4) & 0x1FFF;
 
-		if (caid_is_powervu(caid))
+		if (caid_is_powervu(caid)) // add all supported caids here
 		{
-			cdata->emm_pid = emm_pid;
+			if (cdata->caid == NO_CAID_VALUE) { cdata->caid = caid; }
+			cdata->emm_pid = b2i(2, data + i + 4) & 0x1FFF;;
 			cs_log_dbg(D_READER, "Stream %i found emm pid: 0x%04X (%i)",
-						cdata->connid, emm_pid, emm_pid);
+						cdata->connid, cdata->emm_pid, cdata->emm_pid);
 			break;
 		}
 	}
 }
 
-static void ParseEMMData(emu_stream_client_data *cdata)
+static void ParseEmmData(emu_stream_client_data *cdata)
 {
-	uint8_t *data = cdata->emm_data;
 	uint32_t keysAdded = 0;
 
-	ProcessEMM(NULL, 0x0E00, 0, data, &keysAdded);
+	ProcessEMM(NULL, cdata->caid, 0, cdata->emm_data, &keysAdded);
 
 	if (keysAdded)
 	{
+		//refresh_entitlements(rdr);
 		cs_log("Stream %i found %i keys", cdata->connid, keysAdded);
 	}
 }
 
-static void ParseECMData(emu_stream_client_data *cdata)
+static void ParseEcmData(emu_stream_client_data *cdata)
 {
 	uint8_t *data = cdata->ecm_data;
 	uint8_t dcw[16];
@@ -348,14 +350,21 @@ static void ParseECMData(emu_stream_client_data *cdata)
 	if (section_length < 11)
 		{ return; }
 
-	if (data[11] > cdata->ecm_nb || (cdata->ecm_nb == 255 && data[11] == 0) || ((cdata->ecm_nb - data[11]) > 5))
+	if (caid_is_powervu(cdata->caid))
 	{
-		cdata->ecm_nb = data[11];
-		PowervuECM(data, dcw, cdata->srvid, &cdata->key, NULL);
+		if (data[11] > cdata->ecm_nb || (cdata->ecm_nb == 255 && data[11] == 0) || ((cdata->ecm_nb - data[11]) > 5))
+		{
+			cdata->ecm_nb = data[11];
+			PowervuECM(data, dcw, cdata->srvid, &cdata->key, NULL);
+		}
 	}
+	//else if () // All other caids
+	//{
+		//ProcessECM();
+	//}
 }
 
-static void ParseTSPackets(emu_stream_client_data *data, uint8_t *stream_buf, uint32_t bufLength, uint16_t packetSize)
+static void ParseTsPackets(emu_stream_client_data *data, uint8_t *stream_buf, uint32_t bufLength, uint16_t packetSize)
 {
 	int8_t oddKeyUsed;
 
@@ -403,8 +412,8 @@ static void ParseTSPackets(emu_stream_client_data *data, uint8_t *stream_buf, ui
 
 			if (emu_stream_emm_enabled && !data->emm_pid)
 			{
-				ParseTSData(0x01, 0xFF, 8, &data->have_cat_data, data->cat_data, sizeof(data->cat_data),
-							&data->cat_data_pos, payloadStart, stream_buf + i + offset, packetSize - offset, ParseCATData, data);
+				ParseTsData(0x01, 0xFF, 8, &data->have_cat_data, data->cat_data, sizeof(data->cat_data),
+							&data->cat_data_pos, payloadStart, stream_buf + i + offset, packetSize - offset, ParseCatData, data);
 				continue;
 			}
 		}
@@ -415,22 +424,22 @@ static void ParseTSPackets(emu_stream_client_data *data, uint8_t *stream_buf, ui
 			stream_buf[i + 1] |= 0x1F;
 			stream_buf[i + 2] = 0xFF;
 
-			ParseTSData(0x80, 0xF0, 3, &data->have_emm_data, data->emm_data, sizeof(data->emm_data),
-						&data->emm_data_pos, payloadStart, stream_buf + i + offset, packetSize - offset, ParseEMMData, data);
+			ParseTsData(0x80, 0xF0, 3, &data->have_emm_data, data->emm_data, sizeof(data->emm_data),
+						&data->emm_data_pos, payloadStart, stream_buf + i + offset, packetSize - offset, ParseEmmData, data);
 			continue;
 		}
 
 		if (pid == 0 && !data->pmt_pid)
 		{
-			ParseTSData(0x00, 0xFF, 16, &data->have_pat_data, data->pat_data, sizeof(data->pat_data),
-						&data->pat_data_pos, payloadStart, stream_buf + i + offset, packetSize - offset, ParsePATData, data);
+			ParseTsData(0x00, 0xFF, 16, &data->have_pat_data, data->pat_data, sizeof(data->pat_data),
+						&data->pat_data_pos, payloadStart, stream_buf + i + offset, packetSize - offset, ParsePatData, data);
 			continue;
 		}
 
 		if (!data->ecm_pid && pid == data->pmt_pid)
 		{
-			ParseTSData(0x02, 0xFF, 21, &data->have_pmt_data, data->pmt_data, sizeof(data->pmt_data),
-						&data->pmt_data_pos, payloadStart, stream_buf + i + offset, packetSize - offset, ParsePMTData, data);
+			ParseTsData(0x02, 0xFF, 21, &data->have_pmt_data, data->pmt_data, sizeof(data->pmt_data),
+						&data->pmt_data_pos, payloadStart, stream_buf + i + offset, packetSize - offset, ParsePmtData, data);
 			continue;
 		}
 
@@ -442,8 +451,8 @@ static void ParseTSPackets(emu_stream_client_data *data, uint8_t *stream_buf, ui
 			stream_buf[i + 1] |= 0x1F;
 			stream_buf[i + 2] = 0xFF;
 
-			ParseTSData(0x80, 0xFE, 3, &data->have_ecm_data, data->ecm_data, sizeof(data->ecm_data),
-						&data->ecm_data_pos, payloadStart, stream_buf + i + offset, packetSize - offset, ParseECMData, data);
+			ParseTsData(0x80, 0xFE, 3, &data->have_ecm_data, data->ecm_data, sizeof(data->ecm_data),
+						&data->ecm_data_pos, payloadStart, stream_buf + i + offset, packetSize - offset, ParseEcmData, data);
 			continue;
 		}
 
@@ -692,8 +701,8 @@ static void stream_client_disconnect(emu_stream_client_conn_data *conndata)
 	emu_stream_cur_srvid[conndata->connid] = NO_SRVID_VALUE;
 	stream_server_has_ecm[conndata->connid] = 0;
 	SAFE_MUTEX_UNLOCK(&emu_fixed_key_srvid_mutex);
-	SAFE_MUTEX_LOCK(&emu_stream_server_mutex);
 
+	SAFE_MUTEX_LOCK(&emu_stream_server_mutex);
 	for (i = 0; i < EMU_STREAM_SERVER_MAX_CONNECTIONS; i++)
 	{
 		if (gconnfd[i] == conndata->connfd)
@@ -815,6 +824,7 @@ static void *stream_client_handler(void *arg)
 	clientStatus = send(conndata->connfd, http_buf, strlen(http_buf), 0);
 
 	data->connid = conndata->connid;
+	data->caid = NO_CAID_VALUE;
 
 	while (!exit_oscam && clientStatus != -1 && streamConnectErrorCount < 3
 			&& streamDataErrorCount < 15)
@@ -845,7 +855,7 @@ static void *stream_client_handler(void *arg)
 				cur_dvb_buffer_wait = EMU_DVB_BUFFER_WAIT_DES;
 			}
 
-			streamStatus = recv(streamfd, stream_buf+bytesRead, cur_dvb_buffer_size-bytesRead, MSG_WAITALL);
+			streamStatus = recv(streamfd, stream_buf + bytesRead, cur_dvb_buffer_size - bytesRead, MSG_WAITALL);
 			if (streamStatus == 0) // socket closed
 			{
 				cs_log("WARNING: stream client %i - stream source closed connection", conndata->connid);
@@ -912,14 +922,14 @@ static void *stream_client_handler(void *arg)
 				}
 				else
 				{
-					packetCount = ((bytesRead-startOffset) / packetSize);
+					packetCount = ((bytesRead - startOffset) / packetSize);
 
-					ParseTSPackets(data, stream_buf+startOffset, packetCount * packetSize, packetSize);
+					ParseTsPackets(data, stream_buf + startOffset, packetCount * packetSize, packetSize);
 
-					clientStatus = send(conndata->connfd, stream_buf+startOffset, packetCount * packetSize, 0);
+					clientStatus = send(conndata->connfd, stream_buf + startOffset, packetCount * packetSize, 0);
 
 					remainingDataPos = startOffset + (packetCount * packetSize);
-					remainingDataLength = bytesRead-remainingDataPos;
+					remainingDataLength = bytesRead - remainingDataPos;
 
 					if (remainingDataPos < remainingDataLength)
 					{
@@ -940,6 +950,7 @@ static void *stream_client_handler(void *arg)
 
 	NULLFREE(http_buf);
 	NULLFREE(stream_buf);
+
 	for (i = 0; i < 8; i++)
 	{
 		if (data->key.pvu_csa_ks[i])
@@ -1086,6 +1097,7 @@ void *stream_key_delayer(void *UNUSED(arg))
 		for (i = 0; i < EMU_STREAM_SERVER_MAX_CONNECTIONS; i++)
 		{
 			it = ll_iter_create(ll_emu_stream_delayed_keys[i]);
+
 			while ((item = ll_iter_next(&it)))
 			{
 				if (comp_timeb(&t_now, &item->write_time) < 0)
