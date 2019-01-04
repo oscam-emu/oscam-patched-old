@@ -212,7 +212,7 @@ static void ParsePmtData(emu_stream_client_data *cdata)
 	int32_t i;
 	uint8_t *data = cdata->pmt_data;
 	uint8_t descriptor_tag = 0, descriptor_length = 0, stream_type;
-	uint16_t program_info_length = 0, es_info_length = 0, stream_pid, caid;
+	uint16_t program_info_length = 0, es_info_length = 0, elementary_pid, caid;
 	uint16_t section_length = SCT_LEN(data);
 
 	cdata->pcr_pid = b2i(2, data + 8) & 0x1FFF;
@@ -256,7 +256,7 @@ static void ParsePmtData(emu_stream_client_data *cdata)
 	for (i = 12 + program_info_length; i + 4 < section_length; i += 5 + es_info_length)
 	{
 		stream_type = data[i];
-		stream_pid = b2i(2, data + i + 1) & 0x1FFF;
+		elementary_pid = b2i(2, data + i + 1) & 0x1FFF;
 		es_info_length = b2i(2, data + i + 3) & 0xFFF;
 
 		switch (stream_type)
@@ -273,9 +273,9 @@ static void ParsePmtData(emu_stream_client_data *cdata)
 			case 0xD1: // Dirac video
 			case 0xEA: // VC-1 video
 			{
-				cdata->video_pid = stream_pid;
+				cdata->video_pid = elementary_pid;
 				cs_log_dbg(D_READER, "Stream %i found video pid: 0x%04X (%i)",
-							cdata->connid, stream_pid, stream_pid);
+							cdata->connid, elementary_pid, elementary_pid);
 				break;
 			}
 
@@ -296,10 +296,10 @@ static void ParsePmtData(emu_stream_client_data *cdata)
 				if (cdata->audio_pid_count >= EMU_STREAM_MAX_AUDIO_SUB_TRACKS)
 					{ continue; }
 
-				cdata->audio_pids[cdata->audio_pid_count] = stream_pid;
+				cdata->audio_pids[cdata->audio_pid_count] = elementary_pid;
 				cdata->audio_pid_count++;
 				cs_log_dbg(D_READER, "Stream %i found audio pid: 0x%04X (%i)",
-							cdata->connid, stream_pid, stream_pid);
+							cdata->connid, elementary_pid, elementary_pid);
 				break;
 			}
 		}
