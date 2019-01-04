@@ -6347,7 +6347,7 @@ void dvbapi_send_dcw(struct s_client *client, ECM_REQUEST *er)
 						switch(stream_type)
 						{
 							case 0x01: // MPEG-1 video
-							case 0x02: // MPEG-2 video
+							case 0x02: // MPEG-1 (constrained parameter), MPEG-2 video
 							case 0x10: // MPEG-4 video
 							case 0x1B: // AVC video
 							case 0x20: // MVC video
