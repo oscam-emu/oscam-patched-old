@@ -24,19 +24,10 @@
 static struct gbox_data local_gbox;
 static int8_t local_gbox_initialized = 0;
 static uint8_t local_cards_initialized = 0;
-static uint8_t local_card_change_detected = 0;
 static time_t last_stats_written;
 uint8_t local_gbx_rev = 0x10;
 
 static int32_t gbox_send_ecm(struct s_client *cli, ECM_REQUEST *er);
-
-void gbx_local_card_changed(void)
-{
-	cs_sleepms(100);
-	cs_log_dbg(D_READER, "Local card change detected");
-	local_card_change_detected = 1;
-	return;
-}
 
 char *get_gbox_tmp_fname(char *fext)
 {
@@ -769,6 +760,7 @@ int32_t gbox_cmd_hello_rcvd(struct s_client *cli, uchar *data, int32_t n)
 				{ cli->reader->card_status = CARD_INSERTED; }
 		}
 		peer->next_hello = 0;
+		gbox_write_peer_onl();
 		gbox_write_share_cards_info();
 		cli->last = time((time_t *)0); //hello is activity on proxy
 	}
@@ -1112,7 +1104,30 @@ int32_t gbox_recv_cmd_switch(struct s_client *proxy, uchar *data, int32_t n)
 	return 0;
 }
 
-static uint8_t gbox_add_local_cards(struct s_reader *reader, TUNTAB *ttab)
+static void add_betatunnel_card(uint16_t caid, uint8_t slot)
+{
+	int32_t i;
+	struct s_client *cli;
+		cs_readlock(__func__, &clientlist_lock);
+			for(cli = first_client; cli; cli = cli->next)
+				{
+					TUNTAB *ttab; 
+					ttab = &cli->ttab;
+						for(i = 0; i < ttab->ttnum; i++)
+							{
+															//Check for Betatunnel on gbox account in oscam.user
+								if( cli->gbox && ttab->ttdata && caid == ttab->ttdata[i].bt_caidto ) 
+									{
+										gbox_add_card(local_gbox.id, gbox_get_caprovid(ttab->ttdata[i].bt_caidfrom, i), slot, DEFAULT_GBOX_RESHARE, 0, GBOX_CARD_TYPE_BETUN, NULL);
+										cs_log_dbg(D_READER, "gbox created betatunnel card for caid: %04X->%04X", ttab->ttdata[i].bt_caidfrom, caid);
+									}
+							}
+					}
+		cs_readunlock(__func__, &clientlist_lock);
+	 return;
+}
+
+static uint8_t gbox_add_local_cards(void)
 {
 	int32_t i;
 	uint32_t prid = 0;
@@ -1130,6 +1145,7 @@ static uint8_t gbox_add_local_cards(struct s_reader *reader, TUNTAB *ttab)
 #endif	
 	gbox_delete_cards(GBOX_DELETE_WITH_ID, local_gbox.id);
 	struct s_client *cl;
+
 	cs_readlock(__func__, &clientlist_lock);
 	for(cl = first_client; cl; cl = cl->next)
 	{
@@ -1148,19 +1164,13 @@ static uint8_t gbox_add_local_cards(struct s_reader *reader, TUNTAB *ttab)
 			else
 			{ 
 				gbox_add_card(local_gbox.id, gbox_get_caprovid(cl->reader->caid, 0), slot, DEFAULT_GBOX_RESHARE, 0, GBOX_CARD_TYPE_LOCAL, NULL); 
-				
-				//Check for Betatunnel on gbox account in oscam.user
-				if (chk_is_betatunnel_caid(cl->reader->caid) == 1 && ttab->ttdata && cl->reader->caid == ttab->ttdata[0].bt_caidto)
-				{
-					//For now only first entry in tunnel tab. No sense in iteration?
-					//Add betatunnel card to transmitted list
-					gbox_add_card(local_gbox.id, gbox_get_caprovid(ttab->ttdata[0].bt_caidfrom, 0), slot, DEFAULT_GBOX_RESHARE, 0, GBOX_CARD_TYPE_BETUN, NULL);
-					cs_log_dbg(D_READER, "gbox created betatunnel card for caid: %04X->%04X", ttab->ttdata[0].bt_caidfrom, cl->reader->caid);
-				}
+
+				if (chk_is_betatunnel_caid(cl->reader->caid) == 1 ) //1702 1722
+					{ add_betatunnel_card(cl->reader->caid, gbox_next_free_slot(local_gbox.id)); }
 			}
 		}   //end local readers
 #ifdef MODULE_CCCAM
-		if((cfg.ccc_reshare) &&	(cfg.cc_reshare > -1) && (reader->gbox_cccam_reshare) && cl->typ == 'p' && cl->reader && cl->reader->typ == R_CCCAM && cl->cc)
+		if((cfg.ccc_reshare) &&	(cfg.cc_reshare > -1) && (cl->reader->gbox_cccam_reshare) && cl->typ == 'p' && cl->reader && cl->reader->typ == R_CCCAM && cl->cc)
 		{
 			cc = cl->cc;
 			it = ll_iter_create(cc->cards);
@@ -1179,8 +1189,8 @@ static uint8_t gbox_add_local_cards(struct s_reader *reader, TUNTAB *ttab)
 				if (card->reshare < min_reshare)
 					{ min_reshare = card->reshare; }				
 				min_reshare++; //strange CCCam logic. 0 means direct peers
-				if (reader->gbox_cccam_reshare < min_reshare)
-					{ min_reshare = reader->gbox_cccam_reshare; }
+				if (cl->reader->gbox_cccam_reshare < min_reshare)
+					{ min_reshare = cl->reader->gbox_cccam_reshare; }
 				if(caid_is_seca(card->caid) || caid_is_viaccess(card->caid) || caid_is_cryptoworks(card->caid))
 				{
 					it2 = ll_iter_create(card->providers);
@@ -1201,14 +1211,13 @@ static uint8_t gbox_add_local_cards(struct s_reader *reader, TUNTAB *ttab)
 		{
 			slot = gbox_next_free_slot(local_gbox.id);
 			gbox_add_card(local_gbox.id, cfg.gbox_proxy_card[i], slot, DEFAULT_GBOX_RESHARE, 0, GBOX_CARD_TYPE_PROXY, NULL);
-			cs_log_dbg(D_READER,"add proxy card: level %d slot %d %04X:%06X",reader->gbox_reshare, slot, gbox_get_caid(cfg.gbox_proxy_card[i]), gbox_get_provid(cfg.gbox_proxy_card[i]));
+			cs_log_dbg(D_READER,"add proxy card: slot %d %04X:%06X", slot, gbox_get_caid(cfg.gbox_proxy_card[i]), gbox_get_provid(cfg.gbox_proxy_card[i]));
 		}
 	}	//end add proxy reader cards
 	gbox_write_local_cards_info();
 	return slot;
 }	//end add local gbox cards
 
-/*
 static void gbox_send_peer_crd_update(void)
 {
 		struct s_client *cl;
@@ -1227,7 +1236,26 @@ static void gbox_send_peer_crd_update(void)
 		cs_readunlock(__func__, &clientlist_lock);
 		return;
 }
-*/
+
+void gbx_local_card_stat(uint8_t crdstat, uint16_t caid)
+{
+	if(crdstat && local_cards_initialized)
+		{
+			if(crdstat == LOCALCARDEJECTED) 
+				{
+					cs_sleepms(100);
+				}
+			if(crdstat == LOCALCARDUP) 
+				{
+					cs_sleepms(2000);
+					cs_log("New local card ready - caid = %04X", caid);
+				}
+			cs_log("Local cards update send to peer(s) online -> crd(s):%d", gbox_add_local_cards());
+			gbox_write_local_cards_info();
+			gbox_send_peer_crd_update();
+		}
+	return;
+}	
 
 //returns -1 in case of error, 1 if authentication was performed, 0 else
 static int8_t gbox_check_header_recvd(struct s_client *cli, struct s_client *proxy, uchar *data, int32_t l)
@@ -1236,7 +1264,6 @@ static int8_t gbox_check_header_recvd(struct s_client *cli, struct s_client *pro
 	if (proxy) { peer = proxy->gbox; }
 
 	char tmp[0x50];
-	uint8_t crd =0;
 	int32_t n = l;
 	uint8_t authentication_done = 0;
 	uint16_t peer_recvd_id = 0;
@@ -1265,7 +1292,7 @@ static int8_t gbox_check_header_recvd(struct s_client *cli, struct s_client *pro
 			if (!validate_peerpass(peer_received_pw))
 			{
 				handle_attack(cli, GBOX_ATTACK_PEER_PW, peer_recvd_id);
-				cs_log("peer: %04X - peerpass: %08X unknown -> check [reader] section",  peer_recvd_id, peer_received_pw);
+				cs_log("peer: %04X - peerpass: %08X unknown -> check oscam.server->[reader]->password",  peer_recvd_id, peer_received_pw);
 				return -1;
 			}
 			if (cli->gbox_peer_id == NO_GBOX_ID)
@@ -1281,9 +1308,8 @@ static int8_t gbox_check_header_recvd(struct s_client *cli, struct s_client *pro
 			if (!local_cards_initialized)
 				{ 
 				local_cards_initialized = 1;
-				local_card_change_detected = 0;
-				crd = gbox_add_local_cards(proxy->reader, &cli->ttab);
-				cs_log("Local cards initialized - cards: %d", crd);
+				//gbox_add_local_cards();
+				cs_log("Local cards initialized - cards: %d", gbox_add_local_cards());
 				}
 				peer = proxy->gbox;
 			}
@@ -1323,15 +1349,6 @@ static int8_t gbox_check_header_recvd(struct s_client *cli, struct s_client *pro
 		return -1;
 	}
 	if(!peer) { return -1; }
-
-	if (local_card_change_detected)
-	{ 
-		local_card_change_detected = 0;
-		crd = gbox_add_local_cards(proxy->reader, &cli->ttab);
-		cs_log("Local cards update - cards: %d", crd);
-		//gbox_send_peer_crd_update();
-	}
-
 	if(!peer->authstat)
 	{
 	peer->authstat = 1;

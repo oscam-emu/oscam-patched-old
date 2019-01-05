@@ -84,6 +84,9 @@
 #define GBOX_ATTACK_ECM_BLOCKED	4
 #define GBOX_ATTACK_REMM_REQ_BLOCKED	5
 
+#define LOCALCARDEJECTED 1
+#define LOCALCARDUP 2
+
 struct gbox_rbc_thread_args 
 {
     struct s_client *cli;
@@ -186,11 +189,11 @@ void gbox_send_good_night(void);
 void gbox_send_goodbye(struct s_client *cli);
 void restart_gbox_peer(char *rdrlabel, uint8_t all, uint16_t gbox_id);
 void write_msg_info(struct s_client *cli, uint8_t msg_id, uint8_t txt_id, uint16_t misc);
-extern void gbx_local_card_changed(void);
+extern void gbx_local_card_stat(uint8_t crdstat, uint16_t caid);
 #else
 static inline void gbox_free_cards_pending(ECM_REQUEST *UNUSED(er)) { }
 static inline void gbox_send_good_night(void) { }
-static inline void gbx_local_card_changed(void) { }
+static inline void gbx_local_card_stat(uint8_t UNUSED(crdstat), uint16_t UNUSED(caid) ) { }
 #endif
 
 #endif

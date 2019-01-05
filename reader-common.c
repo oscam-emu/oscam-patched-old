@@ -207,7 +207,6 @@ void cardreader_do_reset(struct s_reader *reader)
 		}
 			if (ret){
 				rdr_log(reader,"THIS WAS A SUCCESSFUL START ATTEMPT No  %u out of max alloted of %u", (i+1), j);
-				gbx_local_card_changed();
 				break;
 			}
 			else {
@@ -227,6 +226,7 @@ void cardreader_do_reset(struct s_reader *reader)
 		reader->card_status = CARD_INSERTED;
 		do_emm_from_file(reader);
 		ICC_Async_DisplayMsg(reader, "AOK");
+		gbx_local_card_stat(2, reader->caid); //local card up
 	}
 
 	return;
@@ -271,7 +271,7 @@ int32_t cardreader_do_checkhealth(struct s_reader *reader)
 				cl->lastecm = 0;
 			}
 			led_status_card_ejected();
-			gbx_local_card_changed();
+			gbx_local_card_stat(1, reader->caid); 
 		}
 		reader->card_status = NO_CARD;
 	}
