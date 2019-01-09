@@ -1456,7 +1456,19 @@ struct s_emmlen_range
 	int16_t max;
 };
 
-struct s_reader                                     //contains device info, reader info and card info
+typedef struct emm_packet_t
+{
+	uchar           emm[MAX_EMM_SIZE];
+	int16_t         emmlen;
+	uchar           caid[2];
+	uchar           provid[4];
+	uchar           hexserial[8];                   //contains hexserial or SA of EMM
+	uchar           type;
+	uint8_t         skip_filter_check;
+	struct s_client *client;
+} EMM_PACKET;
+
+struct s_reader                                         //contains device info, reader info and card info
 {
 	uint8_t         keepalive;
 	uint8_t     changes_since_shareupdate;
@@ -1541,22 +1553,22 @@ struct s_reader                                     //contains device info, read
 	int8_t          card_atr_length;                // length of ATR
 	int8_t          seca_nagra_card;                // seca nagra card 
 #ifdef READER_NAGRA_MERLIN
-	uint8_t         cas7_aes_key[32];
-	uint8_t         cas7_aes_iv[16];
-	uint8_t			mod1[112];
-	uint8_t         mod1_length;
-	uint8_t			data50[80];
-	uint8_t         data50_length;
-	uint8_t			mod50[80];
-	uint8_t         mod50_length;
-	uint8_t			key60[96];
-	uint8_t         key60_length;
-	uint8_t			exp60[96]; 
-	uint8_t         exp60_length;
-	uint8_t			nuid[4];
-	uint8_t         nuid_length;
-	uint8_t			cwekey[16];
-	uint8_t         cwekey_length;
+	uint8_t		cas7_aes_key[32];
+	uint8_t		cas7_aes_iv[16];
+	uint8_t		mod1[112];
+	uint8_t		mod1_length;
+	uint8_t		data50[80];
+	uint8_t		data50_length;
+	uint8_t		mod50[80];
+	uint8_t		mod50_length;
+	uint8_t		key60[96];
+	uint8_t		key60_length;
+	uint8_t		exp60[96];
+	uint8_t		exp60_length;
+	uint8_t		nuid[4];
+	uint8_t		nuid_length;
+	uint8_t		cwekey[16];
+	uint8_t		cwekey_length;
 #endif
 	int32_t         atrlen;
 	SIDTABS         sidtabs;
@@ -1580,15 +1592,15 @@ struct s_reader                                     //contains device info, read
 	int8_t          logemm;
 	int8_t          cachemm;
 	int16_t         rewritemm;
-	int16_t			deviceemm;						// catch device specific emms (so far only used for viaccess)
+	int16_t         deviceemm;                      // catch device specific emms (so far only used for viaccess)
 	int8_t          card_status;
 	int8_t          deprecated;                     //if 0 ATR obeyed, if 1 default speed (9600) is chosen; for devices that cannot switch baudrate
-	struct s_module ph;
-	const struct s_cardreader *crdr;
-	void            *crdr_data; // Private card reader data
-	bool            crdr_flush; // sci readers may disable flush per reader
-	const struct s_cardsystem *csystem;
-	void            *csystem_data; // Private card system data
+	struct          s_module ph;
+	const struct    s_cardreader *crdr;
+	void            *crdr_data;                     // Private card reader data
+	bool            crdr_flush;                     // sci readers may disable flush per reader
+	const struct    s_cardsystem *csystem;
+	void            *csystem_data;                  // Private card system data
 	bool            csystem_active;
 	uint8_t         ncd_key[14];
 	uchar           ncd_skey[16];
@@ -1607,19 +1619,19 @@ struct s_reader                                     //contains device info, read
 	int8_t          cc_keepalive;
 	int8_t          cc_hop;                         // For non-cccam reader: hop for virtual cards
 	int8_t          cc_reshare;
-	int32_t         cc_reconnect;                   //reconnect on ecm-request timeout
+	int32_t         cc_reconnect;                   // reconnect on ecm-request timeout
 #endif
 	int8_t          tcp_connected;
 	int32_t         tcp_ito;                        // inactivity timeout
 	int32_t         tcp_rto;                        // reconnect timeout
-	int32_t         tcp_reconnect_delay;			// max tcp connection block delay
+	int32_t         tcp_reconnect_delay;            // max tcp connection block delay
 
-	struct timeb    tcp_block_connect_till;         //time tcp connect ist blocked
-	int32_t         tcp_block_delay;                //incrementing block time
+	struct timeb    tcp_block_connect_till;         // time tcp connect ist blocked
+	int32_t         tcp_block_delay;                // incrementing block time
 	time_t          last_g;                         // get (if last_s-last_g>tcp_rto - reconnect )
 	time_t          last_s;                         // send
 	time_t          last_check;                     // last checked
-	time_t			last_poll;						// last poll
+	time_t          last_poll;                      // last poll
 	FTAB            fchid;
 	FTAB            ftab;
 	CLASSTAB        cltab;
@@ -1671,18 +1683,22 @@ struct s_reader                                     //contains device info, read
 	uint16_t   statuscnt;
 	uint16_t   modemstat;
 #endif
-	unsigned char   rom[15];
-	unsigned char   irdId[4];
+#ifdef READER_CRYPTOWORKS
+	EMM_PACKET	*last_g_emm;		// last global EMM
+	bool		last_g_emm_valid;	// status of last global EMM
+#endif
+	unsigned char	rom[15];
+	unsigned char	irdId[4];
 	unsigned char	payload4C[15];
-	uint16_t		VgCredit;
-	uint16_t        VgPin;
-	unsigned char   VgFuse;
+	uint16_t	VgCredit;
+	uint16_t	VgPin;
+	unsigned char	VgFuse;
 	unsigned char	VgCountryC[3];
-	unsigned char   VgRegionC[8];
+	unsigned char	VgRegionC[8];
 	unsigned char	VgLastPayload[6];
 #ifdef WITH_LB
 	int32_t         lb_weight;                      //loadbalance weight factor, if unset, weight=100. The higher the value, the higher the usage-possibility
-	int8_t          lb_force_fallback;				//force this reader as fallback if fallback or fallback_percaid paramters set
+	int8_t          lb_force_fallback;		//force this reader as fallback if fallback or fallback_percaid paramters set
 	int32_t         lb_usagelevel;                  //usagelevel for loadbalancer
 	int32_t         lb_usagelevel_ecmcount;
 	struct timeb    lb_usagelevel_time;             //time for counting ecms, this creates usagelevel
@@ -2357,19 +2373,6 @@ typedef struct cs_stat_query
 	uint32_t        chid;
 	int16_t         ecmlen;
 } STAT_QUERY;
-
-typedef struct emm_packet_t
-{
-	uchar           emm[MAX_EMM_SIZE];
-	int16_t         emmlen;
-	uchar           caid[2];
-	uchar           provid[4];
-	uchar           hexserial[8];                   //contains hexserial or SA of EMM
-	uchar           type;
-	uint8_t         skip_filter_check;
-	struct s_client *client;
-} EMM_PACKET;
-
 
 struct s_write_from_cache
 {
