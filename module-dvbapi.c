@@ -5806,20 +5806,18 @@ void dvbapi_write_cw(int32_t demux_id, uchar *cw, int32_t pid, int32_t stream_id
 	memset(&ca_descr, 0, sizeof(ca_descr));
 	memset(&ca_descr_mode, 0, sizeof(ca_descr_mode_t));
 
-	if(memcmp(demux[demux_id].lastcw[0], nullcw, 8) == 0
-			&& memcmp(demux[demux_id].lastcw[1], nullcw, 8) == 0)
-		{ cwEmpty = 1; } // to make sure that both cws get written on constantcw
-
+	if(memcmp(demux[demux_id].lastcw[0], nullcw, 8) == 0 && memcmp(demux[demux_id].lastcw[1], nullcw, 8) == 0)
+	{
+		cwEmpty = 1;
+	} // to make sure that both cws get written on constantcw
 
 	for(n = 0; n < 2; n++)
 	{
-		char lastcw[9 * 3];
-		char newcw[9 * 3];
-		cs_hexdump(0, demux[demux_id].lastcw[n], 8, lastcw, sizeof(lastcw));
-		cs_hexdump(0, cw + (n * 8), 8, newcw, sizeof(newcw));
-
-		// check if already delivered and new cw part is valid but dont check for nullcw on Biss
-		if((memcmp(cw + (n * 8), demux[demux_id].lastcw[n], 8) != 0 || cwEmpty || stream_id >0)
+		// Check if already delivered and new cw part is valid.
+		// Don't check if cw has changed when multiple indices are used, since
+		// we have multiple cw's per demux. The check is not designed for that!
+		// Don't check for null cw on Biss.
+		if(	(memcmp(cw + (n * 8), demux[demux_id].lastcw[n], 8) != 0 || cwEmpty || demux[demux_id].ECMpids[pid].useMultipleIndices == 1)
 			&& (memcmp(cw + (n * 8), nullcw, 8) != 0 || demux[demux_id].ECMpids[pid].CAID == 0x2600))
 		{
 			ca_index_t idx = dvbapi_ca_setpid(demux_id, pid, stream_id, (algo == CA_ALGO_DES), msgid);  // prepare ca
@@ -5836,6 +5834,11 @@ void dvbapi_write_cw(int32_t demux_id, uchar *cw, int32_t pid, int32_t stream_id
 #else
 			int32_t i, j, write_cw = 0;
 			ca_index_t usedidx, lastidx;
+
+			char lastcw[9 * 3];
+			char newcw[9 * 3];
+			cs_hexdump(0, demux[demux_id].lastcw[n], 8, lastcw, sizeof(lastcw));
+			cs_hexdump(0, cw + (n * 8), 8, newcw, sizeof(newcw));
 
 			for(i = 0; i < MAX_DEMUX; i++)
 			{
