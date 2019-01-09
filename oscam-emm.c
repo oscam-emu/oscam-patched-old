@@ -484,6 +484,15 @@ void do_emm(struct s_client *client, EMM_PACKET *ep)
 			}
 		}
 
+#ifdef READER_CRYPTOWORKS
+		if ((ep->type == GLOBAL) && (caid == 0x0D98) && ((aureader->blockemm & EMM_GLOBAL) == EMM_GLOBAL) && ((aureader->blockemm & EMM_SHARED) != EMM_SHARED))
+		{	// save global EMM
+			cs_log_dbg(D_EMM,"save global EMM for caid 0x%04X",caid);
+			memcpy(aureader->last_g_emm, ep, sizeof(EMM_PACKET));
+			aureader->last_g_emm_valid = true;
+		}
+#endif
+
 		switch(ep->type)
 		{
 		case UNKNOWN:
@@ -570,6 +579,20 @@ void do_emm(struct s_client *client, EMM_PACKET *ep)
 			EMM_PACKET *emm_pack;
 			if(cs_malloc(&emm_pack, sizeof(EMM_PACKET)))
 			{
+#ifdef READER_CRYPTOWORKS
+				if ((ep->type == SHARED) && (caid == 0x0D98) && (aureader->last_g_emm_valid == true))
+				{
+					EMM_PACKET *emm_pack_global;
+					if(cs_malloc(&emm_pack_global, sizeof(EMM_PACKET)))
+					{
+						rdr_log_dbg(aureader, D_EMM, "Last stored global EMM for caid 0x%04X is being sent to reader first", caid);
+						memcpy(emm_pack_global, aureader->last_g_emm, sizeof(EMM_PACKET));
+						add_job(aureader->client, ACTION_READER_EMM, emm_pack_global, sizeof(EMM_PACKET));
+						saveemm(aureader, aureader->last_g_emm, "written");
+						cs_log_dump_dbg(D_EMM,emm_pack_global->emm, emm_pack_global->emmlen, "Last stored global EMM to be written before shared EMM:");
+					}
+				}
+#endif
 				rdr_log_dbg(aureader, D_EMM, "emm is being sent to reader");
 				memcpy(emm_pack, ep, sizeof(EMM_PACKET));
 				add_job(aureader->client, ACTION_READER_EMM, emm_pack, sizeof(EMM_PACKET));

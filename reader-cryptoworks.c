@@ -328,6 +328,16 @@ static int32_t cryptoworks_card_init(struct s_reader *reader, ATR *newatr)
 
 	cryptoworks_disable_pin(reader);
 
+	if (reader->caid == 0x0D98)
+	{
+		if(!cs_malloc(&reader->last_g_emm, sizeof(EMM_PACKET)))
+		{
+			return ERROR;
+		}
+		reader->last_g_emm_valid = false;
+		rdr_log(reader, "Init for global EMM handling CAID %04X successful",reader->caid);
+	}
+
 	return OK;
 }
 
