@@ -6539,7 +6539,6 @@ void dvbapi_send_dcw(struct s_client *client, ECM_REQUEST *er)
 						else // Data
 						{
 							cw = er->cw_ex.data;
-							break;
 						}
 
 						dvbapi_write_cw(i, cw, j, k, er->cw_ex.algo, er->cw_ex.algo_mode, er->msgid);
