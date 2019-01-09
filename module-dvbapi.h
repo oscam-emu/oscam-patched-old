@@ -117,6 +117,11 @@ struct box_devices
 	int8_t api;
 };
 
+#define STREAM_UNDEFINED 0x00
+#define STREAM_VIDEO     0x01
+#define STREAM_AUDIO     0x02
+#define STREAM_SUBTITLE  0x03
+
 struct s_ecmpids
 {
 	uint16_t CAID;
