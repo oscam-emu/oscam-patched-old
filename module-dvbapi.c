@@ -37,96 +37,166 @@ extern int32_t exit_oscam;
 #define DN_MULTISHOT 0
 #endif
 
-const char *streamtxt_00_to_1B[] = {
-								"Reserved",			 																		// 00
-								"Videostream (MPEG-1)",																		// 01
-								"Videostream (MPEG-2)",																		// 02
-								"Audiostream (MPEG-1)",																		// 03
-								"Audiostream (MPEG-2)",																		// 04
-								"Datastream (MPEG-2 tabled data)",															// 05
-								"Data-/Audiostream (Subtitles/VBI and AC-3)",												// 06
-								"Datastream (MHEG)",																		// 07
-								"Datastream (DSM CC)",																		// 08
-								"Conditional Access ",																		// 09
-								"Datastream (DSM CC)",																		// 0A
-								"Datastream (DSM CC)",																		// 0B
-								"Datastream (DSM CC)",																		// 0C
-								"Datastream (DSM CC)",																		// 0D
-								"Datastream (Auxiliary)",																	// 0E
-								"Audiostream (MPEG-2)",																		// 0F
-								"Videostream (MPEG-4 H.263)",																// 10
-								"Audiostream (MPEG-4)",																		// 11
-								"Datastream (MPEG-4 FlexMux)",																// 12
-								"Datastream (MPEG-4 FlexMux)",																// 13
-								"Datastream (DSM CC)",																		// 14
-								"Datastream (Metadata)",																	// 15
-								"Datastream (Metadata)",																	// 16
-								"Datastream (DSM CC)",																		// 17
-								"Datastream (DSM CC)",																		// 18
-								"Datastream (Metadata)",																	// 19
-								"Datastream (IPMP)",																		// 1A
-								"Videostream (MPEG-4)",																		// 1B
-							};
-
-const char *streamtxt_80_to_87[] = {
-								"Video-/Audiostream (H.262/PCM)",															// 80
-								"Audiostream (Dolby Digital)",																// 81
-								"Data-/Audiostream (Subtitles/DTS6)",														// 82
-								"Audiostream (Dolby TrueHD)",																// 83
-								"Audiostream (Dolby Digital Plus)",															// 84
-								"Audiostream (DTS 8)",																		// 85
-								"Audiostream (DTS 8 losless)",																// 86
-								"Audiostream (Dolby Digital Plus)",															// 87
-							};
-
-const char *get_streamtxt(uint8_t id)
+const char* get_stream_type_txt(uint8_t stream_type)
 {
-	if(id <= 0x1B)
+	switch(stream_type)
 	{
-		return streamtxt_00_to_1B[id];
-	}
-	else if(id == 0x24)
-	{
-		return 	"Videostream (H.265 Ultra HD video)";
-	}
-	else if(id == 0x42)
-	{
-		return 	"Videostream (Chinese Video Standard)";
-	}
-	else if(id >= 0x80 && id <= 0x87)
-	{
-		return 	streamtxt_80_to_87[id - 0x80];
-	}
-	else if(id == 0x90)
-	{
-		return 	"Datastream (Blu-ray subtitling)";
-	}
-	else if(id == 0x95)
-	{
-		return 	"Datastream (DSM CC)";
-	}
-	else if(id == 0xC0)
-	{
-		return 	"Datastream (DigiCipher II text)";
-	}
-	else if(id == 0xC2)
-	{
-		return 	"Datastream (DSM CC)";
-	}
-	else if(id == 0xD1)
-	{
-		return 	"Videostream (BBC Dirac Ultra HD video)";
-	}
-	else if(id == 0xEA)
-	{
-		return 	"Videostream (WMV9 lower bit-rate)";
-	}
-	else
-	{
-		return "Reserved";
+		case 0x00: return "invalid";
+		case 0x01: return "MPEG-1 video";
+		case 0x02: return "MPEG-2 video"; // MPEG-1 (constrained parameter) or MPEG-2 video
+		case 0x03: return "MPEG-1 audio"; // MP1, MP2, MP3
+		case 0x04: return "MPEG-2 audio"; // MP1, MP2, MP3
+		case 0x05: return "MPEG-2 private sections";
+		case 0x06: return "MPEG-2 PES private data"; // AC-3, Enhanced AC-3, AC-4, DTS(-HD) audio, subtitles, etc (DVB) (depends on descriptor)
+		case 0x07: return "MHEG data";
+		case 0x08: return "DSM-CC data";
+		case 0x09: return "MPEG-2 over ATM data";
+		case 0x0A: return "DSM-CC data";
+		case 0x0B: return "DSM-CC data";
+		case 0x0C: return "DSM-CC data";
+		case 0x0D: return "DSM-CC data";
+		case 0x0E: return "MPEG-2 auxiliary data";
+		case 0x0F: return "MPEG-2 audio"; // AAC
+		case 0x10: return "MPEG-4 video";
+		case 0x11: return "MPEG-4 audio"; // AAC, HE AAC and AAC v2
+		case 0x12: return "MPEG-4 PES data";
+		case 0x13: return "MPEG-4 data";
+		case 0x14: return "DSM-CC data";
+		case 0x15: return "MPEG-7 MetaData";
+		case 0x16: return "MPEG-7 MetaData";
+		case 0x17: return "MPEG-7 MetaData";
+		case 0x18: return "MPEG-7 MetaData";
+		case 0x19: return "MPEG-7 MetaData";
+		case 0x1A: return "MPEG-2 IPMP data";
+		case 0x1B: return "AVC video";
+		case 0x1C: return "MPEG-4 audio"; // DST, ALS, SLS
+		case 0x24: return "HEVC video";
+		case 0x25: return "HEVC subset video";
+		case 0x2D: return "MPEG-H 3D audio"; // main stream
+		case 0x2E: return "MPEG-H 3D audio"; // auxiliary stream
+		case 0x42: return "Chinese video";
+		case 0x7F: return "IPMP data";
+		case 0x81: return "AC-3 audio (ATSC)"; // with descriptor tag 0x81
+		case 0x86: return "SCTE 35 data";
+		case 0x87: return "enhanced AC-3 audio (ATSC)";
+		//case 0x88: return "DTS-HD audio (ATSC 2.0)"; // fixme: has ATSC 2.0 ever been used?
+		//case 0x??: return "AC-4 audio (ATSC 3.0)"; // fixme: add the actual value when it gets published
+		//case 0x??: return "MPEG-H 3D audio (ATSC 3.0)"; // fixme: add the actual value when it gets published
+		case 0xD1: return "BBC Dirac video";
+		case 0xEA: return "VC-1 video";
+
+		default: return "user private";
 	}
 }
 
+const char *get_descriptor_tag_txt(uint8_t descriptor_tag)
+{
+	switch(descriptor_tag)
+	{
+		// Valid in all MPEG contexts:
+		case 0x00: return "reserved";
+		case 0x01: return "forbidden";
+		case 0x02: return "video stream";
+		case 0x03: return "audio stream";
+		case 0x04: return "hierarchy";
+		case 0x05: return "registration";
+		case 0x06: return "data stream alignment";
+		case 0x07: return "target background grid";
+		case 0x08: return "video window";
+		case 0x09: return "CA";
+		case 0x0A: return "ISO 639 language";
+		case 0x0B: return "system clock";
+		case 0x0C: return "multiplex buffer utilization";
+		case 0x0D: return "copyright";
+		case 0x0E: return "maximum bitrate";
+		case 0x0F: return "private data indicator";
+		case 0x10: return "smoothing buffer";
+		case 0x11: return "STD";
+		case 0x12: return "IBP";
+		case 0x13: return "DSM-CC carousel identifier";
+		case 0x14: return "DSM-CC association tag";
+		case 0x15: return "DSM-CC deferred association tags";
+		case 0x17: return "DSM-CC NPT reference";
+		case 0x18: return "DSM-CC NPT endpoint";
+		case 0x19: return "DSM-CC stream mode";
+		case 0x1A: return "DSM-CC stream event";
+		case 0x1B: return "MPEG-4 video";
+		case 0x1C: return "MPEG-4 audio";
+		case 0x1D: return "IOD";
+		case 0x1E: return "SL";
+		case 0x1F: return "FMC";
+		case 0x20: return "External ES id";
+		case 0x21: return "MuxCode";
+		case 0x22: return "FmxBufferSize";
+		case 0x23: return "MultiplexBuffer";
+		case 0x24: return "Content labeling";
+		case 0x25: return "Metadata association";
+		case 0x26: return "Metadata";
+		case 0x27: return "Metadata STD";
+		case 0x28: return "AVC video";
+		case 0x29: return "MPEG-2 IPMP";
+		case 0x2A: return "AVC timing and HRD";
+		case 0x2B: return "MPEG-2 AAC Audio";
+		case 0x2C: return "FlexMuxTiming";
+		case 0x2D: return "MPEG-4 Text";
+		case 0x2E: return "MPEG-4 Audio Extension";
+		case 0x2F: return "Auxiliary Video Stream";
+		case 0x30: return "SVC Extension";
+		case 0x31: return "MVC Extension";
+		case 0x32: return "J2K Video";
+		case 0x33: return "MVC Operation Point";
+		case 0x34: return "MPEG-2 Stereoscopic Video Format";
+		case 0x35: return "Stereoscopic Program Info";
+		case 0x36: return "Stereoscopic Video Info";
+		case 0x37: return "Transport Profile";
+		case 0x38: return "HEVC Video";
+		case 0x3F: return "MPEG-2 Extension";
+
+		// Valid in DVB context:
+		case 0x45: return "VBI data";
+		case 0x46: return "VBI teletext";
+		case 0x51: return "mosaic";
+		case 0x52: return "stream identifier";
+		case 0x56: return "teletext";
+		case 0x59: return "subtitling"; // with stream type 0x06
+		case 0x5F: return "private data specifier";
+		case 0x60: return "service move";
+		case 0x65: return "scrambling";
+		case 0x66: return "data broadcast id";
+		case 0x6A: return "AC-3"; // with stream type 0x06
+		case 0x6B: return "ancillary data";
+		case 0x6F: return "application signalling";
+		case 0x70: return "adaptation field data";
+		case 0x74: return "related content";
+		case 0x78: return "ECM repetition rate";
+		case 0x7A: return "enhanced AC-3"; // with stream type 0x06
+		case 0x7B: return "DTS"; // with stream type 0x06
+		case 0x7C: return "AAC"; // with stream type 0x06
+		case 0x7D: return "XAIT location";
+		case 0x7F: return "DVB extension";
+
+		default: return "user private";
+	}
+}
+
+const char *get_extension_descriptor_txt(uint8_t extension_tag)
+{
+	switch(extension_tag)
+	{
+		case 0x02: return "CP";
+		case 0x06: return "supplementary audio";
+		case 0x0E: return "DTS-HD"; // with stream type 0x06
+		case 0x0F: return "DTS Neural"; // with stream type 0x06
+		case 0x11: return "T2MI";
+		case 0x13: return "URI linkage";
+		case 0x15: return "AC-4"; // with stream type 0x06
+		case 0x18: return "protection message";
+		case 0x19: return "audio preselection";
+		case 0x20: return "TTML subtitling"; // (could become 0x1A, value in A038 draft seems weird)
+
+		default: return "Undefined";
+	}
+}
 
 void flush_read_fd(int32_t demux_index, int32_t num, int fd)
 {
@@ -2900,23 +2970,27 @@ void dvbapi_resort_ecmpids(int32_t demux_index)
 	return;
 }
 
-void dvbapi_parse_descriptor(int32_t demux_id, uint32_t info_length, unsigned char *buffer, uint8_t* is_audio)
+void dvbapi_parse_descriptors(int32_t demux_id, uint32_t info_length, unsigned char *buffer, uint8_t *type)
 {
 	// int32_t ca_pmt_cmd_id = buffer[i + 5];
-	uint32_t descriptor_length = 0;
-	uint32_t j, u, k;
+	uint8_t descriptor_tag = buffer[0], descriptor_length = 0;
 	uint8_t skip_border = cfg.dvbapi_boxtype == BOXTYPE_SAMYGO ? 0x05 : 0x02; // skip input values <0x05 on samygo
+	uint32_t j, u, k;
 
-	static const char format_identifiers_audio[10][5] =
-		{
-			"AC-3", "BSSD", "dmat", "DTS1", "DTS2",
-			"DTS3", "EAC3", "HDMV", "mlpa", "Opus",
-		};
+	static const char format_identifiers_audio[11][5] =
+	{
+		// "HDMV" format identifier is removed
+		// OSCam does not need to know about Blu-ray
+		"AC-3", "BSSD", "dmat", "DRA1", "DTS1",
+		"DTS2", "DTS3", "EAC3", "mlpa", "Opus",
+	};
 
 	if(info_length < 1)
 		{ return; }
 
-	if((buffer[0] < skip_border) && info_length > 0) // skip input values like 0x00 and 0x01
+	// skip descriptors with tag 0x00 and 0x01,
+	// or even greater for samygo (not sure why we do this...)
+	if((descriptor_tag < skip_border) && info_length > 0)
 	{
 		buffer++;
 		info_length--;
@@ -2924,85 +2998,170 @@ void dvbapi_parse_descriptor(int32_t demux_id, uint32_t info_length, unsigned ch
 
 	for(j = 0; j + 1 < info_length; j += descriptor_length + 2)
 	{
+		descriptor_tag = buffer[j];
 		descriptor_length = buffer[j + 1];
+		cs_log_dbg(D_DVBAPI, "Demuxer %d found %s descriptor (tag: %02X length: %02X)", demux_id,
+					get_descriptor_tag_txt(descriptor_tag), descriptor_tag, descriptor_length);
 
-		if(is_audio)
+		switch(descriptor_tag)
 		{
-			if(buffer[j] == 0x6A || buffer[j] == 0x73 || buffer[j] == 0x81)
-			{
-				*is_audio = 1;
-			}
-			else if(buffer[j] == 0x05 && descriptor_length >= 4)
+			case 0x05: // registration descriptor
 			{
 				for(k = 0; k < 10; k++)
 				{
 					if(memcmp(buffer + j + 2, format_identifiers_audio[k], 4) == 0)
 					{
-						*is_audio = 1;
+						*type = STREAM_AUDIO;
 						break;
 					}
 				}
+				break;
 			}
-		}
 
-		if(buffer[j] == 0x81 && descriptor_length == 8)    // private descriptor of length 8, assume enigma/tvh
-		{
-			demux[demux_id].enigma_namespace = b2i(4, buffer + j + 2);
-			demux[demux_id].tsid = b2i(2, buffer + j + 6);
-			demux[demux_id].onid = b2i(2, buffer + j + 8);
-			cs_log_dbg(D_DVBAPI, "Demuxer %d found pmt type: %02x length: %d (assuming enigma private descriptor: namespace %04x tsid %02x onid %02x)", demux_id,
-						  buffer[j], descriptor_length, demux[demux_id].enigma_namespace, demux[demux_id].tsid, demux[demux_id].onid);
-		}
-		else if (descriptor_length !=0)
-		{
-			cs_log_dbg(D_TRACE, "Demuxer %d found pmt type: %02x length: %d", demux_id, buffer[j], descriptor_length);
-		}
-
-		if(buffer[j] != 0x09) { continue; }
-
-		int32_t descriptor_ca_system_id = b2i(2, buffer + j + 2);
-		int32_t descriptor_ca_pid = b2i(2, buffer + j + 4)&0x1FFF;
-		int32_t descriptor_ca_provider = 0;
-		uint32_t descriptor_ca_data = 0;
-		char txt[40]; // room for PBM: 8 byte pbm and DATE: date
-		memset(txt, 0x00, sizeof(txt));
-
-		if(descriptor_ca_system_id >> 8 == 0x01)
-		{
-			for(u = 2; u < descriptor_length; u += 15)
+			case 0x09: // CA descriptor
 			{
-				descriptor_ca_pid = b2i(2, buffer + j + u + 2)&0x1FFF;
-				descriptor_ca_provider = b2i(2, buffer + j + u + 4);
-				int8_t year = buffer[j + u + 15] >> 1;
-				int8_t month = (((buffer[j + u + 15]&0x01) << 3) | (buffer[j + u + 16] >> 5));
-				int8_t day = buffer[j + u + 16]&0x1F;
-				snprintf(txt, sizeof(txt), "PBM: ");
-				cs_hexdump(0, buffer + j + u + 7, 8, txt+5, (2*8)+1); // hexdump 8 byte pbm
-				snprintf(txt+20, sizeof(txt)-20, " DATE: %d-%d-%d", day, month, year+1990);
-				dvbapi_add_ecmpid(demux_id, descriptor_ca_system_id, descriptor_ca_pid, descriptor_ca_provider, 0, txt);
-			}
-		}
-		else
-		{
-			if(caid_is_viaccess(descriptor_ca_system_id) && descriptor_length == 0x0F && buffer[j + 12] == 0x14)
-				{ descriptor_ca_provider = b2i(3, buffer + j + 14) &0xFFFFF0; }
+				int32_t descriptor_ca_system_id = b2i(2, buffer + j + 2);
+				int32_t descriptor_ca_pid = b2i(2, buffer + j + 4)&0x1FFF;
+				int32_t descriptor_ca_provider = 0;
+				uint32_t descriptor_ca_data = 0;
+				char txt[40]; // room for PBM: 8 byte pbm and DATE: date
+				memset(txt, 0x00, sizeof(txt));
 
-			else if(caid_is_nagra(descriptor_ca_system_id) && descriptor_length == 0x07)
-				{ descriptor_ca_provider = b2i(2, buffer + j + 7); }
-
-			else if((descriptor_ca_system_id >> 8 == 0x4A || descriptor_ca_system_id == 0x2710) && descriptor_length > 0x04 )
+				if(descriptor_ca_system_id >> 8 == 0x01)
 				{
-					descriptor_ca_provider = buffer[j + 6];
-
-					if(caid_is_dre(descriptor_ca_system_id) && descriptor_length == 0xA)
+					for(u = 2; u < descriptor_length; u += 15)
 					{
-						descriptor_ca_data = (buffer[j+8] << 24) | (buffer[j+9] << 16) | (buffer[j+10] << 8) | buffer[j+11];
-						snprintf(txt, 40, "CA DATA: %X", descriptor_ca_data);
+						descriptor_ca_pid = b2i(2, buffer + j + u + 2)&0x1FFF;
+						descriptor_ca_provider = b2i(2, buffer + j + u + 4);
+						int8_t year = buffer[j + u + 15] >> 1;
+						int8_t month = (((buffer[j + u + 15]&0x01) << 3) | (buffer[j + u + 16] >> 5));
+						int8_t day = buffer[j + u + 16]&0x1F;
+						snprintf(txt, sizeof(txt), "PBM: ");
+						cs_hexdump(0, buffer + j + u + 7, 8, txt+5, (2*8)+1); // hexdump 8 byte pbm
+						snprintf(txt+20, sizeof(txt)-20, " DATE: %d-%d-%d", day, month, year+1990);
+						dvbapi_add_ecmpid(demux_id, descriptor_ca_system_id, descriptor_ca_pid, descriptor_ca_provider, 0, txt);
 					}
 				}
+				else
+				{
+					if(caid_is_viaccess(descriptor_ca_system_id) && descriptor_length == 0x0F && buffer[j + 12] == 0x14)
+						{ descriptor_ca_provider = b2i(3, buffer + j + 14) &0xFFFFF0; }
 
-			dvbapi_add_ecmpid(demux_id, descriptor_ca_system_id, descriptor_ca_pid, descriptor_ca_provider, descriptor_ca_data, txt);
+					else if(caid_is_nagra(descriptor_ca_system_id) && descriptor_length == 0x07)
+						{ descriptor_ca_provider = b2i(2, buffer + j + 7); }
 
+					else if((descriptor_ca_system_id >> 8 == 0x4A || descriptor_ca_system_id == 0x2710) && descriptor_length > 0x04 )
+					{
+						descriptor_ca_provider = buffer[j + 6];
+
+						if(caid_is_dre(descriptor_ca_system_id) && descriptor_length == 0xA)
+						{
+							descriptor_ca_data = (buffer[j+8] << 24) | (buffer[j+9] << 16) | (buffer[j+10] << 8) | buffer[j+11];
+							snprintf(txt, 40, "CA DATA: %X", descriptor_ca_data);
+						}
+					}
+
+					dvbapi_add_ecmpid(demux_id, descriptor_ca_system_id, descriptor_ca_pid, descriptor_ca_provider, descriptor_ca_data, txt);
+				}
+				break;
+			}
+
+			case 0x59: // subtitling descriptor (DVB)
+			{
+				*type = STREAM_SUBTITLE;
+				break;
+			}
+
+			case 0x6A: // AC-3 descriptor (DVB)
+			case 0x7A: // enhanced AC-3 descriptor (DVB)
+			case 0x7B: // DTS descriptor (DVB)
+			case 0x7C: // AAC descriptor (DVB)
+			{
+				*type = STREAM_AUDIO;
+				break;
+			}
+
+			case 0x7F: // extension descriptor (DVB)
+			{
+				uint8_t extension_descriptor_tag = buffer[j + 2];
+				cs_log_dbg(D_DVBAPI, "Demuxer %d found %s descriptor (extension tag: %02X)", demux_id,
+							get_extension_descriptor_txt(extension_descriptor_tag), extension_descriptor_tag);
+
+				switch(extension_descriptor_tag)
+				{
+					case 0x0E: // DTS-HD descriptor (DVB)
+					case 0x0F: // DTS Neural descriptor (DVB)
+					case 0x15: // AC-4 descriptor (DVB)
+						*type = STREAM_AUDIO;
+						break;
+
+					default:
+						*type = STREAM_UNDEFINED;
+						break;
+				}
+				break;
+			}
+
+			case 0x81:
+			{
+				if(descriptor_length == 8) // private descriptor of length 8, assume enigma/tvh
+				{
+					demux[demux_id].enigma_namespace = b2i(4, buffer + j + 2);
+					demux[demux_id].tsid = b2i(2, buffer + j + 6);
+					demux[demux_id].onid = b2i(2, buffer + j + 8);
+					cs_log_dbg(D_DVBAPI, "Demuxer %d assuming enigma private descriptor (namespace: %08X tsid: %04X onid: %04X)",
+								demux_id, demux[demux_id].enigma_namespace, demux[demux_id].tsid, demux[demux_id].onid);
+				}
+				else if(descriptor_length != 0) // AC-3 descriptor (ATSC)
+				{
+					*type = STREAM_AUDIO;
+					cs_log_dbg(D_DVBAPI, "Demuxer %d assuming AC-3 descriptor (ATSC)", demux_id);
+				}
+				break;
+			}
+
+			case 0x82:
+			{
+				if(descriptor_length == 2) // private descriptor of length 2, assume enigma/tvh
+				{
+					// we have already parsed this descriptor in getDemuxOptions()
+					cs_log_dbg(D_DVBAPI, "Demuxer %d assuming enigma private descriptor", demux_id);
+				}
+				break;
+			}
+
+			case 0x83:
+			{
+				if(descriptor_length == 1) // private descriptor of length 2, assume enigma/tvh
+				{
+					// we have already parsed this descriptor in getDemuxOptions()
+					cs_log_dbg(D_DVBAPI, "Demuxer %d assuming enigma private descriptor", demux_id);
+				}
+				break;
+			}
+
+			case 0x84:
+			{
+				if(descriptor_length == 2) // private descriptor of length 2, assume enigma/tvh
+				{
+					// we have already parsed this descriptor in getDemuxOptions()
+					cs_log_dbg(D_DVBAPI, "Demuxer %d assuming enigma private descriptor", demux_id);
+				}
+				break;
+			}
+
+			case 0x85:
+			{
+				if(descriptor_length == 4) // private descriptor of length 4, assume enigma/tvh
+				{
+					// descriptor is not used by OSCam
+					cs_log_dbg(D_DVBAPI, "Demuxer %d assuming enigma private descriptor", demux_id);
+				}
+				break;
+			}
+
+			default:
+				break;
 		}
 	}
 
@@ -3347,9 +3506,9 @@ int32_t dvbapi_parse_capmt(unsigned char *buffer, uint32_t length, int32_t connf
 	}
 	demux[demux_id].STREAMpidcount = 0; // reset number of streams
 
-	if(program_info_length > 1 && program_info_length < length)
+	if(program_info_length > 1 && program_info_length < length) // parse program descriptors
 	{
-		dvbapi_parse_descriptor(demux_id, program_info_length, buffer + program_info_start, NULL);
+		dvbapi_parse_descriptors(demux_id, program_info_length, buffer + program_info_start, NULL);
 	}
 
 	uint32_t es_info_length = 0, vpid = 0;
@@ -3357,42 +3516,18 @@ int32_t dvbapi_parse_capmt(unsigned char *buffer, uint32_t length, int32_t connf
 
 	for(i = program_info_length + program_info_start; i + 4 < length; i += es_info_length + 5)
 	{
-		uint8_t stream_type = buffer[i];
+		uint8_t stream_type = buffer[i], type = STREAM_UNDEFINED;
 		uint16_t elementary_pid = b2i(2, buffer + i + 1)&0x1FFF;
-		uint8_t is_audio = 0;
 		es_info_length = b2i(2, buffer + i +3)&0x0FFF;
 
 		if(demux[demux_id].STREAMpidcount < ECM_PIDS)
 		{
+			cs_log_dbg(D_DVBAPI,"Demuxer %d found %s stream (type: %02X pid: %04X)",
+						demux_id, get_stream_type_txt(stream_type), stream_type, elementary_pid);
 
-			demux[demux_id].STREAMpids[demux[demux_id].STREAMpidcount] = elementary_pid;
-			demux[demux_id].STREAMpidsType[demux[demux_id].STREAMpidcount] = buffer[i];
-			demux[demux_id].STREAMpidcount++;
-
-			cs_log_dbg(D_DVBAPI,"Demuxer %d stream %s(type: %02x pid: %04x length: %d)", demux_id, get_streamtxt(stream_type), stream_type, elementary_pid,
-				es_info_length);
-
-			// find and register videopid
-			if(!vpid &&
-				(stream_type == 0x01 || stream_type == 0x02 || stream_type == 0x10 || stream_type == 0x1B
-				|| stream_type == 0x24 || stream_type == 0x42 || stream_type == 0xD1 || stream_type == 0xEA))
+			if(es_info_length != 0 && es_info_length < length) // parse program element descriptors
 			{
-				vpid = elementary_pid;
-			}
-
-			if(es_info_length != 0 && es_info_length < length)
-			{
-				dvbapi_parse_descriptor(demux_id, es_info_length, buffer + i + 5, &is_audio);
-
-				if((stream_type == 0x06 || stream_type == 0x80 || stream_type == 0x82) && is_audio)
-				{
-					demux[demux_id].STREAMpidsType[demux[demux_id].STREAMpidcount-1] = 0x03;
-					stream_type = 0x03;
-				}
-				else if(!vpid && stream_type == 0x80 && !is_audio)
-				{
-					vpid = elementary_pid;
-				}
+				dvbapi_parse_descriptors(demux_id, es_info_length, buffer + i + 5, &type);
 			}
 			else
 			{
@@ -3409,6 +3544,50 @@ int32_t dvbapi_parse_capmt(unsigned char *buffer, uint32_t length, int32_t connf
 					break;
 				}
 			}
+
+			switch(stream_type)
+			{
+				case 0x01:
+				case 0x02:
+				case 0x10:
+				case 0x1B:
+				case 0x20:
+				case 0x24:
+				case 0x25:
+				case 0x42:
+				case 0xD1:
+				case 0xEA:
+					if(!vpid)
+					{
+						vpid = elementary_pid; // register videopid
+					}
+					demux[demux_id].STREAMpidsType[demux[demux_id].STREAMpidcount] = STREAM_VIDEO;
+					break;
+
+				case 0x03:
+				case 0x04:
+				case 0x0F:
+				case 0x11:
+				case 0x1C:
+				case 0x2D:
+				case 0x2E:
+					demux[demux_id].STREAMpidsType[demux[demux_id].STREAMpidcount] = STREAM_AUDIO;
+					break;
+
+				case 0x06:
+				case 0x81:
+				case 0x87:
+					// Set the type based on the descriptors for these streams
+					demux[demux_id].STREAMpidsType[demux[demux_id].STREAMpidcount] = type;
+					break;
+
+				default:
+					demux[demux_id].STREAMpidsType[demux[demux_id].STREAMpidcount] = STREAM_UNDEFINED;
+					break;
+			}
+
+			demux[demux_id].STREAMpids[demux[demux_id].STREAMpidcount] = elementary_pid;
+			demux[demux_id].STREAMpidcount++;
 		}
 	}
 
@@ -6254,37 +6433,28 @@ void dvbapi_send_dcw(struct s_client *client, ECM_REQUEST *er)
 				if(er->cw_ex.mode == CW_MODE_MULTIPLE_CW)
 				{
 					int32_t key_pos_a = 0;
-					uint8_t *cw, stream_type;
+					uint8_t *cw;
 
 					demux[i].ECMpids[j].useMultipleIndices = 1;
 
 					for(k = 0; k < demux[i].STREAMpidcount; k++)
 					{
-						stream_type = demux[i].STREAMpidsType[k];
-
-						// Video
-						if(stream_type == 0x01 || stream_type == 0x02 || stream_type == 0x10 || stream_type == 0x1B
-							|| stream_type == 0x24 || stream_type == 0x42 || stream_type == 0x80 || stream_type == 0xD1
-							|| stream_type == 0xEA)
+						if(demux[i].STREAMpidsType[k] == STREAM_VIDEO)
 						{
 							cw = er->cw;
 						}
-						// Audio
-						else if(stream_type == 0x03 || stream_type == 0x04 || stream_type == 0x06 || stream_type == 0x0F
-							|| stream_type == 0x11 || stream_type == 0x81 || (stream_type >= 0x83 && stream_type <= 0x87)
-							|| stream_type == 0x8A)
+						else if(demux[i].STREAMpidsType[k] == STREAM_AUDIO)
 						{
 							cw = er->cw_ex.audio[key_pos_a];
-
 							if(key_pos_a < 3)
 							{
 								key_pos_a++;
 							}
 						}
-						// Data
-						else
+						else // Data
 						{
 							cw = er->cw_ex.data;
+							break;
 						}
 
 						dvbapi_write_cw(i, cw, j, k, er->cw_ex.algo, er->cw_ex.algo_mode, er->msgid);
