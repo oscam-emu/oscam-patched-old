@@ -390,9 +390,9 @@ void gbox_send_hello(struct s_client *proxy, uint8_t hello_stat)
                          (!card->origin_peer || (card->origin_peer && card->origin_peer->gbox.id != peer->gbox.id)))
                           {
 
-                           if(card->type == GBOX_CARD_TYPE_GBOX || card->type == GBOX_CARD_TYPE_CCCAM)
+                           if(card->type == GBOX_CARD_TYPE_GBOX)
                              {
-                                //cs_log_dbg(D_READER,"send peer card %04X - level=%d crd-owner=%04X", card->caprovid >> 16, card->lvl, card->id.peer);                             	                           	
+                               // cs_log_dbg(D_READER,"send to peer gbox-card %04X - level=%d crd-owner=%04X", card->caprovid >> 16, card->lvl, card->id.peer);
                                 *(++ptr) = card->caprovid >> 24;
                                 *(++ptr) = card->caprovid >> 16;
                                 *(++ptr) = card->caprovid >> 8;
@@ -401,9 +401,22 @@ void gbox_send_hello(struct s_client *proxy, uint8_t hello_stat)
                                 *(++ptr) = card->id.slot;
                                 *(++ptr) = ((card->lvl - 1) << 4) + card->dist + 1;
                             }
+                           else if(card->type == GBOX_CARD_TYPE_CCCAM)
+                             {
+                              if(proxy->reader->gbox_cccam_reshare > proxy->reader->gbox_reshare)
+                                { proxy->reader->gbox_cccam_reshare = proxy->reader->gbox_reshare; }
+                               // cs_log_dbg(D_READER,"send to peer ccc-card %04X - level=%d crd-owner=%04X", card->caprovid >> 16, proxy->reader->gbox_cccam_reshare, card->id.peer);
+                                *(++ptr) = card->caprovid >> 24;
+                                *(++ptr) = card->caprovid >> 16;
+                                *(++ptr) = card->caprovid >> 8;
+                                *(++ptr) = card->caprovid & 0xff;
+                                *(++ptr) = 1;
+                                *(++ptr) = card->id.slot;
+                                *(++ptr) = ((proxy->reader->gbox_cccam_reshare - 1) << 4) + card->dist + 1;
+                            }
                            else if(proxy->reader->gbox_reshare > 0)
                             {
-                                //cs_log_dbg(D_READER,"send local crd %04X reshare=%d crd-owner=%04X", card->caprovid >> 16, proxy->reader->gbox_reshare, card->id.peer); 
+                                //cs_log_dbg(D_READER,"send local crd %04X reshare=%d crd-owner=%04X", card->caprovid >> 16, proxy->reader->gbox_reshare, card->id.peer);
                                 *(++ptr) = card->caprovid >> 24;
                                 *(++ptr) = card->caprovid >> 16;
                                 *(++ptr) = card->caprovid >> 8;
@@ -1140,7 +1153,6 @@ static uint8_t gbox_add_local_cards(void)
 	uint16_t cc_peer_id = 0;
 	struct cc_provider *provider;
 	uint8_t *node1 = NULL;
-	uint8_t min_reshare = 0;
 	gbox_delete_cards(GBOX_DELETE_WITH_TYPE, GBOX_CARD_TYPE_CCCAM);
 #endif	
 	gbox_delete_cards(GBOX_DELETE_WITH_ID, local_gbox.id);
@@ -1170,7 +1182,7 @@ static uint8_t gbox_add_local_cards(void)
 			}
 		}   //end local readers
 #ifdef MODULE_CCCAM
-		if((cfg.ccc_reshare) &&	(cfg.cc_reshare > -1) && (cl->reader->gbox_cccam_reshare) && cl->typ == 'p' && cl->reader && cl->reader->typ == R_CCCAM && cl->cc)
+		if((cfg.ccc_reshare) &&	(cfg.cc_reshare > -1) && cl->typ == 'p' && cl->reader && cl->reader->typ == R_CCCAM && cl->cc)
 		{
 			cc = cl->cc;
 			it = ll_iter_create(cc->cards);
@@ -1178,27 +1190,18 @@ static uint8_t gbox_add_local_cards(void)
 			{
 				//calculate gbox id from cc node
 				node1 = ll_has_elements(card->remote_nodes);
-				checksum = ((node1[0] ^ node1[7]) << 8) |
-						((node1[1] ^ node1[6]) << 24) |
-						(node1[2] ^ node1[5]) |
-						((node1[3] ^ node1[4]) << 16);
-				cc_peer_id = ((((checksum >> 24) & 0xFF) ^((checksum >> 8) & 0xFF)) << 8 |
-							  (((checksum >> 16) & 0xFF) ^(checksum & 0xFF)));
-				slot = gbox_next_free_slot(cc_peer_id);
-				min_reshare = cfg.cc_reshare;
-				if (card->reshare < min_reshare)
-					{ min_reshare = card->reshare; }				
-				min_reshare++; //strange CCCam logic. 0 means direct peers
-				if (cl->reader->gbox_cccam_reshare < min_reshare)
-					{ min_reshare = cl->reader->gbox_cccam_reshare; }
+				checksum = ((node1[0] ^ node1[7]) << 8) | ((node1[1] ^ node1[6]) << 24) | (node1[2] ^ node1[5]) | ((node1[3] ^ node1[4]) << 16);
+				cc_peer_id = ((((checksum >> 24) & 0xFF) ^((checksum >> 8) & 0xFF)) << 8 | (((checksum >> 16) & 0xFF) ^(checksum & 0xFF)));
+
+ 				slot = gbox_next_free_slot(cc_peer_id);
 				if(caid_is_seca(card->caid) || caid_is_viaccess(card->caid) || caid_is_cryptoworks(card->caid))
 				{
 					it2 = ll_iter_create(card->providers);
 					while((provider = ll_iter_next(&it2)))
-						{ gbox_add_card(cc_peer_id, gbox_get_caprovid(card->caid, provider->prov), slot, min_reshare, card->hop, GBOX_CARD_TYPE_CCCAM, NULL); }
+						{ gbox_add_card(cc_peer_id, gbox_get_caprovid(card->caid, provider->prov), slot, DEFAULT_CCC_GBOX_RESHARE, card->hop, GBOX_CARD_TYPE_CCCAM, NULL); }
 				}
 				else
-					{ gbox_add_card(cc_peer_id, gbox_get_caprovid(card->caid, 0), slot, min_reshare, card->hop, GBOX_CARD_TYPE_CCCAM, NULL); }
+					{ gbox_add_card(cc_peer_id, gbox_get_caprovid(card->caid, 0), slot, DEFAULT_CCC_GBOX_RESHARE, card->hop, GBOX_CARD_TYPE_CCCAM, NULL); }
 			}
 		}   //end cccam
 #endif
