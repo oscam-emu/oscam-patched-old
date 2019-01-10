@@ -418,15 +418,15 @@ const char *get_cardsystem_desc_by_caid(uint16_t caid)
         if(caid_is_viaccess(caid)) { return "viaccess"; }
         if(caid_is_irdeto(caid)) { return "irdeto"; }
         if(caid_is_videoguard(caid)) { return "videoguard"; }
-        if(caid >= 0x0E00 && caid <= 0x0EFF) { return "powervu"; }
-        if(caid >= 0x1010 && caid <= 0x10FF) { return "tandberg"; }	
-        if(caid >= 0x0B00 && caid <= 0x0BFF) { return "conax"; }
+        if(caid_is_powervu(caid)) { return "powervu"; }
+        if(caid_is_director(caid)) { return "director"; }
+        if(caid_is_conax(caid)) { return "conax"; }
         if(caid_is_cryptoworks(caid)) { return "cryptoworks"; }
         if(caid_is_betacrypt(caid)) { return "betacrypt"; }
         if(caid_is_nagra(caid)) { return "nagra"; }
         if(caid >= 0x4B00 && caid <= 0x4BFF) { return "tongfang"; }
         if(caid >= 0x5501 && caid <= 0x551A) { return "griffin"; }
-        if(caid == 0x4AE0 || caid == 0x4AE1) { return "drecrypt"; }
+        if(caid_is_dre(caid)) { return "drecrypt"; }
         if(caid_is_bulcrypt(caid)) { return "bulcrypt"; }
         if(caid_is_biss(caid)) { return "biss"; }
         if(caid == 0x4ABF) { return "dgcrypt"; }
