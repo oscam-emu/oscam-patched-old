@@ -705,7 +705,11 @@ do
 		revision=`(svnversion -n . 2>/dev/null || printf 0) | sed 's/.*://; s/[^0-9]*$//; s/^$/0/'`
 		if [ "$revision" = "0" ] 
 		then
-			which git > /dev/null 2>&1 && revision=`git log -10 --pretty=%B | grep git-svn-id | head -n 1 | sed -n -e 's/^.*trunk@\([0-9]*\) .*$/\1/p'`
+			which git > /dev/null 2>&1 && revision=`git describe --abbrev=0 --tags --always | sed -n -e 's/^oscam\(.*\)emu/\1/p'`
+		fi
+		if [ -z "$revision" ]
+		then
+			which git > /dev/null 2>&1 && revision=`git log -25 --pretty=%B | grep git-svn-id | head -n 1 | sed -n -e 's/^.*trunk@\([0-9]*\) .*$/\1/p'`
 		fi
 		echo $revision
 		break
