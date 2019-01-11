@@ -305,7 +305,7 @@ uchar *i2b_buf(int32_t n, uint32_t i, uchar *b)
 		b[0] = (i >> 16) & 0xff;
 		b[1] = (i >> 8) & 0xff;
 		b[2] = (i) & 0xff;
-		break
+		break;
 	case 4:
 		b[0] = (i >> 24) & 0xff;
 		b[1] = (i >> 16) & 0xff;
