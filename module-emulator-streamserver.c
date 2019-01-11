@@ -670,6 +670,85 @@ static void DescrambleTsPacketsPowervu(emu_stream_client_data *data, uint8_t *st
 	}
 }
 
+static void DescrambleTsPacketsRosscrypt1(emu_stream_client_data *data, uint8_t *stream_buf, uint32_t bufLength, uint16_t packetSize)
+{
+	int8_t can_decode = 0;
+	int32_t j;
+
+	uint8_t scramblingControl;
+	uint16_t pid, offset;
+	uint32_t i, tsHeader;
+
+	for (i = 0; i < bufLength; i += packetSize)
+	{
+		tsHeader = b2i(4, stream_buf + i);
+		pid = (tsHeader & 0x1FFF00) >> 8;
+		scramblingControl = tsHeader & 0xC0;
+
+		if (tsHeader & 0x20)
+		{
+			offset = 4 + stream_buf[i + 4] + 1;
+		}
+		else
+		{
+			offset = 4;
+		}
+
+		if (packetSize - offset < 1)
+			{ continue; }
+
+		if (scramblingControl == 0)
+			{ continue; }
+
+		if (!(stream_buf[i + 3] & 0x10))
+		{
+			stream_buf[i + 3] &= 0x3F;
+			continue;
+		}
+
+		if (pid == data->video_pid)
+		{
+			can_decode = 1;
+		}
+		else
+		{
+			for (j = 0; j < data->audio_pid_count; j++)
+			{
+					if (pid == data->audio_pids[j])
+					{
+						can_decode = 1;
+						break;
+					}
+			}
+		}
+
+		if (can_decode)
+		{
+			static uint8_t dyn_key[184];
+			static uint8_t last_packet[184];
+
+			if (memcmp(last_packet, stream_buf + i + offset, 184) == 0)
+			{
+				if (memcmp(dyn_key, stream_buf + i + offset, 184) != 0)
+				{
+					memcpy(dyn_key, stream_buf + i + offset, 184);
+				}
+			}
+			else
+			{
+				memcpy(last_packet, stream_buf + i + offset, 184);
+			}
+
+			for (j = 0; j < 184; j++)
+			{
+				stream_buf[i + offset + j] ^= dyn_key[j];
+			}
+
+			stream_buf[i + 3] &= 0x3F;
+		}
+	}
+}
+
 static void DescrambleTsPacketsCompel(emu_stream_client_data *data, uint8_t *stream_buf, uint32_t bufLength, uint16_t packetSize)
 {
 	int8_t can_decode = 0;
@@ -1122,6 +1201,10 @@ static void *stream_client_handler(void *arg)
 							if (caid_is_powervu(data->caid))
 							{
 								DescrambleTsPacketsPowervu(data, stream_buf + startOffset, packetCount * packetSize, packetSize);
+							}
+							else if (data->caid == 0xA101) // Rosscrypt1
+							{
+								DescrambleTsPacketsRosscrypt1(data, stream_buf + startOffset, packetCount * packetSize, packetSize);
 							}
 							else if (data->caid == NO_CAID_VALUE) // Compel
 							{
