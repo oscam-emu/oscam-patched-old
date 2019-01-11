@@ -1779,7 +1779,7 @@ struct s_reader                                         //contains device info, 
 #ifdef MODULE_GHTTP
 	uint8_t         ghttp_use_ssl;
 #endif
-	uint8_t cnxlastecm; // == 0 - las ecm has not been paired ecm, > 0 last ecm has been paired ecm
+	uint8_t cnxlastecm; // == 0 - last ecm has not been paired ecm, > 0 last ecm has been paired ecm
 	LLIST           *emmstat; //emm stats
 	CS_MUTEX_LOCK   emmstat_lock;
 	struct s_reader *next;
