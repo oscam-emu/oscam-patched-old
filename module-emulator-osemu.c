@@ -1026,6 +1026,7 @@ int8_t ProcessECM(struct s_reader *rdr, int16_t ecmDataLen, uint16_t caid, uint3
 	else if (caid_is_nagra(caid))       result = Nagra2ECM(ecmCopy, dw);
 	else if (caid_is_biss(caid))        result = BissEcm(rdr, caid, ecm, dw, srvid, ecmpid);
 	else if (caid_is_dre(caid))         result = Drecrypt2ECM(provider, ecmCopy, dw);
+	else if (caid == 0xA101)            result = 0; // RossCrypt1 does not send ECM's
 
 	if (result != 0)
 	{
