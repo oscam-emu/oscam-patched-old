@@ -1130,6 +1130,9 @@ static const struct config_list reader_opts[] =
 	DEF_OPT_INT8("readtiers"           	, OFS(readtiers),              	1),
 	DEF_OPT_INT8("force_irdeto"         , OFS(force_irdeto),            0),
 	DEF_OPT_INT8("needsemmfirst"        , OFS(needsemmfirst),           0),
+#ifdef READER_CRYPTOWORKS
+	DEF_OPT_INT8("needsglobalfirst"     , OFS(needsglobalfirst),        0),
+#endif
 	DEF_OPT_UINT32("ecmnotfoundlimit"   , OFS(ecmnotfoundlimit),        0),
 	DEF_OPT_FUNC("ecmwhitelist"         , 0,                            ecmwhitelist_fn),
 	DEF_OPT_FUNC("ecmheaderwhitelist"   , 0,                            ecmheaderwhitelist_fn),
@@ -1222,7 +1225,7 @@ static bool reader_check_setting(const struct config_list *UNUSED(clist), void *
 	{
 		"readnano", "resetcycle", "smargopatch", "autospeed", "sc8in1_dtrrts_patch", "boxid","fix07",
 		"fix9993", "rsakey", "deskey", "ins7e", "ins7e11", "ins2e06", "force_irdeto", "needsemmfirst", "boxkey",
-		"atr", "detect", "nagra_read", "mhz", "cardmhz", "readtiers", "read_old_classes", "use_gpio",
+		"atr", "detect", "nagra_read", "mhz", "cardmhz", "readtiers", "read_old_classes", "use_gpio", "needsglobalfirst",
 #ifdef READER_NAGRA_MERLIN
 		"mod1", "data50", "mod50", "key60", "exp60", "nuid", "cwekey",
 #endif

@@ -485,7 +485,7 @@ void do_emm(struct s_client *client, EMM_PACKET *ep)
 		}
 
 #ifdef READER_CRYPTOWORKS
-		if ((ep->type == GLOBAL) && (caid == 0x0D98) && ((aureader->blockemm & EMM_GLOBAL) == EMM_GLOBAL) && ((aureader->blockemm & EMM_SHARED) != EMM_SHARED))
+		if ((ep->type == GLOBAL) && ((caid == 0x0D96) || (caid == 0x0D98)) && ((aureader->blockemm & EMM_GLOBAL) == EMM_GLOBAL) && ((aureader->blockemm & EMM_SHARED) != EMM_SHARED) && (aureader->needsglobalfirst == 1))
 		{	// save global EMM
 			cs_log_dbg(D_EMM,"save global EMM for caid 0x%04X",caid);
 			memcpy(aureader->last_g_emm, ep, sizeof(EMM_PACKET));
@@ -580,12 +580,12 @@ void do_emm(struct s_client *client, EMM_PACKET *ep)
 			if(cs_malloc(&emm_pack, sizeof(EMM_PACKET)))
 			{
 #ifdef READER_CRYPTOWORKS
-				if ((ep->type == SHARED) && (caid == 0x0D98) && (aureader->last_g_emm_valid == true))
+				if ((ep->type == SHARED) && ((caid == 0x0D96) || (caid == 0x0D98)) && (aureader->last_g_emm_valid == true) && (aureader->needsglobalfirst == 1))
 				{
 					EMM_PACKET *emm_pack_global;
 					if(cs_malloc(&emm_pack_global, sizeof(EMM_PACKET)))
 					{
-						rdr_log_dbg(aureader, D_EMM, "Last stored global EMM for caid 0x%04X is being sent to reader first", caid);
+						rdr_log_dbg(aureader, D_EMM, "Last stored global EMM for caid 0x%04X is being sent to Reader first", caid);
 						memcpy(emm_pack_global, aureader->last_g_emm, sizeof(EMM_PACKET));
 						add_job(aureader->client, ACTION_READER_EMM, emm_pack_global, sizeof(EMM_PACKET));
 						saveemm(aureader, aureader->last_g_emm, "written");

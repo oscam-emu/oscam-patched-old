@@ -328,7 +328,7 @@ static int32_t cryptoworks_card_init(struct s_reader *reader, ATR *newatr)
 
 	cryptoworks_disable_pin(reader);
 
-	if (reader->caid == 0x0D98)
+	if ((reader->caid == 0x0D96 && reader->needsglobalfirst == 1) || (reader->caid == 0x0D98 && reader->needsglobalfirst == 1))
 	{
 		if(!cs_malloc(&reader->last_g_emm, sizeof(EMM_PACKET)))
 		{
