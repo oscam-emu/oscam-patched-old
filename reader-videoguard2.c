@@ -1170,44 +1170,43 @@ static int32_t videoguard2_do_ecm(struct s_reader *reader, const ECM_REQUEST *er
 		}
 		else
 		{
-			
-		struct videoguard_data *csystem_data = reader->csystem_data;
-		unsigned char *payload = rbuff + 5;
-		unsigned char buff_0F[6]={ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-		unsigned char buff_56[8]={ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-		unsigned char buff_55[1]={ 0x00 };
-		unsigned char tag, t_len;
-		unsigned char  *t_body;
-		int32_t payloadLen = rbuff[4];
-		int32_t ind = 8 + 6; // +8 (CW1), +2 (cw checksum) + 2 (tier used) +2 (result byte)
-		while(ind < payloadLen)
-		{
-			tag = payload[ind];
-			t_len = payload[ind + 1]; //len of the tag
-			t_body = payload + ind + 2; //body of the tag
-			switch(tag)
+			struct videoguard_data *csystem_data = reader->csystem_data;
+			unsigned char *payload = rbuff + 5;
+			unsigned char buff_0F[6]={ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+			unsigned char buff_56[8]={ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+			unsigned char buff_55[1]={ 0x00 };
+			unsigned char tag, t_len;
+			unsigned char  *t_body;
+			int32_t payloadLen = rbuff[4];
+			int32_t ind = 8 + 6; // +8 (CW1), +2 (cw checksum) + 2 (tier used) +2 (result byte)
+			while(ind < payloadLen)
+			{
+				tag = payload[ind];
+				t_len = payload[ind + 1]; //len of the tag
+				t_body = payload + ind + 2; //body of the tag
+				switch(tag)
 				{
-				case 0x0F: // Debug ecm info
-					if(t_len > 6)
-					{
-						t_len = 6;
-					}
-					memcpy(buff_0F, t_body, t_len);
-					break;
-				case 0x25:  // CW2 tag
-					memcpy(ea->cw + 8, t_body +1, 8);
-					break;
-				case 0x55: // cw crypt info tag
-					memcpy(buff_55, t_body, 1 );
-					break;
-				case 0x56: // tag data for astro
-					memcpy(buff_56, t_body, 8);
-					break;
-				default:
-					break;
+					case 0x0F: // Debug ecm info
+						if(t_len > 6)
+						{
+							t_len = 6;
+						}
+						memcpy(buff_0F, t_body, t_len);
+						break;
+					case 0x25: // CW2 tag
+						memcpy(ea->cw + 8, t_body +1, 8);
+						break;
+					case 0x55: // cw crypt info tag
+						memcpy(buff_55, t_body, 1 );
+						break;
+					case 0x56: // tag data for astro
+						memcpy(buff_56, t_body, 8);
+						break;
+					default:
+						break;
 				}
-		ind += t_len + 2;
-		}
+				ind += t_len + 2;
+			}
 
 		if(12 < payloadLen)
 		{

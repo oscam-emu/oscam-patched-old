@@ -139,14 +139,13 @@ void set_known_card_info(struct s_reader *reader, const unsigned char *atr, cons
 				0x00, 0x00, 0x00, 0x00, 0x54, 0x56, 0x05
 			},
 			23, 2004, 0, NDS2, "VideoGuard Sky Mexico (095B)"
-
-                },
-                {   {
-                                0x3F, 0xFD, 0x13, 0x25, 0x02, 0x50, 0x00, 0x0F, 0x33, 0xB0, 0x16, 0x69, 0xFF, 0x4A, 0x50, 0xD0,
-                                0x80, 0x00, 0x53, 0x59, 0x03
-                        },
-                        21, 2009, 0, NDS2, "VideoGuard BSkyB (0960)"
-                },
+		},
+		{   {
+				0x3F, 0xFD, 0x13, 0x25, 0x02, 0x50, 0x00, 0x0F, 0x33, 0xB0, 0x16, 0x69, 0xFF, 0x4A, 0x50, 0xD0,
+				0x80, 0x00, 0x53, 0x59, 0x03
+			},
+			21, 2009, 0, NDS2, "VideoGuard BSkyB (0960)"
+		},
 		{   {
 				0x3F, 0xFD, 0x13, 0x25, 0x02, 0x50, 0x00, 0x0F, 0x33, 0xB0, 0x0F, 0x69, 0xFF, 0x4A, 0x50, 0xD0,
 				0x00, 0x00, 0x53, 0x59, 0x02
@@ -442,8 +441,7 @@ void set_known_card_info(struct s_reader *reader, const unsigned char *atr, cons
 		ATR_InitFromArray(&tableatr, nds_atr_table[i].atr, nds_atr_table[i].atr_len);
 		ATR_GetHistoricalBytes(&tableatr, table_hist, &table_hist_size);
 
-		if((hist_size == table_hist_size)
-				&& (memcmp(hist, table_hist, hist_size) == 0))
+		if((hist_size == table_hist_size) && (memcmp(hist, table_hist, hist_size) == 0))
 		{
 			csystem_data->card_baseyear = nds_atr_table[i].base_year;
 			csystem_data->card_tierstart = nds_atr_table[i].tier_start;
@@ -471,7 +469,7 @@ int32_t cw_is_valid(unsigned char *cw) // returns 1 if cw_is_valid, returns 0 if
 {
 	int32_t i;
 	for(i = 0; i < 8; i++)
-		if(cw[i] != 0)          //test if cw = 00
+		if(cw[i] != 0) //test if cw = 00
 		{
 			return OK;
 		}
@@ -498,8 +496,7 @@ static void swap_lb(unsigned char *buff, int32_t len)
 
 #if __BYTE_ORDER != __BIG_ENDIAN
 	return;
-	
-#endif /*  */
+#endif
 	int32_t i;
 	unsigned char tmp;
 	for(i = 0; i < len / 2; i++)
@@ -516,15 +513,18 @@ void __xxor(unsigned char *data, int32_t len, const unsigned char *v1, const uns
 	switch(len)   // looks ugly but the cpu don't crash!
 	{
 	case 16:
-		for(i = 8; i < 16; ++i){
+		for(i = 8; i < 16; ++i)
+		{
 			data[i] = v1[i] ^ v2[i];
 		} /* fallthrough */
 	case 8:
-		for(i = 4; i < 8; ++i){
+		for(i = 4; i < 8; ++i)
+		{
 			data[i] = v1[i] ^ v2[i];
 		} /* fallthrough */
 	case 4:
-		for(i = 0; i < 4; ++i){
+		for(i = 0; i < 4; ++i)
+		{
 			data[i] = v1[i] ^ v2[i];
 		} /* fallthrough */
 		break;
@@ -605,47 +605,50 @@ static void cCamCryptVG_Process_D0(struct s_reader *reader, const unsigned char 
 	struct videoguard_data *csystem_data = reader->csystem_data;
 	switch(ins[1])
 	{
-	case 0xb4:
-		swap_lb(data, 64);
-		memcpy(csystem_data->cardkeys[0], data, sizeof(csystem_data->cardkeys[0]));
-		break;
-	case 0xbc:
-	{
-		swap_lb(data, 64);
-		const uint16_t *key1 = (const uint16_t *)csystem_data->cardkeys[1];
-		uint16_t key2[32];
-		memcpy(key2, csystem_data->cardkeys[2], sizeof(key2));
-		int32_t count2;
-		uint16_t iidata[32];
-		memcpy((unsigned char *)&iidata, data, 64);
-		for(count2 = 0; count2 < 32; count2++)
+		case 0xb4:
+			swap_lb(data, 64);
+			memcpy(csystem_data->cardkeys[0], data, sizeof(csystem_data->cardkeys[0]));
+			break;
+		case 0xbc:
 		{
-			uint32_t rem = 0, divisor = key1[count2];
-			int8_t i;
+			swap_lb(data, 64);
+			const uint16_t *key1 = (const uint16_t *)csystem_data->cardkeys[1];
+			uint16_t key2[32];
+			memcpy(key2, csystem_data->cardkeys[2], sizeof(key2));
+			int32_t count2;
+			uint16_t iidata[32];
+			memcpy((unsigned char *)&iidata, data, 64);
+			for(count2 = 0; count2 < 32; count2++)
+			{
+				uint32_t rem = 0, divisor = key1[count2];
+				int8_t i;
+				for(i = 31; i >= 0; i--)
+				{
+					uint32_t x = iidata[i] | (rem << 16);
+					rem = (x % divisor) & 0xffff;
+				}
+				uint32_t carry = 1, t = val_by2on3(divisor) | 1;
+				while(t)
+				{
+					if(t & 1) { carry = ((carry * rem) % divisor) & 0xffff; }
+					rem = ((rem * rem) % divisor) & 0xffff;
+					t >>= 1;
+				}
+				cCamCryptVG_PartialMod(carry, count2, key2, key1);
+			}
+			uint16_t idatacount = 0;
+			int32_t i;
 			for(i = 31; i >= 0; i--)
 			{
-				uint32_t x = iidata[i] | (rem << 16);
-				rem = (x % divisor) & 0xffff;
+				cCamCryptVG_LongMult(iidata, &idatacount, key1[i], key2[i]);
 			}
-			uint32_t carry = 1, t = val_by2on3(divisor) | 1;
-			while(t)
-			{
-				if(t & 1) { carry = ((carry * rem) % divisor) & 0xffff; }
-				rem = ((rem * rem) % divisor) & 0xffff;
-				t >>= 1;
-			}
-			cCamCryptVG_PartialMod(carry, count2, key2, key1);
+			memcpy(data, iidata, 64);
+			swap_lb(data, 64);
+			unsigned char stateD1[16];
+			cCamCryptVG_Reorder16A(stateD1, data);
+			cAES_SetKey(reader, stateD1);
+			break;
 		}
-		uint16_t idatacount = 0;
-		int32_t i;
-		for(i = 31; i >= 0; i--) { cCamCryptVG_LongMult(iidata, &idatacount, key1[i], key2[i]); }
-		memcpy(data, iidata, 64);
-		swap_lb(data, 64);
-		unsigned char stateD1[16];
-		cCamCryptVG_Reorder16A(stateD1, data);
-		cAES_SetKey(reader, stateD1);
-		break;
-	}
 	}
 }
 
@@ -695,7 +698,10 @@ static void cCamCryptVG_Decrypt_D3(struct s_reader *reader, unsigned char *ins, 
 {
 	struct videoguard_data *csystem_data = reader->csystem_data;
 	if(ins[4] > 16) { ins[4] -= 16; }
-	if(ins[1] == 0xbe) { memset(csystem_data->stateD3A, 0, sizeof(csystem_data->stateD3A)); }
+	if(ins[1] == 0xbe)
+	{
+		memset(csystem_data->stateD3A, 0, sizeof(csystem_data->stateD3A));
+	}
 
 	unsigned char tmp[16];
 	memset(tmp, 0, sizeof(tmp));
@@ -826,14 +832,18 @@ static void cCamCryptVG_RotateRightAndHash(unsigned char *p)
 int32_t status_ok(const unsigned char *status)
 {
 	//rdr_log(reader, "check status %02x%02x", status[0],status[1]);
-	return (status[0] == 0x90 || status[0] == 0x91)
-		   && (status[1] == 0x00 || status[1] == 0x01
-			   || status[1] == 0x20 || status[1] == 0x21
-			   || status[1] == 0x80 || status[1] == 0x81
-			   || status[1] == 0xa0 || status[1] == 0xa1);
+	return (status[0] == 0x90
+			|| status[0] == 0x91) && (status[1] == 0x00
+			|| status[1] == 0x01
+			|| status[1] == 0x20
+			|| status[1] == 0x21
+			|| status[1] == 0x80
+			|| status[1] == 0x81
+			|| status[1] == 0xa0
+			|| status[1] == 0xa1);
 }
 
-int32_t checksum_ok(const unsigned char *ird_payload)		/*checksum for precam datas*/
+int32_t checksum_ok(const unsigned char *ird_payload) /*checksum for precam datas*/
 {
 	int32_t b,check=0;
 	for (b = 0; b <= ird_payload[1]; b++)
@@ -841,11 +851,13 @@ int32_t checksum_ok(const unsigned char *ird_payload)		/*checksum for precam dat
 		check=(check+ird_payload[b])&0xFF;
 	}
 	if (ird_payload[ird_payload[1]+1]==check)
-		{
-			return 1;
-		}else{
-			return 0;	//Checksum error
-		}
+	{
+		return 1;
+	}
+	else
+	{
+		return 0; //Checksum error
+	}
 }
 
 void memorize_cmd_table(struct s_reader *reader, const unsigned char *mem, int32_t size)
@@ -853,7 +865,9 @@ void memorize_cmd_table(struct s_reader *reader, const unsigned char *mem, int32
 	struct videoguard_data *csystem_data = reader->csystem_data;
 	NULLFREE(csystem_data->cmd_table);
 	if(cs_malloc(&csystem_data->cmd_table, size))
-		{ memcpy(csystem_data->cmd_table, mem, size); }
+	{
+		memcpy(csystem_data->cmd_table, mem, size);
+	}
 }
 
 int32_t cmd_table_get_info(struct s_reader *reader, const unsigned char *cmd, unsigned char *rlen, unsigned char *rmode)
@@ -889,17 +903,20 @@ int32_t read_cmd_len(struct s_reader *reader, const unsigned char *cmd)
 	def_resp;
 	unsigned char cmd2[5];
 	memcpy(cmd2, cmd, 5);
-	cmd2[0] = 0xD0;
+	if(cmd2[0] == 0xD3) //use classD1 for length request of classD3
+	{
+		cmd2[0] = 0xD1;
+	}
 	cmd2[3] |= 0x80;
 	cmd2[4] = 1;
 	// some card reply with L 91 00 (L being the command length).
 	if(!write_cmd_vg(cmd2, NULL) || !status_ok(cta_res + 1) || cta_res[0] == 0)
 	{
-		if(cta_res[0] == 0)         //some cards reply len=0x00 for not supported ins
+		if(cta_res[0] == 0) //some cards reply len=0x00 for not supported ins
 		{
 			rdr_log_dbg(reader, D_READER, "failed to read %02x%02x cmd length (%02x %02x)", cmd[1], cmd[2], cta_res[1], cta_res[2]);
 		}
-		else                        //others reply only status byte
+		else //others reply only status byte
 		{
 			rdr_log_dbg(reader, D_READER, "failed to read %02x%02x cmd length (%02x %02x)", cmd[1], cmd[2], cta_res[0], cta_res[1]);
 		}
@@ -968,20 +985,6 @@ void rev_date_calc_tm(const unsigned char *Date, struct tm *timeinfo , int32_t b
 
 int32_t videoguard_get_emm_type(EMM_PACKET *ep, struct s_reader *rdr)
 {
-
-	/*
-	Unique:
-	82 30 ad 70 00 XX XX XX 00 XX XX XX 00 XX XX XX 00 XX XX XX 00 00
-	d3 02 00 22 90 20 44 02 4a 50 1d 88 ab 02 ac 79 16 6c df a1 b1 b7 77 00 ba eb 63 b5 c9 a9 30 2b 43 e9 16 a9 d5 14 00
-	d3 02 00 22 90 20 44 02 13 e3 40 bd 29 e4 90 97 c3 aa 93 db 8d f5 6b e4 92 dd 00 9b 51 03 c9 3d d0 e2 37 44 d3 bf 00
-	d3 02 00 22 90 20 44 02 97 79 5d 18 96 5f 3a 67 70 55 bb b9 d2 49 31 bd 18 17 2a e9 6f eb d8 76 ec c3 c9 cc 53 39 00
-	d2 02 00 21 90 1f 44 02 99 6d df 36 54 9c 7c 78 1b 21 54 d9 d4 9f c1 80 3c 46 10 76 aa 75 ef d6 82 27 2e 44 7b 00
-
-	Unknown:
-	82 00 1C 81 02 00 18 90 16 42 01 xx xx xx xx xx
-	xx xx xx xx xx xx xx xx xx xx xx xx xx xx xx
-	*/
-
 	int32_t i;
 	int32_t serial_count = ((ep->emm[3] >> 4) & 3) + 1;
 	int32_t serial_len = (ep->emm[3] & 0x80) ? 3 : 4;
@@ -989,43 +992,46 @@ int32_t videoguard_get_emm_type(EMM_PACKET *ep, struct s_reader *rdr)
 
 	switch(emmtype)
 	{
-	case VG_EMMTYPE_G:
-		rdr_log_dbg(rdr, D_EMM, "GLOBAL");
-		ep->type = GLOBAL;
-		return 1;
-
-	case VG_EMMTYPE_U:
-	case VG_EMMTYPE_S:
-		rdr_log_dbg(rdr, D_EMM, "%s", (emmtype == VG_EMMTYPE_U) ? "UNIQUE" : "SHARED");
-		ep->type = emmtype;
-		if(ep->emm[1] == 0)  // detected UNIQUE EMM from cccam (there is no serial)
-		{
-			rdr_log_dbg(rdr, D_EMM, "CCCam unique EMM detected, no serial available, skipping filter check");
-			ep->skip_filter_check = 1;
+		case VG_EMMTYPE_G:
+			rdr_log_dbg(rdr, D_EMM, "GLOBAL");
+			ep->type = GLOBAL;
 			return 1;
-		}
-
-		for(i = 0; i < serial_count; i++)
-		{
-			if(!memcmp(&ep->emm[i * 4 + 4], rdr->hexserial + 2, serial_len))
+		case VG_EMMTYPE_U:
+		case VG_EMMTYPE_S:
+			rdr_log_dbg(rdr, D_EMM, "%s", (emmtype == VG_EMMTYPE_U) ? "UNIQUE" : "SHARED");
+			ep->type = emmtype;
+			if(ep->emm[1] == 0)  // detected UNIQUE EMM from cccam (there is no serial)
 			{
-				memcpy(ep->hexserial, &ep->emm[i * 4 + 4], serial_len);
+				rdr_log_dbg(rdr, D_EMM, "CCCam unique EMM detected, no serial available, skipping filter check");
+				ep->skip_filter_check = 1;
 				return 1;
 			}
-		}
-		return 0; // if UNIQUE or SHARED but no serial match return FALSE
-
-	default:
-		//remote emm without serial
-		rdr_log_dbg(rdr, D_EMM, "UNKNOWN");
-		ep->type = UNKNOWN;
-		return 1;
+			for(i = 0; i < serial_count; i++)
+			{
+				if(!memcmp(&ep->emm[i * 4 + 4], rdr->hexserial + 2, serial_len))
+				{
+					memcpy(ep->hexserial, &ep->emm[i * 4 + 4], serial_len);
+					return 1;
+				}
+			}
+			return 0; // if UNIQUE or SHARED but no serial match return FALSE
+		default:
+			//remote emm without serial
+			rdr_log_dbg(rdr, D_EMM, "UNKNOWN");
+			ep->type = UNKNOWN;
+			return 1;
 	}
 }
 
-int32_t videoguard_do_emm(struct s_reader *reader, EMM_PACKET *ep, unsigned char CLA,
-						  void (*read_tiers)(struct s_reader *),
-						  int32_t (*docmd)(struct s_reader *, const unsigned char *ins, const unsigned char *txbuff, unsigned char *rxbuff, unsigned char *cta_res))
+int32_t videoguard_do_emm(
+				struct s_reader *reader,
+				EMM_PACKET *ep, unsigned char CLA,
+				void (*read_tiers)(struct s_reader *),
+				int32_t (*docmd)(struct s_reader *,
+				const unsigned char *ins,
+				const unsigned char *txbuff,
+				unsigned char *rxbuff,
+				unsigned char *cta_res))
 {
 	unsigned char cta_res[CTA_RES_LEN];
 	unsigned char ins42[5] = { CLA, 0x42, 0x00, 0x00, 0xFF };
@@ -1059,34 +1065,33 @@ int32_t videoguard_do_emm(struct s_reader *reader, EMM_PACKET *ep, unsigned char
 			offs += nsubs * 4;
 		}
 		if(ua_position == -1)
-			{ return ERROR; }
+		{
+			return ERROR;
+		}
 	}
-	// if (ep->type == GLOBAL && memcmp(&ep->emm[4], &reader->hexserial[2], 4) == 0)  // workaround for vdr-sc client
-	// {
-	//    ep->type = UNIQUE;
-	//    vdrsc_fix = 1;
-	//    offs += 4;
-	// }
-	if(ep->emm[offs] == 0x00 && (ep->emm[offs + 1] == 0x00 || ep->emm[offs + 1] == 0x01))  // unmodified emm from dvbapi
+
+	if(ep->emm[offs] == 0x00 && (ep->emm[offs + 1] == 0x00 || ep->emm[offs + 1] == 0x01)) // unmodified emm from dvbapi
 	{
 		emmv2 = ep->emm[offs + 1];
-		offs += 2 + 1 + emmv2;  // skip sub-emm len (2 bytes sub-emm len if 0x01);
+		offs += 2 + 1 + emmv2; // skip sub-emm len (2 bytes sub-emm len if 0x01);
 	}
 	for(position = 0; position < nsubs && offs + 2 < ep->emmlen; ++position)
 	{
-		if(ep->emm[offs] > 0x07)   // workaround for mgcamd and emmv2
-			{ ++offs; }
+		if(ep->emm[offs] > 0x07) // workaround for mgcamd and emmv2
+		{
+			++offs;
+		}
 		if(ep->emm[offs] == 0x02 || ep->emm[offs] == 0x03 || ep->emm[offs] == 0x07)
 		{
-			if(ep->emm[offs+1] != 0)				//	Checksum test for sub-packets emm:
-			{										// 	
-				EmmIrdHeader = ep->emm + offs;		// 	example: 
-				int32_t chk;						//	827097300000
-				chk = checksum_ok(EmmIrdHeader);	//	D002 0602C317ABA02F 1690144004A6... chk=2F
-				if (chk != 1)						//	D607 0E03A3010325070102810002000778 1B90154004A9... chk=78
-				{									//	D607 0E03A301032507010281000200097A 1B9015400441..	chk=7A
-					return rc;						//	...
-				}									//			
+			if(ep->emm[offs+1] != 0) // Checksum test for sub-packets emm:
+			{
+				EmmIrdHeader = ep->emm + offs;  //example:
+				int32_t chk;			//827097300000
+				chk = checksum_ok(EmmIrdHeader);//D002 0602C317ABA02F 1690144004A6... chk=2F
+				if (chk != 1)			//D607 0E03A3010325070102810002000778 1B90154004A9... chk=78
+				{				//D607 0E03A301032507010281000200097A 1B9015400441... chk=7A
+					return rc;
+				}
 			}
 			if(ep->emm[offs] == 0x03)
 			{
@@ -1100,12 +1105,17 @@ int32_t videoguard_do_emm(struct s_reader *reader, EMM_PACKET *ep, unsigned char
 					offs += ep->emm[offs + 1] + 2;
 					if(!(offs + 1 < ep->emmlen)) { return rc; }
 					if(ep->emm[offs] == 0x00 && (ep->emm[offs + 1] == 0x00 || ep->emm[offs + 1] == 0x01))
-						{ offs += 2 + 1 + emmv2; }
+					{
+						offs += 2 + 1 + emmv2;
+					}
 					continue;
 				}
 			}
 			offs += ep->emm[offs + 1] + 2;
-			if(!(offs + 1 < ep->emmlen)) { return rc; }
+			if(!(offs + 1 < ep->emmlen))
+			{
+				return rc;
+			}
 			if(ep->emm[offs] != 0)
 			{
 				if(ep->type == GLOBAL || vdrsc_fix || position == ua_position)
@@ -1115,16 +1125,26 @@ int32_t videoguard_do_emm(struct s_reader *reader, EMM_PACKET *ep, unsigned char
 					rc = (l > 0 && status_ok(cta_res)) ? OK : ERROR;
 					rdr_log_dbg(reader, D_EMM, "request return code : %02X%02X", cta_res[0], cta_res[1]);
 					if(status_ok(cta_res) && (cta_res[1] & 0x01))
-						{ (*read_tiers)(reader); }
+					{
+						(*read_tiers)(reader);
+					}
 				}
 				offs += ep->emm[offs] + 1;
-				if(offs < ep->emmlen && ep->emm[offs] == 0x00) { ++offs; }
+				if(offs < ep->emmlen && ep->emm[offs] == 0x00)
+				{
+					++offs;
+				}
 			}
 			offs += 1 + emmv2;
-			if(vdrsc_fix) { --position; }
+			if(vdrsc_fix)
+			{
+				--position;
+			}
 		}
 		else
-			{ return rc; }
+		{
+			return rc;
+		}
 	}
 	return rc;
 }
@@ -1132,8 +1152,7 @@ int32_t videoguard_do_emm(struct s_reader *reader, EMM_PACKET *ep, unsigned char
 uint8_t videoguard_get_emm_filter_address_byte(uint8_t isUnique, uint32_t n)
 {
 	uint8_t ret;
-	
-	switch(n) 
+	switch(n)
 	{
 		default:
 		case 0:
@@ -1153,7 +1172,7 @@ uint8_t videoguard_get_emm_filter_address_byte(uint8_t isUnique, uint32_t n)
 		case 3:
 			//filter sub-emm count with 11
 			ret = 0x30;
-			break;	
+			break;
 	}
 	
 	if(isUnique)
@@ -1171,8 +1190,7 @@ uint8_t videoguard_get_emm_filter_address_byte(uint8_t isUnique, uint32_t n)
 uint8_t videoguard_get_emm_filter_address_mask(uint32_t n)
 {
 	uint8_t ret = 0xC0;
-	
-	switch(n) 
+	switch(n)
 	{
 		default:
 		case 0:
@@ -1190,7 +1208,7 @@ uint8_t videoguard_get_emm_filter_address_mask(uint32_t n)
 		case 3:
 			//must have 4 sub-emms (11)
 			ret |= 0x30;
-			break;	
+			break;
 	}
 
 	return ret;
@@ -1200,16 +1218,15 @@ int32_t videoguard_get_emm_filter(struct s_reader *rdr, struct s_csystem_emm_fil
 {
 	if(*emm_filters == NULL)
 	{
-		const unsigned int max_filter_count = 7;		
+		const unsigned int max_filter_count = 7;
 		if(!cs_malloc(emm_filters, max_filter_count * sizeof(struct s_csystem_emm_filter)))
-			{ return ERROR; }
-
+		{
+			return ERROR;
+		}
 		struct s_csystem_emm_filter *filters = *emm_filters;
 		*filter_count = 0;
-
 		int32_t idx = 0;
 		uint32_t n;
-
 		for(n = 0; n < 3; ++n)
 		{
 			filters[idx].type = EMM_UNIQUE;
@@ -1223,7 +1240,6 @@ int32_t videoguard_get_emm_filter(struct s_reader *rdr, struct s_csystem_emm_fil
 			idx++;
 		}
 		// fourth serial position does not fit within the 16bytes demux filter
-
 		for(n = 0; n < 3; ++n)
 		{
 			filters[idx].type = EMM_SHARED;
@@ -1237,7 +1253,6 @@ int32_t videoguard_get_emm_filter(struct s_reader *rdr, struct s_csystem_emm_fil
 			idx++;
 		}
 		// fourth serial position does not fit within the 16bytes demux filter
-
 		filters[idx].type = EMM_GLOBAL;
 		filters[idx].enabled  = 1;
 		filters[idx].filter[0] = 0x82;
@@ -1245,10 +1260,8 @@ int32_t videoguard_get_emm_filter(struct s_reader *rdr, struct s_csystem_emm_fil
 		filters[idx].filter[1] = 0x00;
 		filters[idx].mask[1]   = 0xC0;
 		idx++;
-
 		*filter_count = idx;
 	}
-
 	return OK;
 }
 
@@ -1259,7 +1272,9 @@ static MAILMSG *find_msg(uint16_t caid, uint32_t serial, uint16_t date, uint16_t
 	while((msg = (MAILMSG *)ll_iter_next(&it)))
 	{
 		if(msg->caid == caid && msg->serial == serial && msg->date == date && msg->id == msg_id)
-			{ return msg; }
+		{
+			return msg;
+		}
 	}
 	return 0;
 }
@@ -1286,8 +1301,15 @@ static void write_msg(struct s_reader *reader, MAILMSG *msg, uint32_t baseyear)
 	int32_t mon = (msg->date >> 8) % 12 + 1;
 	int32_t day = msg->date & 0x1f;
 
-	fprintf(fp, "%04X:%08X:%02d/%02d/%04d:%04X:\"%s\":\"%s\"\n", msg->caid, msg->serial, day, mon, year,
-			msg->id, msg->subject, msg->message);
+	fprintf(fp, "%04X:%08X:%02d/%02d/%04d:%04X:\"%s\":\"%s\"\n",
+			msg->caid,
+			msg->serial,
+			day,
+			mon,
+			year,
+			msg->id,
+			msg->subject,
+			msg->message);
 	fclose(fp);
 	NULLFREE(msg->message);
 	msg->message = msg->subject = 0;
@@ -1299,7 +1321,9 @@ static void msgs_init(uint32_t baseyear)
 	vg_msgs = ll_create("vg_msgs");
 	FILE *fp = fopen(cfg.mailfile, "r");
 	if(fp == 0)
-		{ return; }
+	{
+		return;
+	}
 	int32_t year, mon, day;
 	char buffer[2048];
 	while(fgets(buffer, sizeof(buffer), fp))
@@ -1323,14 +1347,18 @@ static void msgs_init(uint32_t baseyear)
 void videoguard_mail_msg(struct s_reader *rdr, uint8_t *data)
 {
 	if(cfg.disablemail)
-		{ return; }
-
+	{
+		return;
+	}
 	struct videoguard_data *csystem_data = rdr->csystem_data;
 	if(vg_msgs == 0)
-		{ msgs_init(csystem_data->card_baseyear); }
-
+	{
+		msgs_init(csystem_data->card_baseyear);
+	}
 	if(data[0] != 0xFF || data[1] != 0xFF)
-		{ return; }
+	{
+		return;
+	}
 
 	uint16_t msg_id = (data[2] << 8) | data[3];
 	uint8_t idx = data[4] & 0x0F;
@@ -1339,13 +1367,14 @@ void videoguard_mail_msg(struct s_reader *rdr, uint8_t *data)
 	int32_t submsg_len = data[12] - 2;
 	uint16_t submsg_idx = (data[13] << 8) | data[14];
 	uint32_t serial = (rdr->hexserial[2] << 24) | (rdr->hexserial[3] << 16) | (rdr->hexserial[4] << 8) | rdr->hexserial[5];
-
 	MAILMSG *msg = find_msg(rdr->caid, serial, date, msg_id);
 
 	if(msg == 0)
 	{
 		if(!cs_malloc(&msg, sizeof(MAILMSG)))
-			{ return; }
+		{
+			return;
+		}
 		msg->caid = rdr->caid;
 		msg->serial = serial;
 		msg->date = date;
@@ -1367,12 +1396,16 @@ void videoguard_mail_msg(struct s_reader *rdr, uint8_t *data)
 	else
 	{
 		if(msg->written == 1 || msg->mask & (1 << idx))
-			{ return; }
+		{
+			return;
+		}
 		msg->mask |= 1 << idx;
 		msg->len += submsg_len;
 		memcpy(&msg->message[submsg_idx], &data[15], submsg_len);
 	}
 	if(msg->mask == (1 << msg->nsubs) - 1)
-		{ write_msg(rdr, msg, csystem_data->card_baseyear); }
+	{
+		write_msg(rdr, msg, csystem_data->card_baseyear);
+	}
 }
 #endif
