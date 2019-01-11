@@ -2361,6 +2361,18 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 		tpl_addVar(vars, TPLADD, "NEEDSEMMFIRST", (rdr->needsemmfirst == 1) ? "1" : "0");
 	}
 
+#ifdef READER_CRYPTOWORKS
+	// needsglobalfirst
+	if(!apicall)
+	{
+		tpl_addVar(vars, TPLADD, "NEEDSGLOBALFIRST", (rdr->needsglobalfirst == 1) ? "checked" : "");
+	}
+	else
+	{
+		tpl_addVar(vars, TPLADD, "NEEDSGLOBALFIRST", (rdr->needsglobalfirst == 1) ? "1" : "0");
+	}
+#endif
+
 	// RSA Key
 	int32_t len = rdr->rsa_mod_length;
 	if(len > 0)

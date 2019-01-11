@@ -1491,6 +1491,9 @@ struct s_reader                                         //contains device info, 
 	FTAB            fallback_percaid;
 	FTAB            localcards;
 	FTAB            disablecrccws_only_for;         // ignore checksum for selected caid provid
+#ifdef READER_CRYPTOWORKS
+	int8_t          needsglobalfirst;              // 0:Write one Global EMM for SHARED EMM disabled 1:Write one Global EMM for SHARED EMM enabled
+#endif
 #ifdef READER_NAGRA_MERLIN
 	unsigned char   kdt05_00[216];
 	unsigned char   kdt05_10[208];
