@@ -813,13 +813,13 @@ static void DescrambleTsPacketsCompel(emu_stream_client_data *data, uint8_t *str
 
 			for (j = 0; j < 184; j++)
 			{
-				if (stream_buf[i + 4 + j] == 0x00)
+				if (stream_buf[i + offset + j] == 0x00)
 				{
 					last00_was_good = 1;
 					matches00++;
 					if (matches00 > limit) dyn_key[j] = 0x00;
 				}
-				else if (stream_buf[i + 4 + j] == 0x3F)
+				else if (stream_buf[i + offset + j] == 0x3F)
 				{
 					last00_was_good = 1;
 					matches00++;
@@ -834,13 +834,13 @@ static void DescrambleTsPacketsCompel(emu_stream_client_data *data, uint8_t *str
 					last00_was_good = 0;
 				}
 
-				if (stream_buf[i + 4 + j] == 0xC0)
+				if (stream_buf[i + offset + j] == 0xC0)
 				{
 					lastFF_was_good = 1;
 					matchesFF++;
 					if (matchesFF > limit) dyn_key[j] = 0x3F;
 				}
-				else if (stream_buf[i + 4 + j] == 0xFF)
+				else if (stream_buf[i + offset + j] == 0xFF)
 				{
 					lastFF_was_good = 1;
 					matchesFF++;
@@ -858,13 +858,13 @@ static void DescrambleTsPacketsCompel(emu_stream_client_data *data, uint8_t *str
 
 			for (j = 183; j >= 0; j--)
 			{
-				if (stream_buf[i + 4 + j] == 0x00)
+				if (stream_buf[i + offset + j] == 0x00)
 				{
 					last00_was_good = 1;
 					matches00++;
 					if (matches00 > limit) dyn_key[j] = 0x00;
 				}
-				else if (stream_buf[i + 4 + j] == 0x3F)
+				else if (stream_buf[i + offset + j] == 0x3F)
 				{
 					last00_was_good = 1;
 					matches00++;
@@ -879,13 +879,13 @@ static void DescrambleTsPacketsCompel(emu_stream_client_data *data, uint8_t *str
 					last00_was_good = 0;
 				}
 
-				if (stream_buf[i + 4 + j] == 0xC0)
+				if (stream_buf[i + offset + j] == 0xC0)
 				{
 					lastFF_was_good = 1;
 					matchesFF++;
 					if (matchesFF > limit) dyn_key[j] = 0x3F;
 				}
-				else if (stream_buf[i + 4 + j] == 0xFF)
+				else if (stream_buf[i + offset + j] == 0xFF)
 				{
 					lastFF_was_good = 1;
 					matchesFF++;
@@ -903,7 +903,7 @@ static void DescrambleTsPacketsCompel(emu_stream_client_data *data, uint8_t *str
 
 			for (j = 0; j < 184; j++)
 			{
-				stream_buf[i + 4 + j] ^= dyn_key[j];
+				stream_buf[i + offset + j] ^= dyn_key[j];
 			}
 
 			stream_buf[i + 3] &= 0x3F;
