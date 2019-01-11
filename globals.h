@@ -1500,6 +1500,9 @@ struct s_reader                                         //contains device info, 
 	FTAB            fallback_percaid;
 	FTAB            localcards;
 	FTAB            disablecrccws_only_for;         // ignore checksum for selected caid provid
+#ifdef READER_CRYPTOWORKS
+	int8_t          needsglobalfirst;              // 0:Write one Global EMM for SHARED EMM disabled 1:Write one Global EMM for SHARED EMM enabled
+#endif
 #ifdef READER_NAGRA_MERLIN
 	unsigned char   kdt05_00[216];
 	unsigned char   kdt05_10[208];
@@ -2466,6 +2469,7 @@ static inline bool caid_is_seca(uint16_t caid) { return caid >> 8 == 0x01; }
 static inline bool caid_is_viaccess(uint16_t caid) { return caid >> 8 == 0x05; }
 static inline bool caid_is_irdeto(uint16_t caid) { return caid >> 8 == 0x06; }
 static inline bool caid_is_videoguard(uint16_t caid) { return caid >> 8 == 0x09; }
+static inline bool caid_is_conax(uint16_t caid) { return caid >> 8 == 0x0B; }
 static inline bool caid_is_cryptoworks(uint16_t caid) { return caid >> 8 == 0x0D; }
 static inline bool caid_is_powervu(uint16_t caid) { return caid >> 8 == 0x0E; }
 static inline bool caid_is_director(uint16_t caid) { return caid >> 8 == 0x10; }
