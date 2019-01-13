@@ -4,6 +4,7 @@
 #include "cscrypt/idea.h"
 #include "oscam-time.h"
 #include "reader-common.h"
+#include "reader-nagra-common.h"
 #include "oscam-work.h"
 
 struct nagra_data
@@ -34,17 +35,13 @@ struct nagra_data
 #define DT06        0x06
 #define CAMDATA     0x08
 
-#define SYSTEM_NAGRA 0x1800
-#define SYSTEM_MASK 0xFF00
-
-
 static time_t tier_date(uint32_t date, char *buf, int32_t l)
 {
 	time_t ut = 870393600L + date * (24 * 3600);
 	if(buf)
 	{
 		struct tm t;
-        t.tm_isdst = -1;
+		t.tm_isdst = -1;
 		cs_gmtime_r(&ut, &t);
 		snprintf(buf, l, "%04d/%02d/%02d", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday);
 	}
@@ -242,7 +239,7 @@ static int32_t NegotiateSessionKey_Tiger(struct s_reader *reader)
 	rdr_log_dbg(reader, D_READER, "------------------------------------------");
 
 	memcpy(reader->hexserial + 2, parte_fija + 15, 4);
-	memcpy(reader->sa[0], parte_fija + 15, 2);
+	memcpy(reader->sa[0], parte_fija + 15, 3);
 
 	memcpy(reader->irdId, parte_fija + 19, 4);
 	memcpy(d1_rsa_modulo, parte_fija + 23, 88);
@@ -621,9 +618,9 @@ static int32_t ParseDataType(struct s_reader *reader, unsigned char dt, unsigned
 		if((cta_lr > 33) && (chid = b2i(2, cta_res + 11)))
 		{
 			int32_t id = (cta_res[7] * 256) | cta_res[8];
-			int32_t offset = ((reader->caid == 0x1830 || reader->caid == 0x1843)
-							&& chid == 0x0BEA) ? -35 : 0;
-            
+			int32_t expire_date1 = b2i(2, cta_res + 13);
+			int32_t expire_date2 = b2i(2, cta_res + 24);
+			int32_t sooner_expire_date = expire_date1 <= expire_date2 ? expire_date1 : expire_date2;
 			// todo: add entitlements to list
 			cs_add_entitlement(reader,
 							   reader->caid,
@@ -631,22 +628,19 @@ static int32_t ParseDataType(struct s_reader *reader, unsigned char dt, unsigned
 							   chid,
 							   0,
 							   tier_date(b2i(2, cta_res + 20) - 0x7f7, ds, 15),
-							   tier_date(b2i(2, cta_res + 13) - 0x7f7 + offset, de, 15),
+							   tier_date(sooner_expire_date - 0x7f7, de, 15),
 							   4,
 							   1);
-
-
-			// tier_date(b2i(2, cta_res+20)-0x7f7, ds, 15);
-			// tier_date(b2i(2, cta_res+13)-0x7f7, de, 15);
 			rdr_log(reader, "|%04X|%04X    |%s  |%s  |", id, chid, ds, de);
 			addProvider(reader, cta_res);
-			return OK;
-		} /* fallthrough */
+		}
+		return OK;
 	case 0x08:
 	case 0x88:
 		if(cta_res[11] == 0x49){
 			decryptDT08(reader, cta_res);
-		} /* fallthrough */
+		}
+		return OK;
 	default:
 		return OK;
 	}
@@ -711,7 +705,7 @@ static int32_t nagra2_card_init(struct s_reader *reader, ATR *newatr)
 		memcpy(reader->rom, atr + 11, 15);
 		is_n3_na = 1;
 	}
-	else if(memcmp(atr + 11, "DNASP", 5) == 0)
+	else if((memcmp(atr + 11, "DNASP", 5) == 0) && (memcmp(atr + 11, "DNASP4", 6) != 0))
 	{
 		rdr_log(reader, "detect native nagra card");
 		memcpy(reader->rom, atr + 11, 15);
@@ -814,7 +808,7 @@ static int32_t nagra2_card_init(struct s_reader *reader, ATR *newatr)
 			return ERROR;
 		}
 		memcpy(reader->hexserial + 2, cta_res + 2, 4);
-		memcpy(reader->sa[0], cta_res + 2, 2);
+		memcpy(reader->sa[0], cta_res + 2, 3);
 
 		if(!GetDataType(reader, DT01, 0x0E)) { return ERROR; }
 		rdr_log_dbg(reader, D_READER, "DT01 DONE");
@@ -1078,7 +1072,7 @@ static int32_t nagra2_card_info(struct s_reader *reader)
 		}
 		memcpy(reader->hexserial + 2, cta_res + 2, 4);
 		rdr_log_dbg_sensitive(reader, D_READER, "SER:  {%s}", cs_hexdump(1, reader->hexserial + 2, 4, tmp_dbg, sizeof(tmp_dbg)));
-		memcpy(reader->sa[0], cta_res + 2, 2);
+		memcpy(reader->sa[0], cta_res + 2, 3);
 		reader->nprov = 1;
 		if(!GetDataType(reader, IRDINFO, 0x39)) { return ERROR; }
 		rdr_log_dbg(reader, D_READER, "IRDINFO DONE");
@@ -1239,82 +1233,6 @@ static int32_t nagra2_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, str
 	return ERROR;
 }
 
-int32_t nagra2_get_emm_type(EMM_PACKET *ep, struct s_reader *rdr)  //returns 1 if shared emm matches SA, unique emm matches serial, or global or unknown
-{
-	switch(ep->emm[0])
-	{
-	case 0x83:
-		memset(ep->hexserial, 0, 8);
-		ep->hexserial[0] = ep->emm[5];
-		ep->hexserial[1] = ep->emm[4];
-		ep->hexserial[2] = ep->emm[3];
-		if(ep->emm[7] == 0x10)
-		{
-			ep->type = SHARED;
-			return (!memcmp(rdr->hexserial + 2, ep->hexserial, 3));
-		}
-		else
-		{
-			ep->hexserial[3] = ep->emm[6];
-			ep->type = UNIQUE;
-			return (!memcmp(rdr->hexserial + 2, ep->hexserial, 4));
-		}
-	case 0x82:
-		ep->type = GLOBAL;
-		return 1;
-	default:
-		ep->type = UNKNOWN;
-		return 1;
-	}
-}
-
-static int32_t nagra2_get_emm_filter(struct s_reader *rdr, struct s_csystem_emm_filter **emm_filters, unsigned int *filter_count)
-{
-	if(*emm_filters == NULL)
-	{
-		const unsigned int max_filter_count = 3;
-		if(!cs_malloc(emm_filters, max_filter_count * sizeof(struct s_csystem_emm_filter)))
-			{ return ERROR; }
-
-		struct s_csystem_emm_filter *filters = *emm_filters;
-		*filter_count = 0;
-
-		int32_t idx = 0;
-
-		filters[idx].type = EMM_GLOBAL;
-		filters[idx].enabled   = 1;
-		filters[idx].filter[0] = 0x82;
-		filters[idx].mask[0]   = 0xFF;
-		idx++;
-
-		filters[idx].type = EMM_SHARED;
-		filters[idx].enabled   = 1;
-		filters[idx].filter[0] = 0x83;
-		filters[idx].filter[1] = rdr->hexserial[4];
-		filters[idx].filter[2] = rdr->hexserial[3];
-		filters[idx].filter[3] = rdr->hexserial[2];
-		filters[idx].filter[4] = 0x00;
-		filters[idx].filter[5] = 0x10;
-		memset(&filters[idx].mask[0], 0xFF, 6);
-		idx++;
-
-		filters[idx].type = EMM_UNIQUE;
-		filters[idx].enabled   = 1;
-		filters[idx].filter[0] = 0x83;
-		filters[idx].filter[1] = rdr->hexserial[4];
-		filters[idx].filter[2] = rdr->hexserial[3];
-		filters[idx].filter[3] = rdr->hexserial[2];
-		filters[idx].filter[4] = rdr->hexserial[5];
-		filters[idx].filter[5] = 0x00;
-		memset(&filters[idx].mask[0], 0xFF, 6);
-		idx++;
-
-		*filter_count = idx;
-	}
-
-	return OK;
-}
-
 static int32_t nagra2_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 {
 	def_resp;
@@ -1375,8 +1293,8 @@ const struct s_cardsystem reader_nagra =
 	.post_process   = nagra2_post_process,
 	.card_info      = nagra2_card_info,
 	.card_init      = nagra2_card_init,
-	.get_emm_type   = nagra2_get_emm_type,
-	.get_emm_filter = nagra2_get_emm_filter,
+	.get_emm_type   = nagra_get_emm_type,
+	.get_emm_filter = nagra_get_emm_filter,
 };
 
 #endif

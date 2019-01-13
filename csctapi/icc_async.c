@@ -12,23 +12,21 @@
 #ifdef READER_NAGRA_MERLIN
 #include "../cscrypt/fast_aes.h"
 #include "../cscrypt/sha256.h"
-#include "../cscrypt/aescbc.h"
 #include "../cscrypt/mdc2.h"
-//#include "../cscrypt/bn.h"
 #include "../cscrypt/idea.h"
 #endif
 
-#define OK	0
-#define ERROR	1
+#define OK 0
+#define ERROR 1
 
 // Default T0/T14 settings
-#define DEFAULT_WI	10
+#define DEFAULT_WI		10
 // Default T1 settings
 #define DEFAULT_IFSC	32
-#define MAX_IFSC	251
-#define DEFAULT_CWI	13
-#define DEFAULT_BWI	4
-#define EDC_LRC		0
+#define MAX_IFSC		251 // Cannot send > 255 buffer
+#define DEFAULT_CWI		13
+#define DEFAULT_BWI		4
+#define EDC_LRC			0
 
 #define PPS_MAX_LENGTH	6
 #define PPS_HAS_PPS1(block) ((block[1] & 0x10) == 0x10)
@@ -46,55 +44,7 @@ static unsigned char PPS_GetPCK(unsigned char *block, uint32_t length);
 static int32_t SetRightParity(struct s_reader *reader);
 
 #ifdef READER_NAGRA_MERLIN
-static uint32_t crctab[256] =
-{
-	0x00000000, 0x04c11db7, 0x09823b6e, 0x0d4326d9, 0x130476dc, 0x17c56b6b, 0x1a864db2, 0x1e475005,
-	0x2608edb8, 0x22c9f00f, 0x2f8ad6d6, 0x2b4bcb61, 0x350c9b64, 0x31cd86d3, 0x3c8ea00a, 0x384fbdbd,
-	0x4c11db70, 0x48d0c6c7, 0x4593e01e, 0x4152fda9, 0x5f15adac, 0x5bd4b01b, 0x569796c2, 0x52568b75,
-	0x6a1936c8, 0x6ed82b7f, 0x639b0da6, 0x675a1011, 0x791d4014, 0x7ddc5da3, 0x709f7b7a, 0x745e66cd,
-	0x9823b6e0, 0x9ce2ab57, 0x91a18d8e, 0x95609039, 0x8b27c03c, 0x8fe6dd8b, 0x82a5fb52, 0x8664e6e5,
-	0xbe2b5b58, 0xbaea46ef, 0xb7a96036, 0xb3687d81, 0xad2f2d84, 0xa9ee3033, 0xa4ad16ea, 0xa06c0b5d,
-	0xd4326d90, 0xd0f37027, 0xddb056fe, 0xd9714b49, 0xc7361b4c, 0xc3f706fb, 0xceb42022, 0xca753d95,
-	0xf23a8028, 0xf6fb9d9f, 0xfbb8bb46, 0xff79a6f1, 0xe13ef6f4, 0xe5ffeb43, 0xe8bccd9a, 0xec7dd02d,
-	0x34867077, 0x30476dc0, 0x3d044b19, 0x39c556ae, 0x278206ab, 0x23431b1c, 0x2e003dc5, 0x2ac12072,
-	0x128e9dcf, 0x164f8078, 0x1b0ca6a1, 0x1fcdbb16, 0x018aeb13, 0x054bf6a4, 0x0808d07d, 0x0cc9cdca,
-	0x7897ab07, 0x7c56b6b0, 0x71159069, 0x75d48dde, 0x6b93dddb, 0x6f52c06c, 0x6211e6b5, 0x66d0fb02,
-	0x5e9f46bf, 0x5a5e5b08, 0x571d7dd1, 0x53dc6066, 0x4d9b3063, 0x495a2dd4, 0x44190b0d, 0x40d816ba,
-	0xaca5c697, 0xa864db20, 0xa527fdf9, 0xa1e6e04e, 0xbfa1b04b, 0xbb60adfc, 0xb6238b25, 0xb2e29692,
-	0x8aad2b2f, 0x8e6c3698, 0x832f1041, 0x87ee0df6, 0x99a95df3, 0x9d684044, 0x902b669d, 0x94ea7b2a,
-	0xe0b41de7, 0xe4750050, 0xe9362689, 0xedf73b3e, 0xf3b06b3b, 0xf771768c, 0xfa325055, 0xfef34de2,
-	0xc6bcf05f, 0xc27dede8, 0xcf3ecb31, 0xcbffd686, 0xd5b88683, 0xd1799b34, 0xdc3abded, 0xd8fba05a,
-	0x690ce0ee, 0x6dcdfd59, 0x608edb80, 0x644fc637, 0x7a089632, 0x7ec98b85, 0x738aad5c, 0x774bb0eb,
-	0x4f040d56, 0x4bc510e1, 0x46863638, 0x42472b8f, 0x5c007b8a, 0x58c1663d, 0x558240e4, 0x51435d53,
-	0x251d3b9e, 0x21dc2629, 0x2c9f00f0, 0x285e1d47, 0x36194d42, 0x32d850f5, 0x3f9b762c, 0x3b5a6b9b,
-	0x0315d626, 0x07d4cb91, 0x0a97ed48, 0x0e56f0ff, 0x1011a0fa, 0x14d0bd4d, 0x19939b94, 0x1d528623,
-	0xf12f560e, 0xf5ee4bb9, 0xf8ad6d60, 0xfc6c70d7, 0xe22b20d2, 0xe6ea3d65, 0xeba91bbc, 0xef68060b,
-	0xd727bbb6, 0xd3e6a601, 0xdea580d8, 0xda649d6f, 0xc423cd6a, 0xc0e2d0dd, 0xcda1f604, 0xc960ebb3,
-	0xbd3e8d7e, 0xb9ff90c9, 0xb4bcb610, 0xb07daba7, 0xae3afba2, 0xaafbe615, 0xa7b8c0cc, 0xa379dd7b,
-	0x9b3660c6, 0x9ff77d71, 0x92b45ba8, 0x9675461f, 0x8832161a, 0x8cf30bad, 0x81b02d74, 0x857130c3,
-	0x5d8a9099, 0x594b8d2e, 0x5408abf7, 0x50c9b640, 0x4e8ee645, 0x4a4ffbf2, 0x470cdd2b, 0x43cdc09c,
-	0x7b827d21, 0x7f436096, 0x7200464f, 0x76c15bf8, 0x68860bfd, 0x6c47164a, 0x61043093, 0x65c52d24,
-	0x119b4be9, 0x155a565e, 0x18197087, 0x1cd86d30, 0x029f3d35, 0x065e2082, 0x0b1d065b, 0x0fdc1bec,
-	0x3793a651, 0x3352bbe6, 0x3e119d3f, 0x3ad08088, 0x2497d08d, 0x2056cd3a, 0x2d15ebe3, 0x29d4f654,
-	0xc5a92679, 0xc1683bce, 0xcc2b1d17, 0xc8ea00a0, 0xd6ad50a5, 0xd26c4d12, 0xdf2f6bcb, 0xdbee767c,
-	0xe3a1cbc1, 0xe760d676, 0xea23f0af, 0xeee2ed18, 0xf0a5bd1d, 0xf464a0aa, 0xf9278673, 0xfde69bc4,
-	0x89b8fd09, 0x8d79e0be, 0x803ac667, 0x84fbdbd0, 0x9abc8bd5, 0x9e7d9662, 0x933eb0bb, 0x97ffad0c,
-	0xafb010b1, 0xab710d06, 0xa6322bdf, 0xa2f33668, 0xbcb4666d, 0xb8757bda, 0xb5365d03, 0xb1f740b4,
-};
-
-uint32_t calc_ccitt32(uint8_t *buf, uint8_t count)
-{
-#define M1 0xffffffff
-#define M2 0xffffff00
-	uint32_t crc = M1;
-	while(count--)
-	{
-		crc=((crc<<8)&M2)^crctab[((crc>>24)&0xff)^*buf++];
-	}
-	return(crc);
-}
-
-static void calculate_cas7_vars(struct s_reader *reader, const ATR *atr)
+static void calculate_cak7_vars(struct s_reader *reader, const ATR *atr)
 {
 	uint8_t aes_key[32];
 	const uint8_t aes_iv[] = { 0x4E, 0x61, 0x67, 0x72, 0x61, 0x63, 0x61, 0x72, 0x64, 0x28, 0x63, 0x29, 0x32, 0x30, 0x30, 0x36 }; // Nagracard(c)2006
@@ -104,22 +54,23 @@ static void calculate_cas7_vars(struct s_reader *reader, const ATR *atr)
 	mbedtls_sha256_update(&ctx_sha256, atr->hb, atr->hbn);
 	mbedtls_sha256_finish(&ctx_sha256, aes_key);
 	mbedtls_sha256_free(&ctx_sha256);
-	memcpy(reader->cas7_aes_key,aes_key,32);
-	memcpy(reader->cas7_aes_iv,aes_iv,16);
+	memcpy(reader->cak7_aes_key,aes_key,32);
+	memcpy(reader->cak7_aes_iv,aes_iv,16);
 }
 
-void calculate_cas7_cmd(struct s_reader *reader, uint8_t *cmdin,uint8_t cmdlen,uint8_t *cmdout)
+void calculate_cak7_cmd(struct s_reader *reader, uint8_t *cmdin,uint8_t cmdlen,uint8_t *cmdout)
 {
-	uint32_t crc = calc_ccitt32(cmdin+4, cmdlen-4);
+	uint32_t crc = ccitt32_crc(cmdin+4, cmdlen-4);
 	i2b_buf(4, crc, cmdin);
 	AesCtx ctx;
-	AesCtxIni(&ctx, reader->cas7_aes_iv, &reader->cas7_aes_key[16], KEY128, CBC);
+	AesCtxIni(&ctx, reader->cak7_aes_iv, &reader->cak7_aes_key[16], KEY128, CBC);
 	AesEncrypt(&ctx, cmdin, cmdout, cmdlen);
 }
 
-void do_cas7_cmd(struct s_reader *reader,unsigned char *cta_res, uint16_t *p_cta_lr,uint8_t *data,uint8_t inlen,uint8_t resplen)
+void do_cak7_cmd(struct s_reader *reader,unsigned char *cta_res, uint16_t *p_cta_lr,uint8_t *data,uint8_t inlen,uint8_t resplen)
 {
-	reader->cas7_seq++;
+	reader->cak7_seq++;
+
 	uint8_t req[inlen+5+1]; // +head+len
 	memset(req,0x00,sizeof(req));
 	// head
@@ -128,15 +79,15 @@ void do_cas7_cmd(struct s_reader *reader,unsigned char *cta_res, uint16_t *p_cta
 	// len
 	req[4]=inlen;
 	req[sizeof(req)-1]=resplen;
-	data[4]=(reader->cas7_seq>>16)&0xFF;
-	data[5]=(reader->cas7_seq>>8)&0xFF;
-	data[6]=(reader->cas7_seq)&0xFF;
-	calculate_cas7_cmd(reader,data,inlen,&req[5]);
-	if(!ICC_Async_CardWrite(reader, req, sizeof(req), cta_res, p_cta_lr, 0x21))
+	data[4]=(reader->cak7_seq>>16)&0xFF;
+	data[5]=(reader->cak7_seq>>8)&0xFF;
+	data[6]=(reader->cak7_seq)&0xFF;
+	calculate_cak7_cmd(reader,data,inlen,&req[5]);
+	if(!ICC_Async_CardWrite(reader, req, sizeof(req), cta_res, p_cta_lr))
 	{
 		AesCtx ctx;
-		AesCtxIni(&ctx, reader->cas7_aes_iv, &reader->cas7_aes_key[16], KEY128, CBC);
-		AesDecrypt(&ctx, cta_res, cta_res,  *p_cta_lr-2);
+		AesCtxIni(&ctx, reader->cak7_aes_iv, &reader->cak7_aes_key[16], KEY128, CBC);
+		AesDecrypt(&ctx, cta_res, cta_res, *p_cta_lr-2);
 	}
 	else
 	{
@@ -147,8 +98,8 @@ void do_cas7_cmd(struct s_reader *reader,unsigned char *cta_res, uint16_t *p_cta
 static void calculate_changerom_cmd(struct s_reader *reader, const ATR *atr, uint8_t *cmd)
 {
 	uint8_t cmd_data[] = { 0xCC, 0xCC, 0xCC, 0xCC, 0x00, 0x00, 0x01, 0x01, 0x01, 0x95, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC };
-	calculate_cas7_vars(reader,atr);
-	calculate_cas7_cmd(reader,cmd_data,sizeof(cmd_data),cmd);
+	calculate_cak7_vars(reader,atr);
+	calculate_cak7_cmd(reader,cmd_data,sizeof(cmd_data),cmd);
 }
 #endif
 
@@ -277,7 +228,7 @@ int32_t ICC_Async_Activate(struct s_reader *reader, ATR *atr, uint16_t deprecate
 		rdr_log(reader, "%s recognized", current.providername);
 	}
 
-	if(current.badcard == 1 )  /* set badcard in cardlist.h */
+	if(current.badcard == 1 ) // set badcard in cardlist.h
 	{
 		current.badcard = 0;
 		rdr_log(reader, "Bad Card -> quick restart");
@@ -287,7 +238,7 @@ int32_t ICC_Async_Activate(struct s_reader *reader, ATR *atr, uint16_t deprecate
 	else
 	{
 
-		/* Get ICC reader->convention */
+		// Get ICC reader->convention
 		if(ATR_GetConvention(atr, &(reader->convention)) != ATR_OK)
 		{
 			rdr_log(reader, "ERROR: Could not read reader->convention");
@@ -314,27 +265,23 @@ int32_t ICC_Async_Activate(struct s_reader *reader, ATR *atr, uint16_t deprecate
 			return ERROR;
 		}
 	}
-	
 #ifdef READER_NAGRA_MERLIN
-
 	char tmp[atr_size * 3 + 1];
 
 	if(current.ishd04 == 1)
 	{
 		rdr_log_dbg(reader, D_READER, "HD04 merlin handling");
-		calculate_cas7_vars(reader, atr);
+		calculate_cak7_vars(reader, atr);
 	}
-	else if(current.ishd03 == 1 || current.ishd04 == 1)   // Switch ROM
+	else if(current.ishd03 == 1) // Switch ROM
 	{
-
-		static uint8_t changerom_handshake[] = { 0x80, 0xCA, 0x00, 0x00, 0x11, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10 };
+		uint8_t changerom_handshake[] = { 0x80, 0xCA, 0x00, 0x00, 0x11, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10 };
 
 		calculate_changerom_cmd(reader, atr, &changerom_handshake[5]);
 		memset(reader->rom, 0, 15);
 		unsigned char cta_res[CTA_RES_LEN];
 		memset(cta_res, 0, CTA_RES_LEN);
 		uint16_t cta_lr;
-		uint8_t block_nad = 0;
 
 		changerom_handshake[4] = 0x11; // 0x11: length of data we will send
 		uint8_t cta_res1_ok = 0x61;
@@ -342,32 +289,26 @@ int32_t ICC_Async_Activate(struct s_reader *reader, ATR *atr, uint16_t deprecate
 
 		if(reader->protocol_type != ATR_PROTOCOL_TYPE_T0)
 		{
-			block_nad = 0x21;
-			changerom_handshake[0] = 0x80; // fix for mipsel router
+			//changerom_handshake[0] = 0x80; // fix for mipsel router
 			changerom_handshake[4] = 0x10; // 0x10: length of data we will send
 			cta_res1_ok = 0x90;
 			cta_res2_ok = 0x00;
 		}
 
-		//rdr_log_dbg(reader, D_READER, "try to init nagra layer");
-		 rdr_log(reader,"try to init nagra layer");
- 
-		//rdr_log_dump_dbg(reader, D_READER, changerom_handshake, sizeof(changerom_handshake), "changerom_handshake data:");
+		rdr_log(reader,"try to init nagra layer");
 
-		if(!ICC_Async_CardWrite(reader, changerom_handshake, sizeof(changerom_handshake), cta_res, &cta_lr, block_nad))
+		if(!ICC_Async_CardWrite(reader, changerom_handshake, sizeof(changerom_handshake), cta_res, &cta_lr))
 		{
 			if(cta_res[cta_lr-2] == cta_res1_ok && cta_res[cta_lr-1] == cta_res2_ok)
 			{
 				//rdr_log_dbg(reader, D_READER, "switch to nagra layer OK");
 				rdr_log(reader, "switch to nagra layer OK");
-				uint8_t cmd_data[cta_lr+2] ;
-				AES128_CBC_decrypt_buffer(cmd_data,cta_res, (cta_lr-2), &reader->cas7_aes_key[16], reader->cas7_aes_iv);
 				memset(atr, 0, 1);
 				call(crdr_ops->activate(reader, atr)); //try to read the atr of this layer
 				ATR_GetRaw(atr, atrarr, &atr_size);
 				//rdr_log_dbg(reader, D_READER, "Nagra layer ATR: %s", cs_hexdump(1, atrarr, atr_size, tmp, sizeof(tmp)));
 				rdr_log(reader,"Nagra layer ATR: %s", cs_hexdump(1, atrarr, atr_size, tmp, sizeof(tmp)));
-				calculate_cas7_vars(reader, atr);
+				calculate_cak7_vars(reader, atr);
 				if(crdr_ops->lock)
 				{
 					crdr_ops->lock(reader);
@@ -387,21 +328,20 @@ int32_t ICC_Async_Activate(struct s_reader *reader, ATR *atr, uint16_t deprecate
 		}
 		else
 		{
-			//rdr_log_dbg(reader, D_READER, "Switch to nagra layer command failed!");
 			rdr_log(reader,"Switch to nagra layer command failed!");
 			return ERROR;
 		}
 		memcpy(reader->card_atr, atrarr, atr_size);
 		reader->card_atr_length = atr_size;
-		memcpy(reader->rom, atr->hb, (atr->hbn>15)?15:atr->hbn);// get historical bytes from atr
+		memcpy(reader->rom, atr->hb, (atr->hbn>15)?15:atr->hbn); // get historical bytes from atr
 	}
-#endif	
+#endif
 	rdr_log_dbg(reader, D_READER, "Card succesfully activated");
-	
-	return OK;
-} 
 
-int32_t ICC_Async_CardWrite(struct s_reader *reader, unsigned char *command, uint16_t command_len, unsigned char *rsp, uint16_t *lr, uint8_t block_nad)
+	return OK;
+}
+
+int32_t ICC_Async_CardWrite(struct s_reader *reader, unsigned char *command, uint16_t command_len, unsigned char *rsp, uint16_t *lr)
 {
 	const struct s_cardreader *crdr_ops = reader->crdr;
 	if (!crdr_ops) return ERROR;
@@ -433,18 +373,17 @@ int32_t ICC_Async_CardWrite(struct s_reader *reader, unsigned char *command, uin
 			type = 0;
 			break;
 		case ATR_PROTOCOL_TYPE_T1:
-			ret = Protocol_T1_Command(reader, command, command_len, rsp, lr, block_nad);
+			ret = Protocol_T1_Command(reader, command, command_len, rsp, lr);
 			type = 1;
 			if(ret != OK && !crdr_ops->skip_t1_command_retries)
 			{
 				//try to resync
 				rdr_log(reader, "Resync error: readtimeouts %d/%d (max/min) us, writetimeouts %d/%d (max/min) us", reader->maxreadtimeout, reader->minreadtimeout, reader->maxwritetimeout, reader->minwritetimeout);
 				unsigned char resync[] = { 0x21, 0xC0, 0x00, 0xE1 };
-				ret = Protocol_T1_Command(reader, resync, sizeof(resync), rsp, lr, 0);
+				ret = Protocol_T1_Command(reader, resync, sizeof(resync), rsp, lr);
 				if(ret == OK)
 				{
-					//reader->ifsc = DEFAULT_IFSC;
-					//tryfix cardtimeouts: ifsc is setup at card init, on resync it should not return to default_ifsc
+					//reader->ifsc = DEFAULT_IFSC; // tryfix cardtimeouts: ifsc is setup at card init, on resync it should not return to default_ifsc
 					rdr_log(reader, "T1 Resync command succesfull ifsc = %i", reader->ifsc);
 					ret = ERROR;
 				}
@@ -472,7 +411,7 @@ int32_t ICC_Async_CardWrite(struct s_reader *reader, unsigned char *command, uin
 		}
 		try++;
 	}
-	while((try < 3) && (ret != OK)); //always do one retry when failing
+	while((try < 3) && (ret != OK)); // always do one retry when failing
 	if(crdr_ops->unlock)
 	{
 		crdr_ops->unlock(reader);
@@ -488,7 +427,7 @@ int32_t ICC_Async_CardWrite(struct s_reader *reader, unsigned char *command, uin
 
 int32_t ICC_Async_GetTimings(struct s_reader *reader, uint32_t wait_etu)
 {
-	int32_t timeout = ETU_to_us(reader, wait_etu)*2;
+	int32_t timeout = ETU_to_us(reader, wait_etu);
 	rdr_log_dbg(reader, D_IFD, "Setting timeout to %i ETU (%d us)", wait_etu, timeout);
 	return timeout;
 }
@@ -506,8 +445,7 @@ int32_t ICC_Async_Transmit(struct s_reader *reader, uint32_t size, uint32_t expe
 	{
 		rdr_log_dbg(reader, D_IFD, "Transmit size %d bytes, delay %d us, timeout=%d us", size, delay, timeout);
 	}
-	//rdr_log_dump_dbg(reader, D_IFD, data, size, "Transmit:");
-	rdr_log_dump_dbg(reader, D_READER, data, size, "Transmit:");
+	rdr_log_dump_dbg(reader, D_IFD, data, size, "Transmit:");
 	unsigned char *sent = data;
 	if(reader->convention == ATR_CONVENTION_INVERSE && crdr_ops->need_inverse)
 	{
@@ -529,7 +467,6 @@ int32_t ICC_Async_Receive(struct s_reader *reader, uint32_t size, unsigned char 
 	if (!crdr_ops) return ERROR;
 
 	rdr_log_dbg(reader, D_IFD, "Receive size %d bytes, delay %d us, timeout=%d us", size, delay, timeout);
-	rdr_log_dump_dbg(reader, D_IFD, data, size, "RECEIVED:");
 	call(crdr_ops->receive(reader, data, size, delay, timeout));
 	rdr_log_dbg(reader, D_IFD, "Receive succesful");
 	if(reader->convention == ATR_CONVENTION_INVERSE && crdr_ops->need_inverse == 1)
@@ -557,16 +494,20 @@ int32_t ICC_Async_Close(struct s_reader *reader)
 void ICC_Async_DisplayMsg(struct s_reader *reader, char *msg)
 {
 	const struct s_cardreader *crdr_ops = reader->crdr;
-	if (!crdr_ops || !crdr_ops->display_msg) return;
+	if (!crdr_ops || !crdr_ops->display_msg)
+	{
+		return;
+	}
 	crdr_ops->display_msg(reader, msg);
 }
 
-int32_t ICC_Async_Reset(struct s_reader *reader, struct s_ATR *atr,
-						int32_t (*rdr_activate_card)(struct s_reader *, struct s_ATR *, uint16_t deprecated),
-						int32_t (*rdr_get_cardsystem)(struct s_reader *, struct s_ATR *))
+int32_t ICC_Async_Reset(struct s_reader *reader, struct s_ATR *atr, int32_t (*rdr_activate_card)(struct s_reader *, struct s_ATR *, uint16_t deprecated), int32_t (*rdr_get_cardsystem)(struct s_reader *, struct s_ATR *))
 {
 	const struct s_cardreader *crdr_ops = reader->crdr;
-	if (!crdr_ops || !crdr_ops->do_reset) return 0;
+	if (!crdr_ops || !crdr_ops->do_reset)
+	{
+		return 0;
+	}
 	return crdr_ops->do_reset(reader, atr, rdr_activate_card, rdr_get_cardsystem);
 }
 
@@ -590,7 +531,7 @@ static int32_t ICC_Async_GetPLL_Divider(struct s_reader *reader)
 	{
 		return reader->divider;
 	}
-	if(reader->cardmhz != 8300)  /* Check dreambox is not DM7025 */
+	if(reader->cardmhz != 8300) // Check dreambox is not DM7025
 	{
 		float divider;
 		divider = ((float) reader->cardmhz) / ((float) reader->mhz);
@@ -600,14 +541,13 @@ static int32_t ICC_Async_GetPLL_Divider(struct s_reader *reader)
 			reader->divider = (int32_t) divider;
 			if(divider > reader->divider)
 			{
-				reader->divider++;    /* to prevent over clocking, ceil (round up) the divider */
+				reader->divider++; // to prevent over clocking, ceil (round up) the divider
 			}
 		}
-		rdr_log_dbg(reader, D_DEVICE, "PLL maxmhz = %.2f, wanted mhz = %.2f, divider used = %d, actualcardclock=%.2f", (float) reader->cardmhz / 100, (float) reader->mhz / 100,
-					reader->divider, (float) reader->cardmhz / reader->divider / 100);
+		rdr_log_dbg(reader, D_DEVICE, "PLL maxmhz = %.2f, wanted mhz = %.2f, divider used = %d, actualcardclock=%.2f", (float) reader->cardmhz / 100, (float) reader->mhz / 100, reader->divider, (float) reader->cardmhz / reader->divider / 100);
 		reader->mhz = reader->cardmhz / reader->divider;
 	}
-	else
+	else // STB is DM7025
 	{
 		int32_t i, dm7025_clock_freq[] = {518, 461, 395, 360, 319, 296, 267, 244, 230, 212, 197}, dm7025_PLL_setting[] = {6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}, t_cardmhz = reader->mhz;
 		for(i = 0; i < 11; i++)
@@ -621,15 +561,10 @@ static int32_t ICC_Async_GetPLL_Divider(struct s_reader *reader)
 		}
 		reader->mhz = dm7025_clock_freq[i];
 		reader->divider = dm7025_PLL_setting[i]; /*Nicer way of codeing is: reader->divider = i + 6;*/
-		rdr_log_dbg(reader, D_DEVICE, "DM7025 PLL maxmhz = %.2f, wanted mhz = %.2f, PLL setting used = %d, actualcardclock=%.2f",
-					(float) reader->cardmhz / 100,
-					(float) t_cardmhz / 100,
-					reader->divider,
-					(float) reader->mhz / 100);
+		rdr_log_dbg(reader, D_DEVICE, "DM7025 PLL maxmhz = %.2f, wanted mhz = %.2f, PLL setting used = %d, actualcardclock=%.2f", (float) reader->cardmhz / 100, (float) t_cardmhz / 100, reader->divider, (float) reader->mhz / 100);
 	}
 	return reader->divider;
 }
-
 
 static void ICC_Async_InvertBuffer(struct s_reader *reader, uint32_t size, unsigned char *buffer)
 {
@@ -714,14 +649,14 @@ static int32_t Parse_ATR(struct s_reader *reader, ATR *atr, uint16_t deprecated)
 	rdr_log_dbg(reader, D_ATR, "%i protocol types detected. Historical bytes: %s", numprottype, cs_hexdump(1, atr->hb, atr->hbn, tmp, sizeof(tmp)));
 
 	ATR_GetParameter(atr, ATR_PARAMETER_N, &(N));
-	ATR_GetProtocolType(atr, 1, &(reader->protocol_type)); //get protocol from TD1
+	ATR_GetProtocolType(atr, 1, &(reader->protocol_type)); // get protocol from TD1
 
 	unsigned char TA2;
-	bool SpecificMode = (ATR_GetInterfaceByte(atr, 2, ATR_INTERFACE_BYTE_TA, &TA2) == ATR_OK);  //if TA2 present, specific mode, else negotiable mode
+	bool SpecificMode = (ATR_GetInterfaceByte(atr, 2, ATR_INTERFACE_BYTE_TA, &TA2) == ATR_OK); // if TA2 present, specific mode, else negotiable mode
 	if(SpecificMode)
 	{
 		reader->protocol_type = TA2 & 0x0F;
-		if((TA2 & 0x10) != 0x10)    //bit 5 set to 0 means F and D explicitly defined in interface characters
+		if((TA2 & 0x10) != 0x10) // bit 5 set to 0 means F and D explicitly defined in interface characters
 		{
 			unsigned char TA1;
 			if(ATR_GetInterfaceByte(atr, 1, ATR_INTERFACE_BYTE_TA, &TA1) == ATR_OK)
@@ -744,7 +679,7 @@ static int32_t Parse_ATR(struct s_reader *reader, ATR *atr, uint16_t deprecated)
 		uint32_t F = atr_f_table[FI];
 		rdr_log_dbg(reader, D_ATR, "Specific mode: T%i, F=%d, D=%d, N=%d", reader->protocol_type, F, D, N);
 	}
-	else   //negotiable mode
+	else // negotiable mode
 	{
 
 		reader->read_timeout = 1000000; // in us
@@ -752,13 +687,13 @@ static int32_t Parse_ATR(struct s_reader *reader, ATR *atr, uint16_t deprecated)
 		bool NeedsPTS = ((reader->protocol_type != ATR_PROTOCOL_TYPE_T14) && (numprottype > 1 || (atr->ib[0][ATR_INTERFACE_BYTE_TA].present == 1 && atr->ib[0][ATR_INTERFACE_BYTE_TA].value != 0x11) || N == 255)); //needs PTS according to old ISO 7816
 		if(NeedsPTS && deprecated == 0)
 		{
-			//                       PTSS   PTS0    PTS1    PCK
+			//                       PTSS  PTS0  PTS1  PCK
 			unsigned char req[6] = { 0xFF, 0x10, 0x00, 0x00 }; //we currently do not support PTS2, standard guardtimes or PTS3,
 			//but spare 2 bytes in arrayif card responds with it
 			req[1] = 0x10 | reader->protocol_type; //PTS0 always flags PTS1 to be sent always
-			if(ATR_GetInterfaceByte(atr, 1, ATR_INTERFACE_BYTE_TA, &req[2]) != ATR_OK)      //PTS1
+			if(ATR_GetInterfaceByte(atr, 1, ATR_INTERFACE_BYTE_TA, &req[2]) != ATR_OK) //PTS1
 			{
-				req[2] = 0x11;    //defaults FI and DI to 1
+				req[2] = 0x11; // defaults FI and DI to 1
 			}
 			uint32_t len = 0;
 			call(SetRightParity(reader));
@@ -779,7 +714,7 @@ static int32_t Parse_ATR(struct s_reader *reader, ATR *atr, uint16_t deprecated)
 		}
 
 		//When for SCI, T14 protocol, TA1 is obeyed, this goes OK for mosts devices, but somehow on DM7025 Sky S02 card goes wrong when setting ETU (ok on DM800/DM8000)
-		if(!PPS_success)   //last PPS not succesfull
+		if(!PPS_success) // last PPS not succesfull
 		{
 			unsigned char TA1;
 			if(ATR_GetInterfaceByte(atr, 1, ATR_INTERFACE_BYTE_TA, &TA1) == ATR_OK)
@@ -787,7 +722,7 @@ static int32_t Parse_ATR(struct s_reader *reader, ATR *atr, uint16_t deprecated)
 				FI = TA1 >> 4;
 				ATR_GetParameter(atr, ATR_PARAMETER_D, &(D));
 			}
-			else   //do not obey TA1
+			else // do not obey TA1
 			{
 				FI = ATR_DEFAULT_FI;
 				D = ATR_DEFAULT_D;
@@ -796,12 +731,11 @@ static int32_t Parse_ATR(struct s_reader *reader, ATR *atr, uint16_t deprecated)
 			{
 				if((D == 32) || (D == 12) || (D == 20))  //those values were RFU in old table
 				{
-					D = 0;    // viaccess cards that fail PTS need this
+					D = 0; // viaccess cards that fail PTS need this
 				}
 			}
 			uint32_t F = atr_f_table[FI];
-			rdr_log_dbg(reader, D_ATR, "No PTS %s, selected protocol T%i, F=%d, D=%d, N=%d",
-						NeedsPTS ? "happened" : "needed", reader->protocol_type, F, D, N);
+			rdr_log_dbg(reader, D_ATR, "No PTS %s, selected protocol T%i, F=%d, D=%d, N=%d", NeedsPTS ? "happened" : "needed", reader->protocol_type, F, D, N);
 		}
 	}//end negotiable mode
 
@@ -840,8 +774,7 @@ static int32_t PPS_Exchange(struct s_reader *reader, unsigned char *params, uint
 
 	len_request = PPS_GetLength(params);
 	params[len_request - 1] = PPS_GetPCK(params, len_request - 1);
-	rdr_log_dbg(reader, D_IFD, "PTS: Sending request: %s",
-				cs_hexdump(1, params, len_request, tmp, sizeof(tmp)));
+	rdr_log_dbg(reader, D_IFD, "PTS: Sending request: %s", cs_hexdump(1, params, len_request, tmp, sizeof(tmp)));
 
 	if(crdr_ops->set_protocol)
 	{
@@ -849,16 +782,15 @@ static int32_t PPS_Exchange(struct s_reader *reader, unsigned char *params, uint
 		return ret;
 	}
 
-	/* Send PPS request */
+	// Send PPS request
 	call(ICC_Async_Transmit(reader, len_request, len_request, params, 0, 1000000));
 
-	/* Get PPS confirm */
+	// Get PPS confirm
 	call(ICC_Async_Receive(reader, 2, confirm, 0, 1000000));
 	len_confirm = PPS_GetLength(confirm);
 	call(ICC_Async_Receive(reader, len_confirm - 2, confirm + 2, 0, 1000000));
 
-	rdr_log_dbg(reader, D_IFD, "PTS: Receiving confirm: %s",
-				cs_hexdump(1, confirm, len_confirm, tmp, sizeof(tmp)));
+	rdr_log_dbg(reader, D_IFD, "PTS: Receiving confirm: %s", cs_hexdump(1, confirm, len_confirm, tmp, sizeof(tmp)));
 	if((len_request != len_confirm) || (memcmp(params, confirm, len_request)))
 	{
 		ret = ERROR;
@@ -868,7 +800,7 @@ static int32_t PPS_Exchange(struct s_reader *reader, unsigned char *params, uint
 		ret = OK;
 	}
 
-	/* Copy PPS handshake */
+	// Copy PPS handshake
 	memcpy(params, confirm, len_confirm);
 	(*length) = len_confirm;
 	return ret;
@@ -898,8 +830,7 @@ static uint32_t PPS_GetLength(unsigned char *block)
 
 static uint32_t ETU_to_us(struct s_reader *reader, uint32_t ETU)
 {
-
-	return (uint32_t)((double) ETU * reader->worketu*2);  // in us
+	return (uint32_t)((double) ETU * reader->worketu); // in us
 }
 
 static int32_t ICC_Async_SetParity(struct s_reader *reader, uint16_t parity)
@@ -949,7 +880,7 @@ static int32_t InitCard(struct s_reader *reader, ATR *atr, unsigned char FI, uin
 	uint32_t I, F, Fi, BGT = 0, edc, GT = 0, WWT = 0, EGT = 0;
 	unsigned char wi = 0;
 
-	//set the amps and the volts according to ATR
+	// set the amps and the volts according to ATR
 	if(ATR_GetParameter(atr, ATR_PARAMETER_I, &I) != ATR_OK)
 	{
 		I = 0;
@@ -957,15 +888,15 @@ static int32_t InitCard(struct s_reader *reader, ATR *atr, unsigned char FI, uin
 
 	tempfi = FI;
 
-	//set clock speed to max if internal reader
+	// set clock speed to max if internal reader
 	if(crdr_ops->max_clock_speed == 1 && reader->typ == R_INTERNAL)
 	{
-		if(reader->autospeed == 1)  //no overclocking
+		if(reader->autospeed == 1) //no overclocking
 		{
-			reader->mhz = atr_fs_table[FI] / 10000;    //we are going to clock the card to this nominal frequency
+			reader->mhz = atr_fs_table[FI] / 10000; // we are going to clock the card to this nominal frequency
 		}
 
-		if(reader->cardmhz > 2000 && reader->autospeed == 1)  // -1 replaced by autospeed parameter is magic number pll internal reader set cardmhz according to optimal atr speed
+		if(reader->cardmhz > 2000 && reader->autospeed == 1) // -1 replaced by autospeed parameter is magic number pll internal reader set cardmhz according to optimal atr speed
 		{
 			reader->mhz = atr_fs_table[FI] / 10000 ;
 			if((!strncmp(boxtype_get(), "vu", 2 ))||(boxtype_is("ini-8000am")))
@@ -977,11 +908,11 @@ static int32_t InitCard(struct s_reader *reader, ATR *atr, unsigned char FI, uin
 
 	if(reader->cardmhz > 2000)
 	{
-		reader->divider = 0; //reset pll divider so divider will be set calculated again.
+		reader->divider = 0; // reset pll divider so divider will be set calculated again.
 		ICC_Async_GetPLL_Divider(reader); // calculate pll divider for target cardmhz.
 	}
 
-	Fi = atr_f_table[FI];  //get the frequency divider also called clock rate conversion factor
+	Fi = atr_f_table[FI]; // get the frequency divider also called clock rate conversion factor
 	if(crdr_ops->set_baudrate)
 	{
 		reader->current_baudrate = DEFAULT_BAUDRATE;
@@ -989,7 +920,7 @@ static int32_t InitCard(struct s_reader *reader, ATR *atr, unsigned char FI, uin
 		if(deprecated == 0)
 		{
 
-			if(reader->protocol_type != ATR_PROTOCOL_TYPE_T14)    //dont switch for T14
+			if(reader->protocol_type != ATR_PROTOCOL_TYPE_T14) // dont switch for T14
 			{
 				uint32_t baud_temp = (double)D * ICC_Async_GetClockRate(reader->cardmhz) / (double)Fi;
 				uint32_t baud_temp2 = (double)D * ICC_Async_GetClockRate(reader->mhz) / (double)Fi;
@@ -1002,7 +933,7 @@ static int32_t InitCard(struct s_reader *reader, ATR *atr, unsigned char FI, uin
 	}
 	if(reader->cardmhz > 2000 && reader->typ == R_INTERNAL)
 	{
-		F = reader->mhz;    // for PLL based internal readers
+		F = reader->mhz; // for PLL based internal readers
 	}
 	else
 	{
@@ -1058,7 +989,7 @@ static int32_t InitCard(struct s_reader *reader, ATR *atr, unsigned char FI, uin
 				}
 				else if(reader->mhz >= 357)
 				{
-					reader->mhz =  369;    // 357 not suported by smartreader
+					reader->mhz =  369; // 357 not suported by smartreader
 				}
 				else if(reader->mhz >= 343)
 				{
@@ -1070,8 +1001,8 @@ static int32_t InitCard(struct s_reader *reader, ATR *atr, unsigned char FI, uin
 				}
 			}
 		}
-		F = reader->mhz;
-	} // all other readers
+		F = reader->mhz; //all other readers
+	}
 	reader->worketu = (double)((double)(1 / (double)D) * ((double)Fi / (double)((double)F / 100)));
 	rdr_log_dbg(reader, D_ATR, "Calculated work ETU is %.2f us reader mhz = %u", reader->worketu, reader->mhz);
 
@@ -1099,7 +1030,7 @@ static int32_t InitCard(struct s_reader *reader, ATR *atr, unsigned char FI, uin
 
 		if(N != 255)  //add extra Guard Time by ATR
 		{
-			EGT += N;    // T0 protocol, if TC1 = 255 then dont add extra guardtime
+			EGT += N; // T0 protocol, if TC1 = 255 then dont add extra guardtime
 		}
 		reader->CWT = 0; // T0 protocol doesnt have char waiting time (used to detect errors within 1 single block of data)
 		reader->BWT = 0; // T0 protocol doesnt have block waiting time (used to detect unresponsive card, this is max time for starting a block answer)
@@ -1128,7 +1059,7 @@ static int32_t InitCard(struct s_reader *reader, ATR *atr, unsigned char FI, uin
 			reader->ifsc = DEFAULT_IFSC;
 		}
 
-		//FIXME workaround for Smargo until native mode works
+		// FIXME workaround for Smargo until native mode works
 		if(reader->smargopatch == 1)
 		{
 			reader->ifsc = MIN(reader->ifsc, 28);
@@ -1168,11 +1099,11 @@ static int32_t InitCard(struct s_reader *reader, ATR *atr, unsigned char FI, uin
 
 		if(N == 255)
 		{
-			GT -= 1;    // special case, ATR says standard 2 etu guardtime is decreased by 1 (in ETU) EGT remains zero!
+			GT -= 1; // special case, ATR says standard 2 etu guardtime is decreased by 1 (in ETU) EGT remains zero!
 		}
 		else
 		{
-			EGT += N;    // ATR says add extra guardtime (in ETU)
+			EGT += N; // ATR says add extra guardtime (in ETU)
 		}
 
 		// Set the error detection code type
@@ -1187,13 +1118,8 @@ static int32_t InitCard(struct s_reader *reader, ATR *atr, unsigned char FI, uin
 
 		// Set initial send sequence (NS)
 		reader->ns = 1;
-#ifdef READER_NAGRA_MERLIN
-		cas7_seq=0x00;
-#endif
-		rdr_log_dbg(reader, D_ATR, "Protocol: T=%i: IFSC=%d, CWT=%d etu, BWT=%d etu, BGT=%d etu, EDC=%s, N=%d",
-					reader->protocol_type, reader->ifsc,
-					reader->CWT, reader->BWT,
-					BGT, (edc == EDC_LRC) ? "LRC" : "CRC", N);
+
+		rdr_log_dbg(reader, D_ATR, "Protocol: T=%i: IFSC=%d, CWT=%d etu, BWT=%d etu, BGT=%d etu, EDC=%s, N=%d", reader->protocol_type, reader->ifsc, reader->CWT, reader->BWT, BGT, (edc == EDC_LRC) ? "LRC" : "CRC", N);
 		reader->read_timeout = reader->BWT;
 		reader->block_delay = BGT;
 		reader->char_delay = GT + EGT;
@@ -1234,25 +1160,32 @@ static int32_t InitCard(struct s_reader *reader, ATR *atr, unsigned char FI, uin
 		call(crdr_ops->write_settings(reader, &s));
 	}
 
-	/*
-		if(reader->typ == R_INTERNAL)
+/*
+	if(reader->typ == R_INTERNAL)
+	{
+		if(reader->cardmhz > 2000)
 		{
-			if(reader->cardmhz > 2000){
-				rdr_log(reader, "PLL Reader: ATR Fsmax is %i MHz, clocking card to %.2f Mhz (nearest possible mhz specified reader->mhz)", atr_fs_table[FI] / 1000000, (float) reader->mhz / 100);
-			}else{
-				rdr_log(reader, "ATR Fsmax is %i MHz, clocking card to %.2f (specified in reader->mhz)", atr_fs_table[FI] / 1000000, (float) reader->mhz / 100);
-			}
-		}else{
-			if ((reader->typ == R_SMART) && (reader->autospeed == 1)){
-				rdr_log(reader, "ATR Fsmax is %i MHz, clocking card to ATR Fsmax for smartreader cardspeed of %.2f MHz (specified in reader->mhz)", atr_fs_table[FI] / 1000000, (float) reader->mhz / 100);
-			}else{
-				rdr_log(reader, "ATR Fsmax is %i MHz, clocking card to wanted user cardclock of %.2f MHz (specified in reader->mhz)",atr_fs_table[FI] / 1000000, (float) reader->mhz / 100);
-			}
+			rdr_log(reader, "PLL Reader: ATR Fsmax is %i MHz, clocking card to %.2f Mhz (nearest possible mhz specified reader->mhz)", atr_fs_table[FI] / 1000000, (float) reader->mhz / 100);
 		}
-	*/
+		else
+		{
+			rdr_log(reader, "ATR Fsmax is %i MHz, clocking card to %.2f (specified in reader->mhz)", atr_fs_table[FI] / 1000000, (float) reader->mhz / 100);
+		}
+	}
+	else
+	{
+		if ((reader->typ == R_SMART) && (reader->autospeed == 1))
+		{
+			rdr_log(reader, "ATR Fsmax is %i MHz, clocking card to ATR Fsmax for smartreader cardspeed of %.2f MHz (specified in reader->mhz)", atr_fs_table[FI] / 1000000, (float) reader->mhz / 100);
+		}
+		else
+		{
+			rdr_log(reader, "ATR Fsmax is %i MHz, clocking card to wanted user cardclock of %.2f MHz (specified in reader->mhz)",atr_fs_table[FI] / 1000000, (float) reader->mhz / 100);
+		}
+	}
+*/
 
 	//Communicate to T1 card IFSD -> we use same as IFSC
-
 	if(reader->protocol_type == ATR_PROTOCOL_TYPE_T1 && reader->ifsc != DEFAULT_IFSC && !crdr_ops->skip_setting_ifsc)
 	{
 		unsigned char rsp[CTA_RES_LEN];
@@ -1261,7 +1194,7 @@ static int32_t InitCard(struct s_reader *reader, ATR *atr, unsigned char FI, uin
 		unsigned char tmp[] = { 0x21, 0xC1, 0x01, 0x00, 0x00 };
 		tmp[3] = reader->ifsc; // Information Field size
 		tmp[4] = reader->ifsc ^ 0xE1;
-		ret = Protocol_T1_Command(reader, tmp, sizeof(tmp), rsp, &lr, 0);
+		ret = Protocol_T1_Command(reader, tmp, sizeof(tmp), rsp, &lr);
 		if(ret != OK)
 		{
 			rdr_log(reader, "Warning: Card returned error on setting ifsd value to %d", reader->ifsc);

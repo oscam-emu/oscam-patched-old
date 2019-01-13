@@ -747,20 +747,22 @@ static inline void xxor(uint8_t *data, int32_t len, const uint8_t *v1, const uin
 	switch(len)
 	{
 	case 16:
-		for(i = 8; i < 16; ++i)
+		for(i = 0; i < 16; ++i)
 		{
 			data[i] = v1[i] ^ v2[i];
-		} /* fallthrough */
+		}
+		break;
 	case 8:
-		for(i = 4; i < 8; ++i)
+		for(i = 0; i < 8; ++i)
 		{
 			data[i] = v1[i] ^ v2[i];
-		} /* fallthrough */
+		}
+		break;
 	case 4:
 		for(i = 0; i < 4; ++i)
 		{
 			data[i] = v1[i] ^ v2[i];
-		} /* fallthrough */
+		}
 		break;
 	default:
 		while(len--)
@@ -882,12 +884,38 @@ void des_ede2_cbc_decrypt(uint8_t* data, const uint8_t* iv, const uint8_t* key1,
 	}
 }
 
-void _3DES(uint8_t *data, uint8_t *key)
+void des_ecb3_decrypt(uint8_t* data, const uint8_t* key)
 {
-	uint32_t ks1[32], ks2[32];
-	des_set_key(key, ks1);
-	des_set_key(key+8, ks2);
-	des(data, ks1, 0);
-	des(data, ks2, 1);
-	des(data, ks1, 0);
+	uint8_t desA[8];
+	uint8_t desB[8];
+
+	uint32_t schedule1[32];
+	uint32_t schedule2[32];
+
+	memcpy(desA, key, 8);
+	des_set_key(desA, schedule1);
+	memcpy(desB, key+8, 8);
+	des_set_key(desB, schedule2);
+	
+	des(data, schedule1, 0);
+	des(data, schedule2, 1);
+	des(data, schedule1, 0);
+}
+
+void des_ecb3_encrypt(uint8_t* data, const uint8_t* key)
+{
+	uint8_t desA[8];
+	uint8_t desB[8];
+
+	uint32_t schedule1[32];
+	uint32_t schedule2[32];
+
+	memcpy(desA, key, 8);
+	des_set_key(desA, schedule1);
+	memcpy(desB, key+8, 8);
+	des_set_key(desB, schedule2);
+	
+	des(data, schedule1, 1);
+	des(data, schedule2, 0);
+	des(data, schedule1, 1);
 }

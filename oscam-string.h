@@ -38,6 +38,7 @@ void get_random_bytes(uint8_t *dst, uint32_t dst_len);
 
 uint32_t crc32(uint32_t crc, const uint8_t *buf, uint32_t len);
 uint16_t ccitt_crc(uint8_t *data, size_t length, uint16_t seed, uint16_t final);
+uint32_t ccitt32_crc(uint8_t *data, size_t len);
 uint32_t jhash(const char *key, size_t len);
 
 char to_hex(char code);

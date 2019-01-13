@@ -1492,32 +1492,48 @@ struct s_reader                                         //contains device info, 
 	FTAB            localcards;
 	FTAB            disablecrccws_only_for;         // ignore checksum for selected caid provid
 #ifdef READER_CRYPTOWORKS
-	int8_t          needsglobalfirst;              // 0:Write one Global EMM for SHARED EMM disabled 1:Write one Global EMM for SHARED EMM enabled
+	int8_t          needsglobalfirst;               // 0:Write one Global EMM for SHARED EMM disabled 1:Write one Global EMM for SHARED EMM enabled
 #endif
 #ifdef READER_NAGRA_MERLIN
-	unsigned char   kdt05_00[216];
-	unsigned char   kdt05_10[208];
-	unsigned char   cardid[8];
-	unsigned char   edata[255];
-	unsigned char   dt5num;
-	unsigned char   out[255];
-	unsigned char   ideakey1[16];
-	unsigned char   block3[8];
-	unsigned char   v[8];
-	unsigned char   iout[8];
-	unsigned char   dtdata[0x10];
+	uint8_t         mod1[112];
+	uint8_t         mod1_length;
+	uint8_t         data50[80];
+	uint8_t         data50_length;
+	uint8_t         mod50[80];
+	uint8_t         mod50_length;
+	uint8_t         key60[96];
+	uint8_t         key60_length;
+	uint8_t         exp60[96];
+	uint8_t         exp60_length;
+	uint8_t         nuid[4];
+	uint8_t         nuid_length;
+	uint8_t         cwekey[16];
+	uint8_t         cwekey_length;
+	uint8_t         kdt05_00[216];
+	uint8_t         kdt05_10[208];
+	uint8_t         cardid[8];
+	uint8_t         edata[255];
+	uint8_t         dt5num;
+	uint8_t         out[255];
+	uint8_t         ideakey1[16];
+	uint8_t         block3[8];
+	uint8_t         v[8];
+	uint8_t         iout[8];
 	uint32_t        dword_83DBC;
-	unsigned char   data2[4];
-	unsigned char   cas7expo[0x11];
-	unsigned char   data[0x80];
-	unsigned char   step1[0x60];
-	unsigned char   step2[0x68];
-	unsigned char   step3[0x6c];
-	unsigned char   encrypted[0x68];
-	uchar           result[104];
-	uchar           stillencrypted[0x50];
-	uchar           resultrsa[0x50];
-	uint32_t        cas7_seq;
+	uint8_t         data2[4];
+	uint8_t         cak7expo[0x11];
+	uint8_t         data[0x80];
+	uint8_t         step1[0x60];
+	uint8_t         step2[0x68];
+	uint8_t         step3[0x6c];
+	uint8_t         encrypted[0x68];
+	uint8_t         result[104];
+	uint8_t         stillencrypted[0x50];
+	uint8_t         resultrsa[0x50];
+	uint32_t        cak7_seq;
+	uint8_t         cak7_camstate;
+	uint8_t         cak7_aes_key[32];
+	uint8_t         cak7_aes_iv[16];
 #endif
 #ifdef CS_CACHEEX
 	CECSP           cacheex; //CacheEx Settings
@@ -1555,24 +1571,6 @@ struct s_reader                                         //contains device info, 
 	uchar           card_atr[64];                   // ATR readed from card
 	int8_t          card_atr_length;                // length of ATR
 	int8_t          seca_nagra_card;                // seca nagra card 
-#ifdef READER_NAGRA_MERLIN
-	uint8_t		cas7_aes_key[32];
-	uint8_t		cas7_aes_iv[16];
-	uint8_t		mod1[112];
-	uint8_t		mod1_length;
-	uint8_t		data50[80];
-	uint8_t		data50_length;
-	uint8_t		mod50[80];
-	uint8_t		mod50_length;
-	uint8_t		key60[96];
-	uint8_t		key60_length;
-	uint8_t		exp60[96];
-	uint8_t		exp60_length;
-	uint8_t		nuid[4];
-	uint8_t		nuid_length;
-	uint8_t		cwekey[16];
-	uint8_t		cwekey_length;
-#endif
 	int32_t         atrlen;
 	SIDTABS         sidtabs;
 	SIDTABS         lb_sidtabs;

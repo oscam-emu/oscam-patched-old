@@ -3,28 +3,28 @@
 #ifdef WITH_CARDREADER
 #include "icc_async.h"
 
-#define OK	0
-#define ERROR	1
+#define OK 0
+#define ERROR 1
 
 /* Buffer sizes */
-#define T1_BLOCK_MAX_SIZE	259
+#define T1_BLOCK_MAX_SIZE		259
 
 /* Types of block */
-#define T1_BLOCK_I		0x00
-#define T1_BLOCK_R_OK		0x80
-#define T1_BLOCK_R_EDC_ERR	0x81
+#define T1_BLOCK_I				0x00
+#define T1_BLOCK_R_OK			0x80
+#define T1_BLOCK_R_EDC_ERR		0x81
 #define T1_BLOCK_R_OTHER_ERR	0x82
 #define T1_BLOCK_S_RESYNCH_REQ	0xC0
 #define T1_BLOCK_S_RESYNCH_RES	0xE0
-#define T1_BLOCK_S_IFS_REQ	0xC1
-#define T1_BLOCK_S_IFS_RES	0xE1
+#define T1_BLOCK_S_IFS_REQ		0xC1
+#define T1_BLOCK_S_IFS_RES		0xE1
 #define T1_BLOCK_S_ABORT_REQ	0xC2
 #define T1_BLOCK_S_ABORT_RES	0xE2
-#define T1_BLOCK_S_WTX_REQ	0xC3
-#define T1_BLOCK_S_WTX_RES	0xE3
-#define T1_BLOCK_S_VPP_ERR	0xE4
+#define T1_BLOCK_S_WTX_REQ		0xC3
+#define T1_BLOCK_S_WTX_RES		0xE3
+#define T1_BLOCK_S_VPP_ERR		0xE4
 
-#define T1_BLOCK_NAD		0x21
+#define T1_BLOCK_NAD			0x00
 
 #define T1_Block_GetNS(a)   ((a[1] >> 6) & 0x01)
 #define T1_Block_GetMore(a) ((a[1] >> 5) & 0x01)
@@ -43,11 +43,11 @@ static unsigned char T1_Block_LRC(unsigned char *data, uint32_t length)
 	return lrc;
 }
 
-static int32_t T1_Block_SendIBlock(struct s_reader *reader, uint8_t *block_data, unsigned char len, unsigned char *inf, unsigned char ns, int32_t more, uint32_t timeout, uint8_t block_nad)
+static int32_t T1_Block_SendIBlock(struct s_reader *reader, uint8_t *block_data, unsigned char len, unsigned char *inf, unsigned char ns, int32_t more, uint32_t timeout)
 {
 	int length = len + 4;
 
-	block_data[0] = block_nad;
+	block_data[0] = T1_BLOCK_NAD;
 	block_data[1] = T1_BLOCK_I | ((ns << 6) & 0x40);
 	if(more)
 	{
@@ -67,14 +67,7 @@ static int32_t T1_Block_SendRBlock(struct s_reader *reader, uint8_t *block_data,
 {
 	int length = 4;
 
-	if (reader->caid == 0X4ABF) // Redlight DGCRYPT
-	{
-		block_data[0] = 0x00;
-	}
-	else
-	{
-		block_data[0] = T1_BLOCK_NAD;
-	}
+	block_data[0] = T1_BLOCK_NAD;
 	block_data[1] = type | ((nr << 4) & 0x10);
 	block_data[2] = 0x00;
 	block_data[3] = T1_Block_LRC(block_data, 3);
@@ -86,14 +79,7 @@ static int32_t T1_Block_SendSBlock(struct s_reader *reader, uint8_t *block_data,
 {
 	int length = 4 + len;
 
-	if (reader->caid == 0X4ABF)
-	{
-		block_data[0] = 0x00;
-	}
-	else
-	{
-		block_data[0] = T1_BLOCK_NAD;
-	}
+	block_data[0] = T1_BLOCK_NAD;
 	block_data[1] = type;
 	block_data[2] = len;
 	if(len != 0x00)
@@ -143,7 +129,7 @@ static int32_t Protocol_T1_ReceiveBlock(struct s_reader *reader, uint8_t *block_
 	return ret;
 }
 
-int32_t Protocol_T1_Command(struct s_reader *reader, unsigned char *command, uint16_t command_len, unsigned char *rsp, uint16_t *lr, uint8_t block_nad)
+int32_t Protocol_T1_Command(struct s_reader *reader, unsigned char *command, uint16_t command_len, unsigned char *rsp, uint16_t *lr)
 {
 	uint8_t block_data[T1_BLOCK_MAX_SIZE];
 	uint8_t rsp_type, bytes, nr, wtx;
@@ -151,23 +137,8 @@ int32_t Protocol_T1_Command(struct s_reader *reader, unsigned char *command, uin
 	int32_t ret, timeout;
 	bool more;
 	uint32_t block_length = 0;
-
-	if(block_nad == 0)
-	{
-		if (reader->caid == 0X4ABF)
-		{
-			block_data[0] = 0x00;
-		}
-		else
-		{
-			block_data[0] = T1_BLOCK_NAD;
-		}
-	}
-
 	if(command[1] == T1_BLOCK_S_IFS_REQ)
 	{
-		rdr_log_dbg(reader, D_READER, "command[1] == T1_BLOCK_S_IFS_REQ");
-
 		uint8_t inf = command[3];
 
 		/* Create an IFS request S-Block */
@@ -195,7 +166,6 @@ int32_t Protocol_T1_Command(struct s_reader *reader, unsigned char *command, uin
 	}
 	else if(command[1] == T1_BLOCK_S_RESYNCH_REQ)
 	{
-		rdr_log_dbg(reader, D_READER, "command[1] == T1_BLOCK_S_RESYNCH_REQ");
 		/* Create an Resynch request S-Block */
 		timeout = ICC_Async_GetTimings(reader, reader->CWT);  // we are going to send: CWT timeout
 		//cs_sleepus(reader->block_delay); // we were receiving, now sending so wait BGT time
@@ -232,7 +202,7 @@ int32_t Protocol_T1_Command(struct s_reader *reader, unsigned char *command, uin
 	/* Create an I-Block */
 	timeout = ICC_Async_GetTimings(reader, reader->CWT);  // we are going to send: CWT timeout
 	//cs_sleepus(reader->block_delay); // we were receiving, now sending so wait BGT time
-	ret = T1_Block_SendIBlock(reader, block_data, bytes, command, reader->ns, more, timeout, block_nad);
+	ret = T1_Block_SendIBlock(reader, block_data, bytes, command, reader->ns, more, timeout);
 	rdr_log_dbg(reader, D_IFD, "Sending block I(%d,%d)", reader->ns, more);
 
 	while((ret == OK) && more)
@@ -263,7 +233,7 @@ int32_t Protocol_T1_Command(struct s_reader *reader, unsigned char *command, uin
 				/* Send an I-Block */
 				timeout = ICC_Async_GetTimings(reader, reader->CWT);  // we are going to send: CWT timeout
 				//cs_sleepus(reader->block_delay); // we were receiving, now sending so wait BGT time
-				ret = T1_Block_SendIBlock(reader, block_data, bytes, command + counter, reader->ns, more, timeout, block_nad);
+				ret = T1_Block_SendIBlock(reader, block_data, bytes, command + counter, reader->ns, more, timeout);
 				rdr_log_dbg(reader, D_IFD, "Protocol: Sending block I(%d,%d)", reader->ns, more);
 
 			}

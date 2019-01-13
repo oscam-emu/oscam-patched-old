@@ -216,7 +216,6 @@ override LIST_SMARGO_BIN =
 endif
 
 SRC-$(CONFIG_LIB_AES) += cscrypt/aes.c
-SRC-$(CONFIG_LIB_AESCBC) += cscrypt/aescbc.c
 SRC-$(CONFIG_LIB_BIGNUM) += cscrypt/bn_add.c
 SRC-$(CONFIG_LIB_BIGNUM) += cscrypt/bn_asm.c
 SRC-$(CONFIG_LIB_BIGNUM) += cscrypt/bn_ctx.c
@@ -229,15 +228,15 @@ SRC-$(CONFIG_LIB_BIGNUM) += cscrypt/bn_shift.c
 SRC-$(CONFIG_LIB_BIGNUM) += cscrypt/bn_sqr.c
 SRC-$(CONFIG_LIB_BIGNUM) += cscrypt/bn_word.c
 SRC-$(CONFIG_LIB_BIGNUM) += cscrypt/mem.c
-SRC-$(CONFIG_LIB_MDC2) += cscrypt/mdc2.c
 SRC-$(CONFIG_LIB_DES) += cscrypt/des.c
-SRC-$(CONFIG_LIB_FASTAES) += cscrypt/fast_aes.c
 SRC-$(CONFIG_LIB_IDEA) += cscrypt/i_cbc.c
 SRC-$(CONFIG_LIB_IDEA) += cscrypt/i_ecb.c
 SRC-$(CONFIG_LIB_IDEA) += cscrypt/i_skey.c
 SRC-y += cscrypt/md5.c
 SRC-$(CONFIG_LIB_RC6) += cscrypt/rc6.c
 SRC-$(CONFIG_LIB_SHA1) += cscrypt/sha1.c
+SRC-$(CONFIG_LIB_MDC2) += cscrypt/mdc2.c
+SRC-$(CONFIG_LIB_FAST_AES) += cscrypt/fast_aes.c
 SRC-$(CONFIG_LIB_SHA256) += cscrypt/sha256.c
 
 SRC-$(CONFIG_WITH_CARDREADER) += csctapi/atr.c
@@ -317,6 +316,7 @@ SRC-$(CONFIG_READER_DRE) += reader-dre-common.c
 SRC-$(CONFIG_READER_DRE) += reader-dre-st20.c
 SRC-$(CONFIG_READER_GRIFFIN) += reader-griffin.c
 SRC-$(CONFIG_READER_IRDETO) += reader-irdeto.c
+SRC-$(CONFIG_READER_NAGRA_COMMON) += reader-nagra-common.c
 SRC-$(CONFIG_READER_NAGRA) += reader-nagra.c
 SRC-$(CONFIG_READER_NAGRA_MERLIN) += reader-nagracak7.c
 SRC-$(CONFIG_READER_SECA) += reader-seca.c
