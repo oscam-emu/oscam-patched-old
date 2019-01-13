@@ -344,15 +344,15 @@ list_config() {
 	# Extra modules/libraries
 	enabled_any MODULE_GBOX WEBIF && echo "CONFIG_LIB_MINILZO=y" || echo "# CONFIG_LIB_MINILZO=n"
 	not_have_flag USE_LIBCRYPTO && echo "CONFIG_LIB_AES=y" || echo "# CONFIG_LIB_AES=n"
-	enabled READER_NAGRA_MERLIN && echo "CONFIG_LIB_AESCBC=y" || echo "# CONFIG_LIB_AESCBC=n"
-	enabled READER_NAGRA_MERLIN && echo "CONFIG_LIB_FASTAES=y" || echo "# CONFIG_LIB_FASTAES=n"
 	enabled MODULE_CCCAM && echo "CONFIG_LIB_RC6=y" || echo "# CONFIG_LIB_RC6=n"
 	not_have_flag USE_LIBCRYPTO && enabled MODULE_CCCAM && echo "CONFIG_LIB_SHA1=y" || echo "# CONFIG_LIB_SHA1=n"
-	enabled READER_NAGRA_MERLIN && echo "CONFIG_LIB_SHA256=y" || echo "# CONFIG_LIB_SHA256=n"
 	enabled_any READER_DRE MODULE_SCAM READER_VIACCESS READER_NAGRA_MERLIN && echo "CONFIG_LIB_DES=y" || echo "# CONFIG_LIB_DES=n"
-	enabled READER_NAGRA_MERLIN && echo "CONFIG_LIB_MDC2=y" || echo "# CONFIG_LIB_MDC2=n"
 	enabled_any MODULE_CCCAM READER_NAGRA READER_NAGRA_MERLIN READER_SECA && echo "CONFIG_LIB_IDEA=y" || echo "# CONFIG_LIB_IDEA=n"
 	not_have_flag USE_LIBCRYPTO && enabled_any READER_CONAX READER_CRYPTOWORKS READER_NAGRA READER_NAGRA_MERLIN && echo "CONFIG_LIB_BIGNUM=y" || echo "# CONFIG_LIB_BIGNUM=n"
+	enabled READER_NAGRA_MERLIN && echo "CONFIG_LIB_MDC2=y" || echo "# CONFIG_LIB_MDC2=n"
+	enabled READER_NAGRA_MERLIN && echo "CONFIG_LIB_FAST_AES=y" || echo "# CONFIG_LIB_FAST_AES=n"
+	enabled READER_NAGRA_MERLIN && echo "CONFIG_LIB_SHA256=y" || echo "# CONFIG_LIB_SHA256=n"
+	enabled_any READER_NAGRA READER_NAGRA_MERLIN && echo "CONFIG_READER_NAGRA_COMMON=y" || echo "# CONFIG_READER_NAGRA_COMMON=n"
 }
 
 make_config_c() {
@@ -500,7 +500,7 @@ menu_protocols() {
 menu_readers() {
 	${DIALOG} --checklist "\nChoose readers (CA systems):\n " $height $width $listheight \
 		READER_NAGRA		"Nagravision"		$(check_test "READER_NAGRA") \
-		READER_NAGRA_MERLIN		"Nagravision_cak7"		$(check_test "READER_NAGRA_MERLIN") \
+		READER_NAGRA_MERLIN		"Nagra Merlin"		$(check_test "READER_NAGRA_MERLIN") \
 		READER_IRDETO		"Irdeto"			$(check_test "READER_IRDETO") \
 		READER_CONAX		"Conax"				$(check_test "READER_CONAX") \
 		READER_CRYPTOWORKS	"Cryptoworks"		$(check_test "READER_CRYPTOWORKS") \

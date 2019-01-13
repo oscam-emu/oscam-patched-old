@@ -145,7 +145,7 @@ static void do_post_dw_hash(struct s_reader *reader, unsigned char *cw, const un
 
 
 	//ecm_header_data = 01 03 b0 01 01
-	if(!cw_is_valid(cw))          //if cw is all zero, keep it that way
+	if(!cw_is_valid(cw)) //if cw is all zero, keep it that way
 	{
 		return;
 	}
@@ -222,7 +222,7 @@ static void do_post_dw_hash(struct s_reader *reader, unsigned char *cw, const un
 			}
 			case 2:
 			{
-				/* Method 2 left out */
+				// Method 2 left out
 				//memcpy(DW_OUTPUT, DW_INPUT, 8);
 				break;
 			}
@@ -236,7 +236,7 @@ static void vg2_read_tiers(struct s_reader *reader)
 {
 	def_resp;
 	struct videoguard_data *csystem_data = reader->csystem_data;
-	if (reader->readtiers == 1)
+	if(reader->readtiers == 1)
 	{
 		uint8_t ins707f[5] = { 0xD1, 0x70, 0x00, 0x7f, 0x02 };
 		if(do_cmd(reader, ins707f, NULL, NULL, cta_res) < 0)
@@ -249,7 +249,7 @@ static void vg2_read_tiers(struct s_reader *reader)
 			rdr_log(reader, "------------------------------------------------------------------");
 			rdr_log(reader, "|- class -|-- tier --|----- valid to ------|--- package name ----|");
 			rdr_log(reader, "+---------+----------+---------------------+---------------------+");
-			if ((reader->VgFuse&5) == 0)
+			if((reader->VgFuse&5) == 0)
 			{
 				rdr_log(reader, "|------- This card is not active, so no package available! ------|");
 			}
@@ -261,7 +261,7 @@ static void vg2_read_tiers(struct s_reader *reader)
 				ins70[2] = TierClass;
 				if(do_cmd(reader, ins70, NULL, NULL, cta_res) < 0)
 				{
-					rdr_log(reader, "classD1 ins70: failed to get tiers for class %02X",TierClass);
+					rdr_log(reader, "classD1 ins70: failed to get tiers for class %02X", TierClass);
 				}
 				else
 				{
@@ -272,7 +272,7 @@ static void vg2_read_tiers(struct s_reader *reader)
 					struct tm timeinfo;
 					memset(&timeinfo, 0, sizeof(struct tm));
 					time_t start_t = 0, end_t;
-					if (cta_res[1] > 0x23)
+					if(cta_res[1] > 0x23)
 					{
 						rev_date_calc_tm(&cta_res[38], &timeinfo, csystem_data->card_baseyear);
 						start_t = mktime(&timeinfo);
@@ -288,7 +288,7 @@ static void vg2_read_tiers(struct s_reader *reader)
 								tier_id = 0;
 								tier_id = ((TierClass<<8) + (word<<3) + bitnum);
 								cs_add_entitlement(reader, reader->caid, b2ll(4, reader->prid[0]), tier_id, TierClass, start_t, end_t, 4, 1);
-								rdr_log(reader, "|-- %02x ---|-- %04x --| %04d/%02d/%02d-%02d:%02d:%02d | %s", 
+								rdr_log(reader, "|-- %02x ---|-- %04x --| %04d/%02d/%02d-%02d:%02d:%02d | %s",
 									TierClass,
 									tier_id,
 									timeinfo.tm_year + 1900,
@@ -322,7 +322,7 @@ static void vg2_read_tiers(struct s_reader *reader)
 		}
 		rdr_log(reader, "------------------------------------------------------from-ins70--");
 	}
-	else if (reader->readtiers == 2)
+	else if(reader->readtiers == 2)
 	{
 		int32_t l;
 		//ins2a is not needed and causes an error on some cards eg Sky Italy 09CD
@@ -371,7 +371,7 @@ static void vg2_read_tiers(struct s_reader *reader)
 		rdr_log(reader, "------------------------------------------------------------------");
 		rdr_log(reader, "|- class -|-- tier --|----- valid to ------|--- package name ----|");
 		rdr_log(reader, "+---------+----------+---------------------+---------------------+");
-		if ((reader->VgFuse&5) == 0)
+		if((reader->VgFuse&5) == 0)
 		{
 			rdr_log(reader, "|------- This card is not active, so no package available! ------|");
 		}
@@ -409,7 +409,7 @@ static void vg2_read_tiers(struct s_reader *reader)
 		}
 		rdr_log(reader, "------------------------------------------------------from-ins76--");
 	}
-	else if (reader->readtiers == 0)
+	else if(reader->readtiers == 0)
 	{
 		rdr_log(reader, "------------------------------------------------------------------");
 		rdr_log(reader, "|--- The reading of the tiers is disabled by the configuration --|");
@@ -419,16 +419,16 @@ static void vg2_read_tiers(struct s_reader *reader)
 
 void videoguard2_poll_status(struct s_reader *reader)
 {
-	const time_t poll_interval = 12;    // less is better
+	const time_t poll_interval = 12; // less is better
 	time_t now = time(0);
 	int32_t i;
-	if (now >= reader->last_poll + poll_interval)
+	if(now >= reader->last_poll + poll_interval)
 	{
 		static const unsigned char ins5C[5] = { 0xD1, 0x5C, 0x00, 0x00, 0x04 };
 		unsigned char cta_res[CTA_RES_LEN];
 		int32_t l;
 		l = do_cmd(reader, ins5C, NULL, NULL, cta_res);
-		if (l < 0 || !status_ok(cta_res + l))
+		if(l < 0 || !status_ok(cta_res + l))
 		{
 			rdr_log(reader, "classD1 ins5C: failed");
 		}
@@ -438,20 +438,20 @@ void videoguard2_poll_status(struct s_reader *reader)
 			{
 				static const unsigned char ins4Ca[5] = { 0xD1, 0x4C, 0x00, 0x00, 0x00 };
 				l = do_cmd(reader, ins4Ca, reader->payload4C, NULL, cta_res);
-				if (l < 0 || !status_ok(cta_res))
+				if(l < 0 || !status_ok(cta_res))
 				{
 					rdr_log(reader, "classD1 ins4Ca: failed");
 				}
-				if (reader->ins7E[0x1A])
+				if(reader->ins7E[0x1A])
 				{
 					static const uint8_t ins7E[5] = { 0xD1, 0x7E, 0x10, 0x00, 0x1A };
 					l = do_cmd(reader, ins7E, reader->ins7E, NULL, cta_res);
-					if (l < 0 || !status_ok(cta_res))
+					if(l < 0 || !status_ok(cta_res))
 					{
 						rdr_log(reader, "classD1 ins7E: failed");
 					}
 				}
-				if (reader->ins2e06[4])
+				if(reader->ins2e06[4])
 				{
 					static const unsigned char ins2e06[5] = { 0xD1, 0x2E, 0x06, 0x00, 0x04 };
 					l = do_cmd(reader, ins2e06, reader->ins2e06, NULL, cta_res);
@@ -461,22 +461,22 @@ void videoguard2_poll_status(struct s_reader *reader)
 					}
 				}
 				static const unsigned char ins58a[5] = { 0xD1, 0x58, 0x00, 0x00, 0x00 };
-				if ((do_cmd(reader, ins58a, NULL, NULL, cta_res) < 0))
+				if((do_cmd(reader, ins58a, NULL, NULL, cta_res) < 0))
 				{
 					rdr_log(reader, "classD1 ins58: failed");
 				}
 				reader->VgFuse = cta_res[2];
 				static const unsigned char ins7403[5] = { 0xD0, 0x74, 0x03, 0x00, 0x00 };
-				if ((do_cmd(reader, ins7403, NULL, NULL, cta_res) < 0))
+				if((do_cmd(reader, ins7403, NULL, NULL, cta_res) < 0))
 				{
 					rdr_log(reader, "classD0 ins7403: failed");
 				}
 				else
 				{
-					if (((cta_res[2]>>5) & 1))
+					if(((cta_res[2]>>5) & 1))
 					{
 						static const unsigned char ins7423[5] = { 0xD3, 0x74, 0x23, 0x00, 0x00 };
-						if (do_cmd(reader, ins7423, NULL, NULL, cta_res) < 0)
+						if(do_cmd(reader, ins7423, NULL, NULL, cta_res) < 0)
 							{
 								rdr_log(reader, "classD1 ins7423: failed");
 							}
@@ -491,21 +491,21 @@ void videoguard2_poll_status(struct s_reader *reader)
 				ins5E[3] = cta_res[1];
 				ins5E[4] = cta_res[3];
 				l = do_cmd(reader, ins5E, NULL, NULL, cta_res);
-				if (l < 0 || !status_ok(cta_res + l))
+				if(l < 0 || !status_ok(cta_res + l))
 				{
 					rdr_log(reader, "Ins5E: failed");
 				}
 				unsigned char ins78[5] = { 0xD1, 0x78, 0x00, 0x00, 0x18 };
 				ins78[2] = cta_res[0];
 				l = do_cmd(reader, ins78, NULL, NULL, cta_res);
-				if (l < 0 || !status_ok(cta_res + l))
+				if(l < 0 || !status_ok(cta_res + l))
 				{
 					rdr_log(reader, "classD1 ins78: failed");
 				}
 				unsigned char ins32[5] = { 0xD1, 0x32, 0x00, 0x00, 0x01 };
 				const unsigned char payload32[1] = { 0x25 };
 				l = do_cmd(reader, ins32, payload32, NULL, cta_res);
-				if (l < 0 || !status_ok(cta_res + l))
+				if(l < 0 || !status_ok(cta_res + l))
 				{
 					rdr_log(reader, "classD1 ins32: failed");
 				}
@@ -518,7 +518,7 @@ void videoguard2_poll_status(struct s_reader *reader)
 				ins5E[3] = cta_res[1];
 				ins5E[4] = cta_res[3];
 				l = do_cmd(reader, ins5E, NULL, NULL, cta_res);
-				if (l < 0 || !status_ok(cta_res + l))
+				if(l < 0 || !status_ok(cta_res + l))
 				{
 					rdr_log(reader, "Ins5E: failed");
 				}
@@ -530,7 +530,7 @@ void videoguard2_poll_status(struct s_reader *reader)
 					{
 						ins36[3] = i;
 						l = do_cmd(reader, ins36, NULL, NULL, cta_res);
-						if (l < 0 || !status_ok(cta_res + l))
+						if(l < 0 || !status_ok(cta_res + l))
 						{
 							rdr_log(reader, "Ins36: failed");
 						}
@@ -544,13 +544,13 @@ void videoguard2_poll_status(struct s_reader *reader)
 				l = read_cmd_len(reader, ins7411);
 				ins7411[4] = l + 0x10;
 				l = do_cmd(reader, ins7411, NULL, NULL, cta_res);
-				if (l < 0 || !status_ok(cta_res))
+				if(l < 0 || !status_ok(cta_res))
 				{
 					rdr_log(reader, "classD3 ins7411: failed");
 				}
 				break;
 			}
-			case 0x00: // normal state
+			case 0x00: //normal state
 			{
 				break;
 			}
@@ -581,7 +581,7 @@ static int32_t videoguard2_card_init(struct s_reader *reader, ATR *newatr)
 		{ return ERROR; }
 	struct videoguard_data *csystem_data = reader->csystem_data;
 
-	/* set information on the card stored in reader-videoguard-common.c */
+	// set information on the card stored in reader-videoguard-common.c
 	set_known_card_info(reader, atr, &atr_size);
 
 	if((reader->ndsversion != NDS2) && (((csystem_data->card_system_version != NDS2) && (csystem_data->card_system_version != NDSUNKNOWN)) || (reader->ndsversion != NDSAUTO)))
@@ -602,7 +602,7 @@ static int32_t videoguard2_card_init(struct s_reader *reader, ATR *newatr)
 
 	unsigned char ins7401[5] = { 0xD0, 0x74, 0x01, 0x00, 0x00 };
 	int32_t l;
-	if((l = read_cmd_len(reader, ins7401)) < 0)  //not a videoguard2/NDS card or communication error
+	if((l = read_cmd_len(reader, ins7401)) < 0) //not a videoguard2/NDS card or communication error
 	{
 		return ERROR;
 	}
@@ -648,9 +648,9 @@ static int32_t videoguard2_card_init(struct s_reader *reader, ATR *newatr)
 	}
 
 
-	/* get Vg credit on card */
+	// get Vg credit on card
 	unsigned char ins7404[5] = { 0xD0, 0x74, 0x04, 0x00, 0x00 };
-	if ((l = read_cmd_len(reader, ins7404)) > 0) //get command len for ins7404
+	if((l = read_cmd_len(reader, ins7404)) > 0) //get command len for ins7404
 	{
 		ins7404[4] = l;
 		if(!write_cmd_vg(ins7404, NULL) || !status_ok(cta_res + l))
@@ -659,7 +659,7 @@ static int32_t videoguard2_card_init(struct s_reader *reader, ATR *newatr)
 		}
 		else
 		{
-			if (cta_res[0] == 0x15)
+			if(cta_res[0] == 0x15)
 			{
 				reader->VgCredit = ((cta_res[8] << 8) + cta_res[9]) / 100;
 				rdr_log(reader, "Credit available on card: %i euro", reader->VgCredit);
@@ -682,7 +682,7 @@ static int32_t videoguard2_card_init(struct s_reader *reader, ATR *newatr)
 
 	if(reader->boxid > 0)
 	{
-		/* the boxid is specified in the config */
+		// the boxid is specified in the config
 		int32_t i;
 		for(i = 0; i < 4; i++)
 		{
@@ -694,7 +694,7 @@ static int32_t videoguard2_card_init(struct s_reader *reader, ATR *newatr)
 		unsigned char ins36[5] = { 0xD0, 0x36, 0x00, 0x00, 0x00 };
 		static const unsigned char ins5e[5] = { 0xD0, 0x5E, 0x00, 0x0C, 0x02 };
 
-		/* we can try to get the boxid from the card */
+		// we can try to get the boxid from the card
 		int32_t boxidOK = 0;
 		l = read_cmd_len(reader, ins36);
 		if(l > 0)
@@ -732,31 +732,31 @@ static int32_t videoguard2_card_init(struct s_reader *reader, ATR *newatr)
 		}
 		else
 		{
-			/* skipping the initial fixed fields: cmdecho (4) + length (1) + encr/rev++ (4) */
+			// skipping the initial fixed fields: cmdecho (4) + length (1) + encr/rev++ (4)
 			int32_t i = 9;
 			int32_t gotUA = 0;
 			while(i < l)
 			{
-				if(!gotUA && buff[i] < 0xF0) /* then we guess that the next 4 bytes is the UA */
+				if(!gotUA && buff[i] < 0xF0) // then we guess that the next 4 bytes is the UA
 				{
 					gotUA = 1;
 					i += 4;
 				}
-				else switch(buff[i]) /* object length vary depending on type */
+				else switch(buff[i]) // object length vary depending on type
 					{
-					case 0x00: /* padding */
+					case 0x00: // padding
 						i += 1;
 						break;
-					case 0xEF: /* card status */
+					case 0xEF: // card status
 						i += 3;
 						break;
 					case 0xD1:
 						i += 4;
 						break;
-					case 0xDF: /* next server contact */
+					case 0xDF: // next server contact
 						i += 5;
 						break;
-					case 0xF3: /* boxID */
+					case 0xF3: // boxID
 						memcpy(boxID, buff + i + 1, sizeof(boxID));
 						boxidOK = 1;
 						i += 5;
@@ -764,22 +764,22 @@ static int32_t videoguard2_card_init(struct s_reader *reader, ATR *newatr)
 					case 0xF6:
 						i += 6;
 						break;
-					case 0x01: /* date & time */
+					case 0x01: // date & time
 						i += 7;
 						break;
 					case 0xFA:
 						i += 9;
 						break;
 					case 0x5E:
-					case 0x67: /* signature */
+					case 0x67: // signature
 					case 0xDE:
 					case 0xE2:
-					case 0xE9: /* tier dates */
-					case 0xF8: /* Old PPV Event Record */
+					case 0xE9: // tier dates
+					case 0xF8: // Old PPV Event Record
 					case 0xFD:
-						i += buff[i + 1] + 2; /* skip length + 2 bytes (type and length) */
+						i += buff[i + 1] + 2; // skip length + 2 bytes (type and length)
 						break;
-					default: /* default to assume a length byte */
+					default: // default to assume a length byte
 						rdr_log(reader, "classD0 ins36: returned unknown type=0x%02X - parsing may fail", buff[i]);
 						i += buff[i + 1] + 2;
 					}
@@ -915,30 +915,15 @@ static int32_t videoguard2_card_init(struct s_reader *reader, ATR *newatr)
 	memset(reader->VgRegionC, 0, 8);
 	memcpy(reader->VgRegionC, cta_res + 60, 8);
 
-	rdr_log(reader, "Region Code: %c%c%c%c%c%c%c%c",
-		reader->VgRegionC[0],
-		reader->VgRegionC[1],
-		reader->VgRegionC[2],
-		reader->VgRegionC[3],
-		reader->VgRegionC[4],
-		reader->VgRegionC[5],
-		reader->VgRegionC[6],
-		reader->VgRegionC[7]);
+	rdr_log(reader, "Region Code: %c%c%c%c%c%c%c%c", reader->VgRegionC[0], reader->VgRegionC[1], reader->VgRegionC[2], reader->VgRegionC[3], reader->VgRegionC[4], reader->VgRegionC[5], reader->VgRegionC[6], reader->VgRegionC[7]);
 
 	memset(reader->VgCountryC, 0, 3);
 	memcpy(reader->VgCountryC, cta_res + 55, 3);
 	rdr_log(reader, "Country Code: %c%c%c", reader->VgCountryC[0], reader->VgCountryC[1], reader->VgCountryC[2]);
 
-	/* we have one provider, 0x0000 */
+	// we have one provider, 0x0000
 	reader->nprov = 1;
 	memset(reader->prid, 0x00, sizeof(reader->prid));
-
-	/*
-	rdr_log(reader, "INS58 : Fuse byte=0x%02X, IRDStatus=0x%02X", cta_res[2],SWIRDstatus);
-	if (SWIRDstatus==4)  {
-	// If swMarriage=4, not married then exchange for BC Key
-	rdr_log(reader, "Card not married, exchange for BC Keys");
-	 */
 
 	cCamCryptVG_SetSeed(reader);
 
@@ -977,9 +962,9 @@ static int32_t videoguard2_card_init(struct s_reader *reader, ATR *newatr)
 		rdr_log(reader, "classD1 ins58: failed");
 		return ERROR;
 	}
-	/*new ins74 present at boot*/
 
-	if (d37423_ok) // from ins7403 answer
+	//new ins74 present at boot
+	if(d37423_ok) // from ins7403 answer
 	{
 		static const unsigned char ins7423[5] = { 0xD3, 0x74, 0x23, 0x00, 0x00 };
 		if(do_cmd(reader, ins7423, NULL, NULL, cta_res) < 0)
@@ -998,18 +983,18 @@ static int32_t videoguard2_card_init(struct s_reader *reader, ATR *newatr)
 	unsigned char ins741C[5] = { 0xD1, 0x74, 0x1C, 0x00, 0x00 };
 	if(len4c > 9)
 	{
-		if((l = read_cmd_len(reader, ins741C)) < 0)  // We need to know the exact len
+		if((l = read_cmd_len(reader, ins741C)) < 0) // We need to know the exact len
 		{
 			return ERROR;
 		}
 		ins741C[4] = l;
-		if(do_cmd(reader, ins741C, NULL, NULL, cta_res) < 0)	//from log this payload is copied on 4c
+		if(do_cmd(reader, ins741C, NULL, NULL, cta_res) < 0) //from log this payload is copied on 4c
 		{
 			rdr_log(reader, "classD1 ins741C: failed");
 		}
 		else
 		{
-			if(l > 8)	//if payload4c is length 0xF, we can't copy over more than 8 bytes in the next memcopy
+			if(l > 8) //if payload4c is length 0xF, we can't copy over more than 8 bytes in the next memcopy
 			{
 				l = 8;
 			}
@@ -1036,7 +1021,7 @@ static int32_t videoguard2_card_init(struct s_reader *reader, ATR *newatr)
 		}
 	}
 
-	/* get PIN settings */
+	// get PIN settings
 	static const unsigned char ins7411[5] = { 0xD1, 0x74, 0x11, 0x00, 0x00 };
 	unsigned char payload2e4[4];
 	if(do_cmd(reader, ins7411, NULL, NULL, cta_res) < 0)
@@ -1052,7 +1037,7 @@ static int32_t videoguard2_card_init(struct s_reader *reader, ATR *newatr)
 		rdr_log(reader, "Pincode read: %04hu", reader->VgPin);
 	}
 
-	/* get PCB(content rating) settings */
+	// get PCB(content rating) settings
 	static const unsigned char ins74e[5] = {0xD1, 0x74, 0x0E, 0x00, 0x00};
 	if(do_cmd(reader, ins74e, NULL, NULL, cta_res) < 0)
 	{
@@ -1063,7 +1048,7 @@ static int32_t videoguard2_card_init(struct s_reader *reader, ATR *newatr)
 		rdr_log(reader, "PCB settings: %X %X %X %X", cta_res[2], cta_res[3], cta_res[4], cta_res[5]);
 	}
 
-	/* send PIN */
+	// send PIN
 	static const unsigned char ins2epin[5] = {0xD1, 0x2E, 0x04, 0x00, 0x04};
 	if(cfg.ulparent)
 	{
@@ -1079,8 +1064,8 @@ static int32_t videoguard2_card_init(struct s_reader *reader, ATR *newatr)
 			rdr_log(reader, "Parental control disabled");
 		}
 	}
-	/* send check control for pin, needed on some cards */
-	/* the presence and the value of payloads is provider's dependent*/
+	// send check control for pin, needed on some cards
+	// the presence and the value of payloads is provider's dependent*/
 	if(reader->ins2e06[4])
 	{
 		static const unsigned char ins2e06[5] = { 0xD1, 0x2E, 0x06, 0x00, 0x04 };
@@ -1103,15 +1088,16 @@ static int32_t videoguard2_card_init(struct s_reader *reader, ATR *newatr)
 
 	rdr_log(reader, "type: %s, caid: %04X", csystem_data->card_desc, reader->caid);
 	rdr_log_sensitive(reader, "serial: {%02X%02X%02X%02X}, BoxID: {%02X%02X%02X%02X}, baseyear: %i",
-				reader->hexserial[2],
-				reader->hexserial[3],
-				reader->hexserial[4],
-				reader->hexserial[5],
-				boxID[0],
-				boxID[1],
-				boxID[2],
-				boxID[3],
-				csystem_data->card_baseyear);
+		reader->hexserial[2],
+		reader->hexserial[3],
+		reader->hexserial[4],
+		reader->hexserial[5],
+		boxID[0],
+		boxID[1],
+		boxID[2],
+		boxID[3],
+		csystem_data->card_baseyear);
+
 	rdr_log(reader, "ready for requests");
 
 	return OK;
@@ -1218,82 +1204,58 @@ static int32_t videoguard2_do_ecm(struct s_reader *reader, const ECM_REQUEST *er
 			int32_t test_0F = 1;
 			if(!cw_is_valid(rbuff + 5)) //sky cards report 90 00 = ok but send cw = 00 when something goes wrong :(
 			{
-				if (buff_0F[0]&1) //case 0f_0x 01 xx xx xx xx xx
+				if(buff_0F[0]&1) //case 0f_0x 01 xx xx xx xx xx
 				{
 					rdr_log(reader, "classD3 ins54: no cw --> Bad/wrong ECM");
 					test_0F = 0;
 				}
-				if (buff_0F[1]&1) //case 0f_0x xx 01 xx xx xx xx
+				if(buff_0F[1]&1) //case 0f_0x xx 01 xx xx xx xx
 				{
 					rdr_log(reader, "classD3 ins54: no cw --> Card appears in error");
 					test_0F = 0;
 				}
-				if ((buff_0F[0]>>1)&1) //case 0f_0x 02 xx xx xx xx xx
+				if((buff_0F[0]>>1)&1) //case 0f_0x 02 xx xx xx xx xx
 				{
 					rdr_log(reader, "classD3 ins54: no cw --> Card isn't active");
 					test_0F = 0;
 				}
 				else //These Messages are only nessensary if the Card is active
 				{
-					if ((buff_0F[1]>>4)&1){ //case 0f_0x xx 10 xx xx xx xx
+					if((buff_0F[1]>>4)&1){ //case 0f_0x xx 10 xx xx xx xx
 						rdr_log(reader, "classD3 ins54: no cw --> Card needs pairing/extra data");
 						test_0F = 0;
 					}
-					if ((buff_0F[1]>>5)&1){ //case 0f_0x xx 20 xx xx xx xx
+					if((buff_0F[1]>>5)&1){ //case 0f_0x xx 20 xx xx xx xx
 						rdr_log(reader, "classD3 ins54: no cw --> No tier found"); //check this
 						test_0F = 0;
 					}
-					if ((buff_0F[2]>>5)&1){ //case 0f_0x xx xx 20 xx xx xx
+					if((buff_0F[2]>>5)&1){ //case 0f_0x xx xx 20 xx xx xx
 						rdr_log(reader, "classD3 ins54: no cw --> Tier expired");
 						test_0F = 0;
 					}
-					if ((buff_0F[1]>>6)&1){ //case 0f_0x xx 40 xx xx xx xx
+					if((buff_0F[1]>>6)&1){ //case 0f_0x xx 40 xx xx xx xx
 						rdr_log(reader, "classD3 ins54: no cw --> Card needs pin");
 						test_0F = 0;
 					}
 				}
-				if (reader->caid == 0x98C || reader->caid == 0x98D) //Only for Sky Germany 'V14/V15' Card
+				if(reader->caid == 0x98C || reader->caid == 0x98D) //Only for Sky Germany 'V14/V15' Card
 				{
-					if ((~buff_0F[5]&1) && ((buff_0F[5]>>3)&1)) //case 0f_0x xx xx xx xx xx 08 > 0x08 = binary xxxx1xx0
+					if((~buff_0F[5]&1) && ((buff_0F[5]>>3)&1)) //case 0f_0x xx xx xx xx xx 08 > 0x08 = binary xxxx1xx0
 					{
-						rdr_log(reader, "classD3 ins54: no cw --> Card is paired! (Debug-ECM-Info: 0F_06 %02X %02X %02X %02X %02X %02X)",
-								buff_0F[0],
-								buff_0F[1],
-								buff_0F[2],
-								buff_0F[3],
-								buff_0F[4],
-								buff_0F[5]);
+						rdr_log(reader, "classD3 ins54: no cw --> Card is paired! (Debug-ECM-Info: 0F_06 %02X %02X %02X %02X %02X %02X)", buff_0F[0], buff_0F[1], buff_0F[2], buff_0F[3], buff_0F[4], buff_0F[5]);
 					}
-					if ((~buff_0F[5]&1) && (~(buff_0F[5]>>3)&1)) //case 0f_0x xx xx xx xx xx 00 > 0x00 = binary xxxx0xx0
+					if((~buff_0F[5]&1) && (~(buff_0F[5]>>3)&1)) //case 0f_0x xx xx xx xx xx 00 > 0x00 = binary xxxx0xx0
 					{
-						rdr_log(reader, "classD3 ins54: no cw --> Card is prepaired / Card is paired, but the pairing is deactivated (Debug-ECM-Info: 0F_06 %02X %02X %02X %02X %02X %02X)",
-								buff_0F[0],
-								buff_0F[1],
-								buff_0F[2],
-								buff_0F[3],
-								buff_0F[4],
-								buff_0F[5]);
+						rdr_log(reader, "classD3 ins54: no cw --> Card is prepaired / Card is paired, but the pairing is deactivated (Debug-ECM-Info: 0F_06 %02X %02X %02X %02X %02X %02X)", buff_0F[0], buff_0F[1], buff_0F[2], buff_0F[3], buff_0F[4], buff_0F[5]);
 					}
-					if (buff_0F[5]&1) //case 0f_0x xx xx xx xx xx 01 > 0x01 = binary xxxxxxx1
+					if(buff_0F[5]&1) //case 0f_0x xx xx xx xx xx 01 > 0x01 = binary xxxxxxx1
 					{
-						rdr_log(reader, "classD3 ins54: no cw --> Card is not paired (Debug-ECM-Info: 0F_06 %02X %02X %02X %02X %02X %02X)",
-								buff_0F[0],
-								buff_0F[1],
-								buff_0F[2],
-								buff_0F[3],
-								buff_0F[4],
-								buff_0F[5]);
+						rdr_log(reader, "classD3 ins54: no cw --> Card is not paired (Debug-ECM-Info: 0F_06 %02X %02X %02X %02X %02X %02X)", buff_0F[0], buff_0F[1], buff_0F[2], buff_0F[3], buff_0F[4], buff_0F[5]);
 					}
 				}
-				if (test_0F) //case unknown error
+				if(test_0F) //case unknown error
 				{
-					rdr_log(reader, "classD3 ins54: status 90 00 = ok but cw=00 tag 0F: %02X %02X %02X %02X %02X %02X, please report to the developers with decrypted ins54",
-							buff_0F[0],
-							buff_0F[1],
-							buff_0F[2],
-							buff_0F[3],
-							buff_0F[4],
-							buff_0F[5]);
+					rdr_log(reader, "classD3 ins54: status 90 00 = ok but cw=00 tag 0F: %02X %02X %02X %02X %02X %02X, please report to the developers with decrypted ins54", buff_0F[0], buff_0F[1], buff_0F[2], buff_0F[3], buff_0F[4], buff_0F[5]);
 				}
 				return ERROR;
 			}
@@ -1301,15 +1263,15 @@ static int32_t videoguard2_do_ecm(struct s_reader *reader, const ECM_REQUEST *er
 			// copy cw1 in place
 			memcpy(ea->cw + 0, rbuff + 5, 8);
 
-			if (buff_55[0]&1) //case 55_01 xx where bit0==1
+			if(buff_55[0]&1) //case 55_01 xx where bit0==1
 			{
 				rdr_log(reader, "classD3 ins54: CW is crypted, pairing active, bad cw");
 				return ERROR;
 			}
-			if ((buff_55[0]>>2)&1) //case 55_01 xx where bit2==1, old dimeno_PostProcess_Decrypt(reader, rbuff, ea->cw);
+			if((buff_55[0]>>2)&1) //case 55_01 xx where bit2==1, old dimeno_PostProcess_Decrypt(reader, rbuff, ea->cw);
 			{
 				unsigned char buffer[0x10];
-				memcpy(buffer, rbuff + 5, 8); 
+				memcpy(buffer, rbuff + 5, 8);
 				memcpy(buffer + 8, buff_56, 8);
 				AES_decrypt(buffer, buffer, &(csystem_data->astrokey));
 				memcpy(ea->cw + 0, buffer, 8); // copy calculated CW in right place
@@ -1338,7 +1300,7 @@ static int32_t videoguard2_do_ecm(struct s_reader *reader, const ECM_REQUEST *er
 				do_post_dw_hash(reader, ea->cw + 8, &er->ecm[posB0 - 2]);
 			}
 
-			if(reader->caid == 0x0907)    //quickfix: cw2 is not a valid cw, something went wrong before
+			if(reader->caid == 0x0907) //quickfix: cw2 is not a valid cw, something went wrong before
 			{
 				memset(ea->cw + 8, 0, 8);
 				if(er->ecm[0] & 1)
@@ -1370,7 +1332,7 @@ static int32_t videoguard2_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 
 static int32_t videoguard2_card_info(struct s_reader *reader)
 {
-	/* info is displayed in init, or when processing info */
+	// info is displayed in init, or when processing info
 	struct videoguard_data *csystem_data = reader->csystem_data;
 	rdr_log(reader, "card detected");
 	rdr_log(reader, "type: %s", csystem_data->card_desc);
@@ -1384,7 +1346,7 @@ static int32_t videoguard2_card_info(struct s_reader *reader)
 static void videoguard2_card_done(struct s_reader *reader)
 {
 	struct videoguard_data *csystem_data = reader->csystem_data;
-	if (csystem_data)
+	if(csystem_data)
 	{
 		NULLFREE(csystem_data->cmd_table);
 	}

@@ -449,7 +449,7 @@ static void write_versionfile(bool use_stdout)
 	{
 		fprintf(fp, "\n");
 		write_readerconf(READER_NAGRA, "Nagra");
-		write_readerconf(READER_NAGRA_MERLIN, "Nagra_Merlin");
+		write_readerconf(READER_NAGRA_MERLIN, "Nagra Merlin");
 		write_readerconf(READER_IRDETO, "Irdeto");
 		write_readerconf(READER_CONAX, "Conax");
 		write_readerconf(READER_CRYPTOWORKS, "Cryptoworks");
@@ -510,7 +510,7 @@ static void do_report_emm_support(void)
 	else
 	{
 		report_emm_support(READER_NAGRA, "Nagra");
-		report_emm_support(READER_NAGRA_MERLIN, "Nagra_Merlin");
+		report_emm_support(READER_NAGRA_MERLIN, "Nagra Merlin");
 		report_emm_support(READER_IRDETO, "Irdeto");
 		report_emm_support(READER_CONAX, "Conax");
 		report_emm_support(READER_CRYPTOWORKS, "Cryptoworks");

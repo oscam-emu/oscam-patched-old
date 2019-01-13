@@ -510,27 +510,28 @@ static void swap_lb(unsigned char *buff, int32_t len)
 void __xxor(unsigned char *data, int32_t len, const unsigned char *v1, const unsigned char *v2)
 {
 	uint32_t i;
-	switch(len)   // looks ugly but the cpu don't crash!
+	switch(len)
 	{
 	case 16:
-		for(i = 8; i < 16; ++i)
+		for(i = 0; i < 16; ++i)
 		{
 			data[i] = v1[i] ^ v2[i];
-		} /* fallthrough */
+		}
+		break;
 	case 8:
-		for(i = 4; i < 8; ++i)
+		for(i = 0; i < 8; ++i)
 		{
 			data[i] = v1[i] ^ v2[i];
-		} /* fallthrough */
+		}
+		break;
 	case 4:
 		for(i = 0; i < 4; ++i)
 		{
 			data[i] = v1[i] ^ v2[i];
-		} /* fallthrough */
+		}
 		break;
 	default:
 		while(len--) { *data++ = *v1++ ^ *v2++; }
-		break;
 	}
 }
 
@@ -847,7 +848,7 @@ int32_t checksum_ok(const unsigned char *ird_payload) /*checksum for precam data
 {
 	int32_t b,check=0;
 	for (b = 0; b <= ird_payload[1]; b++)
-	{        
+	{
 		check=(check+ird_payload[b])&0xFF;
 	}
 	if (ird_payload[ird_payload[1]+1]==check)
@@ -1023,15 +1024,7 @@ int32_t videoguard_get_emm_type(EMM_PACKET *ep, struct s_reader *rdr)
 	}
 }
 
-int32_t videoguard_do_emm(
-				struct s_reader *reader,
-				EMM_PACKET *ep, unsigned char CLA,
-				void (*read_tiers)(struct s_reader *),
-				int32_t (*docmd)(struct s_reader *,
-				const unsigned char *ins,
-				const unsigned char *txbuff,
-				unsigned char *rxbuff,
-				unsigned char *cta_res))
+int32_t videoguard_do_emm(struct s_reader *reader, EMM_PACKET *ep, unsigned char CLA, void (*read_tiers)(struct s_reader *), int32_t (*docmd)(struct s_reader *, const unsigned char *ins, const unsigned char *txbuff, unsigned char *rxbuff, unsigned char *cta_res))
 {
 	unsigned char cta_res[CTA_RES_LEN];
 	unsigned char ins42[5] = { CLA, 0x42, 0x00, 0x00, 0xFF };
@@ -1046,7 +1039,7 @@ int32_t videoguard_do_emm(
 
 	if(ep->type == UNIQUE || ep->type == SHARED)
 	{
-		if(ep->emm[1] == 0x00)   // cccam sends emm-u without UA
+		if(ep->emm[1] == 0x00) // cccam sends emm-u without UA
 		{
 			nsubs = 1;
 			ua_position = 0;
