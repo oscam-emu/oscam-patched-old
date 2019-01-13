@@ -342,7 +342,7 @@ typedef unsigned char uchar;
 	{ \
 		cs_log("WARNING: pthread_attr_setstacksize() failed in %s with error %d %s\n", __func__, pter, strerror(pter)); \
 	} }
-	
+
 #define SAFE_ATTR_SETSTACKSIZE_NOLOG(a,b) { \
 	int32_t pter = pthread_attr_setstacksize(a, b); \
 	if(pter != 0) \
@@ -1563,7 +1563,7 @@ struct s_reader                                         //contains device info, 
 	uchar           atr[64];
 	uchar           card_atr[64];                   // ATR readed from card
 	int8_t          card_atr_length;                // length of ATR
-	int8_t          seca_nagra_card;                // seca nagra card 
+	int8_t          seca_nagra_card;                // seca nagra card
 #ifdef READER_NAGRA_MERLIN
 	uint8_t		cas7_aes_key[32];
 	uint8_t		cas7_aes_iv[16];
@@ -1757,7 +1757,7 @@ struct s_reader                                         //contains device info, 
 	int8_t          ins7e11_fast_reset;
 	uint8_t         sc8in1_dtrrts_patch; // fix for kernel commit 6a1a82df91fa0eb1cc76069a9efe5714d087eccd
 
-#ifdef READER_VIACCESS	
+#ifdef READER_VIACCESS
 	unsigned char   initCA28; // To set when CA28 succeed
 	uint32_t        key_schedule1[32];
 	uint32_t        key_schedule2[32];
@@ -1796,7 +1796,7 @@ struct s_reader                                         //contains device info, 
 	uint8_t         dre36_force_group;
 	uint8_t         dre56_force_group;
 #endif
-	uint8_t cnxlastecm; // == 0 - las ecm has not been paired ecm, > 0 last ecm has been paired ecm
+	uint8_t cnxlastecm; // == 0 - last ecm has not been paired ecm, > 0 last ecm has been paired ecm
 	LLIST           *emmstat; //emm stats
 	CS_MUTEX_LOCK   emmstat_lock;
 	struct s_reader *next;
@@ -1941,7 +1941,7 @@ struct s_cw
 struct s_fakecws
 {
 	uint32_t count;
-	struct s_cw *data;	
+	struct s_cw *data;
 };
 
 #ifdef MODULE_SERIAL
@@ -2178,7 +2178,7 @@ struct s_config
 	uint8_t         gsms_dis;
 	uint8_t         log_hello;
 	uint8_t         dis_attack_txt;
-	char            *gbox_tmp_dir; 
+	char            *gbox_tmp_dir;
 	uint8_t         ccc_reshare;
 	uint16_t        gbox_ignored_peer[GBOX_MAX_IGNORED_PEERS];
 	uint8_t         gbox_ignored_peer_num;
@@ -2357,7 +2357,7 @@ struct s_config
 
 	//Ratelimit list
 	struct s_rlimit *ratelimit_list;
-	
+
 	// fake cws
 	struct s_fakecws fakecws[0x100];
 
