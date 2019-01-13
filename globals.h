@@ -1796,7 +1796,7 @@ struct s_reader                                         //contains device info, 
 	uint8_t         dre36_force_group;
 	uint8_t         dre56_force_group;
 #endif
-	uint8_t cnxlastecm; // == 0 - las ecm has not been paired ecm, > 0 last ecm has been paired ecm
+	uint8_t cnxlastecm; // == 0 - last ecm has not been paired ecm, > 0 last ecm has been paired ecm
 	LLIST           *emmstat; //emm stats
 	CS_MUTEX_LOCK   emmstat_lock;
 	struct s_reader *next;
