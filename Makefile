@@ -62,6 +62,8 @@ CC_OPTS = -O2 -ggdb -pipe -ffunction-sections -fdata-sections
 
 CC = $(CROSS_DIR)$(CROSS)gcc
 STRIP = $(CROSS_DIR)$(CROSS)strip
+LD = $(CROSS_DIR)$(CROSS)ld
+OBJCOPY = $(CROSS_DIR)$(CROSS)objcopy
 
 LDFLAGS = -Wl,--gc-sections
 
@@ -298,7 +300,9 @@ ifndef ANDROID_NDK
 ifndef ANDROID_STANDALONE_TOOLCHAIN
 ifeq "$(CONFIG_WITH_EMU)" "y"
 TOUCH_SK := $(shell touch SoftCam.Key)
-override LDFLAGS += -Wl,--format=binary -Wl,SoftCam.Key -Wl,--format=default
+$(shell $(LD) -r -o "SoftCam.Key.o" -z noexecstack --format=binary "SoftCam.Key")
+$(shell $(OBJCOPY) --rename-section .data=.rodata,alloc,load,readonly,data,contents "SoftCam.Key.o")
+EXTRA_LIBS += SoftCam.Key.o
 endif
 endif
 endif
