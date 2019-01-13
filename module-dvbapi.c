@@ -3627,7 +3627,7 @@ int32_t dvbapi_parse_capmt(unsigned char *buffer, uint32_t length, int32_t connf
 
 	for(i = program_info_length + program_info_start; i + 4 < length; i += es_info_length + 5)
 	{
-		uint8_t stream_type = buffer[i], type = STREAM_UNDEFINED;
+		uint8_t stream_type = buffer[i], type = STREAM_AUDIO; // default to audio - quick fix for missing audio when recording
 		uint16_t elementary_pid = b2i(2, buffer + i + 1)&0x1FFF;
 		es_info_length = b2i(2, buffer + i +3)&0x0FFF;
 
