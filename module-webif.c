@@ -4044,28 +4044,28 @@ static char *send_oscam_user_config(struct templatevars *vars, struct uriparams 
 				get_picon_servicename_or_null(latestclient, clientsrvid, clientprovid, clientcaid, picon_channame, sizeof(picon_channame));
 				if(picon_channame[0])
 				{
-					snprintf(picon_name, sizeof(picon_name) / sizeof(char) - 1, "%s", picon_channame);
+					snprintf(picon_name, sizeof(picon_name) / sizeof(char), "%s", picon_channame);
 					picon_ok = picon_exists(picon_name);
 
 					if(!picon_ok && picon_servicename_remve_hd(picon_channame, sizeof(picon_channame)))
 					{
-						snprintf(picon_name, sizeof(picon_name) / sizeof(char) - 1, "%s", picon_channame);
+						snprintf(picon_name, sizeof(picon_name) / sizeof(char), "%s", picon_channame);
 						picon_ok = picon_exists(picon_name);
 					}
 				}
 				if(!picon_ok)
 				{
-					snprintf(picon_name, sizeof(picon_name) / sizeof(char) - 1, "%04X_%06X_%04X", clientcaid, clientprovid, clientsrvid);
+					snprintf(picon_name, sizeof(picon_name) / sizeof(char), "%04X_%06X_%04X", clientcaid, clientprovid, clientsrvid);
 					picon_ok = picon_exists(picon_name);
 				}
 				if(!picon_ok)
 				{
-					snprintf(picon_name, sizeof(picon_name) / sizeof(char) - 1, "%04X_%04X", clientcaid, clientsrvid);
+					snprintf(picon_name, sizeof(picon_name) / sizeof(char), "%04X_%04X", clientcaid, clientsrvid);
 					picon_ok = picon_exists(picon_name);
 				}
 				if(!picon_ok)
 				{
-					snprintf(picon_name, sizeof(picon_name) / sizeof(char) - 1, "0000_%04X", clientsrvid);
+					snprintf(picon_name, sizeof(picon_name) / sizeof(char), "0000_%04X", clientsrvid);
 					picon_ok = picon_exists(picon_name);
 				}
 				if(picon_ok)
@@ -5339,7 +5339,7 @@ static char *send_oscam_status(struct templatevars * vars, struct uriparams * pa
 							tpl_addVar(vars, TPLADD, "CLIENTTIMEONCHANNEL", sec2timeformat(vars, chsec));
 							if(cfg.http_showpicons && cl->last_srvid)
 							{
-								char picon_channame[128];
+								char picon_channame[30];
 								int8_t picon_ok = 0;
 
 								get_picon_servicename_or_null(cl, cl->last_srvid, cl->last_provid, cl->last_caid, picon_channame, sizeof(picon_channame));
@@ -5495,12 +5495,16 @@ static char *send_oscam_status(struct templatevars * vars, struct uriparams * pa
 							if(rdr->typ == R_GBOX)
 								{
 									struct gbox_peer *peer = cl->gbox;
-									char gbx_txt[32];
+									char gbx_txt[44];
 									memset(gbx_txt, 0, sizeof(gbx_txt));
 									if(!strcmp(txt, "OFFLINE"))
-										{ snprintf(gbx_txt, sizeof(gbx_txt), "%s | ID: %04X", txt, peer->gbox.id); }
+									{
+										snprintf(gbx_txt, sizeof(gbx_txt), "%s | ID: %04X", txt, peer->gbox.id);
+									}
 									else
-										{ snprintf(gbx_txt, sizeof(gbx_txt), "%s | crd: %d | ID: %04X", txt, gbox_count_peer_cards(peer->gbox.id), peer->gbox.id); }
+									{
+										snprintf(gbx_txt, sizeof(gbx_txt), "%s | crd: %d | ID: %04X", txt, gbox_count_peer_cards(peer->gbox.id), peer->gbox.id);
+									}
 									txt = gbx_txt;
 								}
 #endif
@@ -7122,7 +7126,7 @@ static char *send_oscam_EMM(struct templatevars * vars, struct uriparams * param
 
 				if(sb.st_size>emm_max_size[i]*1024)
 				{
-					char orgfile[256];
+					char orgfile[268];
 					int f=0;
 					do {
 						snprintf(orgfile, sizeof(orgfile), "%s.%d", targetfile, f);

@@ -1208,15 +1208,15 @@ static int32_t videoguard2_do_ecm(struct s_reader *reader, const ECM_REQUEST *er
 				ind += t_len + 2;
 			}
 
-		if(12 < payloadLen)
-		{
-			ea->tier = b2i(2, &payload[10]);
-		}
+			if(12 < payloadLen)
+			{
+				ea->tier = b2i(2, &payload[10]);
+			}
 
-		memcpy(reader->VgLastPayload, buff_0F, 6);
+			memcpy(reader->VgLastPayload, buff_0F, 6);
 
-		int32_t test_0F = 1;
-		if(!cw_is_valid(rbuff + 5)) //sky cards report 90 00 = ok but send cw = 00 when something goes wrong :(
+			int32_t test_0F = 1;
+			if(!cw_is_valid(rbuff + 5)) //sky cards report 90 00 = ok but send cw = 00 when something goes wrong :(
 			{
 				if (buff_0F[0]&1) //case 0f_0x 01 xx xx xx xx xx
 				{
