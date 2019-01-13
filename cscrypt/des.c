@@ -618,8 +618,6 @@ static void des_encrypt_int(uint32_t* data, const uint32_t* ks, int8_t do_encryp
 
 	l=(r<<1)|(r>>31);
 	r=(u<<1)|(u>>31);
-
-
 	l&=0xffffffff;
 	r&=0xffffffff;
 
@@ -686,13 +684,11 @@ static void des_encrypt_int(uint32_t* data, const uint32_t* ks, int8_t do_encryp
 
 	l=(l>>1)|(l<<31);
 	r=(r>>1)|(r<<31);
-
 	l&=0xffffffff;
 	r&=0xffffffff;
 
 	{
 		uint32_t tt;
-
 		tt=(((r>>1)^l)&0x55555555);
 		l^=tt;
 		r^=(tt<<1);
@@ -754,17 +750,17 @@ static inline void xxor(uint8_t *data, int32_t len, const uint8_t *v1, const uin
 		for(i = 8; i < 16; ++i)
 		{
 			data[i] = v1[i] ^ v2[i];
-		}
+		} /* fallthrough */
 	case 8:
 		for(i = 4; i < 8; ++i)
 		{
 			data[i] = v1[i] ^ v2[i];
-		}
+		} /* fallthrough */
 	case 4:
 		for(i = 0; i < 4; ++i)
 		{
 			data[i] = v1[i] ^ v2[i];
-		}
+		} /* fallthrough */
 		break;
 	default:
 		while(len--)
