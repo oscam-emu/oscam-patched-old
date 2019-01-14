@@ -14,7 +14,7 @@ static void DREover(const uint8_t *ECMdata, uint8_t *dw)
 {
 	uint8_t key[8];
 	uint32_t key_schedule[32];
-	
+
 	if (ECMdata[2] >= (43 + 4) && ECMdata[40] == 0x3A && ECMdata[41] == 0x4B)
 	{
 		if (!FindKey('D', ECMdata[42] & 0x0F, 0, "OVER", key, 8, 1, 0, 0, NULL))
@@ -43,15 +43,15 @@ static uint32_t DreGostDec(uint32_t inData)
 		0x0D,0x02,0x08,0x04,0x06,0x0F,0x0B,0x01,0x0A,0x09,0x03,0x0E,0x05,0x00,0x0C,0x07
 	};
 	uint8_t i, j;
-	
+
 	for(i = 0; i < 8; i++)
 	{
 		j = (inData >> 28) & 0x0F;
 		inData = (inData << 4) | (Sbox[i * 16 + j] & 0x0F);
 	}
-	
+
 	inData = (inData << 11) | (inData >> 21);
-	
+
 	return (inData);
 }
 
@@ -88,19 +88,19 @@ static void DrecryptPostCw(uint8_t* ccw)
 {
 	uint32_t i, j;
 	uint8_t tmp[4];
-	
+
 	for(i = 0; i < 4; i++)
 	{
 		for(j = 0; j < 4; j++)
 		{
 			tmp[j] = ccw[3 - j];
 		}
-		
+
 		for(j = 0; j < 4; j++)
 		{
 			ccw[j] = tmp[j];
 		}
-		
+
 		ccw += 4;
 	}
 }
@@ -279,14 +279,12 @@ static void DrecryptWriteEebin(const char *path, const char *name)
 
 static int8_t DrecryptProcessEMM(struct s_reader *rdr, uint32_t provId, uint8_t *emm, uint32_t *keysAdded)
 {
-	uint16_t emmLen, emmDataLen;
 	uint32_t i, keyIdent;
-	uint16_t keyName;
-	uint8_t emmKey[32];
-	uint8_t *curECMkey3B = NULL, *curECMkey56 = NULL;
-	uint8_t keynum =0, keyidx = 0, keyclass = 0, key1offset, key2offset;
+	uint16_t keyName, emmLen, emmDataLen;
+	uint8_t emmKey[32], curECMkey3B[32], curECMkey56[32];
+	uint8_t keynum = 0, keyidx = 0, keyclass = 0, key1offset, key2offset;
 	char newKeyName[EMU_MAX_CHAR_KEYNAME], curKeyName[EMU_MAX_CHAR_KEYNAME], keyValue[100];
-	
+
 	emmDataLen = GetEcmLen(emm);
 	emmLen = ((emm[1] & 0xF) << 8) | emm[2];
 
@@ -332,7 +330,7 @@ static int8_t DrecryptProcessEMM(struct s_reader *rdr, uint32_t provId, uint8_t 
 		default:
 			return 1; // Not supported
 	}
-	
+
 	switch (provId & 0xFF)
 	{
 		case 0x11:
@@ -360,7 +358,7 @@ static int8_t DrecryptProcessEMM(struct s_reader *rdr, uint32_t provId, uint8_t 
 		default:
 			return 9; // Wrong provider
 	}
-	
+
 	keyIdent = (0x4AE1 << 8) | provId;
 	keyName = (emm[3] << 8) | emm[keynum];
 
@@ -368,7 +366,7 @@ static int8_t DrecryptProcessEMM(struct s_reader *rdr, uint32_t provId, uint8_t 
 	{
 		return 2;
 	}
-	
+
 	// Key #1
 	for (i = 0; i < 4; i++)
 	{

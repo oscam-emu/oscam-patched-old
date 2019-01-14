@@ -14,15 +14,17 @@ static inline void xxor(uint8_t *data, int32_t len, const uint8_t *v1, const uin
 	switch(len)
 	{
 	case 16:
-		for(i = 8; i < 16; ++i)
+		for(i = 0; i < 16; ++i)
 		{
 			data[i] = v1[i] ^ v2[i];
 		}
+		break;
 	case 8:
-		for(i = 4; i < 8; ++i)
+		for(i = 0; i < 8; ++i)
 		{
 			data[i] = v1[i] ^ v2[i];
 		}
+		break;
 	case 4:
 		for(i = 0; i < 4; ++i)
 		{
@@ -30,7 +32,10 @@ static inline void xxor(uint8_t *data, int32_t len, const uint8_t *v1, const uin
 		}
 		break;
 	default:
-		while(len--) { *data++ = *v1++ ^ *v2++; }
+		while(len--)
+		{
+			*data++ = *v1++ ^ *v2++;
+		}
 		break;
 	}
 }
