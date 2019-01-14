@@ -455,7 +455,7 @@ static void write_versionfile(bool use_stdout)
 	{
 		fprintf(fp, "\n");
 		write_readerconf(READER_NAGRA, "Nagra");
-		write_readerconf(READER_NAGRA_MERLIN, "Nagra_Merlin");
+		write_readerconf(READER_NAGRA_MERLIN, "Nagra Merlin");
 		write_readerconf(READER_IRDETO, "Irdeto");
 		write_readerconf(READER_CONAX, "Conax");
 		write_readerconf(READER_CRYPTOWORKS, "Cryptoworks");
@@ -516,7 +516,7 @@ static void do_report_emm_support(void)
 	else
 	{
 		report_emm_support(READER_NAGRA, "Nagra");
-		report_emm_support(READER_NAGRA_MERLIN, "Nagra_Merlin");
+		report_emm_support(READER_NAGRA_MERLIN, "Nagra Merlin");
 		report_emm_support(READER_IRDETO, "Irdeto");
 		report_emm_support(READER_CONAX, "Conax");
 		report_emm_support(READER_CRYPTOWORKS, "Cryptoworks");
@@ -842,9 +842,9 @@ static void init_machine_info(void)
 	// Linux only functionality
 	char boxtype[128];
 	boxtype[0] = 0;
-	char model[128];
+	char model[64];
 	model[0] = 0;
-	char vumodel[128];
+	char vumodel[64];
 	vumodel[0] = 0;
 	int8_t azmodel = 0;
 	FILE *f;
@@ -854,7 +854,9 @@ static void init_machine_info(void)
 	read_line_from_file("/proc/stb/info/boxtype", boxtype, sizeof(boxtype));
 	read_line_from_file("/proc/stb/info/vumodel", vumodel, sizeof(vumodel));
 	if (vumodel[0] && !boxtype[0] && !azmodel)
+	{
 		snprintf(boxtype, sizeof(boxtype), "vu%s", vumodel);
+	}
 	if (!boxtype[0] && azmodel)
 		snprintf(boxtype, sizeof(boxtype), "Azbox-%s", model);
 

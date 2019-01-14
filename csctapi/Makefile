@@ -1,2 +1,2 @@
 parent:
-	@$(MAKE) --no-print-directory -C ..
+@$(MAKE) --no-print-directory -C ..

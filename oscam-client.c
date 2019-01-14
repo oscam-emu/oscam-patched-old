@@ -605,15 +605,13 @@ void client_check_status(struct s_client *cl)
 		break;
 
 		// Check user for exceeding umaxidle by checking cl->last, except Newcamd & Gbox
-		if(!(cl->ncd_keepalive && (get_module(cl)->listenertype & LIS_NEWCAMD)) && !(get_module(cl)->listenertype & LIS_GBOX) && cl->account->umaxidle>0 &&
-				cl->last && (time(NULL) - cl->last) > (time_t)cl->account->umaxidle)
+		if(!(cl->ncd_keepalive && (get_module(cl)->listenertype & LIS_NEWCAMD)) && !(get_module(cl)->listenertype & LIS_GBOX) && cl->account->umaxidle>0 && cl->last && (time(NULL) - cl->last) > (time_t)cl->account->umaxidle)
 		{
 			add_job(cl, ACTION_CLIENT_IDLE, NULL, 0);
 		}
 
 		// Check clients for exceeding cmaxidle by checking cl->last, except Newcamd & Gbox
-		if(!(cl->ncd_keepalive && (get_module(cl)->listenertype & LIS_NEWCAMD)) && !(get_module(cl)->listenertype & LIS_GBOX) &&
-				cl->last && cl->account->umaxidle==-1 && cfg.cmaxidle && (time(NULL) - cl->last) > (time_t)cfg.cmaxidle)
+		if(!(cl->ncd_keepalive && (get_module(cl)->listenertype & LIS_NEWCAMD)) && !(get_module(cl)->listenertype & LIS_GBOX) && cl->last && cl->account->umaxidle==-1 && cfg.cmaxidle && (time(NULL) - cl->last) > (time_t)cfg.cmaxidle)
 		{
 			add_job(cl, ACTION_CLIENT_IDLE, NULL, 0);
 		}
@@ -622,8 +620,8 @@ void client_check_status(struct s_client *cl)
 		{
 			add_job(cl, ACTION_PEER_IDLE, NULL, 0);
 		}
-		break;
 #endif
+		break;
 	case 'r':
 		cardreader_checkhealth(cl, cl->reader);
 		break;

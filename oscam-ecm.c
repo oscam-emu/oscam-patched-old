@@ -668,16 +668,27 @@ int32_t send_dcw(struct s_client *client, ECM_REQUEST *er)
 	cs_log_dbg(D_LB, "{client %s, caid %04X, prid %06X, srvid %04X} [send_dcw] rc %d from reader %s", (check_client(er->client) ? er->client->account->usr : "-"), er->caid, er->prid, er->srvid, er->rc, er->selected_reader ? er->selected_reader->label : "-");
 
 	static const char stageTxt[] = {'0', 'C', 'L', 'P', 'F', 'X'};
-	static const char *stxt[] = {"found", "cache1", "cache2", "cache3",
-								 "not found", "timeout", "sleeping",
-								 "fake", "invalid", "corrupt", "no card", "expdate", "disabled", "stopped"
-								};
+	static const char *stxt[] = {	"found",
+					"cache1",
+					"cache2",
+					"cache3",
+					"not found",
+					"timeout",
+					"sleeping",
+					"fake",
+					"invalid",
+					"corrupt",
+					"no card",
+					"expdate",
+					"disabled",
+					"stopped"};
+
 	static const char *stxtEx[16] = {"", "group", "caid", "ident", "class", "chid", "queue", "peer", "sid", "", "", "", "", "", "", ""};
 	static const char *stxtWh[16] = {"", "user ", "reader ", "server ", "lserver ", "", "", "", "", "", "", "", "" , "" , "", ""};
 	char sby[100] = "", sreason[32] = "", scwcinfo[32] = "", schaninfo[CS_SERVICENAME_SIZE] = "", srealecmtime[50]="";
 	char erEx[32] = "";
 	char usrname[38] = "";
-	char channame[CS_SERVICENAME_SIZE];
+	char channame[28];
 	struct timeb tpe;
 
 	snprintf(usrname, sizeof(usrname) - 1, "%s", username(client));
@@ -790,9 +801,13 @@ int32_t send_dcw(struct s_client *client, ECM_REQUEST *er)
 
 	get_servicename_or_null(client, er->srvid, er->prid, er->caid, channame, sizeof(channame));
 	if(!channame[0])
-		{ schaninfo[0] = '\0'; }
+	{
+		schaninfo[0] = '\0';
+	}
 	else
-		{ snprintf(schaninfo, sizeof(schaninfo) - 1, " - %s", channame); }
+	{
+		snprintf(schaninfo, sizeof(schaninfo) - 1, " - %s", channame);
+	}
 
 	if(er->msglog[0])
 		{ snprintf(sreason, sizeof(sreason) - 1, " (%.26s)", er->msglog); }

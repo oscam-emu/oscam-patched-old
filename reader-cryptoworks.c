@@ -317,7 +317,7 @@ static int32_t cryptoworks_card_init(struct s_reader *reader, ATR *newatr)
 		{ cs_strncpy(issuer, unknown, sizeof(issuer)); }
 
 	select_file(reader, 0x3f, 0x20, cta_res, &cta_lr);
-	select_file(reader, 0x2f, 0x11, cta_res, &cta_lr);        // read pin
+	select_file(reader, 0x2f, 0x11, cta_res, &cta_lr); // read pin
 	if(read_record(reader, atr[8], cta_res) >= 7)
 	{
 		cta_res[6] = 0;
@@ -328,7 +328,7 @@ static int32_t cryptoworks_card_init(struct s_reader *reader, ATR *newatr)
 
 	cryptoworks_disable_pin(reader);
 
-	if ((reader->caid == 0x0D96 && reader->needsglobalfirst == 1) || (reader->caid == 0x0D98 && reader->needsglobalfirst == 1))
+	if (((reader->caid == 0x0D96) || (reader->caid == 0x0D98)) && reader->needsglobalfirst == 1)
 	{
 		if(!cs_malloc(&reader->last_g_emm, sizeof(EMM_PACKET)))
 		{

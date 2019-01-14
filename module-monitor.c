@@ -302,12 +302,16 @@ static char *monitor_client_info(char id, struct s_client *cl, char *sbuf)
 						{ lrt = i; }
 
 				if(lrt >= 0)
-					{ lrt = 10 + cl->reader->card_status; }
+				{
+					lrt = 10 + cl->reader->card_status;
+				}
 			}
 			else
-				{ lrt = cl->cwlastresptime; }
+			{
+				lrt = cl->cwlastresptime;
+			}
 			localtime_r(&cl->login, &lt);
-			snprintf(ldate, sizeof(ldate), "%02d.%02d.%02d", lt.tm_mday, lt.tm_mon + 1, lt.tm_year % 100);
+			// snprintf(ldate, sizeof(ldate), " %02d.%02d.%02d", lt.tm_mday, lt.tm_mon + 1, lt.tm_year % 100);
 			int32_t cnr = get_threadnum(cl);
 			snprintf(ltime, sizeof(ldate), "%02d:%02d:%02d", lt.tm_hour, lt.tm_min, lt.tm_sec);
 			snprintf(sbuf, 256, "[%c--CCC]%8X|%c|%d|%s|%d|%d|%s|%d|%s|%s|%s|%d|%04X@%06X:%04X|%s|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d\n",
