@@ -8,7 +8,8 @@
 
 unsigned char *MD5(const unsigned char *input, unsigned long len, unsigned char *output_hash);
 
-typedef struct MD5Context {
+typedef struct MD5Context
+{
 	uint32_t buf[4];
 	uint32_t bits[2];
 	uint32_t in[16];

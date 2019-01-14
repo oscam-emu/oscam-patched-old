@@ -919,3 +919,15 @@ void des_ecb3_encrypt(uint8_t* data, const uint8_t* key)
 	des(data, schedule2, 0);
 	des(data, schedule1, 1);
 }
+
+void _3DES(uint8_t *data, uint8_t *key)
+{
+	uint32_t ks1[32], ks2[32];
+
+	des_set_key(key, ks1);
+	des_set_key(key+8, ks2);
+
+	des(data, ks1, 0);
+	des(data, ks2, 1);
+	des(data, ks1, 0);
+}
