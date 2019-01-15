@@ -1779,7 +1779,7 @@ static char *send_oscam_reader(struct templatevars *vars, struct uriparams *para
 					}
 #ifdef MODULE_GBOX
 				else
-					{ 
+					{
 						restart_gbox_peer(rdr->label, 0, 0);
 						cs_log("gbox -> you must restart oscam so that setting becomes effective");
 					}
@@ -2128,13 +2128,13 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 			if(rdr)
 				{
 					if(rdr->typ != R_GBOX)
-						{ 
+						{
 							restart_cardreader(rdr, 1);
 						}
 #ifdef MODULE_GBOX
 					else
 						{
-							//cs_log("SAVE - single gbox reader %s restarted by WebIf", rdr->label); 
+							//cs_log("SAVE - single gbox reader %s restarted by WebIf", rdr->label);
 							restart_gbox_peer(rdr->label, 0, 0);
 						}
 #endif
@@ -2386,7 +2386,7 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 	{
 		for(i = 0; i < len; i++) { tpl_printf(vars, TPLAPPEND, "DESKEY", "%02X", rdr->des_key[i]); }
 	}
-	
+
 	// BoxKey
 	len = rdr->boxkey_length;
 	if(len > 0)
@@ -2403,7 +2403,7 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 		for(i = 0; i < len ; i++)
 			{ tpl_printf(vars, TPLAPPEND, "MOD1", "%02X", rdr->mod1[i]); }
 	}
-	
+
 	// data50 (CAK7)
 	len = rdr->data50_length;
 	if(len > 0)
@@ -2411,7 +2411,7 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 		for(i = 0; i < len ; i++)
 			{ tpl_printf(vars, TPLAPPEND, "DATA50", "%02X", rdr->data50[i]); }
 	}
-	
+
 	// mod50 (CAK7)
 	len = rdr->mod50_length;
 	if(len > 0)
@@ -2419,7 +2419,7 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 		for(i = 0; i < len ; i++)
 			{ tpl_printf(vars, TPLAPPEND, "MOD50", "%02X", rdr->mod50[i]); }
 	}
-	
+
 	// key60 (CAK7)
 	len = rdr->key60_length;
 	if(len > 0)
@@ -2427,7 +2427,7 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 		for(i = 0; i < len ; i++)
 			{ tpl_printf(vars, TPLAPPEND, "KEY60", "%02X", rdr->key60[i]); }
 	}
-	
+
 	// exp60 (CAK7)
 	len = rdr->exp60_length;
 	if(len > 0)
@@ -2435,7 +2435,7 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 		for(i = 0; i < len ; i++)
 			{ tpl_printf(vars, TPLAPPEND, "EXP60", "%02X", rdr->exp60[i]); }
 	}
-	
+
 	// nuid (CAK7)
 	len = rdr->nuid_length;
 	if(len > 0)
@@ -2785,15 +2785,15 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 	tpl_addVar(vars, TPLADD, "PEERONLSTAT", (get_peer_onl_status(gbox_convert_password_to_id((uint32_t)a2i(rdr->r_pwd, 4)))) ? "checked" : "");
 
 	if(rdr->blockemm & 0x80)
-		{ 
-			tpl_addVar(vars, TPLADD, "REMMCNLDCHK", "checked"); 
+		{
+			tpl_addVar(vars, TPLADD, "REMMCNLDCHK", "checked");
 			tpl_printf(vars, TPLADD, "GBOXREMMPEER", "%04X", rdr->gbox_remm_peer);
 			tpl_addVar(vars, TPLADD, "REMMUNIQCHK", (rdr->blockemm & EMM_UNIQUE) ? "" : "checked");
 			tpl_addVar(vars, TPLADD, "REMMSHAREDCHK", (rdr->blockemm & EMM_SHARED) ? "" : "checked");
 			tpl_addVar(vars, TPLADD, "REMMGLOBALCHK", (rdr->blockemm & EMM_GLOBAL) ? "" : "checked");
 		}
 	if(rdr->gbox_gsms_peer)
-		{ 
+		{
 			tpl_printf(vars, TPLADD, "LASTGSMS", "%s", rdr->last_gsms);
 			tpl_printf(vars, TPLADD, "GBOXGSMSPEER", "%04X", rdr->gbox_gsms_peer);
 		}
@@ -4895,7 +4895,7 @@ static char *send_oscam_status(struct templatevars * vars, struct uriparams * pa
 		if(rdr)
 		{
 			if(rdr->typ != R_GBOX)
-				{ 
+				{
 					add_job(rdr->client, ACTION_READER_RESTART, NULL, 0);
 				}
 #ifdef MODULE_GBOX
@@ -5028,9 +5028,9 @@ static char *send_oscam_status(struct templatevars * vars, struct uriparams * pa
 			if(cl->typ == 'c')
 				{ user_count_all++; }
 			else if(cl->typ == 'p')
-				{ 
+				{
 					proxy_count_all++;
-					if((cl->reader->typ == R_GBOX && cl->reader->card_status != CARD_INSERTED && cl->reader->card_status != NO_CARD) || 
+					if((cl->reader->typ == R_GBOX && cl->reader->card_status != CARD_INSERTED && cl->reader->card_status != NO_CARD) ||
 							(cl->reader->typ != R_GBOX && cl->reader->card_status != CARD_INSERTED))
 						{ proxy_count_off++; }
 				}
