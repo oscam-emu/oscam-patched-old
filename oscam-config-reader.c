@@ -247,7 +247,7 @@ static void rsakey_fn(const char *token, char *value, void *setting, FILE *f)
 			}
 			else
 			{
-				rdr->rsa_mod_length = len/2;	
+				rdr->rsa_mod_length = len/2;
 			}
 		}
 		return;
@@ -319,7 +319,7 @@ static void boxkey_fn(const char *token, char *value, void *setting, FILE *f)
 			}
 			else
 			{
-				rdr->boxkey_length = len/2;	
+				rdr->boxkey_length = len/2;
 			}
 		}
 		return;
@@ -900,7 +900,7 @@ static void ecmunique_fn(const char *token, char *value, void *setting, FILE *f)
 		else
 		{
 			rdr->ecmunique = atoi(value);
-			if(rdr->ecmunique >= 1) 
+			if(rdr->ecmunique >= 1)
 			{ rdr->ecmunique=1; }
 			else
 			{ rdr->ecmunique=0; }
@@ -1106,6 +1106,8 @@ static const struct config_list reader_opts[] =
 	DEF_OPT_UINT8("cacheex_drop_csp"        , OFS(cacheex.drop_csp),        0),
 	DEF_OPT_UINT8("cacheex_allow_filter", OFS(cacheex.allow_filter),    1),
 	DEF_OPT_UINT8("cacheex_block_fakecws",OFS(cacheex.block_fakecws),   0),
+	DEF_OPT_FUNC("rsakey"               , 0,                            rsakey_fn),
+	DEF_OPT_FUNC("deskey"               , 0,                            deskey_fn),
 #endif
 	DEF_OPT_FUNC("caid"                 , OFS(ctab),                    reader_caid_fn),
 	DEF_OPT_FUNC("atr"                  , 0,                            atr_fn),
@@ -1120,8 +1122,6 @@ static const struct config_list reader_opts[] =
 	DEF_OPT_FUNC("nuid"               	, 0,                           	nuid_fn),
 	DEF_OPT_FUNC("cwekey"               , 0,                            cwekey_fn),
 #endif
-	DEF_OPT_FUNC("rsakey"               , 0,                            rsakey_fn),
-	DEF_OPT_FUNC("deskey"               , 0,                            deskey_fn),
 	DEF_OPT_FUNC_X("ins7e"              , OFS(ins7E),                   ins7E_fn, SIZEOF(ins7E)),
 	DEF_OPT_FUNC_X("ins7e11"            , OFS(ins7E11),                 ins7E_fn, SIZEOF(ins7E11)),
 	DEF_OPT_FUNC_X("ins2e06"            , OFS(ins2e06),                 ins7E_fn, SIZEOF(ins2e06)),
@@ -1406,7 +1406,7 @@ void free_reader(struct s_reader *rdr)
  	NULLFREE(rdr->cltab.bclass);
 
 	caidtab_clear(&rdr->ctab);
-#ifdef CS_CACHEEX	
+#ifdef CS_CACHEEX
 	cecspvaluetab_clear(&rdr->cacheex.filter_caidtab);
 #endif
 	lb_destroy_stats(rdr);
@@ -1423,7 +1423,7 @@ void free_reader(struct s_reader *rdr)
 	ll_destroy_data(&rdr->emmstat);
 
 	aes_clear_entries(&rdr->aes_list);
-	
+
 	config_list_gc_values(reader_opts, rdr);
 	add_garbage(rdr);
 }

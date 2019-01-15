@@ -387,7 +387,7 @@ static void write_versionfile(bool use_stdout)
 		fprintf(fp, "GBox tmp_dir:   %s\n", cfg.gbox_tmp_dir);
 	}
 #endif
-	
+
 	fprintf(fp, "ConfigDir:      %s\n", cs_confdir);
 
 #ifdef WEBIF
@@ -1558,11 +1558,11 @@ static void run_tests(void) { }
 
 const struct s_cardsystem *cardsystems[] =
 {
-#ifdef READER_NAGRA_MERLIN
-	&reader_nagracak7,
-#endif
 #ifdef READER_NAGRA
 	&reader_nagra,
+#endif
+#ifdef READER_NAGRA_MERLIN
+	&reader_nagracak7,
 #endif
 #ifdef READER_IRDETO
 	&reader_irdeto,
