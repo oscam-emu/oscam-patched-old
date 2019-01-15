@@ -1106,13 +1106,13 @@ static const struct config_list reader_opts[] =
 	DEF_OPT_UINT8("cacheex_drop_csp"        , OFS(cacheex.drop_csp),        0),
 	DEF_OPT_UINT8("cacheex_allow_filter", OFS(cacheex.allow_filter),    1),
 	DEF_OPT_UINT8("cacheex_block_fakecws",OFS(cacheex.block_fakecws),   0),
-	DEF_OPT_FUNC("rsakey"               , 0,                            rsakey_fn),
-	DEF_OPT_FUNC("deskey"               , 0,                            deskey_fn),
 #endif
 	DEF_OPT_FUNC("caid"                 , OFS(ctab),                    reader_caid_fn),
 	DEF_OPT_FUNC("atr"                  , 0,                            atr_fn),
 	DEF_OPT_FUNC("boxid"                , 0,                            boxid_fn),
 	DEF_OPT_FUNC("boxkey"               , 0,                            boxkey_fn),
+	DEF_OPT_FUNC("rsakey"               , 0,                            rsakey_fn),
+	DEF_OPT_FUNC("deskey"               , 0,                            deskey_fn),
 #ifdef READER_NAGRA_MERLIN
 	DEF_OPT_FUNC("mod1"                 , 0,                            mod1_fn),
 	DEF_OPT_FUNC("data50"               , 0,                            data50_fn),
