@@ -37,4 +37,6 @@
 	void des_ecb3_encrypt(uint8_t* data, const uint8_t* key);
 	void des_ecb3_decrypt(uint8_t* data, const uint8_t* key);
 
+	void _3DES(uint8_t *data, uint8_t *key);
+
 #endif
