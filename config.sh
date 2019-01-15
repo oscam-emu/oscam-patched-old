@@ -40,6 +40,7 @@ CONFIG_MODULE_PANDORA=y
 CONFIG_MODULE_SCAM=y
 CONFIG_MODULE_GHTTP=y
 CONFIG_WITH_CARDREADER=y
+CONFIG_READER_NAGRA_COMMON=y
 CONFIG_READER_NAGRA=y
 CONFIG_READER_NAGRA_MERLIN=y
 CONFIG_READER_IRDETO=y
@@ -505,7 +506,7 @@ menu_protocols() {
 menu_readers() {
 	${DIALOG} --checklist "\nChoose readers (CA systems):\n " $height $width $listheight \
 		READER_NAGRA		"Nagravision"		$(check_test "READER_NAGRA") \
-		READER_NAGRA_MERLIN		"Nagra Merlin"		$(check_test "READER_NAGRA_MERLIN") \
+		READER_NAGRA_MERLIN	"Nagra Merlin"		$(check_test "READER_NAGRA_MERLIN") \
 		READER_IRDETO		"Irdeto"			$(check_test "READER_IRDETO") \
 		READER_CONAX		"Conax"				$(check_test "READER_CONAX") \
 		READER_CRYPTOWORKS	"Cryptoworks"		$(check_test "READER_CRYPTOWORKS") \
