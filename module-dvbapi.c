@@ -3845,7 +3845,6 @@ int32_t dvbapi_parse_capmt(uint8_t *buffer, uint32_t length, int32_t connfd, cha
 {
 	uint32_t i = 0, start_descrambling = 0;
 	int32_t j = 0;
-	int32_t max_pids = 64;
 	int32_t demux_id = -1;
 	uint16_t demux_index, adapter_index, pmtpid;
 	uint32_t ca_mask;
@@ -4033,19 +4032,13 @@ int32_t dvbapi_parse_capmt(uint8_t *buffer, uint32_t length, int32_t connfd, cha
 	uint32_t es_info_length = 0, vpid = 0;
 	struct s_dvbapi_priority *addentry;
 
-	// pid limiter for PowerVu
-	if(caid_is_powervu(demux[demux_id].ECMpids[0].CAID))
-	{
-		max_pids = cfg.dvbapi_extended_cw_pids;
-	}
-
 	for(i = program_info_length + program_info_start; i + 4 < length; i += es_info_length + 5)
 	{
 		uint8_t stream_type = buffer[i], type = STREAM_AUDIO; // default to audio - quick fix for missing audio when recording
 		uint16_t elementary_pid = b2i(2, buffer + i + 1) & 0x1FFF;
 		es_info_length = b2i(2, buffer + i + 3) & 0x0FFF;
 
-		if(demux[demux_id].STREAMpidcount < max_pids) // was "ECM_PIDS" (pid limiter)
+		if(demux[demux_id].STREAMpidcount < ECM_PIDS)
 		{
 			cs_log_dbg(D_DVBAPI,"Demuxer %d found %s stream (type: %02X pid: %04X)",
 				demux_id, get_stream_type_txt(stream_type), stream_type, elementary_pid);

@@ -1287,7 +1287,6 @@ static const struct config_list dvbapi_opts[] =
 	DEF_OPT_INT8("read_sdt"		, OFS(dvbapi_read_sdt),	0),
 	DEF_OPT_INT8("write_sdt_prov", OFS(dvbapi_write_sdt_prov),	0),
 	DEF_OPT_INT8("extended_cw_api", OFS(dvbapi_extended_cw_api),	0),
-	DEF_OPT_INT8("extended_cw_pids", OFS(dvbapi_extended_cw_pids),	64), // pid limiter
 	DEF_OPT_FUNC("boxtype"		, OFS(dvbapi_boxtype),		dvbapi_boxtype_fn),
 	DEF_OPT_FUNC("services"		, OFS(dvbapi_sidtabs.ok),	dvbapi_services_fn),
 	// OBSOLETE OPTIONS
