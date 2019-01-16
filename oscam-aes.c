@@ -14,7 +14,9 @@ void aes_set_key(struct aes_keys *aes, char *key)
 bool aes_set_key_alloc(struct aes_keys **aes, char *key)
 {
 	if (!cs_malloc(aes, sizeof(struct aes_keys)))
+	{
 		return false;
+	}
 	aes_set_key(*aes, key);
 	return true;
 }
@@ -35,6 +37,16 @@ void aes_encrypt_idx(struct aes_keys *aes, uchar *buf, int32_t n)
 	{
 		AES_encrypt(buf + i, buf + i, &aes->aeskey_encrypt);
 	}
+}
+
+void aes_cbc_encrypt(struct aes_keys *aes, uchar *buf, int32_t n, uchar *iv)
+{
+	AES_cbc_encrypt(buf, buf, n, &aes->aeskey_encrypt, iv, AES_ENCRYPT);
+}
+
+void aes_cbc_decrypt(struct aes_keys *aes, uchar *buf, int32_t n, uchar *iv)
+{
+	AES_cbc_encrypt(buf, buf, n, &aes->aeskey_decrypt, iv, AES_DECRYPT);
 }
 
 /* Creates an AES_ENTRY and adds it to the given linked list. */
@@ -177,21 +189,6 @@ void parse_aes_keys(struct s_reader *rdr, char *value)
 	}
 	rdr->aes_list = newlist;
 	aes_clear_entries(&savelist);
-
-	/*
-	AES_ENTRY *current;
-	current=rdr->aes_list;
-	while(current) {
-	    cs_log("**************************");
-	    cs_log("current = %p",current);
-	    cs_log("CAID = %04x",current->caid);
-	    cs_log("IDENT = %06x",current->ident);
-	    cs_log("keyID = %d",current->keyid);
-	    cs_log("next = %p",current->next);
-	    cs_log("**************************");
-	    current=current->next;
-	}
-	*/
 }
 
 static AES_ENTRY *aes_list_find(AES_ENTRY *list, uint16_t caid, uint32_t provid, int32_t keyid)
