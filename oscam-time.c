@@ -28,12 +28,17 @@ time_t cs_timegm(struct tm *tm)
 {
 	time_t result = 0;
 	int32_t i;
+
 	if(tm->tm_mon > 12 || tm->tm_mon < 0 || tm->tm_mday > 31 || tm->tm_min > 60 || tm->tm_sec > 60 || tm->tm_hour > 24)
-		{ return 0; }
+	{
+		return 0;
+	}
+
 	for(i = 70; i < tm->tm_year; ++i)
 	{
 		result += is_leap(i + 1900) ? 366 : 365;
 	}
+
 	for(i = 0; i < tm->tm_mon; ++i)
 	{
 		if(i == 0 || i == 2 || i == 4 || i == 6 || i == 7 || i == 9 || i == 11) { result += 31; }
@@ -41,6 +46,7 @@ time_t cs_timegm(struct tm *tm)
 		else if(is_leap(tm->tm_year + 1900)) { result += 29; }
 		else { result += 28; }
 	}
+
 	result += tm->tm_mday - 1;
 	result *= 24;
 	result += tm->tm_hour;
@@ -54,20 +60,23 @@ time_t cs_timegm(struct tm *tm)
 /* Drop-in replacement for gmtime_r as some plattforms strip the function from their libc. */
 struct tm *cs_gmtime_r(const time_t *timep, struct tm *r)
 {
-	static const int16_t daysPerMonth[13] = { 0,
-											31,
-											31 + 28,
-											31 + 28 + 31,
-											31 + 28 + 31 + 30,
-											31 + 28 + 31 + 30 + 31,
-											31 + 28 + 31 + 30 + 31 + 30,
-											31 + 28 + 31 + 30 + 31 + 30 + 31,
-											31 + 28 + 31 + 30 + 31 + 30 + 31 + 31,
-											31 + 28 + 31 + 30 + 31 + 30 + 31 + 31 + 30,
-											31 + 28 + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31,
-											31 + 28 + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31 + 30,
-											31 + 28 + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31 + 30 + 31
-											};
+	static const int16_t daysPerMonth[13] =
+	{
+		0,
+		31,
+		31 + 28,
+		31 + 28 + 31,
+		31 + 28 + 31 + 30,
+		31 + 28 + 31 + 30 + 31,
+		31 + 28 + 31 + 30 + 31 + 30,
+		31 + 28 + 31 + 30 + 31 + 30 + 31,
+		31 + 28 + 31 + 30 + 31 + 30 + 31 + 31,
+		31 + 28 + 31 + 30 + 31 + 30 + 31 + 31 + 30,
+		31 + 28 + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31,
+		31 + 28 + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31 + 30,
+		31 + 28 + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31 + 30 + 31
+	};
+
 	time_t i;
 	time_t work = * timep % 86400;
 	r->tm_sec = work % 60;
@@ -76,25 +85,34 @@ struct tm *cs_gmtime_r(const time_t *timep, struct tm *r)
 	r->tm_hour = work / 60;
 	work = * timep / 86400;
 	r->tm_wday = (4 + work) % 7;
+
 	for(i = 1970; ; ++i)
 	{
 		time_t k = is_leap(i) ? 366 : 365;
 		if(work >= k)
-			{ work -= k; }
+		{
+			work -= k;
+		}
 		else
-			{ break; }
+		{
+			break;
+		}
 	}
+
 	r->tm_year = i - 1900;
 	r->tm_yday = work;
 	r->tm_mday = 1;
+
 	if(is_leap(i) && work > 58)
 	{
 		if(work == 59)
-			{ r->tm_mday = 2; } /* 29.2. */
+		{
+			r->tm_mday = 2; /* 29.2. */
+		}
 		work -= 1;
 	}
-	for(i = 11; i && daysPerMonth[i] > work; --i)
-		{ ; }
+
+	for(i = 11; i && daysPerMonth[i] > work; --i) { ; }
 	r->tm_mon   = i;
 	r->tm_mday += work - daysPerMonth[i];
 	return r;
@@ -114,8 +132,9 @@ void cs_ftime(struct timeb *tp)
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
 #if defined(CLOCKFIX)
-	if (tv.tv_sec > lasttime.tv_sec || (tv.tv_sec == lasttime.tv_sec && tv.tv_usec >= lasttime.tv_usec)){ // check for time issues!
-		lasttime = tv; // register this valid time 
+	if (tv.tv_sec > lasttime.tv_sec || (tv.tv_sec == lasttime.tv_sec && tv.tv_usec >= lasttime.tv_usec))
+	{			// check for time issues!
+		lasttime = tv;  // register this valid time
 	}
 	else
 	{
@@ -133,8 +152,9 @@ void cs_ftimeus(struct timeb *tp)
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
 #if defined(CLOCKFIX)
-	if (tv.tv_sec > lasttime.tv_sec || (tv.tv_sec == lasttime.tv_sec && tv.tv_usec >= lasttime.tv_usec)){ // check for time issues!
-		lasttime = tv; // register this valid time 
+	if (tv.tv_sec > lasttime.tv_sec || (tv.tv_sec == lasttime.tv_sec && tv.tv_usec >= lasttime.tv_usec))
+	{			// check for time issues!
+		lasttime = tv;  // register this valid time
 	}
 	else
 	{
@@ -160,11 +180,17 @@ void cs_sleepms(uint32_t msec)
 		signal, place the remaining time left to sleep back into req_ts. */
 		int rval = nanosleep (&req_ts, &req_ts);
 		if (rval == 0)
+		{
 			break; // Completed the entire sleep time; all done.
+		}
 		else if (errno == EINTR)
+		{
 			continue; // Interrupted by a signal. Try again.
-		else 
+		}
+		else
+		{
 			break; // Some other error; bail out.
+		}
 	}
 	errno = olderrno;
 }
@@ -175,18 +201,25 @@ void cs_sleepus(uint32_t usec)
 	struct timespec req_ts;
 	req_ts.tv_sec = usec / 1000000;
 	req_ts.tv_nsec = (usec % 1000000) * 1000L;
-	int32_t olderrno = errno;       // Some OS (especially MacOSX) seem to set errno to ETIMEDOUT when sleeping
+	int32_t olderrno = errno; // Some OS (especially MacOSX) seem to set errno to ETIMEDOUT when sleeping
+
 	while (1)
 	{
 		/* Sleep for the time specified in req_ts. If interrupted by a
 		signal, place the remaining time left to sleep back into req_ts. */
 		int rval = nanosleep (&req_ts, &req_ts);
 		if (rval == 0)
+		{
 			break; // Completed the entire sleep time; all done.
+		}
 		else if (errno == EINTR)
+		{
 			continue; // Interrupted by a signal. Try again.
-		else 
+		}
+		else
+		{
 			break; // Some other error; bail out.
+		}
 	}
 	errno = olderrno;
 }
@@ -199,11 +232,13 @@ void add_ms_to_timespec(struct timespec *timeout, int32_t msec)
 	const int64_t NANOSEC_PER_SEC = 1000000000;
 	cs_gettime(&now);
 	nanosecs = (int64_t) (msec * NANOSEC_PER_MS + now.tv_nsec);
-	if (nanosecs >= NANOSEC_PER_SEC){
+	if (nanosecs >= NANOSEC_PER_SEC)
+	{
 		secs = now.tv_sec + (nanosecs / NANOSEC_PER_SEC);
 		nanosecs %= NANOSEC_PER_SEC;
 	}
-	else{
+	else
+	{
 		secs = now.tv_sec;
 	}
 	timeout->tv_sec = (long)secs;
@@ -357,8 +392,9 @@ void cs_gettime(struct timespec *ts)
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
 #if defined(CLOCKFIX)
-	if (tv.tv_sec > lasttime.tv_sec || (tv.tv_sec == lasttime.tv_sec && tv.tv_usec >= lasttime.tv_usec)){ // check for time issues!
-		lasttime = tv; // register this valid time 
+	if (tv.tv_sec > lasttime.tv_sec || (tv.tv_sec == lasttime.tv_sec && tv.tv_usec >= lasttime.tv_usec))
+	{			// check for time issues!
+		lasttime = tv;  // register this valid time
 	}
 	else
 	{
@@ -374,7 +410,7 @@ void cs_gettime(struct timespec *ts)
 #if 0
 #if !defined(CLOCKFIX) || (!defined(CLOCK_MONOTONIC) && !defined(__MACH__))
 	struct timeval tv;
-    gettimeofday(&tv, NULL);
+	gettimeofday(&tv, NULL);
 	ts->tv_sec = tv.tv_sec;
 	ts->tv_nsec = tv.tv_usec * 1000;
 	clock_type = CLOCK_TYPE_REALTIME;
@@ -390,13 +426,15 @@ void cs_gettime(struct timespec *ts)
 	ts->tv_nsec = mts.tv_nsec;
 	clock_type = CLOCK_TYPE_REALTIME;
 #else
-	if (clock_type == CLOCK_TYPE_REALTIME) { // monotonic returned error
+	if (clock_type == CLOCK_TYPE_REALTIME) // monotonic returned error
+	{
 		clock_gettime(CLOCK_REALTIME, ts);
 		return;
 	}
 	int32_t	ret = clock_gettime(CLOCK_MONOTONIC, ts);
 	clock_type = CLOCK_TYPE_MONOTONIC;
-	if ((ret < 0 && errno == EINVAL)){ // Error fetching time from this source (Shouldn't happen on modern Linux)
+	if ((ret < 0 && errno == EINVAL)) // Error fetching time from this source (Shouldn't happen on modern Linux)
+	{
 		clock_gettime(CLOCK_REALTIME, ts);
 		clock_type = CLOCK_TYPE_REALTIME;
 	}

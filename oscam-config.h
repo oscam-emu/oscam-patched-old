@@ -57,15 +57,15 @@ void chk_ftab_fn(const char *token, char *value, void *setting, FILE *f);
 
 enum ftab_fn
 {
-	FTAB_ACCOUNT				= 0x01,
-	FTAB_READER					= 0x02,
-	FTAB_PROVID					= 0x04,
-	FTAB_CHID					= 0x08,
-	FTAB_FBPCAID				= 0x10,
-	FTAB_LOCALCARDS				= 0x20,
-	FTAB_IGNCHKSMCAID			= 0x40,
+	FTAB_ACCOUNT			= 0x01,
+	FTAB_READER			= 0x02,
+	FTAB_PROVID			= 0x04,
+	FTAB_CHID			= 0x08,
+	FTAB_FBPCAID			= 0x10,
+	FTAB_LOCALCARDS			= 0x20,
+	FTAB_IGNCHKSMCAID		= 0x40,
 	FTAB_IGNCRCCEX4USERONLYFOR	= 0x80,
-	FTAB_EMUAU					= 0x100
+	FTAB_EMUAU			= 0x100
 };
 
 void ftab_fn(const char *token, char *value, void *setting, long ftab_type, FILE *f);
