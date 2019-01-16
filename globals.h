@@ -830,7 +830,7 @@ struct s_csystem_emm_filter
 	uint8_t         mask[16];
 };
 
-typedef struct v_ban                              // Failban listmember
+typedef struct v_ban                                    // Failban listmember
 {
 	int32_t         v_count;
 	IN_ADDR_T       v_ip;
@@ -841,7 +841,7 @@ typedef struct v_ban                              // Failban listmember
 	char            *info;
 } V_BAN;
 
-typedef struct s_cacheex_stat_entry               // Cacheex stats listmember
+typedef struct s_cacheex_stat_entry                     // Cacheex stats listmember
 {
 	int32_t         cache_count;
 	time_t          cache_last;
@@ -851,7 +851,7 @@ typedef struct s_cacheex_stat_entry               // Cacheex stats listmember
 	int8_t          cache_direction;                // 0 = push / 1 = got
 } S_CACHEEX_STAT_ENTRY;
 
-typedef struct s_entitlement                      // contains entitlement Info
+typedef struct s_entitlement                            // contains entitlement Info
 {
 	uint64_t        id;                             // the element ID
 	uint32_t        type;                           // enumerator for tier,chid whatever
@@ -889,20 +889,20 @@ struct s_module
 	int32_t (*c_init)(struct s_client *);
 	int32_t (*c_send_ecm)(struct s_client *, struct ecm_request_t *);
 	int32_t (*c_send_emm)(struct emm_packet_t *);
-	int32_t (*c_available)(struct s_reader *, int32_t, struct ecm_request_t *);   //Schlocke: available check for load-balancing,
+	int32_t (*c_available)(struct s_reader *, int32_t, struct ecm_request_t *); //Schlocke: available check for load-balancing,
 	// params:
 	// rdr (reader to check)
 	// int32_t checktype (0=return connected, 1=return loadbalance-avail) return int
-	void (*c_idle)(void);                           // Schlocke: called when reader is idle
+	void (*c_idle)(void); // Schlocke: called when reader is idle
 	void (*s_idle)(struct s_client *);
 	void (*s_peer_idle)(struct s_client *);
-	void (*c_card_info)(void);                      // Schlocke: request card infos
+	void (*c_card_info)(void); // Schlocke: request card infos
 
 	int32_t (*c_capmt)(struct s_client *, struct demux_s *);
 
 #ifdef CS_CACHEEX
-	int32_t (*c_cache_push)(struct s_client *, struct ecm_request_t *);           //Cache push
-	int32_t (*c_cache_push_chk)(struct s_client *, struct ecm_request_t *);       //Cache push Node Check, 0=no push
+	int32_t (*c_cache_push)(struct s_client *, struct ecm_request_t *); //Cache push
+	int32_t (*c_cache_push_chk)(struct s_client *, struct ecm_request_t *); //Cache push Node Check, 0=no push
 #endif
 	int32_t         c_port;
 	PTAB            ptab;
@@ -945,7 +945,7 @@ struct s_cardreader
 							uint32_t *length,
 							uint32_t len_request);
 	int32_t (*set_baudrate)(struct s_reader *,
-							uint32_t baud);                     //set only for readers which need baudrate setting and timings need to be guarded by OSCam
+							uint32_t baud); //set only for readers which need baudrate setting and timings need to be guarded by OSCam
 	int32_t (*card_write)(struct s_reader *pcsc_reader,
 							const uchar *buf,
 							uint8_t *cta_res,
@@ -1188,7 +1188,7 @@ struct s_client
 	time_t          lastecm;
 	time_t          expirationdate;
 	uint32_t        allowedtimeframe[SIZE_SHORTDAY][24][2]; //day[0-sun to 6-sat, 7-ALL],hours,minutes use as binary flags to reduce mem usage
-	uint8_t         allowedtimeframe_set;           //flag for internal use to mention if allowed time frame is used
+	uint8_t         allowedtimeframe_set;                   //flag for internal use to mention if allowed time frame is used
 	int8_t          c35_suppresscmd08;
 	uint8_t         c35_sleepsend;
 	int8_t          ncd_keepalive;
@@ -1272,7 +1272,7 @@ struct s_client
 
 #ifdef MODULE_GBOX
 	void            *gbox;
-	uint16_t		gbox_peer_id;
+	uint16_t        gbox_peer_id;
 #endif
 
 #ifdef MODULE_GHTTP
@@ -1470,7 +1470,7 @@ typedef struct emm_packet_t
 	struct s_client *client;
 } EMM_PACKET;
 
-struct s_reader                                   //contains device info, reader info and card info
+struct s_reader                                         //contains device info, reader info and card info
 {
 	uint8_t         keepalive;
 	uint8_t         changes_since_shareupdate;

@@ -13,22 +13,36 @@ extern char cs_tmpdir[200];
 char *get_tmp_dir(void)
 {
 	if(cs_tmpdir[0])
-		{ return cs_tmpdir; }
+	{
+		return cs_tmpdir;
+	}
 #if defined(__CYGWIN__)
+
 	char *d = getenv("TMPDIR");
+
 	if(!d || !d[0])
-		{ d = getenv("TMP"); }
+	{
+		d = getenv("TMP");
+	}
+
 	if(!d || !d[0])
-		{ d = getenv("TEMP"); }
+	{
+		d = getenv("TEMP");
+	}
+
 	if(!d || !d[0])
-		{ getcwd(cs_tmpdir, sizeof(cs_tmpdir) - 1); }
+	{
+		getcwd(cs_tmpdir, sizeof(cs_tmpdir) - 1);
+	}
 
 	cs_strncpy(cs_tmpdir, d, sizeof(cs_tmpdir));
 	char *p = cs_tmpdir;
 	while(*p) { p++; }
 	p--;
 	if(*p != '/' && *p != '\\')
-		{ strcat(cs_tmpdir, "/"); }
+	{
+		strcat(cs_tmpdir, "/");
+	}
 	strcat(cs_tmpdir, "_oscam");
 #else
 	cs_strncpy(cs_tmpdir, "/tmp/.oscam", sizeof(cs_tmpdir));
@@ -41,7 +55,10 @@ char *get_tmp_dir_filename(char *dest, size_t destlen, const char *filename)
 {
 	char *tmp_dir = get_tmp_dir();
 	const char *slash = "/";
-	if(tmp_dir[strlen(tmp_dir) - 1] == '/') { slash = ""; }
+	if(tmp_dir[strlen(tmp_dir) - 1] == '/')
+	{
+		slash = "";
+	}
 	snprintf(dest, destlen, "%s%s%s", tmp_dir, slash, filename);
 	return dest;
 }
@@ -127,7 +144,9 @@ int32_t safe_overwrite_with_bak(char *destfile, char *temp_file, char *bakfile, 
 			{
 				cs_log("Error copying original config file %s to %s. The original config will be left untouched!", destfile, bakfile);
 				if(unlink(temp_file) < 0)
-					{ cs_log("Error removing temp config file %s (errno=%d %s)!", temp_file, errno, strerror(errno)); }
+				{
+					cs_log("Error removing temp config file %s (errno=%d %s)!", temp_file, errno, strerror(errno));
+				}
 				return 1;
 			}
 		}
@@ -137,13 +156,19 @@ int32_t safe_overwrite_with_bak(char *destfile, char *temp_file, char *bakfile, 
 	{
 		cs_log("An error occured while writing the new config file %s.", destfile);
 		if(rc == -2)
-			{ cs_log("The config will be missing or only partly filled upon next startup as this is a non-recoverable error! Please restore from backup or try again."); }
+		{
+			cs_log("The config will be missing or only partly filled upon next startup as this is a non-recoverable error! Please restore from backup or try again.");
+		}
 		if(unlink(temp_file) < 0)
-			{ cs_log("Error removing temp config file %s (errno=%d %s)!", temp_file, errno, strerror(errno)); }
+		{
+			cs_log("Error removing temp config file %s (errno=%d %s)!", temp_file, errno, strerror(errno));
+		}
 		return 1;
 	}
 	if(unlink(temp_file) < 0)
-		{ cs_log("Error removing temp config file %s (errno=%d %s)!", temp_file, errno, strerror(errno)); }
+	{
+		cs_log("Error removing temp config file %s (errno=%d %s)!", temp_file, errno, strerror(errno));
+	}
 	return 0;
 }
 
@@ -154,8 +179,11 @@ char *get_gbox_filename(char *dest, size_t destlen, const char *filename)
 	const char *slash = "/";
 	if(cfg.gbox_tmp_dir != NULL)
 	{
-		if(cfg.gbox_tmp_dir[strlen(cfg.gbox_tmp_dir) - 1] == '/') { slash = ""; }
-		snprintf(dest, destlen, "%s%s%s", cfg.gbox_tmp_dir, slash, filename);	
+		if(cfg.gbox_tmp_dir[strlen(cfg.gbox_tmp_dir) - 1] == '/')
+		{
+			slash = "";
+		}
+		snprintf(dest, destlen, "%s%s%s", cfg.gbox_tmp_dir, slash, filename);
 	}
 	else
 	{
