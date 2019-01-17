@@ -29,14 +29,14 @@
 
 #define PING_INTVL     4
 
-static void *csp_server(struct s_client *client __attribute__((unused)), uchar *mbuf __attribute__((unused)), int32_t n __attribute__((unused)))
+static void *csp_server(struct s_client *client __attribute__((unused)), uint8_t *mbuf __attribute__((unused)), int32_t n __attribute__((unused)))
 {
 	return NULL;
 }
 
 static int32_t csp_send_ping(struct s_client *cl, uint32_t now)
 {
-	uchar buf[13] = {0};
+	uint8_t buf[13] = {0};
 
 	buf[0] = TYPE_PINGREQ;
 	i2b_buf(4, now, buf + 1);
@@ -68,7 +68,7 @@ static int32_t csp_cache_push_out(struct s_client *cl, struct ecm_request_t *er)
 
 	}
 
-	uchar *buf;
+	uint8_t *buf;
 	if(!cs_malloc(&buf, size)) { return -1; }
 
 	uint16_t onid = er->onid;
@@ -109,7 +109,7 @@ static int32_t csp_cache_push_out(struct s_client *cl, struct ecm_request_t *er)
 	return status;
 }
 
-static uint8_t parse_request(struct ecm_request_t *er, uchar *buf)
+static uint8_t parse_request(struct ecm_request_t *er, uint8_t *buf)
 {
 	uint8_t commandTag = buf[0]; // first ecm byte indicating odd or even (0x80 or 0x81)
 	uint16_t srvid = b2i(2, buf + 1);
@@ -127,7 +127,7 @@ static uint8_t parse_request(struct ecm_request_t *er, uchar *buf)
 	return commandTag;
 }
 
-static int32_t csp_recv(struct s_client *client, uchar *buf, int32_t l)
+static int32_t csp_recv(struct s_client *client, uint8_t *buf, int32_t l)
 {
 	int32_t rs = 0;
 	if(!client->udp_fd) { return (-9); }
@@ -160,7 +160,7 @@ static int32_t csp_recv(struct s_client *client, uchar *buf, int32_t l)
 			if(chk_csp_ctab(er, &cfg.csp.filter_caidtab))
 			{
 				memcpy(er->cw, buf + 13, sizeof(er->cw));
-				uchar orgname[32] = {0};
+				uint8_t orgname[32] = {0};
 				if(rs >= 31)
 				{
 					// origin connector name included
@@ -201,7 +201,7 @@ static int32_t csp_recv(struct s_client *client, uchar *buf, int32_t l)
 			uint32_t port = b2i(4, buf + 9);
 			SIN_GET_PORT(client->udp_sa) = htons(port);
 
-			uchar pingrpl[9];
+			uint8_t pingrpl[9];
 			pingrpl[0] = TYPE_PINGRPL;
 			memcpy(pingrpl + 1, buf + 1, 8);
 			int32_t status = sendto(client->udp_fd, pingrpl, sizeof(pingrpl), 0, (struct sockaddr *) &client->udp_sa, client->udp_sa_len);

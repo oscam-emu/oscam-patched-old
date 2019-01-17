@@ -196,13 +196,13 @@ void cacheex_cleanup_hitcache(bool force)
 	{
 		i_next = i->next;
 		cachehit = get_data_from_node(i);
-		
+
 		if(!cachehit)
-		{ 
+		{
 			i = i_next;
 			continue;
 		}
-		
+
 		cs_ftime(&now);
 		gone = comp_timeb(&now, &cachehit->time);
 		gone_max_hitcache_time = comp_timeb(&now, &cachehit->max_hitcache_time);
@@ -223,7 +223,7 @@ void cacheex_cleanup_hitcache(bool force)
 	SAFE_RWLOCK_UNLOCK(&hitcache_lock);
 }
 
-static int32_t cacheex_ecm_hash_calc(uchar *buf, int32_t n)
+static int32_t cacheex_ecm_hash_calc(uint8_t *buf, int32_t n)
 {
 	int32_t i, h = 0;
 	for(i = 0; i < n; i++)
@@ -511,7 +511,7 @@ void cacheex_cache_push(ECM_REQUEST *er)
 						&& chk_ctab(er->caid, &cl->ctab)  					 //Caid-check
 						&& (!checkECMD5(er) || chk_ident_filter(er->caid, er->prid, &cl->ftab))	 	 //Ident-check (not for csp: prid=0 always!)
 						&& chk_srvid(cl, er) //Service-check
-						&& chk_csp_ctab(er, &cl->account->cacheex.filter_caidtab) //cacheex_ecm_filter			
+						&& chk_csp_ctab(er, &cl->account->cacheex.filter_caidtab) //cacheex_ecm_filter
 				  )
 				{
 					cacheex_cache_push_to_client(cl, er);
@@ -540,7 +540,7 @@ void cacheex_cache_push(ECM_REQUEST *er)
 					&& chk_ctab(er->caid, &rdr->ctab)  					 //Caid-check
 					&& (!checkECMD5(er) || chk_ident_filter(er->caid, er->prid, &rdr->ftab))	 	 //Ident-check (not for csp: prid=0 always!)
 					&& chk_srvid(cl, er) //Service-check
-					&& chk_csp_ctab(er, &rdr->cacheex.filter_caidtab) //cacheex_ecm_filter					
+					&& chk_csp_ctab(er, &rdr->cacheex.filter_caidtab) //cacheex_ecm_filter
 			  )
 			{
 				cacheex_cache_push_to_client(cl, er);
@@ -627,7 +627,7 @@ static void log_cacheex_cw(ECM_REQUEST *er, char *reason)
 		{ memcpy(remotenodeid, data, 8); }
 	else
 		{ memset(remotenodeid, 0 , 8); }
-	
+
 	char buf_ecm[109];
 	format_ecm(er, buf_ecm, 109);
 	cs_log_dbg(D_CACHEEX,"got pushed ecm [%s]: %s - odd/even 0x%x - CSP cw: %s - pushed from %s, at hop %d, origin node-id %" PRIu64 "X",
@@ -712,7 +712,7 @@ static int32_t cacheex_add_to_cache_int(struct s_client *cl, ECM_REQUEST *er, in
 		return 0;
 	}
 
-	if((csp && cfg.csp.block_fakecws) || (cl->reader && cl->reader->cacheex.block_fakecws) 
+	if((csp && cfg.csp.block_fakecws) || (cl->reader && cl->reader->cacheex.block_fakecws)
 				|| (!cl->reader && cl->account && cl->account->cacheex.block_fakecws))
 	{
 		if(chk_is_fakecw(er->cw))
@@ -778,7 +778,7 @@ static struct s_cacheex_matcher *cacheex_matcher_read_int(void)
 		{ return NULL; }
 
 	char token[1024];
-	unsigned char type;
+	uint8_t type;
 	int32_t i, ret, count = 0;
 	struct s_cacheex_matcher *new_cacheex_matcher = NULL, *entry, *last = NULL;
 	uint32_t line = 0;

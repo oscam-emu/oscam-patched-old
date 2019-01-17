@@ -65,7 +65,7 @@ enum smartreader_break_type { BREAK_OFF = 0, BREAK_ON = 1 };
 
 /** Port interface for chips with multiple interfaces */
 
-enum smartreader_rdrtypename 
+enum smartreader_rdrtypename
 {
 	SR			= 0,
 	Infinity	= 1,

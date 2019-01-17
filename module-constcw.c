@@ -24,7 +24,7 @@ int32_t constcw_file_available(void)
 	return (1);
 }
 
-int32_t constcw_analyse_file(uint16_t c_caid, uint32_t c_prid, uint16_t c_sid, uint16_t c_pmtpid, uint32_t c_vpid, uint16_t c_ecmpid, uchar *dcw)
+int32_t constcw_analyse_file(uint16_t c_caid, uint32_t c_prid, uint16_t c_sid, uint16_t c_pmtpid, uint32_t c_vpid, uint16_t c_ecmpid, uint8_t *dcw)
 {
 	//CAID:PROVIDER:SID:PMTPID:ECMPID:VPID:XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX
 	FILE *fp;
@@ -48,22 +48,22 @@ int32_t constcw_analyse_file(uint16_t c_caid, uint32_t c_prid, uint16_t c_sid, u
 		int ret = sscanf(token, "%4x:%6x:%4x:%4x:%4x::%2x %2x %2x %2x %2x %2x %2x %2x %2x %2x %2x %2x %2x %2x %2x %2x", &caid, &provid, &sid, &pmtpid, &ecmpid,
 			   &cw[0], &cw[1], &cw[2], &cw[3], &cw[4], &cw[5], &cw[6], &cw[7],
 			   &cw[8], &cw[9], &cw[10], &cw[11], &cw[12], &cw[13], &cw[14], &cw[15]);
-		
-		if(ret != 21){   
+
+		if(ret != 21){
 			ret = sscanf(token, "%4x:%6x:%4x:%4x:%4x:%4x:%2x %2x %2x %2x %2x %2x %2x %2x %2x %2x %2x %2x %2x %2x %2x %2x", &caid, &provid, &sid, &pmtpid, &ecmpid, &vpid,
 				   &cw[0], &cw[1], &cw[2], &cw[3], &cw[4], &cw[5], &cw[6], &cw[7],
 				   &cw[8], &cw[9], &cw[10], &cw[11], &cw[12], &cw[13], &cw[14], &cw[15]);
 			if(ret != 22) continue;
-		}		
+		}
 
 		//cs_log("Line found: %s", token);
-		if(c_caid == caid && c_sid == sid && (!provid || provid == c_prid) && (!pmtpid || !c_pmtpid || pmtpid == c_pmtpid) && (!vpid || !c_vpid || vpid == c_vpid) 
+		if(c_caid == caid && c_sid == sid && (!provid || provid == c_prid) && (!pmtpid || !c_pmtpid || pmtpid == c_pmtpid) && (!vpid || !c_vpid || vpid == c_vpid)
 				&& (!ecmpid || !c_ecmpid || ecmpid == c_ecmpid))
 		{
 			fclose(fp);
 			int8_t i;
 			for(i = 0; i < 16; ++i)
-				{ dcw[i] = (uchar) cw[i]; }
+				{ dcw[i] = (uint8_t) cw[i]; }
 			cs_log("Entry found: %04X@%06X:%04X:%04X:%04X:%04X:%s", caid, provid, sid, pmtpid, ecmpid, vpid, cs_hexdump(1, dcw, 16, token, sizeof(token)));
 			return 1;
 		}
@@ -75,7 +75,7 @@ int32_t constcw_analyse_file(uint16_t c_caid, uint32_t c_prid, uint16_t c_sid, u
 //************************************************************************************************************************
 //* client/server common functions
 //************************************************************************************************************************
-static int32_t constcw_recv(struct s_client *client, uchar *buf, int32_t l)
+static int32_t constcw_recv(struct s_client *client, uint8_t *buf, int32_t l)
 {
 	int32_t ret;
 
@@ -125,7 +125,7 @@ static int32_t constcw_send_ecm(struct s_client *client, ECM_REQUEST *er)
 {
 	time_t t;
 	struct s_reader *rdr = client->reader;
-	uchar cw[16];
+	uint8_t cw[16];
 
 	t = time(NULL);
 	// Check if DCW exist in the files
@@ -145,7 +145,7 @@ static int32_t constcw_send_ecm(struct s_client *client, ECM_REQUEST *er)
 	return (0);
 }
 
-static int32_t constcw_recv_chk(struct s_client *UNUSED(client), uchar *UNUSED(dcw), int32_t *rc, uchar *UNUSED(buf), int32_t UNUSED(n))
+static int32_t constcw_recv_chk(struct s_client *UNUSED(client), uint8_t *UNUSED(dcw), int32_t *rc, uint8_t *UNUSED(buf), int32_t UNUSED(n))
 {
 	//dcw = dcw;
 	//n = n;

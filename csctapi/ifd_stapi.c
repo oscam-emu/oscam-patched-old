@@ -32,11 +32,11 @@ static int32_t stapi_init(struct s_reader *reader)
 	if(!cs_malloc(&reader->crdr_data, sizeof(struct stapi_data)))
 		{ return ERROR; }
 	struct stapi_data *crdr_data = reader->crdr_data;
-	
-#ifdef CARDREADER_STAPI5	
+
+#ifdef CARDREADER_STAPI5
 	STReader_GetRevision();
 #endif
-	
+
 	return STReader_Open(reader->device, &crdr_data->stapi_handle);
 }
 

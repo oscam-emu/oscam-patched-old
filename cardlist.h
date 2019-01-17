@@ -4,7 +4,7 @@
 struct known_cards
 {
 	char providername[32];
-//max atrsize incl. spaces
+	//max atrsize incl. spaces
 	char atr[80];
 	int atrsize;
 }
@@ -42,114 +42,114 @@ struct atrlist
 
 void findatr(struct s_reader *reader)
 {
-	current.found  = 0;
+	current.found = 0;
 	current.ishd03 = 0;
 	current.ishd04 = 0;
 
 	memset(current.providername, 0, 32);
-	if ( strncmp(current.atr, hdplus01.atr, hdplus01.atrsize) == 0 )
+	if (strncmp(current.atr, hdplus01.atr, hdplus01.atrsize) == 0)
 	{
 		memcpy(current.providername, hdplus01.providername, strlen(hdplus01.providername));
 		current.found = 1;
 		return;
 	}
-	else if ( strncmp(current.atr, hdplus02.atr, hdplus02.atrsize) == 0 )
+	else if (strncmp(current.atr, hdplus02.atr, hdplus02.atrsize) == 0)
 	{
 		memcpy(current.providername, hdplus02.providername, strlen(hdplus02.providername));
 		current.found = 1;
 		return;
 	}
-	else if ( strncmp(current.atr, hdplus03.atr, hdplus03.atrsize) == 0 )
+	else if (strncmp(current.atr, hdplus03.atr, hdplus03.atrsize) == 0)
 	{
-		current.ishd03=1;
+		current.ishd03 = 1;
 		memcpy(current.providername, hdplus03.providername, strlen(hdplus03.providername));
 		current.found = 1;
 		return;
 	}
-	else if ( strncmp(current.atr, hdplus03a.atr, hdplus03a.atrsize) == 0 )
+	else if (strncmp(current.atr, hdplus03a.atr, hdplus03a.atrsize) == 0)
 	{
-		current.ishd03=1;
-		current.badcard=1;
+		current.ishd03 = 1;
+		current.badcard = 1;
 		memcpy(current.providername, hdplus03a.providername, strlen(hdplus03a.providername));
 		current.found = 1;
 		return;
 	}
-	else if ( strncmp(current.atr, hdplus03b.atr, hdplus03b.atrsize) == 0 )
+	else if (strncmp(current.atr, hdplus03b.atr, hdplus03b.atrsize) == 0)
 	{
-		current.ishd03=1;
+		current.ishd03 = 1;
 		memcpy(current.providername, hdplus03b.providername, strlen(hdplus03b.providername));
 		current.found = 1;
 		return;
 	}
-	else if ( strncmp(current.atr, hdplus04.atr, hdplus04.atrsize) == 0 )
+	else if (strncmp(current.atr, hdplus04.atr, hdplus04.atrsize) == 0)
 	{
-		current.ishd04=1;
+		current.ishd04 = 1;
 		memcpy(current.providername, hdplus04.providername, strlen(hdplus04.providername));
 		current.found = 1;
 		return;
 	}
-	else if ( strncmp(current.atr, hdplus04a.atr, hdplus04a.atrsize) == 0 )
+	else if (strncmp(current.atr, hdplus04a.atr, hdplus04a.atrsize) == 0)
 	{
-		current.ishd04=1;
+		current.ishd04 = 1;
 		memcpy(current.providername, hdplus04a.providername, strlen(hdplus04a.providername));
 		current.found = 1;
 		return;
 	}
-	else if ( strncmp(current.atr, unity_01.atr, unity_01.atrsize) == 0 )
+	else if (strncmp(current.atr, unity_01.atr, unity_01.atrsize) == 0)
 	{
 		memcpy(current.providername, unity_01.providername, strlen(unity_01.providername));
 		current.found = 1;
 		return;
 	}
-	else if ( strncmp(current.atr, unity_02.atr, unity_02.atrsize) == 0 )
+	else if (strncmp(current.atr, unity_02.atr, unity_02.atrsize) == 0)
 	{
 		memcpy(current.providername, unity_02.providername, strlen(unity_02.providername));
 		current.found = 1;
 		return;
 	}
-	else if ( strncmp(current.atr, kdg_02.atr, kdg_02.atrsize) == 0 )
+	else if (strncmp(current.atr, kdg_02.atr, kdg_02.atrsize) == 0)
 	{
 		memcpy(current.providername, kdg_02.providername, strlen(kdg_02.providername));
 		current.found = 1;
 		return;
 	}
-	else if ( strncmp(current.atr, rlmega.atr, rlmega.atrsize) == 0 )
+	else if (strncmp(current.atr, rlmega.atr, rlmega.atrsize) == 0)
 	{
 		memcpy(current.providername, rlmega.providername, strlen(rlmega.providername));
 		current.found = 1;
 		return;
 	}
-	else if ( strncmp(current.atr, mtv.atr, mtv.atrsize) == 0 )
+	else if (strncmp(current.atr, mtv.atr, mtv.atrsize) == 0)
 	{
 		memcpy(current.providername, mtv.providername, strlen(mtv.providername));
 		current.found = 1;
 		return;
 	}
-	else if ( strncmp(current.atr, orfice.atr, orfice.atrsize) == 0 )
+	else if (strncmp(current.atr, orfice.atr, orfice.atrsize) == 0)
 	{
 		memcpy(current.providername, orfice.providername, strlen(orfice.providername));
 		current.found = 1;
 		return;
 	}
-	else if ( strncmp(current.atr, cdnl.atr, cdnl.atrsize) == 0 )
+	else if (strncmp(current.atr, cdnl.atr, cdnl.atrsize) == 0)
 	{
 		memcpy(current.providername, cdnl.providername, strlen(cdnl.providername));
 		current.found = 1;
 		return;
 	}
-	else if ( strncmp(current.atr, tivusatd.atr, tivusatd.atrsize) == 0 )
+	else if (strncmp(current.atr, tivusatd.atr, tivusatd.atrsize) == 0)
 	{
 		memcpy(current.providername, tivusatd.providername, strlen(tivusatd.providername));
 		current.found = 1;
 		return;
 	}
-	else if ( strncmp(current.atr, tivusate.atr, tivusate.atrsize) == 0 )
+	else if (strncmp(current.atr, tivusate.atr, tivusate.atrsize) == 0)
 	{
 		memcpy(current.providername, tivusate.providername, strlen(tivusate.providername));
 		current.found = 1;
 		return;
 	}
-	else if ( strncmp(current.atr, srg.atr, srg.atrsize) == 0 )
+	else if (strncmp(current.atr, srg.atr, srg.atrsize) == 0)
 	{
 		memcpy(current.providername, srg.providername, strlen(srg.providername));
 		reader->read_old_classes = 0;
@@ -158,37 +158,37 @@ void findatr(struct s_reader *reader)
 	}
 
 	/* test ATR for ins7e11 12,13,14,15 */
-	if ( current.found == 0 )
+	if (current.found == 0)
 	{
 		int i;
 		char buf[66];
-		for( i = 11; i < 16; i++ )
+		for(i = 11; i < 16; i++)
 		{
-			snprintf(buf, skyDEv13.atrsize+1, "3F FF %i 25 03 10 80 41 B0 07 69 FF 4A 50 70 00 00 50 31 01 00 %i", i, i);
-			if ( strncmp(current.atr, buf, skyDEv13.atrsize) == 0 )
+			snprintf(buf, skyDEv13.atrsize + 1, "3F FF %i 25 03 10 80 41 B0 07 69 FF 4A 50 70 00 00 50 31 01 00 %i", i, i);
+			if (strncmp(current.atr, buf, skyDEv13.atrsize) == 0)
 			{
 				memcpy(current.providername, skyDEv13.providername, strlen(skyDEv13.providername));
 				reader->caid = 0x09C4;
 				current.found = 1;
 				break;
 			}
-			snprintf(buf, skyDEv14.atrsize+1, "3F FD %i 25 02 50 80 0F 41 B0 0A 69 FF 4A 50 F0 00 00 50 31 03", i);
-			if ( strncmp(current.atr, buf, skyDEv14.atrsize) == 0 )
+			snprintf(buf, skyDEv14.atrsize + 1, "3F FD %i 25 02 50 80 0F 41 B0 0A 69 FF 4A 50 F0 00 00 50 31 03", i);
+			if (strncmp(current.atr, buf, skyDEv14.atrsize) == 0)
 			{
 				memcpy(current.providername, skyDEv14.providername, strlen(skyDEv14.providername));
 				reader->caid = 0x098C;
 				current.found = 1;
 				break;
 			}
-			snprintf(buf, kbw_v23.atrsize+1, "3F FF %i 25 03 10 80 54 B0 01 69 FF 4A 50 70 00 00 4B 57 01 00 00", i);
-			if ( strncmp(current.atr, buf, kbw_v23.atrsize) == 0 )
+			snprintf(buf, kbw_v23.atrsize + 1, "3F FF %i 25 03 10 80 54 B0 01 69 FF 4A 50 70 00 00 4B 57 01 00 00", i);
+			if (strncmp(current.atr, buf, kbw_v23.atrsize) == 0)
 			{
 				memcpy(current.providername, kbw_v23.providername, strlen(kbw_v23.providername));
 				current.found = 1;
 				break;
 			}
-			snprintf(buf, kdg9.atrsize+1, "3F FD %i 25 02 50 00 03 33 B0 15 69 FF 4A 50 F0 80 03 4B 4C 03", i);
-			if ( strncmp(current.atr, buf, kdg9.atrsize) == 0 )
+			snprintf(buf, kdg9.atrsize + 1, "3F FD %i 25 02 50 00 03 33 B0 15 69 FF 4A 50 F0 80 03 4B 4C 03", i);
+			if (strncmp(current.atr, buf, kdg9.atrsize) == 0)
 			{
 				memcpy(current.providername, kdg9.providername, strlen(kdg9.providername));
 				current.found = 1;
