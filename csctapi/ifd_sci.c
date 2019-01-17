@@ -22,13 +22,13 @@ struct sr_data
 {
 	uint8_t old_reset;
 	unsigned char T;
-	uint32_t fs; 
+	uint32_t fs;
 	uint32_t ETU;
-	uint32_t WWT; 
-	uint32_t CWT; 
-	uint32_t BWT; 
-	uint32_t EGT; 	
-	unsigned char P; 
+	uint32_t WWT;
+	uint32_t CWT;
+	uint32_t BWT;
+	uint32_t EGT;
+	unsigned char P;
 	unsigned char I;
 };
 
@@ -58,9 +58,9 @@ static int32_t Sci_Deactivate(struct s_reader *reader)
 		}
 	}
 	else {return ERROR;}
-		
+
 	return OK;
-	
+
 }
 
 static int32_t Sci_Activate(struct s_reader *reader)
@@ -93,7 +93,7 @@ static int32_t Sci_Read_ATR(struct s_reader *reader, ATR *atr)   // reads ATR on
 	uint32_t timeout = ATR_TIMEOUT;
 	unsigned char buf[SCI_MAX_ATR_SIZE];
 	int32_t n = 0, statusreturn = 0;
-	
+
 	if(IO_Serial_Read(reader, 0, timeout, 1, buf + n))  //read first char of atr
 	{
 		rdr_log(reader, "ERROR: no characters found in ATR!");
@@ -121,7 +121,7 @@ static int32_t Sci_Read_ATR(struct s_reader *reader, ATR *atr)   // reads ATR on
 	int32_t TDi = T0; // place T0 char into TDi for looped parsing.
 	while(n < SCI_MAX_ATR_SIZE)
 	{
-		if(TDi & 0x10)  //TA Present:                              //The value of TA(i) is always interpreted as XI || UI if i > 2 and T = 15 ='F'in TD(i–1)
+		if(TDi & 0x10)  //TA Present:                              //The value of TA(i) is always interpreted as XI || UI if i > 2 and T = 15 ='F'in TD(iï¿½1)
 		{
 			if(IO_Serial_Read(reader, 0, timeout, 1, buf + n)) { break; }  //In this case, TA(i) contains the clock stop indicator XI, which indicates the logical
 			//state the clockline must assume when the clock is stopped, and the class indicator UI,
@@ -308,7 +308,7 @@ static int32_t Sci_Reset(struct s_reader *reader, ATR *atr)
 	int32_t tries = 0;
 	int32_t max_tries = 0;
 	int32_t pll_start_fs = 0;
-	if (reader->cardmhz > 2000 && reader->cardmhz != 8300) 
+	if (reader->cardmhz > 2000 && reader->cardmhz != 8300)
 	{
 		max_tries = (((double)(reader->cardmhz/900)) * 2 ) + 1 ; // the higher the maxpll the higher tries needed, to have 9 Mhz or first avb below.
 		pll_start_fs = ((double)(reader->cardmhz/300)) + 1.5 ; // first avbl reader Mhz equal or above 3.0 Mhz
@@ -341,8 +341,8 @@ static int32_t Sci_Reset(struct s_reader *reader, ATR *atr)
 		else
 		{
 			ret = Sci_Read_ATR(reader, atr);
-			if(ret == ERROR) 
-			{ 
+			if(ret == ERROR)
+			{
 				Sci_Deactivate(reader);
 				Sci_Activate(reader);
 				if (reader->cardmhz > 2000 && reader->cardmhz != 8300)
@@ -357,12 +357,12 @@ static int32_t Sci_Reset(struct s_reader *reader, ATR *atr)
 					params.fs = (11 - tries); // if 1 Mhz init failed retry with 3.19 Mhz up to 5.188 Mhz
 					rdr_log(reader, "Read ATR fail, attempt %d/5  fs = %d", tries, params.fs);
 				}
-				else 
+				else
 				{
 					tries++; // increase fs
 					params.fs = (2 + tries); // if 1 Mhz init failed retry with 3.0 Mhz up to 7.0 Mhz
 					rdr_log(reader, "Read ATR fail, attempt %d/5  fs = %d", tries, params.fs);
-				} 
+				}
 			}
 			else // ATR fetched successfully!
 			{
@@ -435,7 +435,7 @@ static int32_t Sci_FastReset(struct s_reader *reader, ATR *atr)
 	}
 	else
 	{
-		atr_len = reader->card_atr_length + 2; // data buffer has atr lenght + 2 bytes 
+		atr_len = reader->card_atr_length + 2; // data buffer has atr lenght + 2 bytes
 	}
 
 	Sci_Activate(reader);
@@ -467,7 +467,7 @@ static int32_t Sci_FastReset(struct s_reader *reader, ATR *atr)
 				rdr_log(reader,"Error reading ATR");
 				atr_ok= ERROR;
 			}
-				
+
 			cs_sleepms(150);
 			Sci_WriteSettings(reader, crdr_data->T,crdr_data->fs,crdr_data->ETU, crdr_data->WWT,crdr_data->CWT,crdr_data->BWT,crdr_data->EGT,crdr_data->P,crdr_data->I);
 			cs_sleepms(150);
@@ -485,7 +485,7 @@ static int32_t Sci_Init(struct s_reader *reader)
 		rdr_log(reader," Wait On closing before restart %u", i);
 		cs_sleepms(1000);
 	}
-	
+
 	int flags = O_RDWR | O_NOCTTY;
 #if defined(__SH4__) || defined(STB04SCI)
 	flags |= O_NONBLOCK;
@@ -501,7 +501,7 @@ static int32_t Sci_Init(struct s_reader *reader)
 	if(!reader->crdr_data && !cs_malloc(&reader->crdr_data, sizeof(struct sr_data)))
 		{ return ERROR; }
 	struct sr_data *crdr_data = reader->crdr_data;
-	crdr_data->old_reset = 1;	
+	crdr_data->old_reset = 1;
 	reader->handle_nr = reader->handle + 1;
 	return OK;
 }
@@ -534,7 +534,7 @@ static int32_t Sci_Close(struct s_reader *reader)
 
 static int32_t sci_write_settings(struct s_reader *reader, struct s_cardreader_settings *s)
 {
-	if(reader->cardmhz > 2000)   // only for dreambox internal pll readers clockspeed can be set precise others like vu ignore it and work always at 4.5 Mhz 
+	if(reader->cardmhz > 2000)   // only for dreambox internal pll readers clockspeed can be set precise others like vu ignore it and work always at 4.5 Mhz
 	{
 		// P fixed at 5V since this is default class A card, and TB is deprecated
 		if(reader->protocol_type != ATR_PROTOCOL_TYPE_T14)   // fix VU+ internal reader slow responses on T0/T1

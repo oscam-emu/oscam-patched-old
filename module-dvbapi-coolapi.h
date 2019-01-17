@@ -1,7 +1,7 @@
 #ifndef _MODULE_COOLAPI_H_
 #define _MODULE_COOLAPI_H_
 
-int32_t coolapi_set_filter(int32_t fd, int32_t num, int32_t pid, uchar *flt, uchar *mask, int32_t type);
+int32_t coolapi_set_filter(int32_t fd, int32_t num, int32_t pid, uint8_t *flt, uint8_t *mask, int32_t type);
 int32_t coolapi_remove_filter(int32_t fd, int32_t num);
 int32_t coolapi_open_device(int32_t demux_index, int32_t demux_id);
 int32_t coolapi_close_device(int32_t fd);

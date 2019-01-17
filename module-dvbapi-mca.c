@@ -52,7 +52,7 @@ extern DEMUXTYPE demux[MAX_DEMUX];
 int32_t openxcas_provid;
 uint16_t openxcas_sid, openxcas_caid, openxcas_ecm_pid;
 
-static unsigned char openxcas_cw[16];
+static uint8_t openxcas_cw[16];
 static int32_t openxcas_seq, openxcas_filter_idx, openxcas_stream_id, openxcas_cipher_idx, openxcas_busy = 0;
 static uint16_t openxcas_video_pid, openxcas_audio_pid, openxcas_data_pid;
 static uint8_t found[MAX_DEMUX];
@@ -86,7 +86,7 @@ struct s_ecmpids_matrix
 	int32_t irdeto_cycle;
 	int32_t checked;
 	int32_t status;
-	unsigned char table;
+	uint8_t table;
 	int32_t index;
 	uint32_t streams;
 };
@@ -126,9 +126,9 @@ typedef struct demux_s_matrix
 	int32_t tries;
 	int32_t max_status;
 	uint16_t program_number;
-	unsigned char lastcw[2][8];
+	uint8_t lastcw[2][8];
 	int32_t emm_filter;
-	uchar hexserial[8];
+	uint8_t hexserial[8];
 	struct s_reader *rdr;
 	char pmt_file[30];
 	int32_t pmt_time;
@@ -220,7 +220,7 @@ static int mca_write_flt(DEMUXMATRIX *demux_matrix, int timeout)
 	return rval;
 }
 
-static int mca_set_key(unsigned char *mca_cw)
+static int mca_set_key(uint8_t *mca_cw)
 {
 	int rval = -1;
 	struct pollfd mdesc_poll_fd;
@@ -235,7 +235,7 @@ static int mca_set_key(unsigned char *mca_cw)
 	return rval;
 }
 
-static int mca_capmt_remove_duplicates(uchar *capmt, int len)
+static int mca_capmt_remove_duplicates(uint8_t *capmt, int len)
 {
 	int i, newlen = len;
 	uint16_t descriptor_length = 0;
@@ -251,8 +251,8 @@ static int mca_capmt_remove_duplicates(uchar *capmt, int len)
 		}
 	}
 	program_info_length -= (len - newlen);
-	capmt[4] = (uchar)((capmt[4] & 0xF0) | ((program_info_length & 0xF00) >> 8));
-	capmt[5] = (uchar)(program_info_length & 0x0FF);
+	capmt[4] = (uint8_t)((capmt[4] & 0xF0) | ((program_info_length & 0xF00) >> 8));
+	capmt[5] = (uint8_t)(program_info_length & 0x0FF);
 	return newlen;
 }
 
@@ -284,7 +284,7 @@ static void mca_demux_convert(DEMUXTYPE *demux_orig, DEMUXMATRIX *demux_matrix)
 		demux_matrix->ECMpids[i].irdeto_cycle = (int32_t)demux_orig->ECMpids[i].irdeto_cycle;
 		demux_matrix->ECMpids[i].checked = (int32_t)demux_orig->ECMpids[i].checked;
 		demux_matrix->ECMpids[i].status = (int32_t)demux_orig->ECMpids[i].status;
-		demux_matrix->ECMpids[i].table = (unsigned char)demux_orig->ECMpids[i].table;
+		demux_matrix->ECMpids[i].table = (uint8_t)demux_orig->ECMpids[i].table;
 		demux_matrix->ECMpids[i].streams = (uint32_t)demux_orig->ECMpids[i].streams;
 	}
 	demux_matrix->STREAMpidcount = (int32_t)demux->STREAMpidcount;
@@ -293,15 +293,15 @@ static void mca_demux_convert(DEMUXTYPE *demux_orig, DEMUXMATRIX *demux_matrix)
 	demux_matrix->curindex = (int32_t)demux_orig->curindex;
 	demux_matrix->max_status = (int32_t)demux_orig->max_status;
 	demux_matrix->program_number = (uint16_t)demux_orig->program_number;
-	memcpy(&demux_matrix->lastcw, &demux_orig->lastcw, 2 * 8 * sizeof(unsigned char));
+	memcpy(&demux_matrix->lastcw, &demux_orig->lastcw, 2 * 8 * sizeof(uint8_t));
 	demux_matrix->emm_filter = (int32_t)demux_orig->emm_filter;
-	memcpy(&demux_matrix->hexserial, &demux_orig->hexserial, 8 * sizeof(uchar));
+	memcpy(&demux_matrix->hexserial, &demux_orig->hexserial, 8 * sizeof(uint8_t));
 	demux_matrix->rdr = (struct s_reader *)demux_orig->rdr;
 	memcpy(&demux_matrix->pmt_file, &demux_orig->pmt_file, 30);
 	demux_matrix->pmt_time = (int32_t)demux_orig->pmt_time;
 }
 
-static void mca_ecm_callback(int32_t stream_id, uint32_t UNUSED(seq), int32_t cipher_index, uint32_t caid, unsigned char *ecm_data, int32_t l, uint16_t pid)
+static void mca_ecm_callback(int32_t stream_id, uint32_t UNUSED(seq), int32_t cipher_index, uint32_t caid, uint8_t *ecm_data, int32_t l, uint16_t pid)
 {
 	cs_log_dbg(D_DVBAPI, "ecm callback received");
 
@@ -348,7 +348,7 @@ static void mca_ecm_callback(int32_t stream_id, uint32_t UNUSED(seq), int32_t ci
 }
 
 
-static void mca_ex_callback(int32_t stream_id, uint32_t UNUSED(seq), int32_t idx, uint32_t pid, unsigned char *ecm_data, int32_t l)
+static void mca_ex_callback(int32_t stream_id, uint32_t UNUSED(seq), int32_t idx, uint32_t pid, uint8_t *ecm_data, int32_t l)
 {
 	cs_log_dbg(D_DVBAPI, "ex callback received");
 
@@ -358,7 +358,7 @@ static void mca_ex_callback(int32_t stream_id, uint32_t UNUSED(seq), int32_t idx
 
 	if(l < 0 || l > MAX_ECM_SIZE)
 		{ return; }
-	
+
 	ECM_REQUEST *er;
 	if(!(er = get_ecmtask()))
 		{ return; }
@@ -378,10 +378,8 @@ static void mca_ex_callback(int32_t stream_id, uint32_t UNUSED(seq), int32_t idx
 	else
 		{ cs_log_dbg(D_DVBAPI, "ex filter stopped"); }
 
-
-
-	unsigned char mask[12];
-	unsigned char comp[12];
+	uint8_t mask[12];
+	uint8_t comp[12];
 	memset(&mask, 0x00, sizeof(mask));
 	memset(&comp, 0x00, sizeof(comp));
 
@@ -456,9 +454,8 @@ static void *mca_main_thread(void *cli)
 					{ cs_log_dump_dbg(D_DVBAPI, msg.buf + 2, new_len, "capmt (duplicates removed):"); }
 				int demux_id = dvbapi_parse_capmt(msg.buf + 2, new_len, -1, NULL, 0, 0, 0, 0);
 
-
-				unsigned char mask[12];
-				unsigned char comp[12];
+				uint8_t mask[12];
+				uint8_t comp[12];
 				memset(&mask, 0x00, sizeof(mask));
 				memset(&comp, 0x00, sizeof(comp));
 
@@ -501,13 +498,13 @@ static void *mca_main_thread(void *cli)
 				memcpy(&data, msg.buf, msg.buf_len);
 				if(!openxcas_busy)
 					//openxcas_filter_callback(msg.stream_id, msg.sequence, OPENXCAS_FILTER_ECM, &data);
-					{ mca_ecm_callback(msg.stream_id, msg.sequence, data.cipher_index, data.ca_system_id, (unsigned char *)&data.buf, data.len, data.pid); }
+					{ mca_ecm_callback(msg.stream_id, msg.sequence, data.cipher_index, data.ca_system_id, (uint8_t *)&data.buf, data.len, data.pid); }
 				break;
 			case OPENXCAS_PID_FILTER_CALLBACK:
 				cs_log_dbg(D_DVBAPI, "OPENXCAS_PID_FILTER_CALLBACK");
 				memcpy(&data, msg.buf, msg.buf_len);
 				//openxcas_filter_callback_ex(msg.stream_id, msg.sequence, (struct stOpenXCAS_Data *)msg.buf);
-				mca_ex_callback(msg.stream_id, msg.sequence, data.cipher_index, data.pid, (unsigned char *)&data.buf, data.len);
+				mca_ex_callback(msg.stream_id, msg.sequence, data.cipher_index, data.pid, (uuint8_t *)&data.buf, data.len);
 				break;
 			case OPENXCAS_QUIT:
 				cs_log_dbg(D_DVBAPI, "OPENXCAS_QUIT");
@@ -533,7 +530,7 @@ void mca_send_dcw(struct s_client *client, ECM_REQUEST *er)
 	uint32_t delay = 0;
 
 	cs_log_dbg(D_DVBAPI, "send_dcw");
-		
+
 	if(delayentry)
 	{
 		if(delayentry->delay < 1000)
@@ -547,7 +544,7 @@ void mca_send_dcw(struct s_client *client, ECM_REQUEST *er)
 		delay = cfg.dvbapi_delayer;
 		cs_log_dbg(D_DVBAPI, "generic delay: write cw %d ms after ecmrequest", delay);
 	}
-		
+
 	delayer(er, delay);
 
 	dvbapi_write_ecminfo_file(client, er, demux[0].lastcw[0], demux[0].lastcw[1]);
@@ -568,8 +565,8 @@ void mca_send_dcw(struct s_client *client, ECM_REQUEST *er)
 			openxcas_stop_filter(openxcas_stream_id, OPENXCAS_FILTER_ECM);
 			openxcas_remove_filter(openxcas_stream_id, OPENXCAS_FILTER_ECM);
 
-			unsigned char mask[12];
-			unsigned char comp[12];
+			uint8_t mask[12];
+			uint8_t comp[12];
 			memset(&mask, 0x00, sizeof(mask));
 			memset(&comp, 0x00, sizeof(comp));
 
@@ -594,14 +591,14 @@ void mca_send_dcw(struct s_client *client, ECM_REQUEST *er)
 		}
 	}
 
-	unsigned char nullcw[8];
+	uint8_t nullcw[8];
 	memset(nullcw, 0, 8);
 
 	int32_t n;
 	for(n = 0; n < 2; n++)
 	{
 		// 0x2600 used by biss and constant cw could be indeed zero
-		if((memcmp(er->cw + (n * 8), demux[0].lastcw[0], 8) && memcmp(er->cw + (n * 8), demux[0].lastcw[1], 8)) 
+		if((memcmp(er->cw + (n * 8), demux[0].lastcw[0], 8) && memcmp(er->cw + (n * 8), demux[0].lastcw[1], 8))
 			&& (memcmp(er->cw + (n * 8), nullcw, 8) !=0  || er->caid == 0x2600))
 		{
 			memcpy(demux[0].lastcw[n], er->cw + (n * 8), 8);
@@ -614,7 +611,7 @@ void mca_send_dcw(struct s_client *client, ECM_REQUEST *er)
 	}
 }
 
-void *mca_handler(struct s_client *cl, uchar *mbuf, int32_t module_idx)
+void *mca_handler(struct s_client *cl, uint8_t *mbuf, int32_t module_idx)
 {
 	return dvbapi_start_handler(cl, mbuf, module_idx, mca_main_thread);
 }

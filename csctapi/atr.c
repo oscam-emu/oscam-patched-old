@@ -191,7 +191,7 @@ int32_t ATR_InitFromArray(ATR *atr, const unsigned char atr_buffer[ATR_MAX_SIZE]
 	// check that TA1, if pn==1 , has a valid value for FI
 	if(atr->pn == 1 && atr->ib[pn][ATR_INTERFACE_BYTE_TA].present == 1)
 	{
-		uchar FI;
+		uint8_t FI;
 		cs_log_dbg(D_ATR, "TA1 = %02x", atr->ib[pn][ATR_INTERFACE_BYTE_TA].value);
 		FI = (atr->ib[pn][ATR_INTERFACE_BYTE_TA].value & 0xF0) >> 4;
 		cs_log_dbg(D_ATR, "FI = %02x", FI);

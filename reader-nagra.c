@@ -43,6 +43,7 @@ static time_t tier_date(uint32_t date, char *buf, int32_t l)
 		struct tm t;
 		t.tm_isdst = -1;
 		cs_gmtime_r(&ut, &t);
+		l = 27;
 		snprintf(buf, l, "%04d/%02d/%02d", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday);
 	}
 	return ut;
@@ -56,19 +57,29 @@ static char *nagra_datetime(struct s_reader *rdr, uint8_t *ndays, int32_t offset
 	int32_t days = (ndays[0] << 8 | ndays[1]) + offset;
 	int32_t sec = 0;
 	if(!csystem_data->is_tiger)
-		{ sec = (ndays[2] << 8 | ndays[3]); }
-	if(days > 0x41B4 && sizeof(time_t) < 8)  // to overcome 32-bit systems limitations
-		{ days = 0x41A2; }                   // 01-01-2038
+	{
+		sec = (ndays[2] << 8 | ndays[3]);
+	}
+	if(days > 0x41B4 && sizeof(time_t) < 8) // to overcome 32-bit systems limitations
+	{
+		days = 0x41A2; // 01-01-2038
+	}
 	tms.tm_year = 92;
 	tms.tm_mday = days + 1;
 	tms.tm_sec = sec;
 	time_t ut = mktime(&tms);
 	if(t)
-		{ *t = ut; }
+	{
+		*t = ut;
+	}
 	if(csystem_data->is_tiger)
-		{ snprintf(result, 11, "%02d/%02d/%04d", tms.tm_mday, tms.tm_mon + 1, tms.tm_year + 1900); }
+	{
+		snprintf(result, 27, "%02d/%02d/%04d", tms.tm_mday, tms.tm_mon + 1, tms.tm_year + 1900);
+	}
 	else
-		{ snprintf(result, 17, "%04d/%02d/%02d %02d:%02d", tms.tm_year + 1900, tms.tm_mon + 1, tms.tm_mday, tms.tm_hour, tms.tm_min); }
+	{
+		snprintf(result, 33, "%04d/%02d/%02d %02d:%02d", tms.tm_year + 1900, tms.tm_mon + 1, tms.tm_mday, tms.tm_hour, tms.tm_min);
+	}
 	return result;
 }
 
@@ -92,7 +103,11 @@ static int32_t do_cmd(struct s_reader *reader, unsigned char cmd, int32_t ilen, 
 	msg[5] = cmd;
 	int32_t dlen = ilen - 2;
 	msg[6] = dlen;
-	if(data && dlen > 0) { memcpy(msg + 7, data, dlen); }
+
+	if(data && dlen > 0)
+	{
+		memcpy(msg + 7, data, dlen);
+	}
 	msg[dlen + 7] = rlen;
 	if(dlen < 0)
 	{
@@ -147,7 +162,10 @@ static void Signature(unsigned char *sig, const unsigned char *vkey, const unsig
 		idea_set_encrypt_key(b200, &ks);
 		memset(v, 0, sizeof(v));
 		idea_cbc_encrypt(msg + i, b0f0, 8, &ks, v, IDEA_DECRYPT);
-		for(j = 7; j >= 0; j--) { b0f0[j] ^= msg[i + j]; }
+		for(j = 7; j >= 0; j--)
+		{
+			b0f0[j] ^= msg[i + j];
+		}
 		memcpy(b200 + 0, b0f0, 8);
 		memcpy(b200 + 8, b0f0, 8);
 	}
@@ -317,25 +335,25 @@ static int32_t NegotiateSessionKey_Tiger(struct s_reader *reader)
 	}
 	rdr_log(reader, "Negotiate sessionkey was not successful! Please check tivusat rsa key");
 	return ERROR;
-
 }
 
 static int32_t NegotiateSessionKey(struct s_reader *reader)
 {
 	def_resp;
 	unsigned char negot[64];
-	unsigned char cmd2b[] = {0x21, 0x40, 0x4D, 0xA0, 0xCA, 0x00, 0x00, 0x47, 0x27, 0x45,
-							 0x1C, 0x54, 0xd1, 0x26, 0xe7, 0xe2, 0x40, 0x20,
-							 0xd1, 0x66, 0xf4, 0x18, 0x97, 0x9d, 0x5f, 0x16,
-							 0x8f, 0x7f, 0x7a, 0x55, 0x15, 0x82, 0x31, 0x14,
-							 0x06, 0x57, 0x1a, 0x3f, 0xf0, 0x75, 0x62, 0x41,
-							 0xc2, 0x84, 0xda, 0x4c, 0x2e, 0x84, 0xe9, 0x29,
-							 0x13, 0x81, 0xee, 0xd6, 0xa9, 0xf5, 0xe9, 0xdb,
-							 0xaf, 0x22, 0x51, 0x3d, 0x44, 0xb3, 0x20, 0x83,
-							 0xde, 0xcb, 0x5f, 0x35, 0x2b, 0xb0, 0xce, 0x70,
-							 0x01, 0x02, 0x03, 0x04, //IRD nr
-							 0x00
-							};//keynr
+	unsigned char cmd2b[] = {
+		0x21, 0x40, 0x4D, 0xA0, 0xCA, 0x00, 0x00, 0x47, 0x27, 0x45,
+		0x1C, 0x54, 0xd1, 0x26, 0xe7, 0xe2, 0x40, 0x20,
+		0xd1, 0x66, 0xf4, 0x18, 0x97, 0x9d, 0x5f, 0x16,
+		0x8f, 0x7f, 0x7a, 0x55, 0x15, 0x82, 0x31, 0x14,
+		0x06, 0x57, 0x1a, 0x3f, 0xf0, 0x75, 0x62, 0x41,
+		0xc2, 0x84, 0xda, 0x4c, 0x2e, 0x84, 0xe9, 0x29,
+		0x13, 0x81, 0xee, 0xd6, 0xa9, 0xf5, 0xe9, 0xdb,
+		0xaf, 0x22, 0x51, 0x3d, 0x44, 0xb3, 0x20, 0x83,
+		0xde, 0xcb, 0x5f, 0x35, 0x2b, 0xb0, 0xce, 0x70,
+		0x01, 0x02, 0x03, 0x04, //IRD nr
+		0x00 };//keynr
+
 	unsigned char tmp[64];
 	unsigned char idea1[16];
 	unsigned char idea2[16];
@@ -585,64 +603,57 @@ static int32_t ParseDataType(struct s_reader *reader, unsigned char dt, unsigned
 	uint16_t chid;
 	switch(dt)
 	{
-	case IRDINFO:
-	{
-		reader->prid[0][0] = 0;
-		reader->prid[0][1] = 0;
-		reader->prid[0][2] = cta_res[7];
-		reader->prid[0][3] = cta_res[8];
-		if(((cta_res[7] == 0x34) && (cta_res[8] == 0x11)) || ((cta_res[7] == 0x04) && (cta_res[8] == 0x01)))   //provider 3411, 0401 needs cw swap
+		case IRDINFO:
 		{
-			rdr_log_dbg(reader, D_READER, "detect provider with swap cw!");
-			csystem_data->swapCW = 1;
-		}
+			reader->prid[0][0] = 0;
+			reader->prid[0][1] = 0;
+			reader->prid[0][2] = cta_res[7];
+			reader->prid[0][3] = cta_res[8];
+			if(((cta_res[7] == 0x34) && (cta_res[8] == 0x11)) || ((cta_res[7] == 0x04) && (cta_res[8] == 0x01)))   //provider 3411, 0401 needs cw swap
+			{
+				rdr_log_dbg(reader, D_READER, "detect provider with swap cw!");
+				csystem_data->swapCW = 1;
+			}
 
-		reader->prid[1][0] = 0x00;
-		reader->prid[1][1] = 0x00;
-		reader->prid[1][2] = 0x00;
-		reader->prid[1][3] = 0x00;
-		memcpy(reader->sa[1], reader->sa[0], 4);
-		reader->nprov += 1;
+			reader->prid[1][0] = 0x00;
+			reader->prid[1][1] = 0x00;
+			reader->prid[1][2] = 0x00;
+			reader->prid[1][3] = 0x00;
+			memcpy(reader->sa[1], reader->sa[0], 4);
+			reader->nprov += 1;
 
-		reader->caid = (SYSTEM_NAGRA | cta_res[11]);
-		memcpy(reader->irdId, cta_res + 14, 4);
-		if(reader->csystem_active)          // do not output on init but only afterwards in card_info
-		{
-			rdr_log_sensitive(reader, "IRD ID: {%s}", cs_hexdump(1, reader->irdId, 4, ds, sizeof(ds)));
-			nagra_datetime(reader, cta_res + 24, 0, ds, &reader->card_valid_to);
-			rdr_log(reader, "active to: %s", ds);
+			reader->caid = (SYSTEM_NAGRA | cta_res[11]);
+			memcpy(reader->irdId, cta_res + 14, 4);
+			if(reader->csystem_active)          // do not output on init but only afterwards in card_info
+			{
+				rdr_log_sensitive(reader, "IRD ID: {%s}", cs_hexdump(1, reader->irdId, 4, ds, sizeof(ds)));
+				nagra_datetime(reader, cta_res + 24, 0, ds, &reader->card_valid_to);
+				rdr_log(reader, "active to: %s", ds);
+			}
+			return OK;
 		}
-		return OK;
-	}
-	case TIERS:
-		if((cta_lr > 33) && (chid = b2i(2, cta_res + 11)))
-		{
-			int32_t id = (cta_res[7] * 256) | cta_res[8];
-			int32_t expire_date1 = b2i(2, cta_res + 13);
-			int32_t expire_date2 = b2i(2, cta_res + 24);
-			int32_t sooner_expire_date = expire_date1 <= expire_date2 ? expire_date1 : expire_date2;
-			// todo: add entitlements to list
-			cs_add_entitlement(reader,
-							   reader->caid,
-							   id,
-							   chid,
-							   0,
-							   tier_date(b2i(2, cta_res + 20) - 0x7f7, ds, 15),
-							   tier_date(sooner_expire_date - 0x7f7, de, 15),
-							   4,
-							   1);
-			rdr_log(reader, "|%04X|%04X    |%s  |%s  |", id, chid, ds, de);
-			addProvider(reader, cta_res);
-		}
-		return OK;
-	case 0x08:
-	case 0x88:
-		if(cta_res[11] == 0x49){
-			decryptDT08(reader, cta_res);
-		}
-		return OK;
-	default:
-		return OK;
+		case TIERS:
+			if((cta_lr > 33) && (chid = b2i(2, cta_res + 11)))
+			{
+				int32_t id = (cta_res[7] * 256) | cta_res[8];
+				int32_t expire_date1 = b2i(2, cta_res + 13);
+				int32_t expire_date2 = b2i(2, cta_res + 24);
+				int32_t sooner_expire_date = expire_date1 <= expire_date2 ? expire_date1 : expire_date2;
+				// todo: add entitlements to list
+				cs_add_entitlement(reader, reader->caid, id, chid, 0, tier_date(b2i(2, cta_res + 20) - 0x7f7, ds, 15), tier_date(sooner_expire_date - 0x7f7, de, 15), 4, 1);
+				rdr_log(reader, "|%04X|%04X    |%s  |%s  |", id, chid, ds, de);
+				addProvider(reader, cta_res);
+			}
+			return OK;
+		case 0x08:
+		case 0x88:
+			if(cta_res[11] == 0x49)
+			{
+				decryptDT08(reader, cta_res);
+			}
+			return OK;
+		default:
+			return OK;
 	}
 	return ERROR;
 }
@@ -732,7 +743,9 @@ static int32_t nagra2_card_init(struct s_reader *reader, ATR *newatr)
 		rdr_log(reader, "rsa key configured -> using nagra mode");
 		is_pure_nagra = 1;
 		if(!cs_malloc(&reader->csystem_data, sizeof(struct nagra_data)))
-			{ return ERROR; }
+		{
+			return ERROR;
+		}
 		struct nagra_data *csystem_data = reader->csystem_data;
 		csystem_data->is_pure_nagra = is_pure_nagra;
 		if(!do_cmd(reader, 0x10, 0x02, 0x90, 0x11, 0, cta_res, &cta_lr))
@@ -747,7 +760,10 @@ static int32_t nagra2_card_init(struct s_reader *reader, ATR *newatr)
 		rdr_log(reader, "detect seca/nagra tunneled card");
 
 		if(!cs_malloc(&reader->csystem_data, sizeof(struct nagra_data)))
-			{ rdr_log(reader,"mem alloc error"); return ERROR; }
+		{
+			rdr_log(reader,"mem alloc error"); return ERROR;
+		}
+
 		if(!card_write(reader, ins80, handshake, cta_res, &cta_lr)) // try to init nagra layer
 		{
 			if(cta_res[0] == 0x61 && cta_res[1] == 0x10)
@@ -760,15 +776,18 @@ static int32_t nagra2_card_init(struct s_reader *reader, ATR *newatr)
 				}
 				reader->card_atr_length = 23;
 				const struct s_cardreader *crdr_ops = reader->crdr;
-				if (!crdr_ops) return ERROR;
+				if (!crdr_ops)
+				{
+					return ERROR;
+				}
 				call(crdr_ops->activate(reader, newatr)); //read nagra atr
 				get_atr2;
-				memcpy(reader->rom, atr2 + 8, 15);// get historical bytes containing romrev from nagra atr
+				memcpy(reader->rom, atr2 + 8, 15); // get historical bytes containing romrev from nagra atr
 				rdr_log(reader,"Nagra layer found"); 
 				rdr_log(reader,"Rom revision: %.15s", reader->rom);
 				reader->card_atr_length = 14;
 				reader->seca_nagra_card = 2;
-				call(crdr_ops->activate(reader, newatr));// read seca atr to switch back
+				call(crdr_ops->activate(reader, newatr)); // read seca atr to switch back
 				if ((reader->typ == R_SMART || reader->typ == R_INTERNAL || is_smargo_reader(reader)) && ins7e11_state == 1)
 				{
 					ins7e11_state = 0;
@@ -784,14 +803,20 @@ static int32_t nagra2_card_init(struct s_reader *reader, ATR *newatr)
 		NULLFREE(reader->csystem_data);
 		return ERROR; // quitting csystem still not having needed commands to run on nagra layer
 	}
-	else { return ERROR; }
-	
+	else
+	{
+		return ERROR;
+	}
+
 	// Private data may be already allocated, see above (the irdeto check).
 	if(!reader->csystem_data)
 	{
 		if(!cs_malloc(&reader->csystem_data, sizeof(struct nagra_data)))
-			{ return ERROR; }
+		{
+			return ERROR;
+		}
 	}
+
 	struct nagra_data *csystem_data = reader->csystem_data;
 	csystem_data->is_pure_nagra = is_pure_nagra;
 	csystem_data->is_tiger      = is_tiger;
@@ -885,7 +910,7 @@ static int32_t reccmp2(const void *r1, const void *r2)
 static int32_t nagra2_card_info(struct s_reader *reader)
 {
 	int32_t i;
-	char currdate[11], tmp[64];
+	char currdate[27], tmp[64];
 	struct nagra_data *csystem_data = reader->csystem_data;
 	rdr_log(reader, "ROM:    %c %c %c %c %c %c %c %c", reader->rom[0], reader->rom[1], reader->rom[2], reader->rom[3], reader->rom[4], reader->rom[5], reader->rom[6], reader->rom[7]);
 	rdr_log(reader, "REV:    %c %c %c %c %c %c", reader->rom[9], reader->rom[10], reader->rom[11], reader->rom[12], reader->rom[13], reader->rom[14]);
@@ -966,9 +991,13 @@ static int32_t nagra2_card_info(struct s_reader *reader)
 				}
 			}
 			if(reader->nagra_read == 1)
-				{ qsort(records, num_records, sizeof(ncmed_rec), reccmp); }
+			{
+				qsort(records, num_records, sizeof(ncmed_rec), reccmp);
+			}
 			else
-				{ qsort(records, num_records, sizeof(ncmed_rec), reccmp2); }
+			{
+				qsort(records, num_records, sizeof(ncmed_rec), reccmp2);
+			}
 
 			int32_t  euro = 0;
 			char tiername[83];
@@ -982,40 +1011,55 @@ static int32_t nagra2_card_info(struct s_reader *reader)
 			{
 				switch(records[i].type)
 				{
-				case 0x00:
-				case 0x01:
-					if(reccmp(records[i].date2, currdate) >= 0)
-					{
-						if(reader->nagra_read == 2)
-							rdr_log(reader, "Tier : %04X, expiry date: %s %s",
-									records[i].value, records[i].date2, get_tiername(records[i].value, reader->caid, tiername));
-						else if(reader->nagra_read == 1)
+					case 0x00:
+					case 0x01:
+						if(reccmp(records[i].date2, currdate) >= 0)
 						{
-							euro = (records[i].price / 100);
-							rdr_log(reader, "Activation     : ( %04X ) from %s to %s  (%3d euro) %s",
+							if(reader->nagra_read == 2)
+							{
+								rdr_log(reader, "Tier : %04X, expiry date: %s %s",
+									records[i].value, records[i].date2, get_tiername(records[i].value, reader->caid, tiername));
+							}
+							else if(reader->nagra_read == 1)
+							{
+								euro = (records[i].price / 100);
+								rdr_log(reader, "Activation     : ( %04X ) from %s to %s  (%3d euro) %s",
 									records[i].value, records[i].date1, records[i].date2, euro, get_tiername(records[i].value, reader->caid, tiername));
-						}
-						cs_add_entitlement(reader, reader->caid, b2ll(4, reader->prid[0]), records[i].value, 0, tiger_date2time(records[i].date1), tiger_date2time(records[i].date2)+ 0x1517F, 4, 1);
-					}
-					break;
-
-				case 0x20:
-				case 0x21:
-					if(reccmp(records[i].date2, currdate) >= 0)
-					{
-						if(reader->nagra_read == 2)
+							}
+							cs_add_entitlement(
+								reader,
+								reader->caid,
+								b2ll(4, reader->prid[0]),
+								records[i].value,
+								0,
+								tiger_date2time(records[i].date1),
+								tiger_date2time(records[i].date2)+ 0x1517F,
+								4,
+								1);
+						} break;
+					case 0x20:
+					case 0x21:
+						if(reccmp(records[i].date2, currdate) >= 0)
 						{
-							rdr_log(reader, "Tier : %04X, expiry date: %s %s",
-									records[i].value, records[i].date2, get_tiername(records[i].value, reader->caid, tiername));
-						}
-						cs_add_entitlement(reader, reader->caid, b2ll(4, reader->prid[0]), records[i].value, 0, tiger_date2time(records[i].date1), tiger_date2time(records[i].date2)+ 0x1517F, 4, 1);
-					}
-					break;
+							if(reader->nagra_read == 2)
+							{
+								rdr_log(reader, "Tier : %04X, expiry date: %s %s", records[i].value, records[i].date2, get_tiername(records[i].value, reader->caid, tiername));
+							}
+							cs_add_entitlement(
+								reader,
+								reader->caid,
+								b2ll(4, reader->prid[0]),
+								records[i].value,
+								0,
+								tiger_date2time(records[i].date1),
+								tiger_date2time(records[i].date2)+ 0x1517F,
+								4,
+								1);
+						} break;
 				}
 				if(reader->nagra_read == 2)
 				{
-					while(i < num_records - 1 && records[i].value == records[i + 1].value)
-						{ ++i; }
+					while(i < num_records - 1 && records[i].value == records[i + 1].value) { ++i; }
 				}
 			}
 
@@ -1023,41 +1067,41 @@ static int32_t nagra2_card_info(struct s_reader *reader)
 			{
 				switch(records[i].type)
 				{
-				case 0x80:
-					if(reader->nagra_read == 1)
-					{
-						euro = (records[i].price / 100) - prepaid;
-						credit += euro;
-						prepaid += euro;
-						if(euro)
-							rdr_log(reader, "Recharge       :               %s                (%3d euro)",
-									records[i].date2, euro);
-					}
-					break;
-
-				case 0x20:
-				case 0x21:
-					if(reader->nagra_read == 1)
-					{
-						euro = records[i].price / 100;
-						credit -= euro;
-						rdr_log(reader, "Subscription   : ( %04X ) from %s to %s  (%3d euro) %s",
+					case 0x80:
+						if(reader->nagra_read == 1)
+						{
+							euro = (records[i].price / 100) - prepaid;
+							credit += euro;
+							prepaid += euro;
+							if(euro)
+							{
+								rdr_log(reader, "Recharge       :               %s                (%3d euro)", records[i].date2, euro);
+							}
+						} break;
+					case 0x20:
+					case 0x21:
+						if(reader->nagra_read == 1)
+						{
+							euro = records[i].price / 100;
+							credit -= euro;
+							rdr_log(reader, "Subscription   : ( %04X ) from %s to %s  (%3d euro) %s",
 								records[i].value, records[i].date1, records[i].date2, euro, get_tiername(records[i].value, reader->caid, tiername));
-					}
-					break;
-
-				case 0x29:
-					euro = records[i].price / 100;
-					if(reader->nagra_read == 1) { credit -= euro; }
-					rdr_log(reader, "Event purchase : ( %04X ) from %s to %s  (%3d euro)",
-							records[i].value, records[i].date1, records[i].date2, euro);
-					break;
+						} break;
+					case 0x29:
+						euro = records[i].price / 100;
+						if(reader->nagra_read == 1) { credit -= euro; }
+						rdr_log(reader, "Event purchase : ( %04X ) from %s to %s  (%3d euro)", records[i].value, records[i].date1, records[i].date2, euro);
+						break;
 				}
 			}
 			if(reader->nagra_read == 1)
-				{ rdr_log(reader, "Credit         :                                          %3d euro", credit); }
+			{
+				rdr_log(reader, "Credit         :                                          %3d euro", credit);
+			}
 			else
-				{ rdr_log(reader, "Credit : %3d euro", balance); }
+			{
+				rdr_log(reader, "Credit : %3d euro", balance);
+			}
 		}
 	}
 	else
@@ -1074,7 +1118,11 @@ static int32_t nagra2_card_info(struct s_reader *reader)
 		rdr_log_dbg_sensitive(reader, D_READER, "SER:  {%s}", cs_hexdump(1, reader->hexserial + 2, 4, tmp_dbg, sizeof(tmp_dbg)));
 		memcpy(reader->sa[0], cta_res + 2, 3);
 		reader->nprov = 1;
-		if(!GetDataType(reader, IRDINFO, 0x39)) { return ERROR; }
+		if(!GetDataType(reader, IRDINFO, 0x39))
+		{
+			return ERROR;
+		}
+
 		rdr_log_dbg(reader, D_READER, "IRDINFO DONE");
 		CamStateRequest(reader);
 
@@ -1097,8 +1145,14 @@ void nagra2_post_process(struct s_reader *reader)
 	if(!csystem_data->is_tiger)
 	{
 		CamStateRequest(reader);
-		if RENEW_SESSIONKEY() { NegotiateSessionKey(reader); }
-		if SENDDATETIME() { DateTimeCMD(reader); }
+		if RENEW_SESSIONKEY()
+		{
+			NegotiateSessionKey(reader);
+		}
+		if SENDDATETIME()
+		{
+			DateTimeCMD(reader);
+		}
 	}
 }
 
@@ -1118,7 +1172,9 @@ static int32_t nagra2_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, str
 			while(!do_cmd(reader, er->ecm[3] + 1, er->ecm[4] + 5 + 2, 0x88, 0x04, ecm_pkt, cta_res, &cta_lr))
 			{
 				if(retry == 0)
-					{ rdr_log_dbg(reader, D_READER, "nagra2_do_ecm (N3_NA) failed, retry"); }
+				{
+					rdr_log_dbg(reader, D_READER, "nagra2_do_ecm (N3_NA) failed, retry");
+				}
 				else
 				{
 					rdr_log_dbg(reader, D_READER, "nagra2_do_ecm (N3_NA) failed, retry failed!");
@@ -1130,18 +1186,21 @@ static int32_t nagra2_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, str
 		}
 		else
 		{
-			if(reader->ecmcommand < 5)    // cache ecm commands until ecmcommand cache is full
+			if(reader->ecmcommand < 5) // cache ecm commands until ecmcommand cache is full
 			{
 				reader->ecmcommandcache[reader->ecmcommand] = er->ecm[3];
 				reader->ecmcommand++;
-				if(reader->ecmcommand == 5)   // cache is full, comparing!
+				if(reader->ecmcommand == 5) // cache is full, comparing!
 				{
 					int32_t t = 0;
 					int32_t matchfound = 0;
 					reader->ecmcommand++; // No more caching of ecm commands, next ecms will be compared!
 					while(t < 5)
 					{
-						if(reader->ecmcommandcache[t] == er->ecm[3]) { matchfound++; }
+						if(reader->ecmcommandcache[t] == er->ecm[3])
+						{
+							matchfound++;
+						}
 						t++;
 					}
 					if(matchfound != 5)
@@ -1166,7 +1225,9 @@ static int32_t nagra2_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, str
 			while(!do_cmd(reader, er->ecm[3], er->ecm[4] + 2, 0x87, 0x02, er->ecm + 3 + 2, cta_res, &cta_lr))
 			{
 				if(retry == 0)
-					{ rdr_log_dbg(reader, D_READER, "nagra2_do_ecm failed, retry"); }
+				{
+					rdr_log_dbg(reader, D_READER, "nagra2_do_ecm failed, retry");
+				}
 				else
 				{
 					rdr_log_dbg(reader, D_READER, "nagra2_do_ecm failed, retry failed!");
@@ -1205,12 +1266,14 @@ static int32_t nagra2_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, str
 	}
 	else
 	{
-		//check ECM prov id
+		// check ECM prov id
 		if(memcmp(&reader->prid[0][2], er->ecm + 5, 2))
-			{ return ERROR; }
+		{
+			return ERROR;
+		}
 
-		//                  ecm_data: 80 30 89 D3 87 54 11 10 DA A6 0F 4B 92 05 34 00 ...
-		//serial_data: A0 CA 00 00 8C D3 8A 00 00 00 00 00 10 DA A6 0F .
+		// ecm_data: 80 30 89 D3 87 54 11 10 DA A6 0F 4B 92 05 34 00
+		// serial_data: A0 CA 00 00 8C D3 8A 00 00 00 00 00 10 DA A6 0F
 		unsigned char ecm_trim[150];
 		memset(ecm_trim, 0, 150);
 		memcpy(&ecm_trim[5], er->ecm + 3 + 2 + 2, er->ecm[4] + 2);
@@ -1218,7 +1281,6 @@ static int32_t nagra2_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, str
 		{
 			if(cta_res[2] == 0x01)
 			{
-
 				unsigned char v[8];
 				memset(v, 0, sizeof(v));
 				idea_cbc_encrypt(&cta_res[14], ea->cw, 8, &csystem_data->ksSession, v, IDEA_DECRYPT);
@@ -1256,7 +1318,7 @@ static int32_t nagra2_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 	{
 		//check EMM prov id
 		if(memcmp(&reader->prid[0][2], ep->emm + 10, 2))
-		{ 
+		{
 			rdr_log_dbg(reader, D_READER, "EMM skipped since provider doesnt match!");
 			return SKIPPED;
 		}

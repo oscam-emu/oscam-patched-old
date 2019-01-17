@@ -38,7 +38,7 @@ extern uint32_t oscam_stapi_Open(char *name, uint32_t *sessionhandle);
 extern uint32_t oscam_stapi_SignalAllocate(uint32_t sessionhandle, uint32_t *signalhandle);
 extern uint32_t oscam_stapi_FilterAllocate(uint32_t sessionhandle, uint32_t *filterhandle);
 extern uint32_t oscam_stapi_SlotInit(uint32_t sessionhandle, uint32_t signalhandle, uint32_t *bufferhandle, uint32_t *slothandle, uint16_t pid);
-extern uint32_t oscam_stapi_FilterSet(uint32_t filterhandle, uchar *filt, uchar *mask);
+extern uint32_t oscam_stapi_FilterSet(uint32_t filterhandle, uint8_t *filt, uint8_t *mask);
 extern uint32_t oscam_stapi_FilterAssociate(uint32_t filterhandle, uint32_t slothandle);
 extern uint32_t oscam_stapi_SlotDeallocate(uint32_t slothandle);
 extern uint32_t oscam_stapi_BufferDeallocate(uint32_t bufferhandle);
@@ -49,9 +49,9 @@ extern uint32_t oscam_stapi_DescramblerAssociate(uint32_t deschandle, uint32_t s
 extern uint32_t oscam_stapi_DescramblerDisassociate(uint32_t deschandle, uint32_t slot);
 extern uint32_t oscam_stapi_DescramblerAllocate(uint32_t sessionhandle, uint32_t *deschandle);
 extern uint32_t oscam_stapi_DescramblerDeallocate(uint32_t deschandle);
-extern uint32_t oscam_stapi_DescramblerSet(uint32_t deschandle, int32_t parity, uchar *cw);
+extern uint32_t oscam_stapi_DescramblerSet(uint32_t deschandle, int32_t parity, uint8_t *cw);
 extern uint32_t oscam_stapi_SignalWaitBuffer(uint32_t signalhandle, uint32_t *qbuffer, int32_t timeout);
-extern uint32_t oscam_stapi_BufferReadSection(uint32_t bufferhandle, uint32_t *filterlist, int32_t maxfilter, uint32_t *filtercount, int32_t *crc, uchar *buf, int32_t bufsize, uint32_t *size);
+extern uint32_t oscam_stapi_BufferReadSection(uint32_t bufferhandle, uint32_t *filterlist, int32_t maxfilter, uint32_t *filtercount, int32_t *crc, uint8_t *buf, int32_t bufsize, uint32_t *size);
 extern uint32_t oscam_stapi_SignalAbort(uint32_t signalhandle);
 extern uint32_t oscam_stapi_PidQuery(char *name, uint16_t pid);
 extern uint32_t oscam_stapi_BufferFlush(uint32_t bufferhandle);
@@ -59,7 +59,7 @@ extern uint32_t oscam_stapi_SlotClearPid(uint32_t slot);
 
 // Local functions
 static void *stapi_read_thread(void *);
-static int32_t stapi_do_set_filter(int32_t demux_id, FILTERTYPE *filter, uint16_t *pids, int32_t pidcount, uchar *filt, uchar *mask, int32_t dev_id);
+static int32_t stapi_do_set_filter(int32_t demux_id, FILTERTYPE *filter, uint16_t *pids, int32_t pidcount, uint8_t *filt, uint8_t *mask, int32_t dev_id);
 static int32_t stapi_do_remove_filter(int32_t demux_id, FILTERTYPE *filter, int32_t dev_id);
 
 // These variables are declared in module-dvbapi.c
@@ -226,25 +226,29 @@ int32_t stapi_open(void)
 	return 1;
 }
 
-int32_t stapi_activate_section_filter(int32_t fd, uchar *filter, uchar *mask)
+int32_t stapi_activate_section_filter(int32_t fd, uint8_t *filter, uint8_t *mask)
 {
-	int n=0, ret=852049;
-	while (n<3 && ret==852049) {
+	int n = 0, ret = 852049;
+	while(n < 3 && ret == 852049)
+	{
 		ret = oscam_stapi_FilterSet(fd, filter, mask);
-		if(ret) {		
+		if(ret)
+		{
 			cs_log_dbg(D_DVBAPI, "Error: oscam_stapi_FilterSet; %d", ret);
 			cs_sleepms(50);
 			n++;
 		}
 	}
-	if(ret) {
+
+	if(ret)
+	{
 		cs_log("Error: stapi_activate_section_filter: %d", ret);
-		ret = -1; 
+		ret = -1;
 	}
 	return ret;
 }
 
-int32_t stapi_set_filter(int32_t demux_id, uint16_t pid, uchar *filter, uchar *mask, int32_t num, char *pmtfile)
+int32_t stapi_set_filter(int32_t demux_id, uint16_t pid, uint8_t *filter, uint8_t *mask, int32_t num, char *pmtfile)
 {
 	int32_t i;
 	int32_t ret = -1;
@@ -349,7 +353,7 @@ static uint32_t check_slot(int32_t dev_id, uint32_t checkslot, FILTERTYPE *skipf
 }
 
 
-static int32_t stapi_do_set_filter(int32_t demux_id, FILTERTYPE *filter, uint16_t *pids, int32_t pidcount, uchar *filt, uchar *mask, int32_t dev_id)
+static int32_t stapi_do_set_filter(int32_t demux_id, FILTERTYPE *filter, uint16_t *pids, int32_t pidcount, uint8_t *filt, uint8_t *mask, int32_t dev_id)
 {
 	uint32_t FilterAssociateError = 0;
 	int32_t k, ret = 0;
@@ -466,7 +470,7 @@ static void *stapi_read_thread(void *sparam)
 {
 	int32_t dev_index, ErrorCode, i, j, CRCValid;
 	uint32_t QueryBufferHandle = 0, DataSize = 0;
-	uchar buf[BUFFLEN];
+	uint8_t buf[BUFFLEN];
 
 	struct read_thread_param *para = sparam;
 	dev_index = para->id;
@@ -550,9 +554,9 @@ static void *stapi_read_thread(void *sparam)
 		}
 		SAFE_MUTEX_UNLOCK(&filter_lock);
 	}
-	
+
 	pthread_cleanup_pop(0);
-	
+
 	return NULL;
 }
 
@@ -575,7 +579,7 @@ static void stapi_DescramblerAssociate(int32_t demux_id, uint16_t pid, int32_t m
 	if(demux[demux_id].DescramblerHandle[n] == 0) { return; }
 
 	if(mode == ASSOCIATE)
-	{	
+	{
 		int32_t k;
 		for(k = 0; k < SLOTNUM; k++)
 		{
@@ -671,10 +675,10 @@ int32_t stapi_set_pid(int32_t demux_id, int32_t UNUSED(num), ca_index_t idx, uin
 	return 1;
 }
 
-int32_t stapi_write_cw(int32_t demux_id, uchar *cw, uint16_t *STREAMpids, int32_t STREAMpidcount, char *pmtfile)
+int32_t stapi_write_cw(int32_t demux_id, uint8_t *cw, uint16_t *STREAMpids, int32_t STREAMpidcount, char *pmtfile)
 {
 	int32_t ErrorCode, l, n, k;
-	unsigned char nullcw[8];
+	uint8_t nullcw[8];
 	memset(nullcw, 0, 8);
 	char *text[] = { "even", "odd" };
 
@@ -702,7 +706,7 @@ int32_t stapi_write_cw(int32_t demux_id, uchar *cw, uint16_t *STREAMpids, int32_
 		}
 
 		if(demux[demux_id].DescramblerHandle[n] == 0) { continue; }
-			
+
 		for(k = 0; k < STREAMpidcount; k++)
 		{
 			stapi_DescramblerAssociate(demux_id, STREAMpids[k], ASSOCIATE, n);
@@ -711,13 +715,13 @@ int32_t stapi_write_cw(int32_t demux_id, uchar *cw, uint16_t *STREAMpids, int32_
 
 	int32_t pidnum = demux[demux_id].pidindex; // get current pidindex used for descrambling
 	ca_index_t idx = demux[demux_id].ECMpids[pidnum].index[0];
-	
+
 	if(idx == INDEX_INVALID)   // if no indexer for this pid get one!
 	{
 		idx = dvbapi_get_descindex(demux_id, pidnum, 0);
 		cs_log_dbg(D_DVBAPI, "Demuxer %d PID: %d CAID: %04X ECMPID: %04X is using index %d", demux_id, pidnum,
 			demux[demux_id].ECMpids[pidnum].CAID, demux[demux_id].ECMpids[pidnum].ECM_PID, idx);
-	}	
+	}
 
 	for(l = 0; l < 2; l++)
 	{

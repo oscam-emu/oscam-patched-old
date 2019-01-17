@@ -153,7 +153,7 @@ static int32_t pcsc_init(struct s_reader *pcsc_reader)
 	return OK;
 }
 
-static int32_t pcsc_do_api(struct s_reader *pcsc_reader, const uchar *buf, uchar *cta_res, uint16_t *cta_lr, int32_t l)
+static int32_t pcsc_do_api(struct s_reader *pcsc_reader, const uint8_t *buf, uint8_t *cta_res, uint16_t *cta_lr, int32_t l)
 {
 	LONG rv;
 	DWORD dwSendLength, dwRecvLength;
@@ -214,7 +214,7 @@ static int32_t pcsc_do_api(struct s_reader *pcsc_reader, const uchar *buf, uchar
 
 }
 
-static int32_t pcsc_activate_card(struct s_reader *pcsc_reader, uchar *atr, uint16_t *atr_size)
+static int32_t pcsc_activate_card(struct s_reader *pcsc_reader, uint8_t *atr, uint16_t *atr_size)
 {
 	struct pcsc_data *crdr_data = pcsc_reader->crdr_data;
 	LONG rv;
@@ -246,7 +246,7 @@ static int32_t pcsc_activate_card(struct s_reader *pcsc_reader, uchar *atr, uint
 		memcpy(atr, pbAtr, dwAtrLen);
 		*atr_size = dwAtrLen;
 
-		rdr_log(pcsc_reader, "ATR: %s", cs_hexdump(1, (uchar *)pbAtr, dwAtrLen, tmp, sizeof(tmp)));
+		rdr_log(pcsc_reader, "ATR: %s", cs_hexdump(1, (uint8_t *)pbAtr, dwAtrLen, tmp, sizeof(tmp)));
 		memcpy(pcsc_reader->card_atr, pbAtr, dwAtrLen);
 		pcsc_reader->card_atr_length = dwAtrLen;
 		return OK;

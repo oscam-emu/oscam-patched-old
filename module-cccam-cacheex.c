@@ -91,7 +91,7 @@ void cc_cacheex_filter_out(struct s_client *cl)
 	cc_cmd_send(cl, buf, size, MSG_CACHE_FILTER);
 }
 
-void cc_cacheex_filter_in(struct s_client *cl, uchar *buf)
+void cc_cacheex_filter_in(struct s_client *cl, uint8_t *buf)
 {
 	struct s_reader *rdr = (cl->typ == 'c') ? NULL : cl->reader;
 	int i = 0, j;
@@ -242,8 +242,8 @@ static int32_t cc_cacheex_push_out(struct s_client *cl, struct ecm_request_t *er
 	uint32_t size = sizeof(er->ecmd5) + sizeof(er->csp_hash) + sizeof(er->cw) + sizeof(uint8_t) +
 					(ll_count(er->csp_lastnodes) + 1) * 8;
 
-	unsigned char *buf;
-	if(!cs_malloc(&buf, size + 20))  //camd35_send() adds +20
+	uint8_t *buf;
+	if(!cs_malloc(&buf, size + 20)) // camd35_send() adds +20
 		{ return -1; }
 
 	// build ecm message
@@ -323,7 +323,7 @@ static int32_t cc_cacheex_push_out(struct s_client *cl, struct ecm_request_t *er
 	return res;
 }
 
-void cc_cacheex_push_in(struct s_client *cl, uchar *buf)
+void cc_cacheex_push_in(struct s_client *cl, uint8_t *buf)
 {
 	struct cc_data *cc = cl->cc;
 	ECM_REQUEST *er;

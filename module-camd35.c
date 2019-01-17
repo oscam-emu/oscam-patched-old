@@ -39,10 +39,10 @@
 
 #define REQ_SIZE    MAX_ECM_SIZE + 20 + 0x34
 
-static int32_t __camd35_send(struct s_client *cl, uchar *buf, int32_t buflen, int answer_awaited)
+static int32_t __camd35_send(struct s_client *cl, uint8_t *buf, int32_t buflen, int answer_awaited)
 {
 	int32_t l;
-	unsigned char rbuf[REQ_SIZE + 15 + 4], *sbuf = rbuf + 4;
+	uint8_t rbuf[REQ_SIZE + 15 + 4], *sbuf = rbuf + 4;
 
 	if(!cl->udp_fd || !cl->crypted) { return (-1); }  //exit if no fd or aes key not set!
 
@@ -93,31 +93,31 @@ static int32_t __camd35_send(struct s_client *cl, uchar *buf, int32_t buflen, in
 	return status;
 }
 
-int32_t camd35_send(struct s_client *cl, uchar *buf, int32_t buflen)
+int32_t camd35_send(struct s_client *cl, uint8_t *buf, int32_t buflen)
 {
 	// send command and set sending time because we await response
 	return __camd35_send(cl, buf, buflen, 1);
 }
 
-int32_t camd35_send_without_timeout(struct s_client *cl, uchar *buf, int32_t buflen)
+int32_t camd35_send_without_timeout(struct s_client *cl, uint8_t *buf, int32_t buflen)
 {
 	// send command and do NOT set sending time because we DON'T await response
 	return __camd35_send(cl, buf, buflen, 0);
 }
 
-static int32_t camd35_auth_client(struct s_client *cl, uchar *ucrc)
+static int32_t camd35_auth_client(struct s_client *cl, uint8_t *ucrc)
 {
 	int32_t rc = 1, no_delay = 1;
 	uint32_t crc;
 	struct s_auth *account;
-	unsigned char md5tmp[MD5_DIGEST_LENGTH];
+	uint8_t md5tmp[MD5_DIGEST_LENGTH];
 
 	if(cl->upwd[0])
 		{ return (memcmp(cl->ucrc, ucrc, 4) ? 1 : 0); }
 	cl->crypted = 1;
 	crc = (((ucrc[0] << 24) | (ucrc[1] << 16) | (ucrc[2] << 8) | ucrc[3]) & 0xffffffffL);
 	for(account = cfg.account; (account) && (!cl->upwd[0]); account = account->next)
-		if(crc == crc32(0L, MD5((unsigned char *)account->usr, strlen(account->usr), md5tmp), MD5_DIGEST_LENGTH))
+		if(crc == crc32(0L, MD5((uint8_t *)account->usr, strlen(account->usr), md5tmp), MD5_DIGEST_LENGTH))
 		{
 			rc = cs_auth_client(cl, account, NULL);
 			if(!rc)
@@ -128,7 +128,7 @@ static int32_t camd35_auth_client(struct s_client *cl, uchar *ucrc)
 				{
 					return 1;
 				}
-				
+
 				#ifdef CS_CACHEEX
 				if(cl->account->cacheex.mode < 2)
 				#endif
@@ -137,14 +137,14 @@ static int32_t camd35_auth_client(struct s_client *cl, uchar *ucrc)
 					setsockopt(cl->udp_fd, IPPROTO_TCP, TCP_NODELAY, (void *)&no_delay, sizeof(no_delay));
 					cl->tcp_nodelay = 1;
 				}
-				
+
 				return 0;
 			}
 		}
 	return (rc);
 }
 
-static int32_t camd35_recv(struct s_client *client, uchar *buf, int32_t l)
+static int32_t camd35_recv(struct s_client *client, uint8_t *buf, int32_t l)
 {
 	int32_t rc, s, rs, n = 0, buflen = 0, len = 0;
 	for(rc = rs = s = 0; !rc; s++)
@@ -198,7 +198,7 @@ static int32_t camd35_recv(struct s_client *client, uchar *buf, int32_t l)
 
 			}
 			if(rs < 36)
-			{	
+			{
 				if(rc != -5)
 					{ rc = -1; }
 				goto out;
@@ -312,7 +312,7 @@ out:
 		break;
 	case -5:
 		cs_log_dbg(client->typ == 'c' ? D_CLIENT : D_READER, "connection closed");
-		break;		
+		break;
 		//default:  cs_log_dbg(D_TRACE, "camd35_recv returns rc=%d", rc); break;
 	}
 
@@ -327,7 +327,7 @@ static void camd35_request_emm(ECM_REQUEST *er)
 {
 	int32_t i;
 	time_t now;
-	uchar mbuf[1024];
+	uint8_t mbuf[1024];
 	struct s_client *cl = cur_client();
 	struct s_reader *aureader = NULL, *rdr = NULL;
 
@@ -433,7 +433,7 @@ static void camd35_request_emm(ECM_REQUEST *er)
 
 static void camd35_send_dcw(struct s_client *client, ECM_REQUEST *er)
 {
-	uchar *buf;
+	uint8_t *buf;
 	buf = er->src_data; // get orig request
 
 	if(!buf)
@@ -480,26 +480,26 @@ static void camd35_send_dcw(struct s_client *client, ECM_REQUEST *er)
 	camd35_request_emm(er);
 }
 
-static void camd35_process_ecm(uchar *buf, int buflen)
+static void camd35_process_ecm(uint8_t *buf, int buflen)
 {
 	ECM_REQUEST *er;
-	
+
 	if(!buf || buflen < 23)
 		{ return; }
-		
+
 	uint16_t ecmlen = SCT_LEN((&buf[20]));
-	
+
 	if(ecmlen > MAX_ECM_SIZE || ecmlen + 20 > buflen)
 		{ return; }
-	
+
 	if(!(er = get_ecmtask()))
 		{ return; }
 
 	er->ecmlen = ecmlen;
-	
+
 	if(!cs_malloc(&er->src_data, 0x34 + 20 + er->ecmlen))
 		{ NULLFREE(er); return; }
-		
+
 	memcpy(er->src_data, buf, 0x34 + 20 + er->ecmlen);  // save request
 	er->srvid = b2i(2, buf + 8);
 	er->caid = b2i(2, buf + 10);
@@ -509,7 +509,7 @@ static void camd35_process_ecm(uchar *buf, int buflen)
 	get_cw(cur_client(), er);
 }
 
-static void camd35_process_emm(uchar *buf, int buflen, int emmlen)
+static void camd35_process_emm(uint8_t *buf, int buflen, int emmlen)
 {
 	EMM_PACKET epg;
 	if(!buf || buflen < 20 || emmlen + 20 > buflen)
@@ -558,7 +558,7 @@ int32_t camd35_tcp_connect(struct s_client *cl)
 		cl->pfd = cl->udp_fd = handle;
 	}
 	if(!cl->udp_fd) { return (0); }  // Check if client has no handle -> error
-	
+
 	// check if client reached timeout
 	if(cl->reader->tcp_rto && (cl->reader->last_s - cl->reader->last_g > cl->reader->tcp_rto))
 	{
@@ -574,7 +574,7 @@ int32_t camd35_tcp_connect(struct s_client *cl)
 			if(!hostResolve(cl->reader))
 			{
 				network_tcp_connection_close(cl->reader, "no ip");
-				return 0; 
+				return 0;
 			}
 			if(!IP_EQUAL(last_ip, cl->ip))
 			{
@@ -583,7 +583,7 @@ int32_t camd35_tcp_connect(struct s_client *cl)
 			}
 		}
 	}
-	
+
 	return (1); // all ok
 }
 
@@ -629,11 +629,11 @@ static void camd35_send_keepalive_answer(struct s_client *cl)
 
 static int32_t camd35_client_init(struct s_client *cl)
 {
-	unsigned char md5tmp[MD5_DIGEST_LENGTH];
+	uint8_t md5tmp[MD5_DIGEST_LENGTH];
 	int32_t no_delay = 1;
-			   
+
 	cs_strncpy((char *)cl->upwd, cl->reader->r_pwd, sizeof(cl->upwd));
-	i2b_buf(4, crc32(0L, MD5((unsigned char *)cl->reader->r_usr, strlen(cl->reader->r_usr), md5tmp), 16), cl->ucrc);
+	i2b_buf(4, crc32(0L, MD5((uint8_t *)cl->reader->r_usr, strlen(cl->reader->r_usr), md5tmp), 16), cl->ucrc);
 	if (!aes_set_key_alloc(&cl->aes_keys, (char *)MD5(cl->upwd, strlen((char *)cl->upwd), md5tmp)))
 	{
 		return 1;
@@ -662,7 +662,7 @@ static void camd35_idle(void)
 	if(!cl->reader)
 		{ return; }
 
-	if(cl->reader->keepalive) 
+	if(cl->reader->keepalive)
 	{
 		camd35_send_keepalive(cl);
 	}
@@ -686,7 +686,7 @@ static void camd35_idle(void)
 	}
 }
 
-static void *camd35_server(struct s_client *client, uchar *mbuf, int32_t n)
+static void *camd35_server(struct s_client *client, uint8_t *mbuf, int32_t n)
 {
 	if(!client || !mbuf)
 		{ return NULL; }
@@ -755,7 +755,7 @@ static int32_t camd35_send_ecm(struct s_client *client, ECM_REQUEST *er)
 	uint8_t *buf;
 	if(!cs_malloc(&buf, er->ecmlen + 20 + 15))
 	{ return -1; }
-	
+
 	memset(buf, 0, 20);
 	memset(buf + 20, 0xff, er->ecmlen + 15);
 	buf[1] = er->ecmlen;
@@ -767,7 +767,7 @@ static int32_t camd35_send_ecm(struct s_client *client, ECM_REQUEST *er)
 	buf[19] = 0xff;
 	memcpy(buf + 20, er->ecm, er->ecmlen);
 	int32_t rc = ((camd35_send(client, buf, 0) < 1) ? (-1) : 0);
-	
+
 	NULLFREE(buf);
 	return rc;
 }
@@ -782,7 +782,7 @@ static int32_t camd35_send_emm(EMM_PACKET *ep)
 
 	if(!cs_malloc(&buf, ep->emmlen + 20 + 15))
 	{ return -1; }
-	
+
 	memset(buf, 0, 20);
 	memset(buf + 20, 0xff, ep->emmlen + 15);
 
@@ -793,17 +793,17 @@ static int32_t camd35_send_emm(EMM_PACKET *ep)
 	memcpy(buf + 20, ep->emm, ep->emmlen);
 
 	int32_t rc = ((camd35_send_without_timeout(cl, buf, 0) < 1) ? 0 : 1);
-	
+
 	NULLFREE(buf);
-	return rc;	
+	return rc;
 }
 
-static int32_t camd35_recv_chk(struct s_client *client, uchar *dcw, int32_t *rc, uchar *buf, int32_t rc2 __attribute__((unused)))
+static int32_t camd35_recv_chk(struct s_client *client, uint8_t *dcw, int32_t *rc, uint8_t *buf, int32_t rc2 __attribute__((unused)))
 {
 	uint16_t idx;
 	static const char *typtext[] = {"ok", "invalid", "sleeping"};
 	struct s_reader *rdr = client->reader;
-	rdr->last_g = time(NULL);  // last receive is now
+	rdr->last_g = time(NULL); // last receive is now
 
 	// reading CMD05 Emm request and set serial
 	if(buf[0] == 0x05 && buf[1] == 111)

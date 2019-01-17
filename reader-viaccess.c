@@ -50,38 +50,6 @@ static void parse_via_date(const uchar *buf, struct via_date *vd, int32_t fend)
 	}
 }
 
-//static void get_via_data(const uchar *b, int32_t l, time_t *start_t, time_t *end_t, uchar *cls)
-//{
-//  int32_t i, j;
-//  struct via_date vd;
-//  struct tm tm;
-//  memset(&vd, 0, sizeof(struct via_date));
-//
-//  // b -> via date (4 uint8_ts)
-//  b+=4;
-//  l-=4;
-//
-//  j=l-1;
-//  for (; j>=0; j--)
-//      for (i=0; i<8; i++)
-//          if (b[j] & (1 << (i&7)))
-//          {
-//              parse_via_date(b-4, &vd, 1);
-//              *cls=(l-(j+1))*8+i;
-//          }
-//
-//  memset(&tm, 0, sizeof(struct tm));
-//  tm.tm_year = vd.year_s + 80;    //via year starts in 1980, tm_year starts in 1900
-//  tm.tm_mon = vd.month_s - 1; // january is 0 in tm_mon
-//  tm.tm_mday = vd.day_s;
-//  *start_t = mktime(&tm);
-//
-//  tm.tm_year = vd.year_e + 80;
-//  tm.tm_mon = vd.month_e - 1;
-//  tm.tm_mday = vd.day_e;
-//  *end_t = mktime(&tm);
-//
-//}
 struct emm_rass *find_rabuf(struct s_client *client, int32_t provid, uint8_t nano, int8_t add)
 {
 	struct emm_rass *e;
@@ -99,10 +67,17 @@ struct emm_rass *find_rabuf(struct s_client *client, int32_t provid, uint8_t nan
 		if(!add && e->provid == provid && e->emmlen != 0) { return e; }
 		if(add && e->provid == provid && e->emm[0] == nano) { return e; }
 	}
-	if(!add) return NULL;
-	
+
+	if(!add)
+	{
+		return NULL;
+	}
+
 	if(!cs_malloc(&e, sizeof(struct emm_rass)))
-		{ return NULL; }
+	{
+		return NULL;
+	}
+
 	e->provid = provid;
 	ll_append(client->ra_buf, e);
 	return e;
@@ -118,14 +93,16 @@ static void show_class(struct s_reader *reader, const char *p, uint32_t provid, 
 
 	j = l - 1;
 	for(; j >= 0; j--)
+	{
 		for(i = 0; i < 8; i++)
+		{
 			if(b[j] & (1 << (i & 7)))
 			{
 				uchar cls;
 				struct via_date vd;
 				parse_via_date(b - 4, &vd, 1);
 				cls = (l - (j + 1)) * 8 + i;
-				
+
 				if(p) // just show class info, dont add entitlement!
 				{
 					rdr_log(reader, "%sclass: %02X, expiry date: %04d/%02d/%02d - %04d/%02d/%02d", p, cls,
@@ -137,7 +114,7 @@ static void show_class(struct s_reader *reader, const char *p, uint32_t provid, 
 					rdr_log(reader, "class: %02X, expiry date: %04d/%02d/%02d - %04d/%02d/%02d", cls,
 							vd.year_s + 1980, vd.month_s, vd.day_s,
 							vd.year_e + 1980, vd.month_e, vd.day_e);
-					
+
 					//convert time:
 					time_t start_t, end_t;
 					struct tm tm;
@@ -154,6 +131,8 @@ static void show_class(struct s_reader *reader, const char *p, uint32_t provid, 
 					cs_add_entitlement(reader, reader->caid, provid, cls, cls, start_t, end_t, 5, 1);
 				}
 			}
+		}
+	}
 }
 
 static int8_t add_find_class(struct s_reader *reader, uint32_t provid, const uchar *b, int32_t l, int8_t add)
@@ -166,7 +145,9 @@ static int8_t add_find_class(struct s_reader *reader, uint32_t provid, const uch
 
 	j = l - 1;
 	for(; j >= 0; j--)
+	{
 		for(i = 0; i < 8; i++)
+		{
 			if(b[j] & (1 << (i & 7)))
 			{
 				uchar cls;
@@ -192,12 +173,12 @@ static int8_t add_find_class(struct s_reader *reader, uint32_t provid, const uch
 					tm.tm_mon = vd.month_s - 1; // january is 0 in tm_mon
 					tm.tm_mday = vd.day_s;
 					start_t = cs_timegm(&tm);
-					
+
 					tm.tm_year = vd.year_e + 80; //via year starts in 1980, tm_year starts in 1900
 					tm.tm_mon = vd.month_e - 1; // january is 0 in tm_mon
 					tm.tm_mday = vd.day_e;
 					end_t = cs_timegm(&tm);
-					
+
 					if(cs_add_entitlement(reader, reader->caid, provid, cls, cls, start_t, end_t, 5, add) != NULL)
 					{
 						if(!add)
@@ -211,14 +192,19 @@ static int8_t add_find_class(struct s_reader *reader, uint32_t provid, const uch
 					}
 				}
 			}
-	if(freshdate == 0) return -2;
+		}
+	}
+
+	if(freshdate == 0)
+	{
+		return -2;
+	}
+
 	return 1; // emmdate is fresh!
 }
 
 static void show_subs(struct s_reader *reader, const uchar *emm)
 {
-	// emm -> A9, A6, B6
-
 	switch(emm[0])
 	{
 		case 0xA9:
@@ -226,7 +212,6 @@ static void show_subs(struct s_reader *reader, const uchar *emm)
 			show_class(reader, "nano A9: ", 1, emm + 2, emm[1]);
 			break;
 		}
-		
 		case 0xA6:
 		{
 			char szGeo[256];
@@ -236,7 +221,6 @@ static void show_subs(struct s_reader *reader, const uchar *emm)
 			rdr_log(reader, "nano A6: geo %s", szGeo);
 			break;
 		}
-		
 		case 0xB6:
 		{
 			uchar m; // modexp
@@ -244,8 +228,13 @@ static void show_subs(struct s_reader *reader, const uchar *emm)
 
 			m = emm[emm[1] + 1];
 			parse_via_date(emm + 2, &vd, 0);
-			rdr_log(reader, "nano B6: modexp %d%d%d%d%d%d: %02d/%02d/%04d", (m & 0x20) ? 1 : 0,
-				(m & 0x10) ? 1 : 0, (m & 0x08) ? 1 : 0, (m & 0x04) ? 1 : 0, (m & 0x02) ? 1 : 0, (m & 0x01) ? 1 : 0,
+			rdr_log(reader, "nano B6: modexp %d%d%d%d%d%d: %02d/%02d/%04d",
+				(m & 0x20) ? 1 : 0,
+				(m & 0x10) ? 1 : 0,
+				(m & 0x08) ? 1 : 0,
+				(m & 0x04) ? 1 : 0,
+				(m & 0x02) ? 1 : 0,
+				(m & 0x01) ? 1 : 0,
 				vd.day_s, vd.month_s, vd.year_s + 1980);
 			break;
 		}
@@ -256,11 +245,20 @@ static int32_t chk_prov(struct s_reader *reader, uchar *id, uchar keynr)
 {
 	struct viaccess_data *csystem_data = reader->csystem_data;
 	int32_t i, j, rc;
+
 	for(rc = i = 0; (!rc) && (i < reader->nprov); i++)
+	{
 		if(!memcmp(&reader->prid[i][1], id, 3))
+		{
 			for(j = 0; (!rc) && (j < 16); j++)
+			{
 				if(csystem_data->availkeys[i][j] == keynr)
-					{ rc = 1; }
+				{
+					rc = 1;
+				}
+			}
+		}
+	}
 	return (rc);
 }
 
@@ -272,7 +270,7 @@ static int32_t get_maturity(struct s_reader *reader)
 
 	uchar insac[] = { 0xca, 0xac, 0x00, 0x00, 0x00 }; // select data
 	uchar insb8[] = { 0xca, 0xb8, 0x00, 0x00, 0x00 }; // read selected data
-	
+
 	insac[2]=0x06; write_cmd(insac, NULL); // request maturity rating
 	insb8[4]=0x02; write_cmd(insb8, NULL); // read maturity rating nano + len
 	insb8[4]=cta_res[1]; write_cmd(insb8, NULL); // read maturity rating
@@ -321,7 +319,7 @@ static int32_t unlock_parental(struct s_reader *reader)
 		}
 	}
 	else
-		{ 
+		{
 			rdr_log(reader, "Parental lock disabled"); 
 			get_maturity(reader);
 		}
@@ -549,7 +547,7 @@ void hdSurEncPhase1_D2_0F_11(uint8_t *CWs)
 			{
 				a4[i2] = i1 + (i2 * 4);
 			}
-			for(i2 = 0; i2 <= i1 - 1; ++i2)         // the given code in Func1_3 seems to be wrong here(3 instead of i1-1)!
+			for(i2 = 0; i2 <= i1 - 1; ++i2) // the given code in Func1_3 seems to be wrong here(3 instead of i1-1)!
 			{
 				uint8_t tmp = CWs[a4[0]];
 				for(i3 = 1; i3 <= 3; ++i3)
@@ -796,16 +794,22 @@ void CommonMain_D2_13_15(const uint8_t *datain, uint8_t *dataout, int loopval)
 	uint8_t buff11[11+1]; // +1 to avoid func2 bug
 	int i1, i2;
 	buff11[11] = 0;
-	
+
 	CommonMain_1_D2_13_15(datain, buff11);
 	for (i1 = 0; i1 < 11; i1++)
-		{ buff11[i1] ^= Tab1_Comp[(loopval * 11) + i1]; }
+	{
+		buff11[i1] ^= Tab1_Comp[(loopval * 11) + i1];
+	}
 
 	for (i1 = 0; i1 < 8; i1++)
-		{ buff8[i1] = CommonMain_2_D2_13_15(buff11, i1 * 11); }
+	{
+		buff8[i1] = CommonMain_2_D2_13_15(buff11, i1 * 11);
+	}
 
 	for (i1 = 0; i1 < 8; i1++)
-		{ dataout[i1] = Tab0_Comp[buff8[i1]]; }
+	{
+		dataout[i1] = Tab0_Comp[buff8[i1]];
+	}
 
 	i1 = 1;
 	while (i1 < 8)
@@ -827,7 +831,9 @@ void Common_D2_13_15(uint8_t *cw0, const uint8_t *cw1, int loopval)
 
 	CommonMain_D2_13_15(cw1, buff8, loopval);
 	for (i = 0; i < 8; i++)
-		{ cw0[i] ^= buff8[i]; }
+	{
+		cw0[i] ^= buff8[i];
+	}
 }
 
 void ExchangeCWs(uint8_t *cw0, uint8_t *cw1)
@@ -852,12 +858,13 @@ void hdSurEncPhase1_D2_13_15(uint8_t *cws)
 	{
 		// Possible code
 		if ((i & 1)==0)
+		{
 			Common_D2_13_15((uint8_t *) &cws[0], (uint8_t *) &cws[8], i);
+		}
 		else
+		{
 			Common_D2_13_15((uint8_t *) &cws[8], (uint8_t *) &cws[0], i);
-		// Other possible code
-		//Common_D2_13_15((uint8_t *) &cws[0], (uint8_t *) &cws[8], i);
-		//ExchangeCWs((uint8_t *) &cws[0], (uint8_t *) &cws[8]);
+		}
 	}
 	ExchangeCWs((uint8_t *) &cws[0], (uint8_t *) &cws[8]);
 }
@@ -870,12 +877,13 @@ void hdSurEncPhase2_D2_13_15(uint8_t *cws)
 	{
 		// Possible code
 		if ((i & 1)==0)
-		Common_D2_13_15((uint8_t *) &cws[8], (uint8_t *) &cws[0], i);
+		{
+			Common_D2_13_15((uint8_t *) &cws[8], (uint8_t *) &cws[0], i);
+		}
 		else
+		{
 			Common_D2_13_15((uint8_t *) &cws[0], (uint8_t *) &cws[8], i);
-		// Other possible code
-		//Common_D2_13_15((uint8_t *) &cws[0], (uint8_t *) &cws[8], i);
-		//ExchangeCWs((uint8_t *) &cws[0], (uint8_t *) &cws[8]);
+		}
 	}
 	ExchangeCWs((uint8_t *) &cws[8], (uint8_t *) &cws[0]);
 }
@@ -897,16 +905,22 @@ static int32_t viaccess_card_init(struct s_reader *reader, ATR *newatr)
 	static unsigned char ins8704[] = { 0x87, 0x04, 0x00, 0x00, 0x07 };
 	static unsigned char ins8706[] = { 0x87, 0x06, 0x00, 0x00, 0x04 };
 
-
 	if((atr[1] != 0x77) || ((atr[2] != 0x18) && (atr[2] != 0x11) && (atr[2] != 0x19)) || ((atr[9] != 0x68) && (atr[9] != 0x6C) && (atr[9] != 0x64)))
-		{ return ERROR; }
+	{
+		return ERROR;
+	}
 
 	write_cmd(insFAC, FacDat);
 	if(!(cta_res[cta_lr - 2] == 0x90 && cta_res[cta_lr - 1] == 0))
-		{ return ERROR; }
+	{
+		return ERROR;
+	}
 
 	if(!cs_malloc(&reader->csystem_data, sizeof(struct viaccess_data)))
-		{ return ERROR; }
+	{
+		return ERROR;
+	}
+
 	struct viaccess_data *csystem_data = reader->csystem_data;
 
 	write_cmd(insFAC, ins8702_data);
@@ -924,15 +938,6 @@ static int32_t viaccess_card_init(struct s_reader *reader, ATR *newatr)
 		}
 	}
 
-
-	//  switch((atr[atrsize-4]<<8)|atr[atrsize-3])
-	//  {
-	//    case 0x6268: ver="2.3"; break;
-	//    case 0x6668: ver="2.4(?)"; break;
-	//    case 0xa268:
-	//    default: ver="unknown"; break;
-	//  }
-
 	reader->caid = 0x500;
 	memset(reader->prid, 0xff, sizeof(reader->prid));
 	insac[2] = 0xa4;
@@ -940,9 +945,8 @@ static int32_t viaccess_card_init(struct s_reader *reader, ATR *newatr)
 	insb8[4] = 0x07;
 	write_cmd(insb8, NULL); // read unique id
 	memcpy(reader->hexserial, cta_res + 2, 5);
-	//  rdr_log(reader, "[viaccess-reader] type: Viaccess, ver: %s serial: %llu", ver, b2ll(5, cta_res+2));
-	rdr_log_sensitive(reader, "type: Viaccess (%sstandard atr), caid: %04X, serial: {%llu}",
-					  atr[9] == 0x68 ? "" : "non-", reader->caid, (unsigned long long) b2ll(5, cta_res + 2));
+	// rdr_log(reader, "[viaccess-reader] type: Viaccess, ver: %s serial: %llu", ver, b2ll(5, cta_res+2));
+	rdr_log_sensitive(reader, "type: Viaccess (%sstandard atr), caid: %04X, serial: {%llu}", atr[9] == 0x68 ? "" : "non-", reader->caid, (unsigned long long) b2ll(5, cta_res + 2));
 
 	i = 0;
 	insa4[2] = 0x00;
@@ -957,22 +961,13 @@ static int32_t viaccess_card_init(struct s_reader *reader, ATR *newatr)
 		memcpy(&reader->prid[i][1], cta_res, 3);
 		memcpy(&csystem_data->availkeys[i][0], cta_res + 10, 16);
 		snprintf((char *)buf + strlen((char *)buf), sizeof(buf) - strlen((char *)buf), ",%06X", b2i(3, &reader->prid[i][1]));
-		//rdr_log(reader, "[viaccess-reader] buf: %s", buf);
+		// rdr_log(reader, "[viaccess-reader] buf: %s", buf);
 
 		insac[2] = 0xa5;
 		write_cmd(insac, NULL); // request sa
 		insb8[4] = 0x06;
 		write_cmd(insb8, NULL); // read sa
 		memcpy(&reader->sa[i][0], cta_res + 2, 4);
-
-		/*
-		insac[2]=0xa7; write_cmd(insac, NULL); // request name
-		insb8[4]=0x02; write_cmd(insb8, NULL); // read name nano + len
-		l=cta_res[1];
-		insb8[4]=l; write_cmd(insb8, NULL); // read name
-		cta_res[l]=0;
-		rdr_log(reader, "[viaccess-reader] name: %s", cta_res);
-		*/
 
 		insa4[2] = 0x02;
 		write_cmd(insa4, NULL); // select next issuer
@@ -1031,7 +1026,7 @@ static int32_t viaccess_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, s
 	//nanoD2 d2 02 0d 02 -> D2 nano, len 2
 	// 0b, 0f, 13 -> pre AES decrypt CW
 	// 0d, 11, 15 -> post AES decrypt CW
-	
+
 	int32_t nanoD2 = 0; // knowns D2 nanos: 0x0b ,0x0d ,0x0f ,0x11, 0x13, 0x15
 
 	memset(DE04, 0, sizeof(DE04)); //fix dorcel de04 bug
@@ -1096,6 +1091,7 @@ static int32_t viaccess_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, s
 				nanoD2 = 0x15;
 				rdr_log_dbg(reader, D_READER, "ECM: nano D2 0x15");
 			}
+
 			// use the d2 arguments to get the key # to be used
 			int32_t len = ecm88Data[1] + 2;
 			D2KeyID = ecm88Data[3];
@@ -1105,8 +1101,9 @@ static int32_t viaccess_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, s
 			hasD2 = 1;
 		}
 		else
-			{ hasD2 = 0; }
-
+		{
+			hasD2 = 0;
+		}
 
 		// 40 07 03 0b 00  -> nano 40, len =7  ident 030B00 (tntsat), key #0  <== we're pointing here
 		// 09 -> use key #9
@@ -1140,7 +1137,8 @@ static int32_t viaccess_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, s
 					{
 						if(ecm88Data[nanoLen - 1] == 0x01)
 						{
-							rdr_log_dbg(reader, D_READER, "Skip ECM ending with = %02x for ecm number (%x) for provider %02x%02x%02x", ecm88Data[nanoLen - 1], curnumber_ecm, ecm88Data[2], ecm88Data[3], ecm88Data[4]);
+							rdr_log_dbg(reader, D_READER, "Skip ECM ending with = %02x for ecm number (%x) for provider %02x%02x%02x",
+								ecm88Data[nanoLen - 1], curnumber_ecm, ecm88Data[2], ecm88Data[3], ecm88Data[4]);
 						}
 						rdr_log_dbg(reader, D_READER, "Skip ECM ending with = %02x for ecm number (%x)", ecm88Data[nanoLen - 1], curnumber_ecm);
 						ecm88Data = nextEcm;
@@ -1164,9 +1162,10 @@ static int32_t viaccess_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, s
 				// check that we have the AES key to decode the CW
 				// if not there is no need to send the ecm to the card
 				if(!aes_present(reader->aes_list, 0x500, (uint32_t)(provid & 0xFFFFF0) , D2KeyID))
-					{ return ERROR; }
+				{
+					return ERROR;
+				}
 			}
-
 
 			if(!chk_prov(reader, ident, keynr))
 			{
@@ -1185,7 +1184,7 @@ static int32_t viaccess_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, s
 				memcpy(DE04, &ecm88Data[0], 6);
 				ecm88Data += 6;
 			}
-			
+
 			// E0 (seen so far in logs: E0020002 or E0022002, but not in all cases delivers invalid cw so just detect!)
 			if(ecm88Data[0] == 0xE0 && ecm88Data[1] == 0x02)
 			{
@@ -1201,9 +1200,8 @@ static int32_t viaccess_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, s
 				csystem_data->last_geo.geo[0]  = 0;
 				write_cmd(insa4, ident); // set provider
 			}
-			
-			// Nano D2 0x0b, 0x0f, 0x13 -> pre AES decrypt CW
 
+			// Nano D2 0x0b, 0x0f, 0x13 -> pre AES decrypt CW
 			if(hasD2 && (nanoD2 == 0x0b|| nanoD2 == 0x0f|| nanoD2 == 0x13))
 			{
 				uchar *ecm88DataCW = ecm88Data;
@@ -1233,7 +1231,9 @@ static int32_t viaccess_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, s
 				// use AES from list to decrypt CW
 				rdr_log_dbg(reader, D_READER, "Decoding CW : using AES key id %d for provider %06x", D2KeyID, (provid & 0xFFFFF0));
 				if(aes_decrypt_from_list(reader->aes_list, 0x500, (uint32_t)(provid & 0xFFFFF0), D2KeyID, &ecm88DataCW[0], 16) == 0)
-					{ snprintf(ea->msglog, MSGLOGSIZE, "Missing AES key(%d)[aka E%X]",D2KeyID, D2KeyID); }
+				{
+					snprintf(ea->msglog, MSGLOGSIZE, "Missing AES key(%d)[aka E%X]",D2KeyID, D2KeyID);
+				}
 				if(nanoD2 == 0x0f)
 				{
 					hdSurEncPhase1_D2_0F_11(ecm88DataCW);
@@ -1248,16 +1248,18 @@ static int32_t viaccess_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, s
 			{
 				nanoLen = ecm88Data[1] + 2;
 				if(!ecmf8Data)
-					{ ecmf8Data = (uchar *)ecm88Data; }
+				{
+					ecmf8Data = (uchar *)ecm88Data;
+				}
 				ecmf8Len += nanoLen;
 				ecm88Len -= nanoLen;
 				curEcm88len -= nanoLen;
 				ecm88Data += nanoLen;
 			}
+
 			if(ecmf8Len)
 			{
-				if(csystem_data->last_geo.geo_len != ecmf8Len ||
-						memcmp(csystem_data->last_geo.geo, ecmf8Data, csystem_data->last_geo.geo_len))
+				if(csystem_data->last_geo.geo_len != ecmf8Len || memcmp(csystem_data->last_geo.geo, ecmf8Data, csystem_data->last_geo.geo_len))
 				{
 					memcpy(csystem_data->last_geo.geo, ecmf8Data, ecmf8Len);
 					csystem_data->last_geo.geo_len = ecmf8Len;
@@ -1289,37 +1291,33 @@ static int32_t viaccess_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, s
 			{
 				write_cmd(ins88, (uchar *)ecm88Data); // request dcw
 			}
-			//
+
 			write_cmd(insc0, NULL); // read dcw
 			switch(cta_res[0])
 			{
-			case 0xe8: // even
-				if(cta_res[1] == 8)
-				{
-					memcpy(ea->cw, cta_res + 2, 8);
-					rc = 1;
-				}
-				break;
-			case 0xe9: // odd
-				if(cta_res[1] == 8)
-				{
-					memcpy(ea->cw + 8, cta_res + 2, 8);
-					rc = 1;
-				}
-				break;
-			case 0xea: // complete
-				if(cta_res[1] == 16)
-				{
-					memcpy(ea->cw, cta_res + 2, 16);
-					rc = 1;
-				}
-				break;
-					
-			default :
-				ecm88Data = nextEcm;
-				ecm88Len -= curEcm88len;
-				rdr_log_dbg(reader, D_READER, "Error: card respondend %02X %02X, trying next ECM", cta_res[0], cta_res[1]);
-				snprintf(ea->msglog, MSGLOGSIZE, "key to use is not the current one, trying next ECM");
+				case 0xe8: // even
+					if(cta_res[1] == 8)
+					{
+						memcpy(ea->cw, cta_res + 2, 8);
+						rc = 1;
+					} break;
+				case 0xe9: // odd
+					if(cta_res[1] == 8)
+					{
+						memcpy(ea->cw + 8, cta_res + 2, 8);
+						rc = 1;
+					} break;
+				case 0xea: // complete
+					if(cta_res[1] == 16)
+					{
+						memcpy(ea->cw, cta_res + 2, 16);
+						rc = 1;
+					} break;
+				default :
+					ecm88Data = nextEcm;
+					ecm88Len -= curEcm88len;
+					rdr_log_dbg(reader, D_READER, "Error: card respondend %02X %02X, trying next ECM", cta_res[0], cta_res[1]);
+					snprintf(ea->msglog, MSGLOGSIZE, "key to use is not the current one, trying next ECM");
 			}
 		}
 		else
@@ -1331,7 +1329,7 @@ static int32_t viaccess_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, s
 			return ERROR; /*Lets interupt the loop and exit, because we don't know this ECM type.*/
 		}
 	}
-	
+
 	// Nano D2 0d, 11, 15 -> post AES decrypt CW
 
 	if(hasD2 && !dcw_crc(ea->cw) && (nanoD2 == 0x0d || nanoD2 == 0x11 || nanoD2 == 0x15 ))
@@ -1348,7 +1346,9 @@ static int32_t viaccess_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, s
 		rdr_log_dbg(reader, D_READER, "Decoding CW : using AES key id %d for provider %06x", D2KeyID, (provid & 0xFFFFF0));
 		rc = aes_decrypt_from_list(reader->aes_list, 0x500, (uint32_t)(provid & 0xFFFFF0), D2KeyID, ea->cw, 16);
 		if(rc == 0)
-			{ snprintf(ea->msglog, MSGLOGSIZE, "Missing AES key(%d)[aka E%X]",D2KeyID, D2KeyID); }
+		{
+			snprintf(ea->msglog, MSGLOGSIZE, "Missing AES key(%d)[aka E%X]",D2KeyID, D2KeyID);
+		}
 		if(nanoD2 == 0x11)
 		{
 			hdSurEncPhase1_D2_0F_11(ea->cw);
@@ -1358,18 +1358,21 @@ static int32_t viaccess_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, s
 			hdSurEncPhase2_D2_13_15(ea->cw);
 		}
 	}
-	
+
 	if ( hasE0 )
 	{	
-		if ( reader->initCA28 ){
+		if ( reader->initCA28 )
+		{
 			rdr_log_dbg(reader, D_READER, "Decrypting nano E0 encrypted cw.");
 			uint8_t returnedcw[16] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }; 
 			memcpy(returnedcw,ea->cw,16);
+
 			// Processing 3DES
 			// Processing even cw
 			des(returnedcw, reader->key_schedule1, 0);  //decrypt
 			des(returnedcw, reader->key_schedule2, 1);  //crypt
 			des(returnedcw, reader->key_schedule1, 0);  //decrypt
+
 			// Processing odd cw
 			des(returnedcw+8, reader->key_schedule1, 0);  //decrypt
 			des(returnedcw+8, reader->key_schedule2, 1);  //crypt
@@ -1377,7 +1380,9 @@ static int32_t viaccess_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, s
 
 			// returning value
 			memcpy(ea->cw,returnedcw, 16);
-		}else{
+		}
+		else
+		{
 			snprintf(ea->msglog, MSGLOGSIZE, "nano E0 detected, no valid boxkey / deskey defined: no decoding");
 		}
 	}
@@ -1437,8 +1442,9 @@ static int32_t viaccess_get_emm_type(EMM_PACKET *ep, struct s_reader *rdr)
 		for(i = 0; i < rdr->nprov; i++)
 		{
 			if(!memcmp(&rdr->prid[i][2], ep->hexserial+1, 2))
-				{ return 1; }
-			
+			{
+				return 1;
+			}
 			return (!memcmp(&rdr->sa[0][0], ep->hexserial, 3));
 		} /* fallthrough */
 
@@ -1455,18 +1461,19 @@ static int32_t viaccess_get_emm_filter(struct s_reader *rdr, struct s_csystem_em
 	{
 		bool network = is_network_reader(rdr);
 		int8_t device_emm = ((rdr->deviceemm >0) ? 1 : 0); // set to 1 if device specific emms should be catched too
-		
 		const unsigned int max_filter_count = 4 + ((device_emm != 0 && rdr->nprov > 0) ? 1:0) + (3 * ((rdr->nprov > 0) ? (rdr->nprov - 1) : 0));
-		
+
 		if(!cs_malloc(emm_filters, max_filter_count * sizeof(struct s_csystem_emm_filter)))
-			{ return ERROR; }
+		{
+			return ERROR;
+		}
 
 		struct s_csystem_emm_filter *filters = *emm_filters;
 		*filter_count = 0;
 
 		int32_t idx = 0;
 		int32_t prov;
-		
+
 		if(rdr->nprov > 0 && device_emm == 1)
 		{
 			filters[idx].type = EMM_GLOBAL;  // 8A or 8B no reassembly needed!
@@ -1477,7 +1484,7 @@ static int32_t viaccess_get_emm_filter(struct s_reader *rdr, struct s_csystem_em
 			filters[idx].mask[3]   = 0x80;
 			idx++;
 		}
-		
+
 		// shared are most important put them on top, define first since viaccess produces a lot of filters!	
 		for(prov = 0; (prov < rdr->nprov); prov++)
 		{	
@@ -1485,7 +1492,7 @@ static int32_t viaccess_get_emm_filter(struct s_reader *rdr, struct s_csystem_em
 			{
 				continue;
 			}
-			
+
 			filters[idx].type = EMM_SHARED; // 8C or 8D always first part of shared, second part delivered by 8E!
 			filters[idx].enabled   = 1;
 			filters[idx].filter[0] = 0x8C;
@@ -1509,7 +1516,7 @@ static int32_t viaccess_get_emm_filter(struct s_reader *rdr, struct s_csystem_em
 			}
 			idx++;
 		}
-		
+
 		// globals are less important, define last since viaccess produces a lot of filters!
 		for(prov = 0; (prov < rdr->nprov); prov++)
 		{
@@ -1517,7 +1524,7 @@ static int32_t viaccess_get_emm_filter(struct s_reader *rdr, struct s_csystem_em
 			{
 				continue;
 			}
-			
+
 			filters[idx].type = EMM_GLOBAL;  // 8A or 8B no reassembly needed!
 			filters[idx].enabled   = 1;
 			filters[idx].filter[0] = 0x8A;
@@ -1535,7 +1542,7 @@ static int32_t viaccess_get_emm_filter(struct s_reader *rdr, struct s_csystem_em
 			}
 			idx++;
 		}
-		
+
 		filters[idx].type = EMM_UNIQUE;
 		filters[idx].enabled   = 1;
 		filters[idx].filter[0] = 0x88;
@@ -1566,8 +1573,6 @@ static int32_t viaccess_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 	unsigned char insf4[] = { 0xca, 0xf4, 0x00, 0x01, 0x00 }; // set adf, encrypted
 	unsigned char ins18[] = { 0xca, 0x18, 0x01, 0x01, 0x00 }; // set subscription
 	unsigned char ins1c[] = { 0xca, 0x1c, 0x01, 0x01, 0x00 }; // set subscription, encrypted
-	//static const unsigned char insc8[] = { 0xca,0xc8,0x00,0x00,0x02 }; // read extended status
-	// static const unsigned char insc8Data[] = { 0x00,0x00 }; // data for read extended status
 	struct viaccess_data *csystem_data = reader->csystem_data;
 
 	int32_t emmdatastart = 7;
@@ -1589,8 +1594,16 @@ static int32_t viaccess_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 		}
 	}
 
-	if(ep->type == UNIQUE) { emmdatastart++; }
-	if(ep->type == GLOBAL && emmdatastart == 7) { emmdatastart -= 4; }
+	if(ep->type == UNIQUE)
+	{
+		emmdatastart++;
+	}
+
+	if(ep->type == GLOBAL && emmdatastart == 7)
+	{
+		emmdatastart -= 4;
+	}
+
 	int32_t emmLen = SCT_LEN(ep->emm) - emmdatastart;
 	int32_t rc = 0;
 
@@ -1714,7 +1727,7 @@ static int32_t viaccess_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 					NULLFREE(tmpbuf);
 				}
 			}
-		}	
+		}
 		else
 		{
 			/* other nanos */
@@ -1726,16 +1739,8 @@ static int32_t viaccess_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 					rdr_log(reader, "no provid in shared emm -> skipped!");
 					return SKIPPED;
 				}
-				
 				int8_t match = add_find_class(reader, emm_provid, emmParsed + 2, emmParsed[1], 0);
-				
-				// seems not all classes have to be present on card to accept the emm
-				/*if(match == -1)
-				{
-					rdr_log(reader, "shared emm provid %06X one or more classes of this emm do not match with your card -> skipped!", emm_provid);
-					return SKIPPED;
-				}*/
-				
+
 				if(match == -2)
 				{
 					rdr_log(reader, "shared emm provid %06X all classes have entitlementdate already same or newer -> skipped!", emm_provid);
@@ -1819,7 +1824,7 @@ static int32_t viaccess_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 		{
 			rdr_log_dump(reader, ins18, 5, "set subscription cmd:");
 			rdr_log_dump(reader, insData, ins18[4], "set subscription data:");
-			if(!(cta_res[cta_lr -2] == 0x90 && cta_res[cta_lr - 1] == 0x40))  // dont throw softerror 9040 in log!
+			if(!(cta_res[cta_lr -2] == 0x90 && cta_res[cta_lr - 1] == 0x40)) // dont throw softerror 9040 in log!
 			{
 				rdr_log(reader, "update error: %02X %02X", cta_res[cta_lr - 2], cta_res[cta_lr - 1]);
 			}
@@ -1841,7 +1846,11 @@ static int32_t viaccess_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 		}
 
 		ins1c[2] = nano9EData ? 0x01 : 0x00; // found 9E nano ?
-		if(ep->type == UNIQUE) { ins1c[2] = 0x02; }
+		if(ep->type == UNIQUE)
+		{
+			ins1c[2] = 0x02;
+		}
+
 		ins1c[3] = keynr;  // key
 		ins1c[4] = nano92Data[1] + 2 + nano81Data[1] + 2 + nanoF0Data[1] + 2;
 		memcpy(insData, nano92Data, nano92Data[1] + 2);
@@ -1849,49 +1858,14 @@ static int32_t viaccess_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 		memcpy(insData + nano92Data[1] + 2 + nano81Data[1] + 2, nanoF0Data, nanoF0Data[1] + 2);
 		write_cmd(ins1c, insData);
 
-		if((cta_res[cta_lr - 2] == 0x90 || cta_res[cta_lr - 2] == 0x91) &&
-				(cta_res[cta_lr - 1] == 0x00 || cta_res[cta_lr - 1] == 0x08))
+		if((cta_res[cta_lr - 2] == 0x90 || cta_res[cta_lr - 2] == 0x91) && (cta_res[cta_lr - 1] == 0x00 || cta_res[cta_lr - 1] == 0x08))
 		{
 			rdr_log(reader, "update successfully written");
 			rc = 1; // written
 		}
 		rc = 1;
-		/* don't return ERROR at this place
-		else {
-		    if( cta_res[cta_lr-2]&0x1 )
-		        rdr_log(reader, "update not written. Data already exists or unknown address");
-
-		    //if( cta_res[cta_lr-2]&0x8 ) {
-		    write_cmd(insc8, NULL);
-		    if( (cta_res[cta_lr-2]==0x90 && cta_res[cta_lr-1]==0x00) ) {
-		        rdr_log(reader, "extended status  %02X %02X", cta_res[0], cta_res[1]);
-		    }
-		    //}
-		    return ERROR;
-		} */
-
 	}
 
-	/*
-	Sub Main()
-	Sc.Write("CA A4 04 00 03")
-	RX
-	Sc.Write("02 07 11")
-	RX
-	Sc.Write("CA F0 00 01 22")
-	RX
-	Sc.Write("9E 20")
-	Sc.Write("10 10 08 8A 80 00 04 00 10 10 26 E8 54 80 1E 80")
-	Sc.Write("00 01 00 00 00 00 00 50 00 00 80 02 22 00 08 50")
-	RX
-	Sc.Write("CA 18 01 01 11")
-	RX
-	Sc.Write("A9 05 34 DE 34 FF 80")
-	Sc.Write("F0 08 1A 3E AF B5 2B EE E3 3B")
-	RX
-
-	End Sub
-	*/
 	return rc;
 }
 
@@ -1931,7 +1905,7 @@ static int32_t viaccess_card_info(struct s_reader *reader)
 
 	insa4[2] = 0x00;
 	write_cmd(insa4, NULL); // select issuer 0
-	
+
 	for(i = 1; (cta_res[cta_lr - 2] == 0x90) && (cta_res[cta_lr - 1] == 0); i++)
 	{
 		bool added = false;
@@ -1957,10 +1931,15 @@ static int32_t viaccess_card_info(struct s_reader *reader)
 		write_cmd(insb8, NULL); // read name
 		cta_res[l] = 0;
 		trim((char *)cta_res);
+
 		if(cta_res[0])
-			{ snprintf((char *)l_name, sizeof(l_name), ", name: %s", cta_res); }
+		{
+			snprintf((char *)l_name, sizeof(l_name), ", name: %.55s", cta_res);
+		}
 		else
-			{ l_name[0] = 0; }
+		{
+			l_name[0] = 0;
+		}
 
 		// read GEO
 		insac[2] = 0xa6;
@@ -1971,10 +1950,7 @@ static int32_t viaccess_card_info(struct s_reader *reader)
 		char tmp[l * 3 + 1];
 		insb8[4] = l;
 		write_cmd(insb8, NULL); // read geo
-		rdr_log_sensitive(reader, "provider: %d, id: {%06X%s}, sa: {%08X}, geo: %s",
-						  i, l_provid, l_name, l_sa, (l < 4) ? "empty" : cs_hexdump(1, cta_res, l, tmp, sizeof(tmp)));
-		
-		
+		rdr_log_sensitive(reader, "provider: %d, id: {%06X%s}, sa: {%08X}, geo: %s", i, l_provid, l_name, l_sa, (l < 4) ? "empty" : cs_hexdump(1, cta_res, l, tmp, sizeof(tmp)));
 
 		// read classes subscription
 		insac[2] = 0xa9;
@@ -1982,12 +1958,13 @@ static int32_t viaccess_card_info(struct s_reader *reader)
 		if(!reader->read_old_classes)
 		{
 			now = time(NULL) - (24*60*60);
-			cs_gmtime_r(&now, &timeinfo);		
+			cs_gmtime_r(&now, &timeinfo);
 			tmpdate = timeinfo.tm_mday | ((timeinfo.tm_mon + 1) << 5) | ((timeinfo.tm_year - 80) << 9);
 			cls[0] = tmpdate >> 8;
 			cls[1] = tmpdate & 0xff;
 		}
 		write_cmd(insac, cls); // request class subs
+
 		while((cta_res[cta_lr - 2] == 0x90) && (cta_res[cta_lr - 1] == 0))
 		{
 			insb8[4] = 0x02;
@@ -1997,15 +1974,14 @@ static int32_t viaccess_card_info(struct s_reader *reader)
 				l = cta_res[1];
 				insb8[4] = l;
 				write_cmd(insb8, NULL); // read class subs
-				if((cta_res[cta_lr - 2] == 0x90) &&
-						(cta_res[cta_lr - 1] == 0x00 || cta_res[cta_lr - 1] == 0x08))
+				if((cta_res[cta_lr - 2] == 0x90) && (cta_res[cta_lr - 1] == 0x00 || cta_res[cta_lr - 1] == 0x08))
 				{
 					show_class(reader, NULL, l_provid, cta_res, cta_lr - 2);
 					added = true;
 				}
 			}
 		}
-		
+
 		if(!added)
 		{
 			// add entitlement info for provid without class
@@ -2028,6 +2004,7 @@ static int32_t viaccess_card_info(struct s_reader *reader)
 		uchar ins28_data[4];
 		memcpy(ins28_data, reader->boxkey, 4);
 		write_cmd(ins28, ins28_data); // unlock card to reply on E002xxyy
+
 		if((cta_res[cta_lr - 2] == 0x90) && (cta_res[cta_lr - 1] == 0))
 		{
 			rdr_log(reader, "CA 28 initialisation successful!");
@@ -2053,9 +2030,12 @@ static int32_t viaccess_reassemble_emm(struct s_reader *rdr, struct s_client *cl
 	int16_t k;
 	int32_t prov, provid = 0;
 	struct emm_rass *r_emm = NULL;
-	
+
 	// Viaccess
-	if(*len > 500) { return 0; } 
+	if(*len > 500)
+	{
+		return 0;
+	}
 
 	switch(buffer[0])
 	{
@@ -2074,12 +2054,12 @@ static int32_t viaccess_reassemble_emm(struct s_reader *rdr, struct s_client *cl
 			{
 				return 0;
 			}
-			memset(&r_emm->emm[0], 0, sizeof(r_emm->emm)); // zero it!  
+			memset(&r_emm->emm[0], 0, sizeof(r_emm->emm)); // zero it!
 			memcpy(&r_emm->emm[0], &buffer[0], *len); // put the fresh new shared emm
 			r_emm->emmlen = *len; // put the emmlen indicating that this shared emm isnt being reassembled
 			rdr_log_dump_dbg(rdr, D_EMM, r_emm->emm, r_emm->emmlen, "%s: received fresh emm-gh for provid %06X", __func__, provid);
 			return 0;
-		
+
 		case 0x8e:
 			// emm-s part 2
 			for(prov = 0; prov < rdr->nprov ; prov++)
@@ -2099,7 +2079,7 @@ static int32_t viaccess_reassemble_emm(struct s_reader *rdr, struct s_client *cl
 					}
 					r_emm = find_rabuf(client, provid, 0, 0); // nano = dont care, the shared 8c or 8d not been written gets returned!
 					if(!r_emm || !r_emm->emmlen) 
-					{ 
+					{
 						continue; // match but no emm-gh found for this provider 
 					}
 					else
@@ -2108,8 +2088,10 @@ static int32_t viaccess_reassemble_emm(struct s_reader *rdr, struct s_client *cl
 					}
 				}
 			}
-			if(!r_emm || !r_emm->emmlen) { return 0; } // stop -> no emm-gh found!
-			
+			if(!r_emm || !r_emm->emmlen)
+			{
+				return 0; // stop -> no emm-gh found!
+			}
 			//extract nanos from emm-gh and emm-s
 			uchar emmbuf[512];
 
