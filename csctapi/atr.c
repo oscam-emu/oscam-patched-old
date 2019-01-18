@@ -24,36 +24,18 @@
 #include "../globals.h"
 #include "atr.h"
 #define ERROR 1
-/*
- * Not exported variables definition
- */
 
 const uint32_t atr_fs_table[16] = {5000000L, 5000000L, 6000000L, 8000000L, 12000000L, 16000000L, 20000000L, 0, 0, 5000000L, 7500000L, 10000000L, 15000000L, 20000000L, 0, 0};
-
-static const uint32_t atr_num_ib_table[16] = {0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4};
-
-/*
- * Exported variables definition
- */
-
 const uint32_t atr_f_table[16] = {372, 372, 558, 744, 1116, 1488, 1860, 0, 0, 512, 768, 1024, 1536, 2048, 0, 0};
-
 const double atr_d_table[16] = {0, 1, 2, 4, 8, 16, 32, 64, 12, 20, 0, 0, 0, 0, 0, 0};
-//const double atr_d_table[16] = {0, 1, 2, 4, 8, 16, 32, 64, 12, 20, 0.5, 0.25, 0.125, 0.0625, 0.03125, 0.015625};
-//old table has 0 for RFU:
-//double atr_d_table[16] = {0, 1, 2, 4, 8, 16, 0, 0, 0, 0, 0.5, 0.25, 125, 0.0625, 0.03125, 0.015625};
 
-static const uint32_t atr_i_table[4] = {25, 50, 100, 0};
-
-/*
- * Exported funcions definition
- */
 #ifdef WITH_CARDREADER
 int32_t ATR_InitFromArray(ATR *atr, const unsigned char atr_buffer[ATR_MAX_SIZE], uint32_t length)
 {
 	unsigned char TDi;
 	unsigned char buffer[ATR_MAX_SIZE];
 	uint32_t pointer = 0, pn = 0;
+	static const uint32_t atr_num_ib_table[16] = {0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4};
 
 	/* Check size of buffer */
 	if(length < 2)
@@ -354,7 +336,7 @@ int32_t ATR_GetIntegerValue(ATR *atr, int32_t name, unsigned char *value)
 int32_t ATR_GetParameter(ATR *atr, int32_t name, uint32_t *parameter)
 {
 	unsigned char FI, DI, II, PI1, PI2, N;
-
+	static const uint32_t atr_i_table[4] = {25, 50, 100, 0};
 	if(name == ATR_PARAMETER_F)
 	{
 		if(ATR_GetIntegerValue(atr, ATR_INTEGER_VALUE_FI, &FI) != ATR_OK)
