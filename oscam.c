@@ -72,7 +72,7 @@ static void ssl_done(void) { }
 extern char *config_mak;
 
 /*****************************************************************************
-        Globals
+		Globals
 *****************************************************************************/
 const char *syslog_ident = "oscam";
 static char *oscam_pidfile;
@@ -81,15 +81,15 @@ static char default_pidfile[64];
 int32_t exit_oscam = 0;
 static struct s_module modules[CS_MAX_MOD];
 
-struct s_client *first_client = NULL;  //Pointer to clients list, first client is master
-struct s_reader *first_active_reader = NULL;  //list of active readers (enable=1 deleted = 0)
-LLIST *configured_readers = NULL;  //list of all (configured) readers
+struct s_client *first_client = NULL; // Pointer to clients list, first client is master
+struct s_reader *first_active_reader = NULL; // list of active readers (enable=1 deleted = 0)
+LLIST *configured_readers = NULL; // list of all (configured) readers
 
-uint16_t  len4caid[256];    // table for guessing caid (by len)
-char  cs_confdir[128] = CS_CONFDIR;
+uint16_t len4caid[256]; // table for guessing caid (by len)
+char cs_confdir[128] = CS_CONFDIR;
 uint16_t cs_dblevel = 0; // Debug Level
 int32_t thread_pipe[2] = {0, 0};
-static int8_t cs_restart_mode = 1; //Restartmode: 0=off, no restart fork, 1=(default)restart fork, restart by webif, 2=like=1, but also restart on segfaults
+static int8_t cs_restart_mode = 1; // Restartmode: 0=off, no restart fork, 1=(default)restart fork, restart by webif, 2=like=1, but also restart on segfaults
 #ifdef WITH_UTF8
 uint8_t cs_http_use_utf8 = 1;
 #else
@@ -98,7 +98,7 @@ uint8_t cs_http_use_utf8 = 0;
 static int8_t cs_capture_SEGV;
 static int8_t cs_dump_stack;
 static uint16_t cs_waittime = 60;
-char  cs_tmpdir[200] = {0x00};
+char cs_tmpdir[200] = {0x00};
 CS_MUTEX_LOCK system_lock;
 CS_MUTEX_LOCK config_lock;
 CS_MUTEX_LOCK gethostbyname_lock;
@@ -112,17 +112,16 @@ static int32_t bg;
 static int32_t gbdb;
 static int32_t max_pending = 32;
 
-//ecms list
+// ecms list
 CS_MUTEX_LOCK ecmcache_lock;
-struct ecm_request_t    *ecmcwcache = NULL;
+struct ecm_request_t *ecmcwcache = NULL;
 uint32_t ecmcwcache_size = 0;
 
-//pushout deleted list
+// pushout deleted list
 CS_MUTEX_LOCK ecm_pushed_deleted_lock;
-struct ecm_request_t	*ecm_pushed_deleted = NULL;
+struct ecm_request_t *ecm_pushed_deleted = NULL;
 
-
-struct  s_config  cfg;
+struct s_config cfg;
 
 int log_remove_sensitive = 1;
 
@@ -133,7 +132,7 @@ static char *stb_boxname;
 static uint32_t oscam_stacksize = 0;
 
 /*****************************************************************************
-        Statics
+		Statics
 *****************************************************************************/
 /* Prints usage information and information about the built-in modules. */
 static void show_usage(void)
@@ -343,13 +342,13 @@ static void parse_cmdline_params(int argc, char **argv)
 }
 
 #define write_conf(CONFIG_VAR, text) \
-    fprintf(fp, "%-40s %s\n", text ":", config_enabled(CONFIG_VAR) ? "yes" : "no")
+	fprintf(fp, "%-40s %s\n", text ":", config_enabled(CONFIG_VAR) ? "yes" : "no")
 
 #define write_readerconf(CONFIG_VAR, text) \
-    fprintf(fp, "%-40s %s\n", text ":", config_enabled(CONFIG_VAR) ? "yes" : "no - no EMM support!")
+	fprintf(fp, "%-40s %s\n", text ":", config_enabled(CONFIG_VAR) ? "yes" : "no - no EMM support!")
 
 #define write_cardreaderconf(CONFIG_VAR, text) \
-    fprintf(fp, "%s%-29s %s\n", "cardreader_", text ":", config_enabled(CONFIG_VAR) ? "yes" : "no")
+	fprintf(fp, "%s%-29s %s\n", "cardreader_", text ":", config_enabled(CONFIG_VAR) ? "yes" : "no")
 
 static void write_versionfile(bool use_stdout)
 {
@@ -421,7 +420,8 @@ static void write_versionfile(bool use_stdout)
 	write_conf(CW_CYCLE_CHECK, "CW Cycle Check support");
 	write_conf(LCDSUPPORT, "LCD support");
 	write_conf(LEDSUPPORT, "LED support");
-	switch (cs_getclocktype()) {
+	switch (cs_getclocktype())
+	{
 		case CLOCK_TYPE_UNKNOWN  : write_conf(CLOCKFIX, "Clockfix with UNKNOWN clock"); break;
 		case CLOCK_TYPE_REALTIME : write_conf(CLOCKFIX, "Clockfix with realtime clock"); break;
 		case CLOCK_TYPE_MONOTONIC: write_conf(CLOCKFIX, "Clockfix with monotonic clock"); break;
@@ -496,10 +496,10 @@ static void remove_versionfile(void)
 }
 
 #define report_emm_support(CONFIG_VAR, text) \
-    do { \
-        if (!config_enabled(CONFIG_VAR)) \
-            cs_log_dbg(D_TRACE, "Binary without %s module - no EMM processing for %s possible!", text, text); \
-    } while(0)
+	do { \
+		if (!config_enabled(CONFIG_VAR)) \
+			cs_log_dbg(D_TRACE, "Binary without %s module - no EMM processing for %s possible!", text, text); \
+	} while(0)
 
 static void do_report_emm_support(void)
 {
@@ -742,9 +742,9 @@ static void init_signal(void)
 	set_signal_handler(SIGTERM, 3, cs_exit);
 
 	set_signal_handler(SIGWINCH, 1, SIG_IGN);
-	set_signal_handler(SIGPIPE , 0, cs_sigpipe);
-	set_signal_handler(SIGALRM , 0, cs_master_alarm);
-	set_signal_handler(SIGHUP  , 1, cs_reload_config);
+	set_signal_handler(SIGPIPE, 0, cs_sigpipe);
+	set_signal_handler(SIGALRM, 0, cs_master_alarm);
+	set_signal_handler(SIGHUP, 1, cs_reload_config);
 	set_signal_handler(SIGUSR1, 1, cs_debug_level);
 	set_signal_handler(SIGUSR2, 1, cs_card_info);
 	set_signal_handler(OSCAM_SIGNAL_WAKEUP, 0, cs_dummy);
@@ -783,9 +783,9 @@ void cs_exit(int32_t sig)
 
 		free_client(cl);
 
-		//Restore signals before exiting thread
-		set_signal_handler(SIGPIPE , 0, cs_sigpipe);
-		set_signal_handler(SIGHUP  , 1, cs_reload_config);
+		// Restore signals before exiting thread
+		set_signal_handler(SIGPIPE, 0, cs_sigpipe);
+		set_signal_handler(SIGHUP, 1, cs_reload_config);
 
 		pthread_exit(NULL);
 		return;
@@ -803,7 +803,7 @@ static char *read_line_from_file(char *fname, char *buf, int bufsz)
 		return NULL;
 	while (fgets(buf, bufsz, f))
 	{
-		if (strstr(buf,"\n")) //we need only the first line
+		if (strstr(buf,"\n")) // we need only the first line
 		{
 			buf[strlen(buf)-1] = '\0';
 			break;
@@ -890,8 +890,8 @@ static void init_machine_info(void)
 
 	if (!boxtype[0])
 	{
-		uchar *pos;
-		pos = (uchar*) memchr(buffer.release, 'd', sizeof(buffer.release));
+		uint8_t *pos;
+		pos = (uint8_t *)memchr(buffer.release, 'd', sizeof(buffer.release));
 		if(pos)
 		{
 			if((!memcmp(pos, "dbox2", sizeof("dbox2"))) && !strcasecmp(buffer.machine, "ppc"))
@@ -1037,7 +1037,7 @@ int32_t start_thread(char *nameroutine, void *startroutine, void *arg, pthread_t
 	SAFE_ATTR_INIT(&attr);
 
 	if(modify_stacksize)
- 		{ SAFE_ATTR_SETSTACKSIZE(&attr, oscam_stacksize); }
+		{ SAFE_ATTR_SETSTACKSIZE(&attr, oscam_stacksize); }
 
 	int32_t ret = pthread_create(pthread == NULL ? &temp : pthread, &attr, startroutine, arg);
 	if(ret)
@@ -1189,10 +1189,10 @@ static void process_clients(void)
 	struct s_reader *rdr;
 	struct pollfd *pfd;
 	struct s_client **cl_list;
-	struct timeb start, end;  // start time poll, end time poll
+	struct timeb start, end; // start time poll, end time poll
 	uint32_t cl_size = 0;
 
-	uchar buf[10];
+	uint8_t buf[10];
 
 	if(pipe(thread_pipe) == -1)
 	{
@@ -1210,7 +1210,7 @@ static void process_clients(void)
 	{
 		pfdcount = 1;
 
-		//connected tcp clients
+		// connected tcp clients
 		for(cl = first_client->next; cl; cl = cl->next)
 		{
 			if(cl->init_done && !cl->kill && cl->pfd && cl->typ == 'c' && !cl->is_udp)
@@ -1308,7 +1308,6 @@ static void process_clients(void)
 				}
 			}
 
-
 			//reader
 			// either an ecm answer, a keepalive or connection closed from a proxy
 			// physical reader ('r') should never send data without request
@@ -1335,7 +1334,6 @@ static void process_clients(void)
 					add_job(cl2, ACTION_READER_REMOTE, NULL, 0);
 				}
 			}
-
 
 			//server sockets
 			// new connection on a tcp listen socket or new message on udp listen socket
@@ -1434,7 +1432,6 @@ static void * card_poll(void) {
 #ifdef WEBIF
 static pid_t pid;
 
-
 static void fwd_sig(int32_t sig)
 {
 	kill(pid, sig);
@@ -1444,15 +1441,14 @@ static void restart_daemon(void)
 {
 	while(1)
 	{
-
-		//start client process:
+		// start client process:
 		pid = fork();
 		if(!pid)
-			{ return; } //client process=oscam process
+			{ return; } // client process=oscam process
 		if(pid < 0)
 			{ exit(1); }
 
-		//set signal handler for the restart daemon:
+		// set signal handler for the restart daemon:
 		set_signal_handler(SIGINT, 3, fwd_sig);
 #if defined(__APPLE__)
 		set_signal_handler(SIGEMT, 3, fwd_sig);
@@ -1467,7 +1463,7 @@ static void restart_daemon(void)
 		set_signal_handler(SIGPIPE , 0, SIG_IGN);
 		set_signal_handler(OSCAM_SIGNAL_WAKEUP, 0, SIG_IGN);
 
-		//restart control process:
+		// restart control process:
 		int32_t res = 0;
 		int32_t status = 0;
 		do
@@ -1482,11 +1478,11 @@ static void restart_daemon(void)
 		while(res != pid);
 
 		if(cs_restart_mode == 2 && WIFSIGNALED(status) && WTERMSIG(status) == SIGSEGV)
-			{ status = 99; } //restart on segfault!
+			{ status = 99; } // restart on segfault!
 		else
 			{ status = WEXITSTATUS(status); }
 
-		//status=99 restart oscam, all other->terminate
+		// status=99 restart oscam, all other->terminate
 		if(status != 99)
 		{
 			exit(status);
@@ -1651,9 +1647,10 @@ const struct s_cardreader *cardreaders[] =
 };
 
 static void find_conf_dir(void)
- {
+{
 	static const char* confdirs[] =
-		{	"/etc/tuxbox/config/",
+		{
+			"/etc/tuxbox/config/",
 			"/etc/tuxbox/config/oscam/",
 			"/var/tuxbox/config/",
 			"/usr/keys/",
@@ -1666,7 +1663,7 @@ static void find_conf_dir(void)
 		};
 
 	char conf_file[128+16];
- 	int32_t i;
+	int32_t i;
 
 	if(cs_confdir[strlen(cs_confdir) - 1] != '/')
 		{ strcat(cs_confdir, "/"); }
@@ -1860,7 +1857,7 @@ int32_t main(int32_t argc, char *argv[])
 		}
 	}
 
-	//set time for server to now to avoid 0 in monitor/webif
+	// set time for server to now to avoid 0 in monitor/webif
 	first_client->last = time((time_t *)0);
 
 	webif_init();
@@ -1902,7 +1899,7 @@ int32_t main(int32_t argc, char *argv[])
 
 	// Cleanup
 #ifdef MODULE_GBOX
- if(!cfg.gsms_dis)
+if(!cfg.gsms_dis)
 	{ stop_sms_sender(); }
 #endif
 	webif_close();

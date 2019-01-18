@@ -113,7 +113,7 @@ struct tm *cs_gmtime_r(const time_t *timep, struct tm *r)
 	}
 
 	for(i = 11; i && daysPerMonth[i] > work; --i) { ; }
-	r->tm_mon   = i;
+	r->tm_mon = i;
 	r->tm_mday += work - daysPerMonth[i];
 	return r;
 }
@@ -132,9 +132,9 @@ void cs_ftime(struct timeb *tp)
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
 #if defined(CLOCKFIX)
-	if (tv.tv_sec > lasttime.tv_sec || (tv.tv_sec == lasttime.tv_sec && tv.tv_usec >= lasttime.tv_usec))
-	{			// check for time issues!
-		lasttime = tv;  // register this valid time
+	if (tv.tv_sec > lasttime.tv_sec || (tv.tv_sec == lasttime.tv_sec && tv.tv_usec >= lasttime.tv_usec)) // check for time issues!
+	{
+		lasttime = tv; // register this valid time
 	}
 	else
 	{
@@ -142,8 +142,8 @@ void cs_ftime(struct timeb *tp)
 		settimeofday(&tv, NULL); // set time back to last known valid time
 		//fprintf(stderr, "*** WARNING: BAD TIME AFFECTING WHOLE OSCAM ECM HANDLING, SYSTEMTIME SET TO LAST KNOWN VALID TIME **** \n");
 	}
-#endif	
-	tp->time    = tv.tv_sec;
+#endif
+	tp->time = tv.tv_sec;
 	tp->millitm = tv.tv_usec / 1000;
 }
 
@@ -152,9 +152,9 @@ void cs_ftimeus(struct timeb *tp)
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
 #if defined(CLOCKFIX)
-	if (tv.tv_sec > lasttime.tv_sec || (tv.tv_sec == lasttime.tv_sec && tv.tv_usec >= lasttime.tv_usec))
-	{			// check for time issues!
-		lasttime = tv;  // register this valid time
+	if (tv.tv_sec > lasttime.tv_sec || (tv.tv_sec == lasttime.tv_sec && tv.tv_usec >= lasttime.tv_usec)) // check for time issues!
+	{
+		lasttime = tv; // register this valid time
 	}
 	else
 	{
@@ -162,14 +162,14 @@ void cs_ftimeus(struct timeb *tp)
 		settimeofday(&tv, NULL); // set time back to last known valid time
 		//fprintf(stderr, "*** WARNING: BAD TIME AFFECTING WHOLE OSCAM ECM HANDLING, SYSTEMTIME SET TO LAST KNOWN VALID TIME **** \n");
 	}
-#endif	
-	tp->time    = tv.tv_sec;
+#endif
+	tp->time = tv.tv_sec;
 	tp->millitm = tv.tv_usec;
 }
 
 void cs_sleepms(uint32_t msec)
 {
-	//does not interfere with signals like sleep and usleep do
+	// does not interfere with signals like sleep and usleep do
 	struct timespec req_ts;
 	req_ts.tv_sec = msec / 1000;
 	req_ts.tv_nsec = (msec % 1000) * 1000000L;
@@ -197,7 +197,7 @@ void cs_sleepms(uint32_t msec)
 
 void cs_sleepus(uint32_t usec)
 {
-	//does not interfere with signals like sleep and usleep do
+	// does not interfere with signals like sleep and usleep do
 	struct timespec req_ts;
 	req_ts.tv_sec = usec / 1000000;
 	req_ts.tv_nsec = (usec % 1000000) * 1000L;
@@ -270,15 +270,15 @@ int64_t add_ms_to_timeb_diff(struct timeb *tb, int32_t ms)
 }
 
 #if defined(__UCLIBC__)
-#  define __UCLIBC_VER (__UCLIBC_MAJOR__ * 10000 + __UCLIBC_MINOR__ * 100 + __UCLIBC_SUBLEVEL__)
+#define __UCLIBC_VER (__UCLIBC_MAJOR__ * 10000 + __UCLIBC_MINOR__ * 100 + __UCLIBC_SUBLEVEL__)
 #else
-#  define __UCLIBC_VER 999999
+#define __UCLIBC_VER 999999
 #endif
 
 #if defined(__GLIBC__)
-#  define __GLIBCVER (__GLIBC__ * 100 + __GLIBC_MINOR__)
+#define __GLIBCVER (__GLIBC__ * 100 + __GLIBC_MINOR__)
 #else
-#  define __GLIBCVER 9999
+#define __GLIBCVER 9999
 #endif
 
 // Assume we have HAVE_pthread_condattr_setclock if CLOCK_MONOTONIC is defined
@@ -288,17 +288,17 @@ int64_t add_ms_to_timeb_diff(struct timeb *tb, int32_t ms)
 
 #if defined(HAVE_pthread_condattr_setclock)
 // UCLIBC 0.9.31 does not have pthread_condattr_setclock
-#  if __UCLIBC_VER < 932
-#     undef HAVE_pthread_condattr_setclock
-#  endif
+#if __UCLIBC_VER < 932
+#undef HAVE_pthread_condattr_setclock
+#endif
 // glibc 2.3.6 in ppc old toolchain do not have pthread_condattr_setclock
-#  if __GLIBCVER < 204
-#     undef HAVE_pthread_condattr_setclock
-#  endif
+#if __GLIBCVER < 204
+#undef HAVE_pthread_condattr_setclock
+#endif
 // android's libc not have pthread_condattr_setclock
-#  if __BIONIC__
-#     undef HAVE_pthread_condattr_setclock
-#  endif
+#if __BIONIC__
+#undef HAVE_pthread_condattr_setclock
+#endif
 #endif
 
 void __cs_pthread_cond_init(const char *n, pthread_cond_t *cond)
@@ -392,9 +392,9 @@ void cs_gettime(struct timespec *ts)
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
 #if defined(CLOCKFIX)
-	if (tv.tv_sec > lasttime.tv_sec || (tv.tv_sec == lasttime.tv_sec && tv.tv_usec >= lasttime.tv_usec))
-	{			// check for time issues!
-		lasttime = tv;  // register this valid time
+	if (tv.tv_sec > lasttime.tv_sec || (tv.tv_sec == lasttime.tv_sec && tv.tv_usec >= lasttime.tv_usec)) // check for time issues!
+	{
+		lasttime = tv; // register this valid time
 	}
 	else
 	{

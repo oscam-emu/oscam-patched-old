@@ -9,9 +9,13 @@ bool cs_malloc(void *result, size_t size)
 {
 	void **tmp = result;
 	*tmp = malloc(size);
-	if(*tmp == NULL){
+
+	if(*tmp == NULL)
+	{
 		fprintf(stderr, "%s: ERROR: Can't allocate %zu bytes!", __func__, size);
-	}else{
+	}
+	else
+	{
 		memset(*tmp, 0, size);
 	}
 	return !!*tmp;
@@ -26,7 +30,9 @@ bool cs_realloc(void *result, size_t size)
 {
 	void **tmp = result, **tmp2 = result;
 	*tmp = realloc(*tmp, size);
-	if(*tmp == NULL){
+
+	if(*tmp == NULL)
+	{
 		fprintf(stderr, "%s: ERROR: Can't allocate %zu bytes!", __func__, size);
 		NULLFREE(*tmp2);
 	}
@@ -39,7 +45,9 @@ char *cs_strdup(const char *str)
 	char *newstr;
 	if(!str)
 		{ return NULL; }
-	if(cs_malloc(&newstr, strlen(str) + 1)){
+
+	if(cs_malloc(&newstr, strlen(str) + 1))
+	{
 		strncpy(newstr, str, strlen(str));
 		return newstr;
 	}
@@ -52,15 +60,18 @@ char *cs_strdup(const char *str)
    num should be the real size of char array (do not subtract -1). */
 void cs_strncpy(char *destination, const char *source, size_t num)
 {
-	if(!source){
+	if(!source)
+	{
 		destination[0] = '\0';
 		return;
 	}
+
 	uint32_t l, size = strlen(source);
 	if(size > num - 1)
 		{ l = num - 1; }
 	else
 		{ l = size; }
+
 	memcpy(destination, source, l);
 	destination[l] = '\0';
 }
@@ -69,9 +80,10 @@ void cs_strncpy(char *destination, const char *source, size_t num)
 char *strtolower(char *txt)
 {
 	char *p;
-	for(p = txt; *p; p++){
-		if(isupper((uchar)*p))
-			{ *p = tolower((uchar) * p); }
+	for(p = txt; *p; p++)
+	{
+		if(isupper((uint8_t)*p))
+			{ *p = tolower((uint8_t) * p); }
 	}
 	return txt;
 }
@@ -80,9 +92,10 @@ char *strtolower(char *txt)
 char *strtoupper(char *txt)
 {
 	char *p;
-	for(p = txt; *p; p++){
-		if(islower((uchar)*p))
-			{ *p = toupper((uchar) * p); }
+	for(p = txt; *p; p++)
+	{
+		if(islower((uint8_t)*p))
+			{ *p = toupper((uint8_t)*p); }
 	}
 	return txt;
 }
@@ -91,15 +104,21 @@ char *trim(char *txt)
 {
 	int32_t l;
 	char *p1, *p2;
-	if(*txt == ' '){
+
+	if(*txt == ' ')
+	{
 		for(p1 = p2 = txt; (*p1 == ' ') || (*p1 == '\t') || (*p1 == '\n') || (*p1 == '\r'); p1++)
 			{ ; }
+
 		while(*p1)
 			{ *p2++ = *p1++; }
+
 		*p2 = '\0';
 	}
+
 	l = strlen(txt);
-	if(l > 0){
+	if(l > 0)
+	{
 		for(p1 = txt + l - 1; l > 0 && ((*p1 == ' ') || (*p1 == '\t') || (*p1 == '\n') || (*p1 == '\r')); *p1-- = '\0', l--)
 			{ ; }
 	}
@@ -109,8 +128,8 @@ char *trim(char *txt)
 char *trim2(char *txt)
 {
 	int32_t i, n;
-	
-	for(i=n=0; i<(int32_t)strlen(txt); i++)
+
+	for(i = n = 0; i < (int32_t)strlen(txt); i++)
 	{
 		if(txt[i] == ' ' || txt[i] == '\t') continue;
 		if(txt[i] == '#') {break;}
@@ -118,19 +137,20 @@ char *trim2(char *txt)
 		n++;
 	}
 	txt[n] = '\0';
-	
+
 	return txt;
 }
 
 char *remove_white_chars(char *txt)
 {
-
 	char *p1 = txt, *p2 = txt;
 
 	if(NULL != p1)
 	{
-		while('\0' != *p1){
-			if((' '  != *p1) && ('\t' != *p1) && ('\n' != *p1) && ('\r' != *p1)){
+		while('\0' != *p1)
+		{
+			if((' ' != *p1) && ('\t' != *p1) && ('\n' != *p1) && ('\r' != *p1))
+			{
 				*p2++ = *p1;
 			}
 			p1++;
@@ -148,13 +168,15 @@ bool streq(const char *s1, const char *s2)
 	return strcmp(s1, s2) == 0;
 }
 
-char *cs_hexdump(int32_t m, const uchar *buf, int32_t n, char *target, int32_t len)
+char *cs_hexdump(int32_t m, const uint8_t *buf, int32_t n, char *target, int32_t len)
 {
 	int32_t i = 0;
 	target[0] = '\0';
 	m = m ? 3 : 2;
+
 	if(m * n >= len)
 		{ n = (len / m) - 1; }
+
 	while(i < n)
 	{
 		snprintf(target + (m * i), len - (m * i), "%02X%s", *buf++, m > 2 ? " " : "");
@@ -171,7 +193,7 @@ int32_t gethexval(char c)
 	return -1;
 }
 
-int32_t cs_atob(uchar *buf, char *asc, int32_t n)
+int32_t cs_atob(uint8_t *buf, char *asc, int32_t n)
 {
 	int32_t i, rc;
 	for(i = 0; i < n; i++)
@@ -244,47 +266,53 @@ int32_t dyn_word_atob(char *asc)
 {
 	int32_t rc = (-1);
 	int32_t i, len = strlen(trim(asc));
+
 	if(len <= 6 && len > 0)
 	{
 		for(i = 0, rc = 0; i < len; i++)
 		{
 			rc = rc << 4 | gethexval(asc[i]);
 		}
+
 		if(rc & 0x1000000)
 			{ rc = -1; }
 	}
 	return rc;
 }
 
-int32_t key_atob_l(char *asc, uchar *bin, int32_t l)
+int32_t key_atob_l(char *asc, uint8_t *bin, int32_t l)
 {
 	int32_t i, n1, n2, rc;
+
 	for(i = rc = 0; i < l; i += 2)
 	{
-		if((n1 = gethexval(asc[i  ])) < 0) { rc = -1; }
+		if((n1 = gethexval(asc[i])) < 0) { rc = -1; }
 		if((n2 = gethexval(asc[i + 1])) < 0) { rc = -1; }
 		bin[i >> 1] = (n1 << 4) + (n2 & 0xff);
 	}
 	return rc;
 }
 
-uint32_t b2i(int32_t n, const uchar *b)
+uint32_t b2i(int32_t n, const uint8_t *b)
 {
 	switch(n)
 	{
-	case 2:
-		return (b[0] <<  8) |  b[1];
-	case 3:
-		return (b[0] << 16) | (b[1] <<  8) |  b[2];
-	case 4:
-		return ((b[0] << 24) | (b[1] << 16) | (b[2] << 8) | b[3]) & 0xffffffffL;
-	default:
-		cs_log("Error in b2i, n=%i", n);
+		case 2:
+			return (b[0] << 8) | b[1];
+
+		case 3:
+			return (b[0] << 16) | (b[1] << 8) | b[2];
+
+		case 4:
+			return ((b[0] << 24) | (b[1] << 16) | (b[2] << 8) | b[3]) & 0xffffffffL;
+
+		default:
+			cs_log("Error in b2i, n=%i", n);
 	}
 	return 0;
 }
 
-uint64_t b2ll(int32_t n, uchar *b)
+uint64_t b2ll(int32_t n, uint8_t *b)
 {
 	int32_t i;
 	uint64_t k = 0;
@@ -293,30 +321,32 @@ uint64_t b2ll(int32_t n, uchar *b)
 	return k;
 }
 
-uchar *i2b_buf(int32_t n, uint32_t i, uchar *b)
+uint8_t *i2b_buf(int32_t n, uint32_t i, uint8_t *b)
 {
 	switch(n)
 	{
-	case 2:
-		b[0] = (i >> 8) & 0xff;
-		b[1] = (i) & 0xff;
-		break;
-	case 3:
-		b[0] = (i >> 16) & 0xff;
-		b[1] = (i >> 8) & 0xff;
-		b[2] = (i) & 0xff;
-		break;
-	case 4:
-		b[0] = (i >> 24) & 0xff;
-		b[1] = (i >> 16) & 0xff;
-		b[2] = (i >> 8) & 0xff;
-		b[3] = (i) & 0xff;
-		break;
+		case 2:
+			b[0] = (i >> 8) & 0xff;
+			b[1] = (i) & 0xff;
+			break;
+
+		case 3:
+			b[0] = (i >> 16) & 0xff;
+			b[1] = (i >> 8) & 0xff;
+			b[2] = (i) & 0xff;
+			break;
+
+		case 4:
+			b[0] = (i >> 24) & 0xff;
+			b[1] = (i >> 16) & 0xff;
+			b[2] = (i >> 8) & 0xff;
+			b[3] = (i) & 0xff;
+			break;
 	}
 	return b;
 }
 
-void ull2b_buf(uint64_t i, uchar *b)
+void ull2b_buf(uint64_t i, uint8_t *b)
 {
 	b[0] = (i >> 56) & 0xff;
 	b[1] = (i >> 48) & 0xff;
@@ -332,6 +362,7 @@ uint32_t a2i(char *asc, int32_t bytes)
 {
 	int32_t i, n;
 	uint32_t rc;
+
 	for(rc = i = 0, n = strlen(trim(asc)) - 1; i < abs(bytes) << 1; n--, i++)
 	{
 		if(n >= 0)
@@ -361,11 +392,11 @@ int32_t boundary(int32_t exp, int32_t n)
 
 /* Checks whether an array has at least one non-zero byte.
    length specifies the maximum length to check for. */
-int32_t array_has_nonzero_byte(uchar *value, int32_t length)
+int32_t array_has_nonzero_byte(uint8_t *value, int32_t length)
 {
 	if(!value)
 		{ return 0; }
-	
+
 	int32_t i;
 	for(i = 0; i < length; i++)
 	{
@@ -386,12 +417,14 @@ void get_random_bytes_init(void)
 {
 	srand(time(NULL));
 	int fd = open("/dev/urandom", O_RDONLY);
+
 	if(fd < 0)
 	{
 		fd = open("/dev/random", O_RDONLY);
 		if(fd < 0)
 			{ return; }
 	}
+
 	if(read(fd, rand_pool, RAND_POOL_SIZE + sizeof(uint32_t)) > -1)
 	{
 		uint32_t pool_seed = b2i(4, rand_pool + RAND_POOL_SIZE);
@@ -404,6 +437,7 @@ void get_random_bytes(uint8_t *dst, uint32_t dst_len)
 {
 	static uint32_t rand_pool_pos; // *MUST* be static
 	uint32_t i;
+
 	for(i = 0; i < dst_len; i++)
 	{
 		rand_pool_pos++; // Races are welcome...
@@ -496,62 +530,6 @@ uint32_t crc32(uint32_t crc, const uint8_t *buf, uint32_t len)
 		while(--len);
 	}
 	return crc ^ 0xffffffffL;
-}
-
-static uint32_t fletcher_crc_table[256] = {
-	0x00000000, 0x04c11db7, 0x09823b6e, 0x0d4326d9, 0x130476dc, 0x17c56b6b,
-	0x1a864db2, 0x1e475005, 0x2608edb8, 0x22c9f00f, 0x2f8ad6d6, 0x2b4bcb61,
-	0x350c9b64, 0x31cd86d3, 0x3c8ea00a, 0x384fbdbd, 0x4c11db70, 0x48d0c6c7,
-	0x4593e01e, 0x4152fda9, 0x5f15adac, 0x5bd4b01b, 0x569796c2, 0x52568b75,
-	0x6a1936c8, 0x6ed82b7f, 0x639b0da6, 0x675a1011, 0x791d4014, 0x7ddc5da3,
-	0x709f7b7a, 0x745e66cd, 0x9823b6e0, 0x9ce2ab57, 0x91a18d8e, 0x95609039,
-	0x8b27c03c, 0x8fe6dd8b, 0x82a5fb52, 0x8664e6e5, 0xbe2b5b58, 0xbaea46ef,
-	0xb7a96036, 0xb3687d81, 0xad2f2d84, 0xa9ee3033, 0xa4ad16ea, 0xa06c0b5d,
-	0xd4326d90, 0xd0f37027, 0xddb056fe, 0xd9714b49, 0xc7361b4c, 0xc3f706fb,
-	0xceb42022, 0xca753d95, 0xf23a8028, 0xf6fb9d9f, 0xfbb8bb46, 0xff79a6f1,
-	0xe13ef6f4, 0xe5ffeb43, 0xe8bccd9a, 0xec7dd02d, 0x34867077, 0x30476dc0,
-	0x3d044b19, 0x39c556ae, 0x278206ab, 0x23431b1c, 0x2e003dc5, 0x2ac12072,
-	0x128e9dcf, 0x164f8078, 0x1b0ca6a1, 0x1fcdbb16, 0x018aeb13, 0x054bf6a4,
-	0x0808d07d, 0x0cc9cdca, 0x7897ab07, 0x7c56b6b0, 0x71159069, 0x75d48dde,
-	0x6b93dddb, 0x6f52c06c, 0x6211e6b5, 0x66d0fb02, 0x5e9f46bf, 0x5a5e5b08,
-	0x571d7dd1, 0x53dc6066, 0x4d9b3063, 0x495a2dd4, 0x44190b0d, 0x40d816ba,
-	0xaca5c697, 0xa864db20, 0xa527fdf9, 0xa1e6e04e, 0xbfa1b04b, 0xbb60adfc,
-	0xb6238b25, 0xb2e29692, 0x8aad2b2f, 0x8e6c3698, 0x832f1041, 0x87ee0df6,
-	0x99a95df3, 0x9d684044, 0x902b669d, 0x94ea7b2a, 0xe0b41de7, 0xe4750050,
-	0xe9362689, 0xedf73b3e, 0xf3b06b3b, 0xf771768c, 0xfa325055, 0xfef34de2,
-	0xc6bcf05f, 0xc27dede8, 0xcf3ecb31, 0xcbffd686, 0xd5b88683, 0xd1799b34,
-	0xdc3abded, 0xd8fba05a, 0x690ce0ee, 0x6dcdfd59, 0x608edb80, 0x644fc637,
-	0x7a089632, 0x7ec98b85, 0x738aad5c, 0x774bb0eb, 0x4f040d56, 0x4bc510e1,
-	0x46863638, 0x42472b8f, 0x5c007b8a, 0x58c1663d, 0x558240e4, 0x51435d53,
-	0x251d3b9e, 0x21dc2629, 0x2c9f00f0, 0x285e1d47, 0x36194d42, 0x32d850f5,
-	0x3f9b762c, 0x3b5a6b9b, 0x0315d626, 0x07d4cb91, 0x0a97ed48, 0x0e56f0ff,
-	0x1011a0fa, 0x14d0bd4d, 0x19939b94, 0x1d528623, 0xf12f560e, 0xf5ee4bb9,
-	0xf8ad6d60, 0xfc6c70d7, 0xe22b20d2, 0xe6ea3d65, 0xeba91bbc, 0xef68060b,
-	0xd727bbb6, 0xd3e6a601, 0xdea580d8, 0xda649d6f, 0xc423cd6a, 0xc0e2d0dd,
-	0xcda1f604, 0xc960ebb3, 0xbd3e8d7e, 0xb9ff90c9, 0xb4bcb610, 0xb07daba7,
-	0xae3afba2, 0xaafbe615, 0xa7b8c0cc, 0xa379dd7b, 0x9b3660c6, 0x9ff77d71,
-	0x92b45ba8, 0x9675461f, 0x8832161a, 0x8cf30bad, 0x81b02d74, 0x857130c3,
-	0x5d8a9099, 0x594b8d2e, 0x5408abf7, 0x50c9b640, 0x4e8ee645, 0x4a4ffbf2,
-	0x470cdd2b, 0x43cdc09c, 0x7b827d21, 0x7f436096, 0x7200464f, 0x76c15bf8,
-	0x68860bfd, 0x6c47164a, 0x61043093, 0x65c52d24, 0x119b4be9, 0x155a565e,
-	0x18197087, 0x1cd86d30, 0x029f3d35, 0x065e2082, 0x0b1d065b, 0x0fdc1bec,
-	0x3793a651, 0x3352bbe6, 0x3e119d3f, 0x3ad08088, 0x2497d08d, 0x2056cd3a,
-	0x2d15ebe3, 0x29d4f654, 0xc5a92679, 0xc1683bce, 0xcc2b1d17, 0xc8ea00a0,
-	0xd6ad50a5, 0xd26c4d12, 0xdf2f6bcb, 0xdbee767c, 0xe3a1cbc1, 0xe760d676,
-	0xea23f0af, 0xeee2ed18, 0xf0a5bd1d, 0xf464a0aa, 0xf9278673, 0xfde69bc4,
-	0x89b8fd09, 0x8d79e0be, 0x803ac667, 0x84fbdbd0, 0x9abc8bd5, 0x9e7d9662,
-	0x933eb0bb, 0x97ffad0c, 0xafb010b1, 0xab710d06, 0xa6322bdf, 0xa2f33668,
-	0xbcb4666d, 0xb8757bda, 0xb5365d03, 0xb1f740b4};
-
-uint32_t fletcher_crc32(uint8_t *data, uint32_t len)
-{
-	uint32_t i;
-	uint32_t crc = 0xffffffff;
-
-	for (i=0; i<len; i++)
-		crc = (crc << 8) ^ fletcher_crc_table[((crc >> 24) ^ *data++) & 0xff];
-
-	return crc;
 }
 
 static uint16_t ccitt_crc_table [256] =
@@ -656,7 +634,7 @@ uint32_t ccitt32_crc(uint8_t *data, size_t len)
 	uint32_t crc = 0xffffffff;
 	while(len--)
 	{
-		crc=((crc<<8)&0xffffff00)^ccitt32_crc_table[((crc>>24)&0xff)^*data++];
+		crc = ((crc << 8) & 0xffffff00) ^ ccitt32_crc_table[((crc >> 24) & 0xff) ^ *data++];
 	}
 	return(crc);
 }
@@ -686,20 +664,21 @@ char to_hex(char code)
 
 /* Converts a char array to a char array with hex values (needed for example for md5).
    Note that result needs to be at least (p_array_len * 2) + 1 large. */
-void char_to_hex(const unsigned char *p_array, uint32_t p_array_len, unsigned char *result)
+void char_to_hex(const uint8_t *p_array, uint32_t p_array_len, uint8_t *result)
 {
 	result[p_array_len * 2] = '\0';
-	const unsigned char *p_end = p_array + p_array_len;
+	const uint8_t *p_end = p_array + p_array_len;
 	uint32_t pos = 0;
-	const unsigned char *p;
+	const uint8_t *p;
+
 	for(p = p_array; p != p_end; p++, pos += 2)
 	{
-		result[pos    ] = to_hex(*p >> 4);
+		result[pos] = to_hex(*p >> 4);
 		result[pos + 1] = to_hex(*p & 15);
 	}
 }
 
-static inline unsigned char to_uchar(char ch)
+static inline uint8_t to_uchar(char ch)
 {
 	return ch;
 }
@@ -713,7 +692,7 @@ void base64_encode(const char *in, size_t inlen, char *out, size_t outlen)
 		if(!--outlen) { break; }
 		*out++ = b64str[((to_uchar(in[0]) << 4) + (--inlen ? to_uchar(in[1]) >> 4 : 0)) & 0x3f];
 		if(!--outlen) { break; }
-*out++ = (inlen ? b64str[((to_uchar(in[1]) << 2) + (--inlen ? to_uchar(in[2]) >> 6 : 0)) & 0x3f] : '=');
+		*out++ = (inlen ? b64str[((to_uchar(in[1]) << 2) + (--inlen ? to_uchar(in[2]) >> 6 : 0)) & 0x3f] : '=');
 		if(!--outlen) { break; }
 		*out++ = inlen ? b64str[to_uchar(in[2]) & 0x3f] : '=';
 		if(!--outlen) { break; }
@@ -742,8 +721,9 @@ static int8_t b64decoder[256];
 /* Prepares the base64 decoding array */
 void b64prepare(void)
 {
-	const unsigned char alphabet[64] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+	const uint8_t alphabet[64] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 	int32_t i;
+
 	for(i = sizeof(b64decoder) - 1; i >= 0; --i)
 	{
 		b64decoder[i] = -1;
@@ -756,7 +736,7 @@ void b64prepare(void)
 }
 
 /* Decodes a base64-encoded string. The given array will be used directly for output and is thus modified! */
-int32_t b64decode(unsigned char *result)
+int32_t b64decode(uint8_t *result)
 {
 	int32_t i, len = strlen((char *)result), j = 0, bits = 0, char_count = 0;
 
@@ -998,16 +978,17 @@ static const uint16_t iso_6937_to_ucs4_comb[15][64] =
 	}
 };
 
-size_t ISO6937toUTF8(const unsigned char **inbuf, size_t *inbytesleft, unsigned char **outbuf, size_t *outbytesleft)
+size_t ISO6937toUTF8(const uint8_t **inbuf, size_t *inbytesleft, uint8_t **outbuf, size_t *outbytesleft)
 {
 	if(!inbuf || !(*inbuf))
 	{
 		return (size_t)(0); /* Reset state requested */
 	}
-	const unsigned char *iptr = *inbuf;
-	const unsigned char *iend = iptr + *inbytesleft;
-	unsigned char *optr = *outbuf;
-	unsigned char *oend = optr + *outbytesleft;
+
+	const uint8_t *iptr = *inbuf;
+	const uint8_t *iend = iptr + *inbytesleft;
+	uint8_t *optr = *outbuf;
+	uint8_t *oend = optr + *outbytesleft;
 	uint16_t ch;
 	int err = 0;
 
@@ -1105,16 +1086,17 @@ static const uint16_t *get_iso8859_table(int8_t iso_table_number)
 	}
 }
 
-size_t ISO8859toUTF8(int8_t iso_table_number, const unsigned char **inbuf, size_t *inbytesleft, unsigned char **outbuf, size_t *outbytesleft)
+size_t ISO8859toUTF8(int8_t iso_table_number, const uint8_t **inbuf, size_t *inbytesleft, uint8_t **outbuf, size_t *outbytesleft)
 {
-	if( !inbuf || !(*inbuf) )
+	if(!inbuf || !(*inbuf))
 	{
 		return (size_t)(0); /* Reset state requested */
 	}
-	const unsigned char *iptr = *inbuf;
-	const unsigned char *iend = iptr + *inbytesleft;
-	unsigned char *optr = *outbuf;
-	unsigned char *oend = optr + *outbytesleft;
+
+	const uint8_t *iptr = *inbuf;
+	const uint8_t *iend = iptr + *inbytesleft;
+	uint8_t *optr = *outbuf;
+	uint8_t *oend = optr + *outbytesleft;
 	uint16_t ch;
 	int err = 0;
 	const uint16_t *iso_table = NULL;
@@ -1129,11 +1111,11 @@ size_t ISO8859toUTF8(int8_t iso_table_number, const unsigned char **inbuf, size_
 		}
 	}
 
-	while ( iptr < iend )
+	while (iptr < iend)
 	{
-		if( *iptr < 0x80 )
+		if(*iptr < 0x80)
 		{
-			if( optr >= oend )
+			if(optr >= oend)
 			{
 				err = E2BIG;
 				break; /* No space in outbuf */
@@ -1152,9 +1134,9 @@ size_t ISO8859toUTF8(int8_t iso_table_number, const unsigned char **inbuf, size_
 		}
 		iptr++;
 
-		if ( ch < 0x80 )
+		if (ch < 0x80)
 		{
-			if ( optr >= oend )
+			if (optr >= oend)
 			{
 				err = E2BIG;
 				break; /* No space in outbuf for char */
@@ -1162,9 +1144,9 @@ size_t ISO8859toUTF8(int8_t iso_table_number, const unsigned char **inbuf, size_
 			optr[0] = ch & 0xff;
 			optr += 1;
 		}
-		else if ( ch < 0x800 )
+		else if (ch < 0x800)
 		{
-			if ( optr + 1 >= oend )
+			if (optr + 1 >= oend)
 			{
 				err = E2BIG;
 				break; /* No space in outbuf for multibyte char */
@@ -1175,7 +1157,7 @@ size_t ISO8859toUTF8(int8_t iso_table_number, const unsigned char **inbuf, size_
 		}
 		else
 		{
-			if ( optr + 2 >= oend )
+			if (optr + 2 >= oend)
 			{
 				err = E2BIG;
 				break; /* No space in outbuf for multibyte char */
@@ -1192,7 +1174,7 @@ size_t ISO8859toUTF8(int8_t iso_table_number, const unsigned char **inbuf, size_
 	*inbytesleft = iend - iptr;
 	*outbytesleft = oend - optr;
 
-	if( err )
+	if(err)
 	{
 		errno = err;
 		return (size_t)(-1);
@@ -1202,24 +1184,26 @@ size_t ISO8859toUTF8(int8_t iso_table_number, const unsigned char **inbuf, size_
 
 #endif
 
-size_t UnicodetoUTF8(const unsigned char **inbuf, size_t *inbytesleft, unsigned char **outbuf, size_t *outbytesleft)
+size_t UnicodetoUTF8(const uint8_t **inbuf, size_t *inbytesleft, uint8_t **outbuf, size_t *outbytesleft)
 {
 	if(!inbuf || !(*inbuf))
 	{
 		return (size_t)(0); /* Reset state requested */
 	}
-	const unsigned char *iptr = *inbuf;
-	const unsigned char *iend = iptr + *inbytesleft;
-	unsigned char *optr = *outbuf;
-	unsigned char *oend = optr + *outbytesleft;
+
+	const uint8_t *iptr = *inbuf;
+	const uint8_t *iend = iptr + *inbytesleft;
+	uint8_t*optr = *outbuf;
+	uint8_t *oend = optr + *outbytesleft;
 	uint16_t ch;
 	int err = 0;
 
-	while (iptr+1 < iend)
+	while (iptr + 1 < iend)
 	{
 		ch = (iptr[0] << 8) | iptr[1];
 		iptr += 2;
-		if ( ch < 0x80 )
+
+		if (ch < 0x80)
 		{
 			if (optr >= oend)
 			{
@@ -1267,4 +1251,3 @@ size_t UnicodetoUTF8(const unsigned char **inbuf, size_t *inbytesleft, unsigned 
 	}
 	return (size_t)(0);
 }
-

@@ -16,13 +16,13 @@ void cs_rwlock_int_nolog(const char *n, CS_MUTEX_LOCK *l, int8_t type);
 void cs_rwunlock_int_nolog(const char *n, CS_MUTEX_LOCK *l, int8_t type);
 
 #define cs_writelock(n, l) cs_rwlock_int(n, l, WRITELOCK)
-#define cs_readlock(n, l)  cs_rwlock_int(n, l, READLOCK)
-#define cs_writeunlock(n, l)   cs_rwunlock_int(n, l, WRITELOCK)
-#define cs_readunlock(n, l)    cs_rwunlock_int(n, l, READLOCK)
+#define cs_readlock(n, l) cs_rwlock_int(n, l, READLOCK)
+#define cs_writeunlock(n, l) cs_rwunlock_int(n, l, WRITELOCK)
+#define cs_readunlock(n, l) cs_rwunlock_int(n, l, READLOCK)
 #define cs_try_writelock(n, l) cs_try_rwlock_int(n, l, WRITELOCK)
-#define cs_try_readlock(n, l)  cs_try_rwlock_int(n, l, READLOCK)
+#define cs_try_readlock(n, l) cs_try_rwlock_int(n, l, READLOCK)
 
-#define cs_writelock_nolog(n, l) 	cs_rwlock_int_nolog(n, l, WRITELOCK)
-#define cs_writeunlock_nolog(n, l)	cs_rwunlock_int_nolog(n, l, WRITELOCK)
+#define cs_writelock_nolog(n, l) cs_rwlock_int_nolog(n, l, WRITELOCK)
+#define cs_writeunlock_nolog(n, l) cs_rwunlock_int_nolog(n, l, WRITELOCK)
 
 #endif

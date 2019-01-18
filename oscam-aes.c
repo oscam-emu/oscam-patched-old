@@ -7,8 +7,8 @@
 
 void aes_set_key(struct aes_keys *aes, char *key)
 {
-	AES_set_decrypt_key((const unsigned char *)key, 128, &aes->aeskey_decrypt);
-	AES_set_encrypt_key((const unsigned char *)key, 128, &aes->aeskey_encrypt);
+	AES_set_decrypt_key((const uint8_t *)key, 128, &aes->aeskey_decrypt);
+	AES_set_encrypt_key((const uint8_t *)key, 128, &aes->aeskey_encrypt);
 }
 
 bool aes_set_key_alloc(struct aes_keys **aes, char *key)
@@ -21,7 +21,7 @@ bool aes_set_key_alloc(struct aes_keys **aes, char *key)
 	return true;
 }
 
-void aes_decrypt(struct aes_keys *aes, uchar *buf, int32_t n)
+void aes_decrypt(struct aes_keys *aes, uint8_t *buf, int32_t n)
 {
 	int32_t i;
 	for(i = 0; i < n; i += 16)
@@ -30,7 +30,7 @@ void aes_decrypt(struct aes_keys *aes, uchar *buf, int32_t n)
 	}
 }
 
-void aes_encrypt_idx(struct aes_keys *aes, uchar *buf, int32_t n)
+void aes_encrypt_idx(struct aes_keys *aes, uint8_t *buf, int32_t n)
 {
 	int32_t i;
 	for(i = 0; i < n; i += 16)
@@ -39,18 +39,18 @@ void aes_encrypt_idx(struct aes_keys *aes, uchar *buf, int32_t n)
 	}
 }
 
-void aes_cbc_encrypt(struct aes_keys *aes, uchar *buf, int32_t n, uchar *iv)
+void aes_cbc_encrypt(struct aes_keys *aes, uint8_t *buf, int32_t n, uint8_t *iv)
 {
 	AES_cbc_encrypt(buf, buf, n, &aes->aeskey_encrypt, iv, AES_ENCRYPT);
 }
 
-void aes_cbc_decrypt(struct aes_keys *aes, uchar *buf, int32_t n, uchar *iv)
+void aes_cbc_decrypt(struct aes_keys *aes, uint8_t *buf, int32_t n, uint8_t *iv)
 {
 	AES_cbc_encrypt(buf, buf, n, &aes->aeskey_decrypt, iv, AES_DECRYPT);
 }
 
 /* Creates an AES_ENTRY and adds it to the given linked list. */
-void add_aes_entry(AES_ENTRY **list, uint16_t caid, uint32_t ident, int32_t keyid, uchar *aesKey)
+void add_aes_entry(AES_ENTRY **list, uint16_t caid, uint32_t ident, int32_t keyid, uint8_t *aesKey)
 {
 	AES_ENTRY *new_entry, *next, *current;
 
@@ -64,7 +64,7 @@ void add_aes_entry(AES_ENTRY **list, uint16_t caid, uint32_t ident, int32_t keyi
 	new_entry->keyid = keyid;
 	if(memcmp(aesKey, "\xFF\xFF", 2))
 	{
-		AES_set_decrypt_key((const unsigned char *)aesKey, 128, &(new_entry->key));
+		AES_set_decrypt_key((const uint8_t *)aesKey, 128, &(new_entry->key));
 		// cs_log("adding key : %s",cs_hexdump(1,aesKey,16, tmp, sizeof(tmp)));
 	}
 	else
@@ -101,7 +101,7 @@ void parse_aes_entry(AES_ENTRY **list, char *label, char *value)
 	int32_t len;
 	char *tmp;
 	int32_t nb_keys, key_id;
-	uchar aes_key[16];
+	uint8_t aes_key[16];
 	char *save = NULL;
 
 	tmp = strtok_r(value, "@", &save);
@@ -209,7 +209,7 @@ static AES_ENTRY *aes_list_find(AES_ENTRY *list, uint16_t caid, uint32_t provid,
 }
 
 
-int32_t aes_decrypt_from_list(AES_ENTRY *list, uint16_t caid, uint32_t provid, int32_t keyid, uchar *buf, int32_t n)
+int32_t aes_decrypt_from_list(AES_ENTRY *list, uint16_t caid, uint32_t provid, int32_t keyid, uint8_t *buf, int32_t n)
 {
 	AES_ENTRY *current = aes_list_find(list, caid, provid, keyid);
 	if(!current)

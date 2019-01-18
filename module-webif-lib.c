@@ -118,9 +118,9 @@ time_t parse_modifiedsince(char *value)
 void calculate_opaque(IN_ADDR_T addr, char *opaque)
 {
 	char noncetmp[128];
-	unsigned char md5tmp[MD5_DIGEST_LENGTH];
+	uint8_t md5tmp[MD5_DIGEST_LENGTH];
 	snprintf(noncetmp, sizeof(noncetmp), "%d:%s:%d", (int32_t)time(NULL), cs_inet_ntoa(addr), (int16_t)rand());
-	char_to_hex(MD5((unsigned char *)noncetmp, strlen(noncetmp), md5tmp), MD5_DIGEST_LENGTH, (unsigned char *)opaque);
+	char_to_hex(MD5((uint8_t *)noncetmp, strlen(noncetmp), md5tmp), MD5_DIGEST_LENGTH, (uint8_t *)opaque);
 }
 
 void init_noncelocks(void)
@@ -182,11 +182,11 @@ void calculate_nonce(char *nonce, char *result, char *opaque)
 	if(!foundnonce && !foundopaque)
 	{
 		char noncetmp[128], randstr[16];
-		unsigned char md5tmp[MD5_DIGEST_LENGTH];
+		uint8_t md5tmp[MD5_DIGEST_LENGTH];
 		get_random_bytes((uint8_t *)randstr, sizeof(randstr) - 1);
 		randstr[sizeof(randstr) - 1] = '\0';
 		snprintf(noncetmp, sizeof(noncetmp), "%d:%s:%s", (int32_t)now, randstr, noncekey);
-		char_to_hex(MD5((unsigned char *)noncetmp, strlen(noncetmp), md5tmp), MD5_DIGEST_LENGTH, (unsigned char *)result);
+		char_to_hex(MD5((uint8_t *)noncetmp, strlen(noncetmp), md5tmp), MD5_DIGEST_LENGTH, (uint8_t *)result);
 		if(cs_malloc(&noncelist, sizeof(struct s_nonce)))
 		{
 			noncelist->expirationdate = now + AUTHNONCEEXPIRATION;
@@ -272,17 +272,17 @@ int32_t check_auth(char *authstring, char *method, char *path, IN_ADDR_T addr, c
 	{
 		char A1tmp[3 + strlen(username) + strlen(AUTHREALM) + strlen(expectedPassword)];
 		char A1[(MD5_DIGEST_LENGTH * 2) + 1], A2[(MD5_DIGEST_LENGTH * 2) + 1], A3[(MD5_DIGEST_LENGTH * 2) + 1];
-		unsigned char md5tmp[MD5_DIGEST_LENGTH];
+		uint8_t md5tmp[MD5_DIGEST_LENGTH];
 		snprintf(A1tmp, sizeof(A1tmp), "%s:%s:%s", username, AUTHREALM, expectedPassword);
-		char_to_hex(MD5((unsigned char *)A1tmp, strlen(A1tmp), md5tmp), MD5_DIGEST_LENGTH, (unsigned char *)A1);
+		char_to_hex(MD5((uint8_t *)A1tmp, strlen(A1tmp), md5tmp), MD5_DIGEST_LENGTH, (uint8_t *)A1);
 
 		char A2tmp[2 + strlen(method) + strlen(uri)];
 		snprintf(A2tmp, sizeof(A2tmp), "%s:%s", method, uri);
-		char_to_hex(MD5((unsigned char *)A2tmp, strlen(A2tmp), md5tmp), MD5_DIGEST_LENGTH, (unsigned char *)A2);
+		char_to_hex(MD5((uint8_t *)A2tmp, strlen(A2tmp), md5tmp), MD5_DIGEST_LENGTH, (uint8_t *)A2);
 
 		char A3tmp[10 + strlen(A1) + strlen(A2) + strlen(authnonce) + strlen(authnc) + strlen(authcnonce)];
 		snprintf(A3tmp, sizeof(A3tmp), "%s:%s:%s:%s:auth:%s", A1, authnonce, authnc, authcnonce, A2);
-		char_to_hex(MD5((unsigned char *)A3tmp, strlen(A3tmp), md5tmp), MD5_DIGEST_LENGTH, (unsigned char *)A3);
+		char_to_hex(MD5((uint8_t *)A3tmp, strlen(A3tmp), md5tmp), MD5_DIGEST_LENGTH, (uint8_t *)A3);
 
 		if(strcmp(A3, authresponse) == 0)
 		{
@@ -369,7 +369,7 @@ void send_headers(FILE *f, int32_t status, char *title, char *extra, char *mime,
 		pos += snprintf(pos, sizeof(buf) - (pos - buf), "Last-Modified: %s\r\n", timebuf);
 		if(content)
 		{
-			uint32_t checksum = (uint32_t)crc32(0L, (uchar *)content, length);
+			uint32_t checksum = (uint32_t)crc32(0L, (uint8_t *)content, length);
 			pos += snprintf(pos, sizeof(buf) - (pos - buf), "ETag: \"%u\"\r\n", checksum == 0 ? 1 : checksum);
 		}
 	}
@@ -527,7 +527,7 @@ void send_file(FILE *f, char *filename, char *subdir, time_t modifiedheader, uin
 
 	size = strlen(result);
 
-	if((etagheader == 0 && moddate < modifiedheader) || (etagheader > 0 && (uint32_t)crc32(0L, (uchar *)result, size) == etagheader))
+	if((etagheader == 0 && moddate < modifiedheader) || (etagheader > 0 && (uint32_t)crc32(0L, (uint8_t *)result, size) == etagheader))
 	{
 		send_header304(f, extraheader);
 	}

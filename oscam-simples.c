@@ -22,12 +22,14 @@ static void cl_set_last_providptr(struct s_client *cl, uint32_t provid, uint16_t
 			{
 				zero_match = this;
 			}
-			for(i=0; i < this->nprovid; i++)
+
+			for(i = 0; i < this->nprovid; i++)
 			{
 				if(this->provid[i] == 0 )
 				{
 					zero_match = this;
 				}
+
 				if(this->provid[i] == provid)
 				{
 					cl->last_providptr = this;
@@ -36,7 +38,7 @@ static void cl_set_last_providptr(struct s_client *cl, uint32_t provid, uint16_t
 			}
 		}
 	}
-	
+
 	if(zero_match != NULL)
 	{
 		cl->last_providptr = zero_match;
@@ -50,7 +52,7 @@ static char *__get_servicename(struct s_client *cl, uint16_t srvid, uint32_t pro
 	struct s_srvid *this, *provid_zero_match = NULL, *provid_any_match = NULL;
 	buf[0] = '\0';
 
-	if(!srvid || (srvid >> 12) >= 16)  //cfg.srvid[16]
+	if(!srvid || (srvid >> 12) >= 16) // cfg.srvid[16]
 	{
 		return (buf);
 	}
@@ -75,7 +77,6 @@ static char *__get_servicename(struct s_client *cl, uint16_t srvid, uint32_t pro
 	{
 		if(this->srvid == srvid)
 		{
-
 			for(i = 0; i < this->ncaid; i++)
 			{
 				if(this->caid[i].caid == caid && this->name)
@@ -84,7 +85,7 @@ static char *__get_servicename(struct s_client *cl, uint16_t srvid, uint32_t pro
 					if(this->caid[i].nprovid == 0)
 					{
 						provid_zero_match = this;
-						
+
 						if(0 == provid)
 						{
 							if(cl)
@@ -102,7 +103,7 @@ static char *__get_servicename(struct s_client *cl, uint16_t srvid, uint32_t pro
 					{
 						if(this->caid[i].provid[j] == 0)
 							{ provid_zero_match = this; }
-						
+
 						if(this->caid[i].provid[j] == provid)
 						{
 							if(cl)
@@ -185,7 +186,7 @@ char *get_picon_servicename_or_null(struct s_client *cl, uint16_t srvid, uint32_
 		}
 		j = 0;
 
-		for(i=0; i<buflen && buf[i] && j+4<buflen; i++)
+		for(i = 0; i < buflen && buf[i] && j + 4 < buflen; i++)
 		{
 			if(isalnum((int)buf[i]))
 			{
@@ -195,29 +196,29 @@ char *get_picon_servicename_or_null(struct s_client *cl, uint16_t srvid, uint32_
 			else if(buf[i] == '*')
 			{
 				tmp_buf[j] = 's';
-				tmp_buf[j+1] = 't';
-				tmp_buf[j+2] = 'a';
-				tmp_buf[j+3] = 'r';
+				tmp_buf[j + 1] = 't';
+				tmp_buf[j + 2] = 'a';
+				tmp_buf[j + 3] = 'r';
 				j += 4;
 			}
 			else if(buf[i] == '+')
 			{
 				tmp_buf[j] = 'p';
-				tmp_buf[j+1] = 'l';
-				tmp_buf[j+2] = 'u';
-				tmp_buf[j+3] = 's';
+				tmp_buf[j + 1] = 'l';
+				tmp_buf[j + 2] = 'u';
+				tmp_buf[j + 3] = 's';
 				j += 4;
 			}
 			else if(buf[i] == '&')
 			{
 				tmp_buf[j] = 'a';
-				tmp_buf[j+1] = 'n';
-				tmp_buf[j+2] = 'd';
+				tmp_buf[j + 1] = 'n';
+				tmp_buf[j + 2] = 'd';
 				j += 3;
 			}
 		}
 
-		tmp_buf[buflen-1] = '\0';
+		tmp_buf[buflen - 1] = '\0';
 		cs_strncpy(buf, tmp_buf, buflen);
 		NULLFREE(tmp_buf);
 	}
@@ -228,16 +229,16 @@ char *get_picon_servicename_or_null(struct s_client *cl, uint16_t srvid, uint32_
 int32_t picon_servicename_remve_hd(char *buf, uint32_t UNUSED(buflen))
 {
 	int32_t l = strlen(buf);
-	
+
 	if(l < 3)
 	{
 		return 0;
 	}
-	
-	if(buf[l-2] == 'h' && buf[l-1] == 'd')
+
+	if(buf[l - 2] == 'h' && buf[l - 1] == 'd')
 	{
-		buf[l-2] = '\0';
-		buf[l-1] = '\0';
+		buf[l - 2] = '\0';
+		buf[l - 1] = '\0';
 		return 1;
 	}
 
@@ -298,7 +299,7 @@ char *get_tiername_defaultid(uint16_t tierid, uint16_t caid, char *buf)
 	{
 		snprintf(buf, 82, "%04X", tierid);
 	}
-	
+
 	return (buf);
 }
 
@@ -309,7 +310,8 @@ char *get_provider(uint32_t provid, uint16_t caid, char *buf, uint32_t buflen)
 	int32_t i;
 	struct s_provid *this = cfg.provid;
 
-	if(!caid) {
+	if(!caid)
+	{
 		buf[0] = '\0';
 		return (buf);
 	}
@@ -318,7 +320,7 @@ char *get_provider(uint32_t provid, uint16_t caid, char *buf, uint32_t buflen)
 	{
 		if(this->caid == caid)
 		{
-			for(i=0; i<this->nprovid && !found; i++)
+			for(i = 0; i < this->nprovid && !found; i++)
 			{
 				if(this->provid[i] == provid)
 				{
@@ -362,12 +364,13 @@ char *__get_providername(uint32_t provid, uint16_t caid, char *buf, uint32_t buf
 				zero_match = this;
 			}
 
-			for(i=0; i<this->nprovid && !found; i++)
+			for(i = 0; i < this->nprovid && !found; i++)
 			{
 				if(this->provid[i] == 0 )
 				{
 					zero_match = this;
 				}
+
 				if(this->provid[i] == provid)
 				{
 					cs_strncpy(buf, this->prov, buflen);
@@ -427,9 +430,9 @@ void add_provider(uint16_t caid, uint32_t provid, const char *name, const char *
 	{
 		if((*ptr)->caid == caid)
 		{
-			for(i=0; i<(*ptr)->nprovid; i++)
+			for(i = 0; i < (*ptr)->nprovid; i++)
 			{
-			 	if((*ptr)->provid[i] == provid)
+				if((*ptr)->provid[i] == provid)
 				{
 					return;
 				}

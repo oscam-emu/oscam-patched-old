@@ -25,8 +25,7 @@ static int8_t cs_emmlen_is_blocked(struct s_reader *rdr, int16_t len)
 	LL_ITER it = ll_iter_create(rdr->blockemmbylen);
 	while((blocklen = ll_iter_next(&it)))
 	{
-		if(blocklen->min <= len
-				&& (len <= blocklen->max || blocklen->max == 0))
+		if(blocklen->min <= len && (len <= blocklen->max || blocklen->max == 0))
 			{ return 1; }
 	}
 	return 0;
@@ -40,7 +39,7 @@ static int8_t cs_emmlen_is_blocked(struct s_reader *rdr, int16_t len)
  */
 static int8_t do_simple_emm_filter(struct s_reader *rdr, const struct s_cardsystem *csystem, EMM_PACKET *ep, int8_t cl_dvbapi)
 {
-	if(is_network_reader(rdr)) { return 1; }  // dont evaluate on network readers, server with local reader will check it
+	if(is_network_reader(rdr)) { return 1; } // don't evaluate on network readers, server with local reader will check it
 
 	//copied and enhanced from module-dvbapi.c
 	//dvbapi_start_emm_filter()
@@ -75,12 +74,12 @@ static int8_t do_simple_emm_filter(struct s_reader *rdr, const struct s_cardsyst
 		for(i = 0, k = 0; i < 16 && k < ep->emmlen && match; i++, k++)
 		{
 			mask = dmx_filter[j].mask[i];
-			if(k == 1 && cl_dvbapi)  // fixup for emms send by dvbapi
-				{ k += 2; } //skip emm len bytes
+			if(k == 1 && cl_dvbapi) // fixup for emms send by dvbapi
+				{ k += 2; } // skip emm len bytes
 			if(!mask)
 				{ continue; }
 			//cs_log("**** filter %d [%d] = %02X, filter mask[%d] = %02X, flt&mask = %02X , ep->emm[%d] = %02X, ep->emm[%d] & mask = %02X ****", j, i,
-			//  dmx_filter[j].filter[i], i, dmx_filter[j].mask[i], flt&mask, k, ep->emm[k], k, ep->emm[k] & mask);
+			//		dmx_filter[j].filter[i], i, dmx_filter[j].mask[i], flt&mask, k, ep->emm[k], k, ep->emm[k] & mask);
 			flt = (dmx_filter[j].filter[i] & mask);
 			match = (flt == (ep->emm[k] & mask));
 			if(!match)
@@ -89,13 +88,13 @@ static int8_t do_simple_emm_filter(struct s_reader *rdr, const struct s_cardsyst
 		if(match)
 		{
 			NULLFREE(dmx_filter);
-			return 1; //valid emm
+			return 1; // valid emm
 		}
 	}
 
 	NULLFREE(dmx_filter);
 
-	return 0; //emm filter does not match, illegal emm, return
+	return 0; // emm filter does not match, illegal emm, return
 }
 
 static void reader_log_emm(struct s_reader *reader, EMM_PACKET *ep, int32_t count, int32_t rc, struct timeb *tps)
@@ -128,25 +127,28 @@ static void reader_log_emm(struct s_reader *reader, EMM_PACKET *ep, int32_t coun
 	}
 
 #if defined(WEBIF) || defined(LCDSUPPORT)
-	//counting results
+	// counting results
 	switch(rc)
 	{
-	case 0:
-		reader->emmerror[ep->type]++;
-		reader->webif_emmerror[ep->type]++;
-		break;
-	case 1:
-		reader->emmwritten[ep->type]++;
-		reader->webif_emmwritten[ep->type]++;
-		break;
-	case 2:
-		reader->emmskipped[ep->type]++;
-		reader->webif_emmskipped[ep->type]++;
-		break;
-	case 3:
-		reader->emmblocked[ep->type]++;
-		reader->webif_emmblocked[ep->type]++;
-		break;
+		case 0:
+			reader->emmerror[ep->type]++;
+			reader->webif_emmerror[ep->type]++;
+			break;
+
+		case 1:
+			reader->emmwritten[ep->type]++;
+			reader->webif_emmwritten[ep->type]++;
+			break;
+
+		case 2:
+			reader->emmskipped[ep->type]++;
+			reader->webif_emmskipped[ep->type]++;
+			break;
+
+		case 3:
+			reader->emmblocked[ep->type]++;
+			reader->webif_emmblocked[ep->type]++;
+			break;
 	}
 #endif
 }
@@ -175,13 +177,13 @@ int32_t emm_reader_match(struct s_reader *reader, uint16_t caid, uint32_t provid
 				caid_found = 1;
 				break;
 			}
-			
-			if ( (reader->caid == 0) && chk_ctab_ex(caid, &reader->ctab) )
+
+			if ((reader->caid == 0) && chk_ctab_ex(caid, &reader->ctab))
 			{
 				caid_found = 1;
 				break;
 			}
-				
+
 		}
 		if(!caid_found)
 		{
@@ -190,9 +192,10 @@ int32_t emm_reader_match(struct s_reader *reader, uint16_t caid, uint32_t provid
 		}
 	}
 
-	//if (!hexserialset(reader)) { There are cards without serial, they should get emm of type global and shared!
-	//  rdr_log_dbg(reader, D_EMM, "no hexserial is set");
-	//  return 0;
+	//if(!hexserialset(reader)) // There are cards without serial, they should get emm of type global and shared!
+	//{
+	//	rdr_log_dbg(reader, D_EMM, "no hexserial is set");
+	//	return 0;
 	//}
 
 	if(!provid)
@@ -202,13 +205,13 @@ int32_t emm_reader_match(struct s_reader *reader, uint16_t caid, uint32_t provid
 	}
 
 	uint32_t prid = reader->auprovid;
-	
+
 	if(caid_is_viaccess(caid) && (prid != 0) && ((prid &0xFFFFF0) != prid)) // viaccess fixup last digit of provid is a dont care!
 	{
 		prid &= 0xFFFFF0;
-		rdr_log_dbg(reader, D_EMM, "reader auprovid = %06X fixup to %06X (ignoring last digit)", reader->auprovid, prid); 
+		rdr_log_dbg(reader, D_EMM, "reader auprovid = %06X fixup to %06X (ignoring last digit)", reader->auprovid, prid);
 	}
-	
+
 	if(prid == provid)
 	{
 		rdr_log_dbg(reader, D_EMM, "reader auprovid = %06X matching with emm provid = %06X -> SEND!", prid, provid);
@@ -218,25 +221,25 @@ int32_t emm_reader_match(struct s_reader *reader, uint16_t caid, uint32_t provid
 	for(i = 0; i < reader->nprov; i++)
 	{
 		prid = b2i(4, reader->prid[i]);
-		
+
 		if(caid_is_viaccess(caid) && (prid != 0) && ((prid &0xFFFFF0) != prid)) // viaccess fixup last digit of provid is a dont care!
 		{
 			rdr_log_dbg(reader, D_EMM, "reader provid = %06X fixup to %06X (ignoring last digit)", prid, (prid &0xFFFFF0));
 			prid &= 0xFFFFF0;
 		}
-		
+
 		if(prid == provid)
 		{
 			rdr_log_dbg(reader, D_EMM, "reader provid %06X matching with emm provid %06X -> SEND!", prid, provid);
 			return 1;
 		}
-		
+
 		if((reader->typ == R_CAMD35 || reader->typ == R_CS378X) && (prid & 0xFFFF) == (provid & 0xFFFF))
 		{
 			rdr_log_dbg(reader, D_EMM, "CS378: Match after fixing reader provid %06X to ??%04X and emm provid %06X to ??%04X -> SEND!", prid, prid&0xFFFF, provid, provid&0xFFFF);
 			return 1;
 		}
-		
+
 		rdr_log_dbg(reader, D_EMM, "reader provid %06X no match with emm provid %06X -> SKIP!", prid, provid);
 	}
 	return 0;
@@ -280,22 +283,26 @@ static void saveemm(struct s_reader *aureader, EMM_PACKET *ep, const char *proce
 		localtime_r(&rawtime, &timeinfo); // to access LOCAL date/time info
 		int32_t emm_length = SCT_LEN(ep->emm);
 		strftime(buf, sizeof(buf), "%Y/%m/%d %H:%M:%S", &timeinfo);
+
 		switch(ep->type)
 		{
 			case GLOBAL:
 				fp_log = fopen(get_emmlog_filename(token_log, sizeof(token_log), aureader->label, "global", "log"), "a");
 				break;
+
 			case SHARED:
 				fp_log = fopen(get_emmlog_filename(token_log, sizeof(token_log), aureader->label, "shared", "log"), "a");
 				break;
+
 			case UNIQUE:
 				fp_log = fopen(get_emmlog_filename(token_log, sizeof(token_log), aureader->label, "unique", "log"), "a");
 				break;
+
 			case UNKNOWN:
 			default:
 				fp_log = fopen(get_emmlog_filename(token_log, sizeof(token_log), aureader->label, "unknown", "log"), "a");
-		}			
-		
+		}
+
 		if(!fp_log)
 		{
 			rdr_log(aureader, "ERROR: Cannot open file '%s' (errno=%d: %s)\n", token_log, errno, strerror(errno));
@@ -323,7 +330,7 @@ void do_emm(struct s_client *client, EMM_PACKET *ep)
 
 	struct s_reader *aureader = NULL;
 	uint16_t sct_len;
-	
+
 	if(ep->emmlen < 3)
 	{
 		cs_log("EMM size %d invalid, ignored! client %s", ep->emmlen, username(client));
@@ -335,15 +342,15 @@ void do_emm(struct s_client *client, EMM_PACKET *ep)
 		cs_log("EMM size %d > Max EMM size %d, ignored! client %s", ep->emmlen, MAX_EMM_SIZE, username(client));
 		return;
 	}
-		
+
 	sct_len = SCT_LEN(ep->emm);
 	if(sct_len > ep->emmlen)
 	{
 		cs_log("Real EMM size %d > EMM size %d, ignored! client %s", sct_len, ep->emmlen, username(client));
-		return;	
+		return;
 	}
 	ep->emmlen = sct_len;
-	
+
 	cs_log_dump_dbg(D_EMM, ep->emm, ep->emmlen, "emm:");
 
 	int8_t assemble = 0;
@@ -359,12 +366,12 @@ void do_emm(struct s_client *client, EMM_PACKET *ep)
 
 		uint16_t caid = b2i(2, ep->caid);
 		uint32_t provid = b2i(4, ep->provid);
-		
+
 		if(caid_is_viaccess(caid)) // viaccess fixup last digit is a dont care!
 		{
-			 provid &= 0xFFFFF0;
+			provid &= 0xFFFFF0;
 		}
-		
+
 		if(aureader->audisabled)
 		{
 			rdr_log_dbg(aureader, D_EMM, "AU is disabled");
@@ -376,8 +383,8 @@ void do_emm(struct s_client *client, EMM_PACKET *ep)
 				rdr_log(aureader, "%s emmtype=%s, len=%d (hex: 0x%02X), idx=0, cnt=1: audisabled (0 ms)",
 						client->account->usr,
 						typtext[ep->type],
-						SCT_LEN(ep->emm)-3,
-						SCT_LEN(ep->emm)-3);
+						SCT_LEN(ep->emm) - 3,
+						SCT_LEN(ep->emm) - 3);
 			}
 			continue;
 		}
@@ -388,15 +395,15 @@ void do_emm(struct s_client *client, EMM_PACKET *ep)
 			continue;
 		}
 
-		//TODO: provider possibly not set yet, this is done in get_emm_type()
+		// TODO: provider possibly not set yet, this is done in get_emm_type()
 		if(!emm_reader_match(aureader, caid, provid))
 			{ continue; }
 
 		const struct s_cardsystem *csystem = NULL;
 
-		if(is_network_reader(aureader))    // network reader (R_CAMD35 R_NEWCAMD R_CS378X R_CCCAM)
+		if(is_network_reader(aureader)) // network reader (R_CAMD35 R_NEWCAMD R_CS378X R_CCCAM)
 		{
-			if(!aureader->ph.c_send_emm)  // no emm support
+			if(!aureader->ph.c_send_emm) // no emm support
 				{ continue; }
 
 			csystem = get_cardsystem_by_caid(caid);
@@ -406,7 +413,7 @@ void do_emm(struct s_client *client, EMM_PACKET *ep)
 				continue;
 			}
 		}
-		else     // local reader
+		else // local reader
 		{
 			if(aureader->csystem_active)
 				{ csystem = aureader->csystem; }
@@ -449,9 +456,9 @@ void do_emm(struct s_client *client, EMM_PACKET *ep)
 		}
 
 		rdr_log_dbg_sensitive(aureader, D_EMM, "emmtype %s. Reader serial {%s}.", typtext[ep->type],
-								 cs_hexdump(0, aureader->hexserial, 8, tmp, sizeof(tmp)));
+								cs_hexdump(0, aureader->hexserial, 8, tmp, sizeof(tmp)));
 		rdr_log_dbg_sensitive(aureader, D_EMM, "emm UA/SA: {%s}.",
-								 cs_hexdump(0, ep->hexserial, 8, tmp, sizeof(tmp)));
+								cs_hexdump(0, ep->hexserial, 8, tmp, sizeof(tmp)));
 
 		client->last = time(NULL);
 
@@ -486,7 +493,8 @@ void do_emm(struct s_client *client, EMM_PACKET *ep)
 
 #ifdef READER_CRYPTOWORKS
 		if ((ep->type == GLOBAL) && ((caid == 0x0D96) || (caid == 0x0D98)) && ((aureader->blockemm & EMM_GLOBAL) == EMM_GLOBAL) && ((aureader->blockemm & EMM_SHARED) != EMM_SHARED) && (aureader->needsglobalfirst == 1))
-		{	// save global EMM
+		{
+			// save global EMM
 			cs_log_dbg(D_EMM,"save global EMM for caid 0x%04X",caid);
 			memcpy(aureader->last_g_emm, ep, sizeof(EMM_PACKET));
 			aureader->last_g_emm_valid = true;
@@ -495,20 +503,23 @@ void do_emm(struct s_client *client, EMM_PACKET *ep)
 
 		switch(ep->type)
 		{
-		case UNKNOWN:
-			is_blocked = (aureader->blockemm & EMM_UNKNOWN) == EMM_UNKNOWN;
-			break;
-		case UNIQUE :
-			is_blocked = (aureader->blockemm & EMM_UNIQUE) == EMM_UNIQUE;
-			break;
-		case SHARED :
-			is_blocked = (aureader->blockemm & EMM_SHARED) == EMM_SHARED;
-			break;
-		case GLOBAL :
-			is_blocked = (aureader->blockemm & EMM_GLOBAL) == EMM_GLOBAL;
-			break;
+			case UNKNOWN:
+				is_blocked = (aureader->blockemm & EMM_UNKNOWN) == EMM_UNKNOWN;
+				break;
+
+			case UNIQUE :
+				is_blocked = (aureader->blockemm & EMM_UNIQUE) == EMM_UNIQUE;
+				break;
+
+			case SHARED :
+				is_blocked = (aureader->blockemm & EMM_SHARED) == EMM_SHARED;
+				break;
+
+			case GLOBAL :
+				is_blocked = (aureader->blockemm & EMM_GLOBAL) == EMM_GLOBAL;
+				break;
 		}
-		
+
 		// if not already blocked we check for block by len
 		if(!is_blocked) { is_blocked = cs_emmlen_is_blocked(aureader, SCT_LEN(ep->emm)-3) ; }
 
@@ -545,36 +556,36 @@ void do_emm(struct s_client *client, EMM_PACKET *ep)
 		ep->client = client;
 
 		int32_t writeemm = 1; // 0= dont write emm, 1=write emm, default = write
-		
-		if(aureader->cachemm && !(caid_is_irdeto(caid) || caid_is_videoguard(caid))) //Check emmcache early:
+
+		if(aureader->cachemm && !(caid_is_irdeto(caid) || caid_is_videoguard(caid))) // Check emmcache early:
 		{
-			unsigned char md5tmp[MD5_DIGEST_LENGTH];
+			uint8_t md5tmp[MD5_DIGEST_LENGTH];
 
 			MD5(ep->emm, SCT_LEN(ep->emm), md5tmp);
-		
+
 			struct s_emmcache *emmcache = find_emm_cache(md5tmp); // check emm cache
 			if(emmcache && !lastseendone)
 			{
 				cs_ftime(&emmcache->lastseen);
 				lastseendone = true; // in case several aureaders, only do lastseen once!
 			}
-		
+
 			struct s_emmstat *emmstat = get_emm_stat(aureader, md5tmp, ep->type);
 			if(emmstat)
 			{
 				rdr_log_dbg(aureader, D_EMM, "emm count %d rewrite %d", emmstat->count, aureader->rewritemm);
-				
+
 				if(emmstat->count >= aureader->rewritemm)
 				{
 					reader_log_emm(aureader, ep, emmstat->count, 2, NULL);
-					writeemm = 0; // dont write emm!
+					writeemm = 0; // don't write emm!
 					saveemm(aureader, ep, "emmcache");
 					continue; // found emm match needs no further handling, proceed with next reader!
 				}
 			}
 		}
-		
-		if(writeemm)   // only write on no cache hit or cache hit that needs further rewrite
+
+		if(writeemm) // only write on no cache hit or cache hit that needs further rewrite
 		{
 			EMM_PACKET *emm_pack;
 			if(cs_malloc(&emm_pack, sizeof(EMM_PACKET)))
@@ -615,7 +626,7 @@ void do_emm(struct s_client *client, EMM_PACKET *ep)
 int32_t reader_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 {
 	int32_t rc, ecs = 0,count = 0;
-	unsigned char md5tmp[MD5_DIGEST_LENGTH];
+	uint8_t md5tmp[MD5_DIGEST_LENGTH];
 	struct timeb tps;
 
 	cs_ftime(&tps);
@@ -624,29 +635,29 @@ int32_t reader_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 	{
 		MD5(ep->emm, SCT_LEN(ep->emm), md5tmp);
 		int64_t gone = comp_timeb(&tps, &last_emm_clean);
-		if(gone > (int64_t)1000*60*60*24*30 || gone < 0) // dont run every time, only on first emm oscam is started and then every 30 days
+		if(gone > (int64_t)1000 * 60 * 60 * 24 * 30 || gone < 0) // dont run every time, only on first emm oscam is started and then every 30 days
 		{
 			last_emm_clean = tps;
-			count = clean_stale_emm_cache_and_stat(md5tmp, (int64_t)1000*60*60*24*30); // clean global all emms from all readers after 30 days emm is last seen!
+			count = clean_stale_emm_cache_and_stat(md5tmp, (int64_t)1000 * 60 * 60 *24 * 30); // clean global all emms from all readers after 30 days emm is last seen!
 			cs_log_dbg(D_EMM, "Cleaned %d emm stale stats and cache entries", count);
 		}
-		
+
 		struct s_emmcache *emmcache = find_emm_cache(md5tmp); // check emm cache
 		if(!emmcache)
 		{
 			emm_edit_cache(md5tmp, ep, true);
 		}
-		
+
 		struct s_emmstat *emmstat = get_emm_stat(reader, md5tmp, ep->type);
 		if(emmstat)
 		{
 			if(reader->cachemm && emmstat->count >= reader->rewritemm)
 			{
-				ecs = 2; //skip emm
+				ecs = 2; // skip emm
 			}
 			else
 			{
-				ecs = 1; //rewrite emm
+				ecs = 1; // rewrite emm
 				if(!emmstat->count)
 				{
 					cs_ftime(&emmstat->firstwritten);
@@ -665,12 +676,12 @@ int32_t reader_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 			return 0;
 		}
 	}
-	
+
 	// Ecs=0 not found in cache
 	// Ecs=1 found in cache, rewrite emm
 	// Ecs=2 skip
 	if((rc = ecs) < 2)
-	{	
+	{
 		if(is_network_reader(reader))
 		{
 			rdr_log_dbg(reader, D_READER, "network emm reader");
@@ -705,9 +716,9 @@ void do_emm_from_file(struct s_reader *reader)
 	FILE *fp;
 
 	if(reader->emmfile[0] == '/')
-		{ snprintf(token, sizeof(token), "%s", reader->emmfile); } //pathname included
+		{ snprintf(token, sizeof(token), "%s", reader->emmfile); } // pathname included
 	else
-		{ get_config_filename(token, sizeof(token), reader->emmfile); } //only file specified, look in confdir for this file
+		{ get_config_filename(token, sizeof(token), reader->emmfile); } // only file specified, look in confdir for this file
 
 	if(!(fp = fopen(token, "rb")))
 	{
@@ -747,8 +758,8 @@ void do_emm_from_file(struct s_reader *reader)
 		return;
 	}
 
-	//save old b_nano value
-	//clear lsb and lsb+1, so no blocking, and no saving for this nano
+	// save old b_nano value
+	// clear lsb and lsb+1, so no blocking, and no saving for this nano
 	uint16_t save_s_nano = reader->s_nano;
 	uint16_t save_b_nano = reader->b_nano;
 	uint32_t save_saveemm = reader->saveemm;
@@ -756,14 +767,14 @@ void do_emm_from_file(struct s_reader *reader)
 	reader->s_nano = reader->b_nano = 0;
 	reader->saveemm = 0;
 
-    int32_t rc = 0;
+	int32_t rc = 0;
 	rc = cardreader_do_emm(reader, eptmp);
 	if(rc == OK)
 		{ rdr_log(reader, "EMM from file %s was successfully written.", token); }
 	else
 		{ rdr_log(reader, "ERROR: EMM read from file %s NOT processed correctly! (rc=%d)", token, rc); }
 
-	//restore old block/save settings
+	// restore old block/save settings
 	reader->s_nano = save_s_nano;
 	reader->b_nano = save_b_nano;
 	reader->saveemm = save_saveemm;
@@ -771,7 +782,7 @@ void do_emm_from_file(struct s_reader *reader)
 	NULLFREE(eptmp);
 }
 
-void emm_sort_nanos(unsigned char *dest, const unsigned char *src, int32_t len)
+void emm_sort_nanos(uint8_t *dest, const uint8_t *src, int32_t len)
 {
 	int32_t w = 0, c = -1, j = 0;
 	while(1)

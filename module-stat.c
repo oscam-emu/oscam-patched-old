@@ -17,7 +17,7 @@
 #include "oscam-string.h"
 #include "oscam-time.h"
 
-#define UNDEF_AVG_TIME 99999  //NOT set here 0 or small value! Could cause there reader get selected
+#define UNDEF_AVG_TIME 99999 // NOT set here 0 or small value! Could cause there reader get selected
 #define MAX_ECM_SEND_CACHE 16
 
 #define LB_NONE 0
@@ -129,7 +129,7 @@ void load_stat_from_file(void)
 	int32_t type = 0;
 	char *ptr, *saveptr1 = NULL;
 	char *split[12];
-	
+
 	while(fgets(line, LINESIZE, file))
 	{
 		if(!line[0] || line[0] == '#' || line[0] == ';')
@@ -145,7 +145,7 @@ void load_stat_from_file(void)
 			else { type = 1; }
 		}
 
-		if(type == 1)  //New format - faster parsing:
+		if(type == 1) // New format - faster parsing:
 		{
 			for(i = 0, ptr = strtok_r(line, ",", &saveptr1); ptr && i < 12 ; ptr = strtok_r(NULL, ",", &saveptr1), i++)
 				{ split[i] = ptr; }
@@ -165,7 +165,7 @@ void load_stat_from_file(void)
 				s->ecmlen = a2i(split[10], 2);
 			}
 		}
-		else     //Old format - keep for compatibility:
+		else // Old format - keep for compatibility:
 		{
 			i = sscanf(line, "%255s rc %04d caid %04hX prid %06X srvid %04hX time avg %d ms ecms %d last %ld fail %d len %02hX\n",
 					   buf, &s->rc, &s->caid, &s->prid, &s->srvid,
@@ -175,7 +175,6 @@ void load_stat_from_file(void)
 
 		if(valid && s->ecmlen > 0)
 		{
-
 			if(rdr == NULL || strcmp(buf, rdr->label) != 0)
 			{
 				LL_ITER itr = ll_iter_create(configured_readers);
@@ -213,7 +212,7 @@ void load_stat_from_file(void)
 	}
 	fclose(file);
 	NULLFREE(line);
-	
+
 	cs_ftime(&te);
 #ifdef WITH_DEBUG
 	int64_t load_time = comp_timeb(&te, &ts);
@@ -258,13 +257,13 @@ static READER_STAT *get_stat_lock(struct s_reader *rdr, STAT_QUERY *q, int8_t lo
 				s->ecmlen = q->ecmlen;
 				break;
 			}
-			if(!q->ecmlen)  //Query without ecmlen from dvbapi
+			if(!q->ecmlen) // Query without ecmlen from dvbapi
 				{ break; }
 		}
 	}
 	if(lock) { cs_readunlock(__func__, &rdr->lb_stat_lock); }
 
-	//Move stat to list start for faster access:
+	// Move stat to list start for faster access:
 	if (i > 10 && s && !rdr->lb_stat_busy) {
 		if (lock) cs_writelock(__func__, &rdr->lb_stat_lock);
 		ll_iter_move_first(&it);
@@ -343,14 +342,14 @@ static void save_stat_to_file_thread(void)
 		if(rdr->lb_stat)
 		{
 			rdr->lb_stat_busy = 1;
-			
+
 			cs_writelock(__func__, &rdr->lb_stat_lock);
 			LL_ITER it = ll_iter_create(rdr->lb_stat);
 			READER_STAT *s;
 			while((s = ll_iter_next(&it)))
 			{
 				int64_t gone = comp_timeb(&ts, &s->last_received);
-				if(gone > cleanup_timeout || !s->ecmlen)    //cleanup old stats
+				if(gone > cleanup_timeout || !s->ecmlen) // cleanup old stats
 				{
 					ll_iter_remove_data(&it);
 					continue;
@@ -367,14 +366,14 @@ static void save_stat_to_file_thread(void)
 						s->srvid, (uint16_t)s->chid, s->time_avg, s->ecm_count, s->last_received.time, s->fail_factor, s->ecmlen);
 
 				count++;
-				//              if (count % 500 == 0) { //Saving stats is using too much cpu and causes high file load. so we need a break
-				//                  cs_readunlock(__func__, &rdr->lb_stat_lock);
-				//                  cs_sleepms(100);
-				//                  cs_readlock(__func__, &rdr->lb_stat_lock);
-				//              }
+				//if(count % 500 == 0) { // Saving stats is using too much cpu and causes high file load. so we need a break
+				//	cs_readunlock(__func__, &rdr->lb_stat_lock);
+				//	cs_sleepms(100);
+				//	cs_readlock(__func__, &rdr->lb_stat_lock);
+				//}
 			}
 			cs_writeunlock(__func__, &rdr->lb_stat_lock);
-			
+
 			rdr->lb_stat_busy = 0;
 		}
 	}
@@ -412,7 +411,7 @@ static READER_STAT *get_add_stat(struct s_reader *rdr, STAT_QUERY *q)
 {
 	if (rdr->lb_stat_busy)
 		return NULL;
-		
+
 	if(!rdr->lb_stat)
 	{
 		rdr->lb_stat = ll_create("lb_stat");
@@ -431,8 +430,8 @@ static READER_STAT *get_add_stat(struct s_reader *rdr, STAT_QUERY *q)
 			s->srvid = q->srvid;
 			s->chid = q->chid;
 			s->ecmlen = q->ecmlen;
-			s->time_avg = UNDEF_AVG_TIME; //dummy placeholder
-			s->rc = E_FOUND;  //set to found--> do not change!
+			s->time_avg = UNDEF_AVG_TIME; // dummy placeholder
+			s->rc = E_FOUND; // set to found--> do not change!
 			cs_ftime(&s->last_received);
 			s->fail_factor = 0;
 			s->ecm_count = 0;
@@ -507,12 +506,12 @@ static void add_stat(struct s_reader *rdr, ECM_REQUEST *er, int32_t ecm_time, in
 		{ return; }
 
 
-	//IGNORE stats for fallback reader with lb_force_fallback parameter
+	// IGNORE stats for fallback reader with lb_force_fallback parameter
 	if(chk_is_fixed_fallback(rdr, er) && rdr->lb_force_fallback)
-	  { return; }
+		{ return; }
 
 
-	//IGNORE fails for ratelimit check
+	// IGNORE fails for ratelimit check
 	if(rc == E_NOTFOUND && rcEx == E2_RATELIMIT)
 	{
 #ifdef WITH_DEBUG
@@ -527,7 +526,7 @@ static void add_stat(struct s_reader *rdr, ECM_REQUEST *er, int32_t ecm_time, in
 	}
 
 
-	//IGNORE fails when reader has positive services defined in new lb_whitelist_services parameter! See ticket #3310,#3311
+	// IGNORE fails when reader has positive services defined in new lb_whitelist_services parameter! See ticket #3310,#3311
 	if(rc >= E_NOTFOUND && has_lb_srvid(cl, er))
 	{
 #ifdef WITH_DEBUG
@@ -536,14 +535,14 @@ static void add_stat(struct s_reader *rdr, ECM_REQUEST *er, int32_t ecm_time, in
 			char buf[ECM_FMT_LEN];
 			format_ecm(er, buf, ECM_FMT_LEN);
 			cs_log_dbg(D_LB, "loadbalancer: NOT adding stat (blocking) for reader %s because has positive srvid: rc %d %s time %d ms",
-						  rdr->label, rc, buf, ecm_time);
+						rdr->label, rc, buf, ecm_time);
 		}
 #endif
 		return;
 	}
 
 
-	//IGNORE fails for sleep CMD08
+	// IGNORE fails for sleep CMD08
 	if(rc == E_NOTFOUND && rdr->client->stopped==2)
 	{
 #ifdef WITH_DEBUG
@@ -556,8 +555,8 @@ static void add_stat(struct s_reader *rdr, ECM_REQUEST *er, int32_t ecm_time, in
 #endif
 		return;
 	}
-	
-	//IGNORE timeouts on local readers (they could be busy handling an emm or entitlement refresh)
+
+	// IGNORE timeouts on local readers (they could be busy handling an emm or entitlement refresh)
 	if(rc == E_TIMEOUT && !is_network_reader(rdr))
 	{
 #ifdef WITH_DEBUG
@@ -568,8 +567,8 @@ static void add_stat(struct s_reader *rdr, ECM_REQUEST *er, int32_t ecm_time, in
 #endif
 		return;
 	}
-	
-	//IGNORE unhandled ecmresponses
+
+	// IGNORE unhandled ecmresponses
 	if(rc == E_UNHANDLED)
 	{
 #ifdef WITH_DEBUG
@@ -581,7 +580,7 @@ static void add_stat(struct s_reader *rdr, ECM_REQUEST *er, int32_t ecm_time, in
 		return;
 	}
 
-	//ignore too old ecms
+	// ignore too old ecms
 	if((uint32_t)ecm_time >= 3 * cfg.ctimeout)
 		{ return; }
 
@@ -596,27 +595,27 @@ static void add_stat(struct s_reader *rdr, ECM_REQUEST *er, int32_t ecm_time, in
 
 	struct timeb now;
 	cs_ftime(&now);
-	
+
 	cs_ftime(&s->last_received);
 
-	if(rc == E_FOUND)    //found
+	if(rc == E_FOUND) // found
 	{
 
 		s->rc = E_FOUND;
 		s->ecm_count++;
 		s->fail_factor = 0;
 
-		//FASTEST READER:
+		// FASTEST READER:
 		s->time_idx++;
 		if(s->time_idx >= LB_MAX_STAT_TIME)
 			{ s->time_idx = 0; }
 		s->time_stat[s->time_idx] = ecm_time;
 		calc_stat(s);
 
-		//OLDEST READER now set by get best reader!
+		// OLDEST READER now set by get best reader!
 
 
-		//USAGELEVEL:
+		// USAGELEVEL:
 		/* Assign a value to rdr->lb_usagelevel_ecmcount,
 		because no determined value was assigned before. */
 		if(rdr->lb_usagelevel_ecmcount < 0)
@@ -633,12 +632,12 @@ static void add_stat(struct s_reader *rdr, ECM_REQUEST *er, int32_t ecm_time, in
 		}
 
 	}
-	else if(rc == E_NOTFOUND || rc == E_TIMEOUT || rc == E_FAKE)  //not found / timeout /fake
+	else if(rc == E_NOTFOUND || rc == E_TIMEOUT || rc == E_FAKE) // not found / timeout /fake
 	{
 		inc_fail(s);
 		s->rc = rc;
 	}
-	else if(rc == E_INVALID)  //invalid
+	else if(rc == E_INVALID) // invalid
 	{
 		s->rc = rc;
 	}
@@ -650,7 +649,7 @@ static void add_stat(struct s_reader *rdr, ECM_REQUEST *er, int32_t ecm_time, in
 			char buf[ECM_FMT_LEN];
 			format_ecm(er, buf, ECM_FMT_LEN);
 			cs_log_dbg(D_LB, "loadbalancer: not handled stat for reader %s: rc %d %s time %d ms",
-						  rdr->label, rc, buf, ecm_time);
+						rdr->label, rc, buf, ecm_time);
 		}
 #endif
 		return;
@@ -664,7 +663,7 @@ static void add_stat(struct s_reader *rdr, ECM_REQUEST *er, int32_t ecm_time, in
 		char buf[ECM_FMT_LEN];
 		format_ecm(er, buf, ECM_FMT_LEN);
 		cs_log_dbg(D_LB, "loadbalancer: adding stat for reader %s: rc %d %s time %d ms fail %d",
-					  rdr->label, rc, buf, ecm_time, s->fail_factor);
+					rdr->label, rc, buf, ecm_time, s->fail_factor);
 	}
 #endif
 
@@ -720,7 +719,7 @@ int32_t clean_stat_by_id(struct s_reader *rdr, uint16_t caid, uint32_t prid, uin
 	if(rdr && rdr->lb_stat)
 	{
 		if (rdr->lb_stat_busy) return 0;
-		
+
 		rdr->lb_stat_busy = 1;
 		cs_writelock(__func__, &rdr->lb_stat_lock);
 		READER_STAT *s;
@@ -747,28 +746,28 @@ int32_t clean_stat_by_id(struct s_reader *rdr, uint16_t caid, uint32_t prid, uin
 /*
 static int32_t has_ident(FTAB *ftab, ECM_REQUEST *er) {
 
-    if (!ftab || !ftab->filts)
-        return 0;
+	if (!ftab || !ftab->filts)
+		return 0;
 
-    int32_t j, k;
+	int32_t j, k;
 
-    for (j = 0; j < ftab->nfilts; j++) {
-        if (ftab->filts[j].caid) {
-            if (ftab->filts[j].caid==er->caid) { //caid matches!
-                int32_t nprids = ftab->filts[j].nprids;
-                if (!nprids) // No Provider ->Ok
-                    return 1;
+	for (j = 0; j < ftab->nfilts; j++) {
+		if (ftab->filts[j].caid) {
+			if (ftab->filts[j].caid==er->caid) { //caid matches!
+				int32_t nprids = ftab->filts[j].nprids;
+				if (!nprids) // No Provider ->Ok
+					return 1;
 
-                for (k = 0; k < nprids; k++) {
-                    uint32_t prid = ftab->filts[j].prids[k];
-                    if (prid == er->prid) { //Provider matches
-                        return 1;
-                    }
-                }
-            }
-        }
-    }
-    return 0; //No match!
+				for (k = 0; k < nprids; k++) {
+					uint32_t prid = ftab->filts[j].prids[k];
+					if (prid == er->prid) { //Provider matches
+						return 1;
+					}
+				}
+			}
+		}
+	}
+	return 0; //No match!
 }*/
 
 static int32_t get_retrylimit(ECM_REQUEST *er)
@@ -776,17 +775,14 @@ static int32_t get_retrylimit(ECM_REQUEST *er)
 	return caidvaluetab_get_value(&cfg.lb_retrylimittab, er->caid, cfg.lb_retrylimit);
 }
 
-
 static int32_t get_nfb_readers(ECM_REQUEST *er)
 {
-
 	int32_t nfb_readers = er->client->account->lb_nfb_readers == -1 ? cfg.lb_nfb_readers : er->client->account->lb_nfb_readers;
 
 	if(nfb_readers <= 0) { nfb_readers = 1; }
 
 	return nfb_readers;
 }
-
 
 static int32_t get_nbest_readers(ECM_REQUEST *er)
 {
@@ -798,23 +794,22 @@ static int32_t get_nbest_readers(ECM_REQUEST *er)
 
 static void convert_to_beta_int(ECM_REQUEST *er, uint16_t caid_to)
 {
-	unsigned char md5tmp[MD5_DIGEST_LENGTH];
+	uint8_t md5tmp[MD5_DIGEST_LENGTH];
 	convert_to_beta(er->client, er, caid_to);
 	// update ecmd5 for store ECM in cache
 	memcpy(er->ecmd5, MD5(er->ecm + 13, er->ecmlen - 13, md5tmp), CS_ECMSTORESIZE);
 	cacheex_update_hash(er);
-	er->btun = 2; //marked as auto-betatunnel converted. Also for fixing recursive lock in get_cw
+	er->btun = 2; // marked as auto-betatunnel converted. Also for fixing recursive lock in get_cw
 }
-
 
 static void convert_to_nagra_int(ECM_REQUEST *er, uint16_t caid_to)
 {
-	unsigned char md5tmp[MD5_DIGEST_LENGTH];
+	uint8_t md5tmp[MD5_DIGEST_LENGTH];
 	convert_to_nagra(er->client, er, caid_to);
 	// update ecmd5 for store ECM in cache
 	memcpy(er->ecmd5, MD5(er->ecm + 3, er->ecmlen - 3, md5tmp), CS_ECMSTORESIZE);
 	cacheex_update_hash(er);
-	er->btun = 2; //marked as auto-betatunnel converted. Also for fixing recursive lock in get_cw
+	er->btun = 2; // marked as auto-betatunnel converted. Also for fixing recursive lock in get_cw
 }
 
 static int32_t lb_valid_btun(ECM_REQUEST *er, uint16_t caidto)
@@ -882,7 +877,6 @@ uint16_t lb_get_betatunnel_caid_to(ECM_REQUEST *er)
 	return 0;
 }
 
-
 void check_lb_auto_betatunnel_mode(ECM_REQUEST *er)
 {
 	int32_t lbbm = cfg.lb_auto_betatunnel_mode;
@@ -898,14 +892,14 @@ void check_lb_auto_betatunnel_mode(ECM_REQUEST *er)
 	{
 		er->caid = 0x1835;
 	}
-	////no other way to autodetect is 1801,1834 or 1835
+	// no other way to autodetect 1801, 1834 or 1835
 }
 
 uint16_t get_rdr_caid(struct s_reader *rdr)
 {
 	if(is_network_reader(rdr))
 	{
-		return 0; //reader caid is not real caid
+		return 0; // reader caid is not real caid
 	}
 	else
 	{
@@ -951,7 +945,6 @@ static void try_open_blocked_readers(ECM_REQUEST *er, STAT_QUERY *q, int32_t *ma
 	READER_STAT *s;
 	struct s_reader *rdr;
 
-
 	for(ea = er->matching_rdr; ea; ea = ea->next)
 	{
 		if((ea->status & READER_FALLBACK) || (ea->status & READER_ACTIVE)) { continue; }
@@ -964,7 +957,7 @@ static void try_open_blocked_readers(ECM_REQUEST *er, STAT_QUERY *q, int32_t *ma
 			continue;
 		}
 
-		//if force_reopen we must active the "valid" reader
+		// if force_reopen we must active the "valid" reader
 		if(s->rc != E_FOUND && (*force_reopen) && cfg.lb_force_reopen_always)
 		{
 			cs_log_dbg(D_LB, "loadbalancer: force opening reader %s and reset fail_factor! --> ACTIVE", rdr->label);
@@ -993,19 +986,17 @@ static void try_open_blocked_readers(ECM_REQUEST *er, STAT_QUERY *q, int32_t *ma
 			continue;
 		}
 
-		if(s->rc != E_FOUND)  //for debug output
+		if(s->rc != E_FOUND) // for debug output
 		{
 			cs_log_dbg(D_LB, "loadbalancer: reader %s blocked for %d seconds (fail_factor %d), retrying in %d seconds", rdr->label, get_reopen_seconds(s), s->fail_factor, (uint) (reopenseconds - (gone/1000)));
 			continue;
 		}
 
-		if(s->rc == E_FOUND)   //for debug output
+		if(s->rc == E_FOUND) // for debug output
 			{ cs_log_dbg(D_LB, "loadbalancer: reader %s \"e_found\" but not selected for lbvalue check", rdr->label); }
 
 	}
 }
-
-
 
 /**
  * Gets best reader for caid/prid/srvid/ecmlen.
@@ -1031,16 +1022,15 @@ void stat_get_best_reader(ECM_REQUEST *er)
 	STAT_QUERY q;
 	get_stat_query(er, &q);
 
-
-	//auto-betatunnel: The trick is: "let the loadbalancer decide"!
-	if(cfg.lb_auto_betatunnel && caid_is_nagra(er->caid) && er->ecmlen)    //nagra
+	// auto-betatunnel: The trick is: "let the loadbalancer decide"!
+	if(cfg.lb_auto_betatunnel && caid_is_nagra(er->caid) && er->ecmlen) // nagra
 	{
 		uint16_t caid_to = __lb_get_betatunnel_caid_to(er->caid);
 		if(caid_to)
 		{
 			int8_t needs_stats_nagra = 1, needs_stats_beta = 1;
 
-			//Clone query parameters for beta:
+			// Clone query parameters for beta:
 			STAT_QUERY qbeta = q;
 			qbeta.caid = caid_to;
 			qbeta.prid = 0;
@@ -1054,7 +1044,7 @@ void stat_get_best_reader(ECM_REQUEST *er)
 			READER_STAT *stat_nagra = NULL;
 			READER_STAT *stat_beta = NULL;
 
-			//What is faster? nagra or beta?
+			// What is faster? nagra or beta?
 			int8_t isn;
 			int8_t isb;
 			int8_t overall_valid = 0;
@@ -1067,12 +1057,11 @@ void stat_get_best_reader(ECM_REQUEST *er)
 				weight = rdr->lb_weight;
 				if(weight <= 0) { weight = 1; }
 
-
-				//Check if betatunnel is allowed on this reader:
+				// Check if betatunnel is allowed on this reader:
 				int8_t valid = chk_ctab(caid_to, &rdr->ctab) //Check caid
-							   && chk_rfilter2(caid_to, 0, rdr) //Ident
-							   && chk_srvid_by_caid_prov_rdr(rdr, caid_to, 0) //Services
-							   && (!get_rdr_caid(rdr) || chk_caid_rdr(rdr, caid_to)); //rdr-caid
+								&& chk_rfilter2(caid_to, 0, rdr) //Ident
+								&& chk_srvid_by_caid_prov_rdr(rdr, caid_to, 0) //Services
+								&& (!get_rdr_caid(rdr) || chk_caid_rdr(rdr, caid_to)); //rdr-caid
 				if(valid)
 				{
 					stat_beta = get_stat(rdr, &qbeta);
@@ -1081,7 +1070,7 @@ void stat_get_best_reader(ECM_REQUEST *er)
 				//else
 				//stat_beta = NULL;
 
-				//Check if nagra is allowed on this reader:
+				// Check if nagra is allowed on this reader:
 				int8_t nvalid = chk_ctab(er->caid, &rdr->ctab)//Check caid
 								&& chk_rfilter2(er->caid, 0, rdr) //Ident
 								&& chk_srvid_by_caid_prov_rdr(rdr, er->caid, 0) //Services
@@ -1092,7 +1081,7 @@ void stat_get_best_reader(ECM_REQUEST *er)
 					overall_nvalid = 1;
 				}
 
-				//calculate nagra data:
+				// calculate nagra data:
 				if(stat_nagra && stat_nagra->rc == E_FOUND)
 				{
 					ntime = stat_nagra->time_avg * 100 / weight;
@@ -1100,7 +1089,7 @@ void stat_get_best_reader(ECM_REQUEST *er)
 						{ time_nagra = ntime; }
 				}
 
-				//calculate beta data:
+				// calculate beta data:
 				if(stat_beta && stat_beta->rc == E_FOUND)
 				{
 					ntime = stat_beta->time_avg * 100 / weight;
@@ -1108,7 +1097,7 @@ void stat_get_best_reader(ECM_REQUEST *er)
 						{ time_beta = ntime; }
 				}
 
-				//Uncomplete reader evaluation, we need more stats!
+				// Uncomplete reader evaluation, we need more stats!
 				if(stat_nagra)
 				{
 					needs_stats_nagra = 0;
@@ -1122,10 +1111,10 @@ void stat_get_best_reader(ECM_REQUEST *er)
 				cs_log_dbg(D_LB, "loadbalancer-betatunnel valid %d, stat_nagra %d, stat_beta %d, (%04X,%04X)", valid, isn, isb , get_rdr_caid(rdr), caid_to);
 			}
 
-			if(!overall_valid) //we have no valid betatunnel reader also we don't needs stats (converted)
+			if(!overall_valid) // we have no valid betatunnel reader also we don't needs stats (converted)
 				{ needs_stats_beta = 0; }
 
-			if(!overall_nvalid)  //we have no valid reader also we don't needs stats (unconverted)
+			if(!overall_nvalid) // we have no valid reader also we don't needs stats (unconverted)
 				{ needs_stats_nagra = 0; }
 
 			if(cfg.lb_auto_betatunnel_prefer_beta && time_beta)
@@ -1138,8 +1127,8 @@ void stat_get_best_reader(ECM_REQUEST *er)
 			if(needs_stats_nagra || needs_stats_beta)
 			{
 				cs_log_dbg(D_LB, "loadbalancer-betatunnel %04X:%04X (%d/%d) needs more statistics...", er->caid, caid_to,
-							  needs_stats_nagra, needs_stats_beta);
-				if(needs_stats_beta)    //try beta first
+							needs_stats_nagra, needs_stats_beta);
+				if(needs_stats_beta) // try beta first
 				{
 
 					convert_to_beta_int(er, caid_to);
@@ -1160,16 +1149,15 @@ void stat_get_best_reader(ECM_REQUEST *er)
 		}
 	}
 	else
-
-
-		if(cfg.lb_auto_betatunnel && (er->caid == 0x1702 || er->caid == 0x1722) && er->ocaid == 0x0000 && er->ecmlen)    //beta
+	{
+		if(cfg.lb_auto_betatunnel && (er->caid == 0x1702 || er->caid == 0x1722) && er->ocaid == 0x0000 && er->ecmlen) // beta
 		{
 			uint16_t caid_to = __lb_get_betatunnel_caid_to(er->caid);
 			if(caid_to)
 			{
 				int8_t needs_stats_nagra = 1, needs_stats_beta = 1;
 
-				//Clone query parameters for beta:
+				// Clone query parameters for beta:
 				STAT_QUERY qnagra = q;
 				qnagra.caid = caid_to;
 				qnagra.prid = 0;
@@ -1195,13 +1183,11 @@ void stat_get_best_reader(ECM_REQUEST *er)
 					weight = rdr->lb_weight;
 					if(weight <= 0) { weight = 1; }
 
-
-
 					//Check if reverse betatunnel is allowed on this reader:
 					int8_t valid = chk_ctab(caid_to, &rdr->ctab)//, rdr->typ) //Check caid
-								   && chk_rfilter2(caid_to, 0, rdr) //Ident
-								   && chk_srvid_by_caid_prov_rdr(rdr, caid_to, 0) //Services
-								   && (!get_rdr_caid(rdr) || chk_caid_rdr(rdr, caid_to)); //rdr-caid
+									&& chk_rfilter2(caid_to, 0, rdr) //Ident
+									&& chk_srvid_by_caid_prov_rdr(rdr, caid_to, 0) //Services
+									&& (!get_rdr_caid(rdr) || chk_caid_rdr(rdr, caid_to)); //rdr-caid
 					if(valid)
 					{
 						stat_nagra = get_stat(rdr, &qnagra);
@@ -1210,7 +1196,7 @@ void stat_get_best_reader(ECM_REQUEST *er)
 					//else
 					//stat_nagra = NULL;
 
-					//Check if beta is allowed on this reader:
+					// Check if beta is allowed on this reader:
 					int8_t bvalid = chk_ctab(er->caid, &rdr->ctab)//, rdr->typ) //Check caid
 									&& chk_rfilter2(er->caid, 0, rdr) //Ident
 									&& chk_srvid_by_caid_prov_rdr(rdr, er->caid, 0) //Services
@@ -1221,7 +1207,7 @@ void stat_get_best_reader(ECM_REQUEST *er)
 						overall_bvalid = 1;
 					}
 
-					//calculate nagra data:
+					// calculate nagra data:
 					if(stat_nagra && stat_nagra->rc == E_FOUND)
 					{
 						avg_time = stat_nagra->time_avg * 100 / weight;
@@ -1229,7 +1215,7 @@ void stat_get_best_reader(ECM_REQUEST *er)
 							{ time_nagra = avg_time; }
 					}
 
-					//calculate beta data:
+					// calculate beta data:
 					if(stat_beta && stat_beta->rc == E_FOUND)
 					{
 						avg_time = stat_beta->time_avg * 100 / weight;
@@ -1237,7 +1223,7 @@ void stat_get_best_reader(ECM_REQUEST *er)
 							{ time_beta = avg_time; }
 					}
 
-					//Uncomplete reader evaluation, we need more stats!
+					// Uncomplete reader evaluation, we need more stats!
 					if(stat_beta)
 					{
 						needs_stats_beta = 0;
@@ -1251,10 +1237,10 @@ void stat_get_best_reader(ECM_REQUEST *er)
 					cs_log_dbg(D_LB, "loadbalancer-betatunnel valid %d, stat_beta %d, stat_nagra %d, (%04X,%04X)", valid, isb, isn , get_rdr_caid(rdr), caid_to);
 				}
 
-				if(!overall_valid) //we have no valid reverse betatunnel reader also we don't needs stats (converted)
+				if(!overall_valid) // we have no valid reverse betatunnel reader also we don't needs stats (converted)
 					{ needs_stats_nagra = 0; }
 
-				if(!overall_bvalid)  //we have no valid reader also we don't needs stats (unconverted)
+				if(!overall_bvalid) // we have no valid reader also we don't needs stats (unconverted)
 					{ needs_stats_beta = 0; }
 
 				if(cfg.lb_auto_betatunnel_prefer_beta && time_beta)
@@ -1264,12 +1250,12 @@ void stat_get_best_reader(ECM_REQUEST *er)
 						{ time_beta = 0; }
 				}
 
-				//if we needs stats, we send 2 ecm requests: 18xx and 17xx:
+				// if we needs stats, we send 2 ecm requests: 18xx and 17xx:
 				if(needs_stats_nagra || needs_stats_beta)
 				{
 					cs_log_dbg(D_LB, "loadbalancer-betatunnel %04X:%04X (%d/%d) needs more statistics...", er->caid, caid_to,
-								  needs_stats_beta, needs_stats_nagra);
-					if(needs_stats_nagra)  // try nagra frist
+								needs_stats_beta, needs_stats_nagra);
+					if(needs_stats_nagra) // try nagra frist
 					{
 
 						convert_to_nagra_int(er, caid_to);
@@ -1290,23 +1276,25 @@ void stat_get_best_reader(ECM_REQUEST *er)
 
 			}
 		}
+	}
 
 	if(cfg.lb_auto_betatunnel && chk_is_betatunnel_caid(er->caid))
 	{
-		//check again is caid valied to reader
-		//with both caid on local readers or with proxy
-		//(both caid will setup to reader for make tunnel caid in share (ccc) visible)
-		//make sure dosn't send a beta ecm to nagra reader (or reverse)
+		// check again is caid valied to reader
+		// with both caid on local readers or with proxy
+		// (both caid will setup to reader for make tunnel caid in share (ccc) visible)
+		// make sure dosn't send a beta ecm to nagra reader (or reverse)
 		struct s_ecm_answer *prv = NULL;
 		for(ea = er->matching_rdr; ea; ea = ea->next)
 		{
 			rdr = ea->reader;
-			if(is_network_reader(rdr))    //reader caid is not real caid
+			if(is_network_reader(rdr)) // reader caid is not real caid
 			{
 				prv = ea;
 				continue; // proxy can convert or reject
 			}
 			cs_log_dbg(D_LB, "check again caid %04X on reader %s", er->caid, rdr->label);
+
 			if(!get_rdr_caid(ea->reader) || chk_caid_rdr(ea->reader, er->caid))
 			{
 				prv = ea;
@@ -1323,6 +1311,7 @@ void stat_get_best_reader(ECM_REQUEST *er)
 					{ er->matching_rdr = ea->next; }
 			}
 		}
+
 		if(!er->reader_avail)
 			{ return; }
 	}
@@ -1339,13 +1328,13 @@ void stat_get_best_reader(ECM_REQUEST *er)
 	int32_t nreaders = cfg.lb_max_readers; // lb_max_readers is limit lb uses while learning
 
 
-	if(!nreaders)  // if is configured zero -> replace it by -1 (default means unlimited!)
+	if(!nreaders) // if is configured zero -> replace it by -1 (default means unlimited!)
 		{ nreaders = -1; }
 	else if(nreaders <= nbest_readers)
-		{ nreaders = nbest_readers + 1; } //nreaders must cover nbest more 1 reader for try to unblock/add stats
+		{ nreaders = nbest_readers + 1; } // nreaders must cover nbest more 1 reader for try to unblock/add stats
 
 	int32_t reader_active = 0;
-	int32_t max_reopen = nreaders - nbest_readers; //if nreaders=-1, we try to reopen all readers
+	int32_t max_reopen = nreaders - nbest_readers; // if nreaders=-1, we try to reopen all readers
 
 
 #ifdef WITH_DEBUG
@@ -1361,7 +1350,6 @@ void stat_get_best_reader(ECM_REQUEST *er)
 		for(ea = er->matching_rdr; ea; ea = ea->next)
 		{
 			nr++;
-
 			if(nr > 5) { continue; }
 
 			if(!(ea->status & READER_FALLBACK))
@@ -1379,10 +1367,9 @@ void stat_get_best_reader(ECM_REQUEST *er)
 		format_ecm(er, ecmbuf, ECM_FMT_LEN);
 
 		cs_log_dbg(D_LB, "loadbalancer: client %s for %s: n=%d valid readers: %s",
-					  username(er->client), ecmbuf, nr, buf);
+					username(er->client), ecmbuf, nr, buf);
 	}
 #endif
-
 
 	//Deactive all matching readers and set ea->value = 0;
 	for(ea = er->matching_rdr; ea; ea = ea->next)
@@ -1396,111 +1383,106 @@ void stat_get_best_reader(ECM_REQUEST *er)
 	else { cs_log_dbg(D_LB, "loadbalancer: mode %d, nbest %d, nfb %d, max_reopen %d, retrylimit %d ms", cfg.lb_mode, nbest_readers, nfb_readers, max_reopen, retrylimit); }
 
 
-	//Here evaluate lbvalue for readers with valid statistics
+	// Here evaluate lbvalue for readers with valid statistics
 	for(ea = er->matching_rdr; ea; ea = ea->next)
 	{
-
 		rdr = ea->reader;
 		s = get_stat(rdr, &q);
-
 
 		int32_t weight = rdr->lb_weight <= 0 ? 100 : rdr->lb_weight;
 		//struct s_client *cl = rdr->client;
 
 		if(s && s->rc == E_FOUND
-				&& s->ecm_count >= cfg.lb_min_ecmcount
-				&& (s->ecm_count <= cfg.lb_max_ecmcount || (retrylimit && s->time_avg <= retrylimit))
-		  )
+			&& s->ecm_count >= cfg.lb_min_ecmcount
+			&& (s->ecm_count <= cfg.lb_max_ecmcount || (retrylimit && s->time_avg <= retrylimit)))
 		{
-
-			//Reader can decode this service (rc==0) and has lb_min_ecmcount ecms:
+			// Reader can decode this service (rc==0) and has lb_min_ecmcount ecms:
 			if(er->preferlocalcards && (ea->status & READER_LOCAL))
-				{ nlocal_readers++; } //Prefer local readers!
+				{ nlocal_readers++; } // Prefer local readers!
 
 			switch(cfg.lb_mode)
 			{
-			case LB_FASTEST_READER_FIRST:
-				current = s->time_avg * 100 / weight;
-				break;
+				case LB_FASTEST_READER_FIRST:
+					current = s->time_avg * 100 / weight;
+					break;
 
-			case LB_OLDEST_READER_FIRST:
-				if(!rdr->lb_last.time)
-					{ rdr->lb_last = check_time; }
+				case LB_OLDEST_READER_FIRST:
+					if(!rdr->lb_last.time)
+						{ rdr->lb_last = check_time; }
 
-				//current is negative here!
-				current = comp_timeb(&rdr->lb_last, &check_time);
+					//current is negative here!
+					current = comp_timeb(&rdr->lb_last, &check_time);
+					current = current * weight / 100;
+					if(!current) { current = -1; }
 
-				current = current * weight / 100;
-
-				if(!current) { current = -1; }
-
-				//handle retrylimit
-				if(retrylimit)
-				{
-					if(s->time_avg > retrylimit){  //set lowest value for reader with time-avg>retrylimit
-  					   current = s->time_avg;   //in this way, it will choose best time-avg reader among the worst ones
-					}else{
-					   current = current - 1;   //so when all have same current, it prioritizes the one with s->time_avg<=retrylimit! This avoid a loop!
+					//handle retrylimit
+					if(retrylimit)
+					{
+						if(s->time_avg > retrylimit) // set lowest value for reader with time-avg>retrylimit
+						{
+							current = s->time_avg; // in this way, it will choose best time-avg reader among the worst ones
+						}
+						else
+						{
+							current = current - 1; // so when all have same current, it prioritizes the one with s->time_avg<=retrylimit! This avoid a loop!
+						}
 					}
-				}
+					break;
 
-				break;
+				case LB_LOWEST_USAGELEVEL:
+					current = rdr->lb_usagelevel * 100 / weight;
 
-			case LB_LOWEST_USAGELEVEL:
-				current = rdr->lb_usagelevel * 100 / weight;
-
-				//handle retrylimit
-				if(retrylimit)
-				{
-					if(s->time_avg > retrylimit)
-						{ current = 1000; } //set lowest value for reader with time-avg>retrylimit
-					else
-						{ current = current - 1; } //so when all reaches retrylimit (all have lb_value=1000) or all have same current, it prioritizes the one with s->time_avg<=retrylimit! This avoid a loop!
-				}
-
-				break;
+					//handle retrylimit
+					if(retrylimit)
+					{
+						if(s->time_avg > retrylimit)
+							{ current = 1000; } //set lowest value for reader with time-avg>retrylimit
+						else
+							{ current = current - 1; } //so when all reaches retrylimit (all have lb_value=1000) or all have same current, it prioritizes the one with s->time_avg<=retrylimit! This avoid a loop!
+					}
+					break;
 			}
 
-			if(cfg.lb_mode != LB_OLDEST_READER_FIRST)    //Adjust selection to reader load:
+			if(cfg.lb_mode != LB_OLDEST_READER_FIRST) // Adjust selection to reader load:
 			{
-				/*    if (rdr->ph.c_available && !rdr->ph.c_available(rdr, AVAIL_CHECK_LOADBALANCE, er)) {
-				  current=current*2;
+				/*if(rdr->ph.c_available && !rdr->ph.c_available(rdr, AVAIL_CHECK_LOADBALANCE, er))
+				{
+					current=current*2;
 				}
 
-				if (cl && cl->pending)
-				  current=current*cl->pending;
+				if(cl && cl->pending)
+					current=current*cl->pending;
 				*/
 				if(current < 1)
 					{ current = 1; }
 			}
-
 
 			cs_log_dbg(D_LB, "loadbalancer: reader %s lbvalue = %d (time-avg %d)", rdr->label, (int) llabs(current), s->time_avg);
 
 #if defined(WEBIF) || defined(LCDSUPPORT)
 			rdr->lbvalue = llabs(current);
 #endif
-
 			ea->value = current;
 			ea->time = s->time_avg;
 		}
 	}
 
-	//check for local readers
-	if(nlocal_readers > nbest_readers)    //if we have local readers, we prefer them!
+	// check for local readers
+	if(nlocal_readers > nbest_readers) // if we have local readers, we prefer them!
 	{
 		nlocal_readers = nbest_readers;
 		nbest_readers = 0;
 	}
 	else
-		{ nbest_readers = nbest_readers - nlocal_readers; }
-
+	{
+		nbest_readers = nbest_readers - nlocal_readers;
+	}
 
 	struct s_reader *best_rdr = NULL;
 	struct s_reader *best_rdri = NULL;
 	int32_t best_time = 0;
 
-	//Here choose nbest readers. We evaluate only readers with valid stats (they have ea->value>0, calculated above)
+	// Here choose nbest readers. We evaluate only readers with valid stats (they have ea->value>0, calculated above)
 	while(1)
 	{
 		struct s_ecm_answer *best = NULL;
@@ -1513,6 +1495,7 @@ void stat_get_best_reader(ECM_REQUEST *er)
 			if(ea->value && (!best || ea->value < best->value))
 				{ best = ea; }
 		}
+
 		if(!best)
 			{ break; }
 
@@ -1523,26 +1506,25 @@ void stat_get_best_reader(ECM_REQUEST *er)
 			best_time = best->time;
 		}
 
-		if(nlocal_readers)   //primary readers, local
+		if(nlocal_readers) // primary readers, local
 		{
 			nlocal_readers--;
 			reader_active++;
 			best->status |= READER_ACTIVE;
-		    best->value = 0;
+			best->value = 0;
 			cs_log_dbg(D_LB, "loadbalancer: reader %s --> ACTIVE", best_rdri->label);
 		}
-		else if(nbest_readers)   //primary readers, other
+		else if(nbest_readers) // primary readers, other
 		{
 			nbest_readers--;
 			reader_active++;
 			best->status |= READER_ACTIVE;
-		    best->value = 0;
+			best->value = 0;
 			cs_log_dbg(D_LB, "loadbalancer: reader %s --> ACTIVE", best_rdri->label);
 		}
 		else
 			{ break; }
 	}
-
 
 	/* Here choose nfb_readers
 	 * Select fallbacks reader until nfb_readers reached using this priority:
@@ -1573,9 +1555,8 @@ void stat_get_best_reader(ECM_REQUEST *er)
 
 				s = get_stat(rdr, &q);
 				if(s && s->rc == E_FOUND
-						&& s->ecm_count >= cfg.lb_min_ecmcount
-						&& (s->ecm_count <= cfg.lb_max_ecmcount || (retrylimit && s->time_avg <= retrylimit))
-				  )
+					&& s->ecm_count >= cfg.lb_min_ecmcount
+					&& (s->ecm_count <= cfg.lb_max_ecmcount || (retrylimit && s->time_avg <= retrylimit)))
 				{
 					nfb_readers--;
 					ea->status |= (READER_ACTIVE | READER_FALLBACK);
@@ -1606,31 +1587,27 @@ void stat_get_best_reader(ECM_REQUEST *er)
 		best->value = 0;
 		cs_log_dbg(D_LB, "loadbalancer: reader %s --> FALLBACK", best->reader->label);
 	}
-	//end fallback readers
+	// end fallback readers
 
-
-
-	//ACTIVE readers with no stats, or with no lb_min_ecmcount, or lb_max_ecmcount reached --> NO use max_reopen for these readers, always open!
+	// ACTIVE readers with no stats, or with no lb_min_ecmcount, or lb_max_ecmcount reached --> NO use max_reopen for these readers, always open!
 	for(ea = er->matching_rdr; ea; ea = ea->next)
 	{
 		rdr = ea->reader;
 		s = get_stat(rdr, &q);
 
-
 #ifdef CS_CACHEEX
-		//if cacheex reader, always active and no stats
+		// if cacheex reader, always active and no stats
 		if(rdr->cacheex.mode == 1)
 		{
 			ea->status |= READER_ACTIVE;
 			continue;
 		}
 #endif
-
-		//ignore fixed fallback with lb_force_fallback=1: no need stats, always used as fallaback!
+		// ignore fixed fallback with lb_force_fallback=1: no need stats, always used as fallaback!
 		if(chk_is_fixed_fallback(rdr, er) && rdr->lb_force_fallback)
 			continue;
 
-		//active readers with no stats
+		// active readers with no stats
 		if(!s)
 		{
 			cs_log_dbg(D_LB, "loadbalancer: reader %s need starting statistics --> ACTIVE", rdr->label);
@@ -1639,7 +1616,7 @@ void stat_get_best_reader(ECM_REQUEST *er)
 			continue;
 		}
 
-		//active readers with no lb_min_ecmcount reached
+		// active readers with no lb_min_ecmcount reached
 		if(s->rc == E_FOUND && s->ecm_count < cfg.lb_min_ecmcount)
 		{
 			cs_log_dbg(D_LB, "loadbalancer: reader %s needs to reach lb_min_ecmcount(%d), now %d --> ACTIVE", rdr->label, cfg.lb_min_ecmcount, s->ecm_count);
@@ -1648,12 +1625,12 @@ void stat_get_best_reader(ECM_REQUEST *er)
 			continue;
 		}
 
-		//reset stats and active readers reach cfg.lb_max_ecmcount and time_avg > retrylimit.
+		// reset stats and active readers reach cfg.lb_max_ecmcount and time_avg > retrylimit.
 		if(s->rc == E_FOUND && s->ecm_count > cfg.lb_max_ecmcount && (!retrylimit || s->time_avg > retrylimit))
 		{
 			cs_log_dbg(D_LB, "loadbalancer: reader %s reaches max ecms (%d), resetting statistics --> ACTIVE", rdr->label, cfg.lb_max_ecmcount);
-			reset_ecmcount_reader(s, rdr); //ecm_count=0
-			reset_avgtime_reader(s, rdr); //time_avg=0
+			reset_ecmcount_reader(s, rdr); // ecm_count=0
+			reset_avgtime_reader(s, rdr); // time_avg=0
 			ea->status |= READER_ACTIVE;
 			reader_active++;
 			continue;
@@ -1662,21 +1639,19 @@ void stat_get_best_reader(ECM_REQUEST *er)
 		struct timeb now;
 		cs_ftime(&now);
 		int64_t gone = comp_timeb(&now, &s->last_received);
-		//reset avg-time and active reader with s->last_received older than 5 min and avg-time>retrylimit
+		// reset avg-time and active reader with s->last_received older than 5 min and avg-time>retrylimit
 		if(retrylimit && s->rc == E_FOUND && (gone >= 300*1000) && s->time_avg > retrylimit)
 		{
 			cs_log_dbg(D_LB, "loadbalancer: reader %s has time-avg>retrylimit and last received older than 5 minutes, resetting avg-time --> ACTIVE", rdr->label);
-			reset_avgtime_reader(s, rdr); //time_avg=0
-			ea->status &= ~(READER_ACTIVE | READER_FALLBACK); //It could be activated as fallback above because has lb_vlaue>0, so remove fallback state!
+			reset_avgtime_reader(s, rdr); // time_avg=0
+			ea->status &= ~(READER_ACTIVE | READER_FALLBACK); // It could be activated as fallback above because has lb_vlaue>0, so remove fallback state!
 			ea->status |= READER_ACTIVE;
 			reader_active++;
 			continue;
 		}
 	}
 
-
 	int32_t force_reopen = 0;
-
 
 	//no reader active --> force to reopen matching readers
 	if(reader_active == 0)
@@ -1686,7 +1661,6 @@ void stat_get_best_reader(ECM_REQUEST *er)
 	}
 	else if(retrylimit)
 	{
-
 		/*
 		 * check for lbretrylimit!
 		 *
@@ -1707,9 +1681,8 @@ void stat_get_best_reader(ECM_REQUEST *er)
 
 				//reset avg time and ACTIVE all valid lbvalue readers
 				if(s && s->rc == E_FOUND
-						&& s->ecm_count >= cfg.lb_min_ecmcount
-						&& (s->ecm_count <= cfg.lb_max_ecmcount || s->time_avg <= retrylimit)
-				  )
+					&& s->ecm_count >= cfg.lb_min_ecmcount
+					&& (s->ecm_count <= cfg.lb_max_ecmcount || s->time_avg <= retrylimit))
 				{
 					if((ea->status & READER_FALLBACK)) { cs_log_dbg(D_LB, "loadbalancer: reader %s selected as FALLBACK --> ACTIVE", rdr->label); }
 					else if(!(ea->status & READER_ACTIVE)) { cs_log_dbg(D_LB, "loadbalancer: reader %s --> ACTIVE", rdr->label); }
@@ -1729,14 +1702,10 @@ void stat_get_best_reader(ECM_REQUEST *er)
 		}
 	}
 
-
 	//try to reopen max_reopen blocked readers (readers with last ecm not "e_found"); if force_reopen=1, force reopen valid blocked readers!
 	try_open_blocked_readers(er, &q, &max_reopen, &force_reopen);
 
-
 	cs_log_dbg(D_LB, "loadbalancer: --------------------------------------------");
-
-
 
 #ifdef WITH_DEBUG
 	if(cs_dblevel & D_LB)
@@ -1755,7 +1724,6 @@ void stat_get_best_reader(ECM_REQUEST *er)
 				{ continue; }
 
 			nr++;
-
 			if(nr > 5) { continue; }
 
 			if(!(ea->status & READER_FALLBACK))
@@ -1773,13 +1741,11 @@ void stat_get_best_reader(ECM_REQUEST *er)
 		format_ecm(er, ecmbuf, ECM_FMT_LEN);
 
 		cs_log_dbg(D_LB, "loadbalancer: client %s for %s: n=%d selected readers: %s",
-					  username(er->client), ecmbuf, nr, buf);
+					username(er->client), ecmbuf, nr, buf);
 	}
 #endif
 	return;
 }
-
-
 
 /**
  * clears statistic of reader ridx.
@@ -1811,7 +1777,7 @@ static void housekeeping_stat_thread(void)
 	struct s_reader *rdr;
 	set_thread_name(__func__);
 	LL_ITER itr = ll_iter_create(configured_readers);
-	cs_readlock(__func__, &readerlist_lock); //this avoids cleaning a reading during writing
+	cs_readlock(__func__, &readerlist_lock); // this avoids cleaning a reading during writing
 	while((rdr = ll_iter_next(&itr)))
 	{
 		if(rdr->lb_stat)
@@ -1820,9 +1786,9 @@ static void housekeeping_stat_thread(void)
 			cs_writelock(__func__, &rdr->lb_stat_lock);
 			LL_ITER it = ll_iter_create(rdr->lb_stat);
 			READER_STAT *s;
+
 			while((s = ll_iter_next(&it)))
 			{
-
 				int64_t gone = comp_timeb(&now, &s->last_received);
 				if(gone > cleanup_timeout)
 				{
@@ -1843,7 +1809,7 @@ static void housekeeping_stat(int32_t force)
 	struct timeb now;
 	cs_ftime(&now);
 	int64_t gone = comp_timeb(&now, &last_housekeeping);
-	if(!force && (gone < 60*60*1000))  //only clean once in an hour
+	if(!force && (gone < 60 * 60 * 1000)) // only clean once in an hour
 		{ return; }
 
 	last_housekeeping = now;
@@ -1941,7 +1907,6 @@ void lb_mark_last_reader(ECM_REQUEST *er)
 	}
 }
 
-
 /**
  * Automatic timeout feature depending on statistik values
  **/
@@ -1963,6 +1928,7 @@ static uint32_t __lb_auto_timeout(ECM_REQUEST *er, uint32_t ctimeout)
 			if(s) { break; }
 		}
 	}
+
 	if(!s) { return ctimeout; }
 
 	uint32_t t;
@@ -1975,7 +1941,9 @@ static uint32_t __lb_auto_timeout(ECM_REQUEST *er, uint32_t ctimeout)
 		t = s->time_avg * (100 + cfg.lb_auto_timeout_p) / 100;
 		if((int32_t)(t - s->time_avg) < cfg.lb_auto_timeout_t) { t = s->time_avg + cfg.lb_auto_timeout_t; }
 	}
+
 	if(t > ctimeout) { t = ctimeout; }
+
 #ifdef WITH_DEBUG
 	if(D_TRACE & cs_dblevel)
 	{
@@ -2005,7 +1973,7 @@ bool lb_check_auto_betatunnel(ECM_REQUEST *er, struct s_reader *rdr)
 	{
 		uint16_t save_caid = er->caid;
 		er->caid = caid;
-		match = matching_reader(er, rdr); //matching
+		match = matching_reader(er, rdr); // matching
 		er->caid = save_caid;
 	}
 	return match;
@@ -2020,7 +1988,6 @@ static struct ecm_request_t *check_same_ecm(ECM_REQUEST *er)
 	time_t timeout;
 	struct s_ecm_answer *ea_ecm = NULL, *ea_er = NULL;
 	uint8_t rdrs = 0;
-
 
 	cs_readlock(__func__, &ecmcache_lock);
 	for(ecm = ecmcwcache; ecm; ecm = ecm->next)
@@ -2089,8 +2056,9 @@ static void use_same_readers(ECM_REQUEST *er_new, ECM_REQUEST *er_cache)
 
 void lb_set_best_reader(ECM_REQUEST *er)
 {
-	if (!cfg.lb_mode)
+	if(!cfg.lb_mode)
 		return;
+
 	// cache2 is handled by readers queue, so, if a same ecm hash with same readers, use these same readers to get cache2 from them! Not ask other readers!
 	struct ecm_request_t *ecm_eq = NULL;
 	ecm_eq = check_same_ecm(er);
@@ -2099,7 +2067,9 @@ void lb_set_best_reader(ECM_REQUEST *er)
 		// set all readers used by ecm_eq, so we get cache2 from them!
 		use_same_readers(er, ecm_eq);
 		cs_log_dbg(D_LB, "{client %s, caid %04X, prid %06X, srvid %04X} [get_cw] found same ecm with same readers from client %s, use them!", (check_client(er->client) ? er->client->account->usr : "-"), er->caid, er->prid, er->srvid, (check_client(ecm_eq->client) ? ecm_eq->client->account->usr : "-"));
-	}else{
+	}
+	else
+	{
 		// FILTER readers by loadbalancing
 		stat_get_best_reader(er);
 	}
@@ -2111,7 +2081,6 @@ void lb_update_last(struct s_ecm_answer *ea_er, struct s_reader *reader)
 	if (!(ea_er->status & READER_FALLBACK))
 		cs_ftime(&reader->lb_last);
 }
-
 
 void send_reader_stat(struct s_reader *rdr, ECM_REQUEST *er, struct s_ecm_answer *ea, int8_t rc)
 {

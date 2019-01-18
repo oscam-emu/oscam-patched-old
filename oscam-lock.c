@@ -46,15 +46,15 @@ void cs_lock_destroy(const char *pn, CS_MUTEX_LOCK *l)
 #ifdef WITH_DEBUG
 	const char *old_name = l->name;
 #endif
-	l->name = NULL; //No new locks!
+	l->name = NULL; // No new locks!
 	cs_rwunlock_int(pn, l, WRITELOCK);
 
-	//Do not destroy when having pending locks!
+	// Do not destroy when having pending locks!
 	int32_t n = (l->timeout / 10) + 2;
 	while((--n > 0) && (l->writelock || l->readlock)) { cs_sleepms(10); }
 
 	cs_rwlock_int(pn, l, WRITELOCK);
-	l->flag++; //No new unlocks!
+	l->flag++; // No new unlocks!
 	cs_rwunlock_int(pn, l, WRITELOCK);
 
 #ifdef WITH_DEBUG
@@ -81,7 +81,7 @@ void cs_rwlock_int(const char *n, CS_MUTEX_LOCK *l, int8_t type)
 	SAFE_MUTEX_LOCK_R(&l->lock, n);
 
 	add_ms_to_timespec(&ts, l->timeout * 1000);
-	ts.tv_nsec = 0; // 100% resemble previous code, I consider it wrong 
+	ts.tv_nsec = 0; // 100% resemble previous code, I consider it wrong
 	if(type == WRITELOCK)
 	{
 		l->writelock++;
@@ -127,7 +127,7 @@ void cs_rwlock_int_nolog(const char *n, CS_MUTEX_LOCK *l, int8_t type)
 	SAFE_MUTEX_LOCK_NOLOG_R(&l->lock, n);
 
 	add_ms_to_timespec(&ts, l->timeout * 1000);
-	ts.tv_nsec = 0; // 100% resemble previous code, I consider it wrong 
+	ts.tv_nsec = 0; // 100% resemble previous code, I consider it wrong
 	if(type == WRITELOCK)
 	{
 		l->writelock++;

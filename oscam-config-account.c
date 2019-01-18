@@ -26,9 +26,6 @@ static void account_tosleep_fn(const char *token, char *value, void *setting, FI
 		{ fprintf_conf(f, token, "%d\n", *tosleep); }
 }
 
-
-
-
 static void account_c35_suppresscmd08_fn(const char *token, char *value, void *setting, FILE *f)
 {
 	int8_t *c35_suppresscmd08 = setting;
@@ -53,7 +50,6 @@ static void account_c35_suppresscmd08_fn(const char *token, char *value, void *s
 		{ fprintf_conf(f, token, "%u\n", *umaxidle); }
 }
 */
-
 
 static void account_ncd_keepalive_fn(const char *token, char *value, void *setting, FILE *f)
 {
@@ -83,7 +79,7 @@ static void account_allowedprotocols_fn(const char *token, char *value, void *se
 			char *ptr, *saveptr1 = NULL;
 			for(i = 0, ptr = strtok_r(value, ",", &saveptr1); ptr; ptr = strtok_r(NULL, ",", &saveptr1), i++)
 			{
-				if(streq(ptr, "camd33"))   { account->allowedprotocols |= LIS_CAMD33TCP; }
+				if(streq(ptr, "camd33"))        { account->allowedprotocols |= LIS_CAMD33TCP; }
 				else if(streq(ptr, "camd35"))   { account->allowedprotocols |= LIS_CAMD35UDP; }
 				else if(streq(ptr, "cs357x"))   { account->allowedprotocols |= LIS_CAMD35UDP; }
 				else if(streq(ptr, "cs378x"))   { account->allowedprotocols |= LIS_CAMD35TCP; }
@@ -208,52 +204,59 @@ static void account_allowedtimeframe_fn(const char *token, char *value, void *se
 	uint8_t day_idx;
 	int32_t allowed[4];
 	uint32_t tempo = 0;
-	
+
 	char *ptr1, *ptr2, *ptr3, *saveptr1 = NULL, *saveptr2 = NULL;
-	
+
 	if(value)
 	{
 		//First empty allowedtimeframe array very important otherwise new config won't be properly set
-		for(i=0;i<SIZE_SHORTDAY;i++) {
-			for(j=0;j<24;j++) {
-					account->allowedtimeframe[i][j][0]=0;
-					account->allowedtimeframe[i][j][1]=0;
+		for(i = 0; i < SIZE_SHORTDAY; i++)
+		{
+			for(j = 0; j < 24; j++)
+			{
+				account->allowedtimeframe[i][j][0] = 0;
+				account->allowedtimeframe[i][j][1] = 0;
 			}
 		}
 		account->allowedtimeframe_set=0;
 		strtoupper(value);
-		
+
 		for(i = 0, ptr1 = strtok_r(value, ";", &saveptr1); (ptr1); ptr1 = strtok_r(NULL, ";", &saveptr1), i++)
 		{
 			if((ptr2 = strchr(trim(ptr1), '@')))
 			{
-				*ptr2++ = '\0'; 	//clean up @ symbol
-				//ptr1 is the day
+				*ptr2++ = '\0'; // clean up @ symbol
+				// ptr1 is the day
 				dest = strstr(weekdstr,ptr1);
-				day_idx = (dest - weekdstr)/3;
-						
+				day_idx = (dest - weekdstr) / 3;
+
 				for(j = 0, ptr3 = strtok_r(ptr2, ",", &saveptr2); (ptr3); ptr3 = strtok_r(NULL, ",", &saveptr2), j++)
 				{
-					if((sscanf(ptr3, "%2d:%2d-%2d:%2d", &allowed[0], &allowed[1], &allowed[2], &allowed[3]) == 4) && (day_idx<SIZE_SHORTDAY))
+					if((sscanf(ptr3, "%2d:%2d-%2d:%2d", &allowed[0], &allowed[1], &allowed[2], &allowed[3]) == 4) && (day_idx < SIZE_SHORTDAY))
 					{
 						startt = allowed[0] * 60 + allowed[1];
 						endt = allowed[2] * 60 + allowed[3];
-						if(startt == endt) { endt++; } //end time cannot be the same as the star time
-						if((startt <0) || (startt > 1439)) { startt = 0; } //could not start later than 23H59, avoid overflow
-						if((endt <0) || (endt > 1440)) { endt = 1440; } //could not be higher than 24H00, avoid overflow
-						account->allowedtimeframe_set=1;
-						if(startt > endt) {
-						    for(t=startt; t<1440 ;t++)
-							{	
+
+						if(startt == endt) { endt++; } // end time cannot be the same as the star time
+						if((startt < 0) || (startt > 1439)) { startt = 0; } // could not start later than 23H59, avoid overflow
+						if((endt < 0) || (endt > 1440)) { endt = 1440; } // could not be higher than 24H00, avoid overflow
+
+						account->allowedtimeframe_set = 1;
+
+						if(startt > endt)
+						{
+							for(t = startt; t < 1440; t++)
+							{
 								tempo = (1 << (t % 30));
-								account->allowedtimeframe[day_idx][t/60][(t/30)%2]=account->allowedtimeframe[day_idx][t/60][(t/30)%2]|tempo;
+								account->allowedtimeframe[day_idx][t / 60][(t / 30) % 2] = account->allowedtimeframe[day_idx][t / 60][(t / 30) % 2] | tempo;
 							}
-							startt=0; 
-						} 
-						for(t=startt; t<endt ;t++)
-						{	
+							startt = 0;
+						}
+
+						for(t = startt; t < endt; t++)
+						{
 							tempo = (1 << (t % 30));
-							account->allowedtimeframe[day_idx][t/60][((t/30)%2)]=account->allowedtimeframe[day_idx][t/60][(t/30)%2]|tempo;
+							account->allowedtimeframe[day_idx][t / 60][((t / 30) % 2)] = account->allowedtimeframe[day_idx][t / 60][(t / 30) % 2] | tempo;
 						}
 					}
 					else
@@ -262,38 +265,42 @@ static void account_allowedtimeframe_fn(const char *token, char *value, void *se
 					}
 				}
 			}
-			else //No day specified so whole week (ALL)
+			else // No day specified so whole week (ALL)
 			{
 				if(sscanf(ptr1, "%2d:%2d-%2d:%2d", &allowed[0], &allowed[1], &allowed[2], &allowed[3]) == 4)
 				{
 					startt = allowed[0] * 60 + allowed[1];
 					endt = allowed[2] * 60 + allowed[3];
-					if(startt == endt) { endt++; } //end time cannot be the same as the star time
-					if((startt <0) || (startt > 1439)) { startt = 0; } //could not start later than 23H59, avoid overflow
-					if((endt <0) || (endt > 1440)) { endt = 1440; } //could not be higher than 24H00, avoid overflow
-					account->allowedtimeframe_set=1;
+
+					if(startt == endt) { endt++; } // end time cannot be the same as the star time
+					if((startt <0) || (startt > 1439)) { startt = 0; } // could not start later than 23H59, avoid overflow
+					if((endt <0) || (endt > 1440)) { endt = 1440; } // could not be higher than 24H00, avoid overflow
+
+					account->allowedtimeframe_set = 1;
 					dest = strstr(weekdstr,"ALL");
-					day_idx = (dest - weekdstr)/3;
-					if(startt > endt) 
-					{ 
-						for(t=startt; t<1440 ;t++)
+					day_idx = (dest - weekdstr) / 3;
+
+					if(startt > endt)
+					{
+						for(t = startt; t < 1440; t++)
 						{
 							tempo = (1 << (t % 30));
-							account->allowedtimeframe[day_idx][t/60][(t/30)%2]=account->allowedtimeframe[7][t/60][(t/30)%2]|tempo;
-						}			
-						startt=0; 
-					} 
-					for(t=startt; t<endt ;t++)
-					{	
+							account->allowedtimeframe[day_idx][t / 60][(t / 30) % 2] = account->allowedtimeframe[7][t / 60][(t / 30) % 2] | tempo;
+						}
+						startt=0;
+					}
+
+					for(t = startt; t < endt; t++)
+					{
 						tempo = (1 << (t % 30));
-						account->allowedtimeframe[day_idx][t/60][(t/30)%2]=account->allowedtimeframe[7][t/60][(t/30)%2]|tempo;
+						account->allowedtimeframe[day_idx][t / 60][(t / 30) % 2] = account->allowedtimeframe[7][t / 60][(t / 30) % 2] | tempo;
 					}
 				}
 				else
 				{
 					fprintf(stderr, "WARNING: Value '%s' is not valid for allowedtimeframe (hh:mm-hh:mm)\n", value);
 				}
-				
+
 			}
 		}
 		return;
@@ -411,70 +418,70 @@ static const struct config_list account_opts[] =
 #ifdef CS_ANTICASC
 	DEF_OPT_FIXUP_FUNC(account_fixups_fn),
 #endif
-	DEF_OPT_INT8("disabled"             , OFS(disabled),                0),
-	DEF_OPT_SSTR("user"                 , OFS(usr),                     "", SIZEOF(usr)),
-	DEF_OPT_STR("pwd"                   , OFS(pwd),                     NULL),
+	DEF_OPT_INT8("disabled"                    , OFS(disabled),                0),
+	DEF_OPT_SSTR("user"                        , OFS(usr),                     "", SIZEOF(usr)),
+	DEF_OPT_STR("pwd"                          , OFS(pwd),                     NULL),
 #ifdef WEBIF
-	DEF_OPT_STR("description"           , OFS(description),             NULL),
+	DEF_OPT_STR("description"                  , OFS(description),             NULL),
 #endif
-	DEF_OPT_STR("hostname"              , OFS(dyndns),                  NULL),
-	DEF_OPT_FUNC("caid"                 , OFS(ctab),                    check_caidtab_fn),
-	DEF_OPT_INT8("uniq"                 , OFS(uniq),                    0),
-	DEF_OPT_UINT8("sleepsend"           , OFS(c35_sleepsend),           0),
-	DEF_OPT_INT32("failban"             , OFS(failban),                 0),
-	DEF_OPT_INT8("monlevel"             , OFS(monlvl),                  0),
-	DEF_OPT_FUNC("sleep"                , OFS(tosleep),                 account_tosleep_fn),
-	DEF_OPT_FUNC("suppresscmd08"        , OFS(c35_suppresscmd08),       account_c35_suppresscmd08_fn),
-	DEF_OPT_INT32("umaxidle"            , OFS(umaxidle),                -1),
-	DEF_OPT_FUNC("keepalive"            , OFS(ncd_keepalive),           account_ncd_keepalive_fn),
-	DEF_OPT_FUNC("au"                   , 0,                            account_au_fn),
-	DEF_OPT_UINT8("emmreassembly"       , OFS(emm_reassembly),          2),
-	DEF_OPT_FUNC("expdate"              , 0,                            account_expdate_fn),
-	DEF_OPT_FUNC("allowedprotocols"     , 0,                            account_allowedprotocols_fn),
-	DEF_OPT_FUNC("allowedtimeframe"     , 0,							account_allowedtimeframe_fn),
-	DEF_OPT_FUNC("betatunnel"           , OFS(ttab),                    account_tuntab_fn),
-	DEF_OPT_FUNC("group"                , OFS(grp),                     group_fn),
-	DEF_OPT_FUNC("services"             , OFS(sidtabs),                 services_fn),
-	DEF_OPT_INT8("preferlocalcards"     , OFS(preferlocalcards),        -1),
-	DEF_OPT_FUNC_X("ident"              , OFS(ftab),                    ftab_fn, FTAB_ACCOUNT | FTAB_PROVID),
-	DEF_OPT_FUNC_X("chid"               , OFS(fchid),                   ftab_fn, FTAB_ACCOUNT | FTAB_CHID),
-	DEF_OPT_FUNC("class"                , OFS(cltab),                   class_fn),
-	DEF_OPT_UINT32("max_connections"    , OFS(max_connections),         1),
+	DEF_OPT_STR("hostname"                     , OFS(dyndns),                  NULL),
+	DEF_OPT_FUNC("caid"                        , OFS(ctab),                    check_caidtab_fn),
+	DEF_OPT_INT8("uniq"                        , OFS(uniq),                    0),
+	DEF_OPT_UINT8("sleepsend"                  , OFS(c35_sleepsend),           0),
+	DEF_OPT_INT32("failban"                    , OFS(failban),                 0),
+	DEF_OPT_INT8("monlevel"                    , OFS(monlvl),                  0),
+	DEF_OPT_FUNC("sleep"                       , OFS(tosleep),                 account_tosleep_fn),
+	DEF_OPT_FUNC("suppresscmd08"               , OFS(c35_suppresscmd08),       account_c35_suppresscmd08_fn),
+	DEF_OPT_INT32("umaxidle"                   , OFS(umaxidle),                -1),
+	DEF_OPT_FUNC("keepalive"                   , OFS(ncd_keepalive),           account_ncd_keepalive_fn),
+	DEF_OPT_FUNC("au"                          , 0,                            account_au_fn),
+	DEF_OPT_UINT8("emmreassembly"              , OFS(emm_reassembly),          2),
+	DEF_OPT_FUNC("expdate"                     , 0,                            account_expdate_fn),
+	DEF_OPT_FUNC("allowedprotocols"            , 0,                            account_allowedprotocols_fn),
+	DEF_OPT_FUNC("allowedtimeframe"            , 0,                            account_allowedtimeframe_fn),
+	DEF_OPT_FUNC("betatunnel"                  , OFS(ttab),                    account_tuntab_fn),
+	DEF_OPT_FUNC("group"                       , OFS(grp),                     group_fn),
+	DEF_OPT_FUNC("services"                    , OFS(sidtabs),                 services_fn),
+	DEF_OPT_INT8("preferlocalcards"            , OFS(preferlocalcards),        -1),
+	DEF_OPT_FUNC_X("ident"                     , OFS(ftab),                    ftab_fn, FTAB_ACCOUNT | FTAB_PROVID),
+	DEF_OPT_FUNC_X("chid"                      , OFS(fchid),                   ftab_fn, FTAB_ACCOUNT | FTAB_CHID),
+	DEF_OPT_FUNC("class"                       , OFS(cltab),                   class_fn),
+	DEF_OPT_UINT32("max_connections"           , OFS(max_connections),         1),
 #ifdef CS_CACHEEX
-	DEF_OPT_INT8("cacheex"              , OFS(cacheex.mode),            0),
-	DEF_OPT_INT8("cacheex_maxhop"       , OFS(cacheex.maxhop),          0),
-	DEF_OPT_FUNC("cacheex_ecm_filter"   , OFS(cacheex.filter_caidtab),  cacheex_hitvaluetab_fn),
-	DEF_OPT_UINT8("cacheex_drop_csp"    , OFS(cacheex.drop_csp),        0),
-	DEF_OPT_UINT8("cacheex_allow_request"   , OFS(cacheex.allow_request),   0),
-	DEF_OPT_UINT8("no_wait_time"        , OFS(no_wait_time),            0),
-	DEF_OPT_UINT8("cacheex_allow_filter", OFS(cacheex.allow_filter),    1),	
-	DEF_OPT_UINT8("cacheex_block_fakecws",OFS(cacheex.block_fakecws),   0),	
-	DEF_OPT_UINT8("disablecrccacheex"    ,OFS(disablecrccacheex),       0),
+	DEF_OPT_INT8("cacheex"                     , OFS(cacheex.mode),            0),
+	DEF_OPT_INT8("cacheex_maxhop"              , OFS(cacheex.maxhop),          0),
+	DEF_OPT_FUNC("cacheex_ecm_filter"          , OFS(cacheex.filter_caidtab),  cacheex_hitvaluetab_fn),
+	DEF_OPT_UINT8("cacheex_drop_csp"           , OFS(cacheex.drop_csp),        0),
+	DEF_OPT_UINT8("cacheex_allow_request"      , OFS(cacheex.allow_request),   0),
+	DEF_OPT_UINT8("no_wait_time"               , OFS(no_wait_time),            0),
+	DEF_OPT_UINT8("cacheex_allow_filter"       , OFS(cacheex.allow_filter),    1),
+	DEF_OPT_UINT8("cacheex_block_fakecws"      , OFS(cacheex.block_fakecws),   0),
+	DEF_OPT_UINT8("disablecrccacheex"          , OFS(disablecrccacheex),       0),
 	DEF_OPT_FUNC_X("disablecrccacheex_only_for", OFS(disablecrccacheex_only_for), ftab_fn, FTAB_ACCOUNT | FTAB_IGNCRCCEX4USERONLYFOR),
 #endif
 #ifdef MODULE_CCCAM
-	DEF_OPT_INT32("cccmaxhops"          , OFS(cccmaxhops),              DEFAULT_CC_MAXHOPS),
-	DEF_OPT_INT8("cccreshare"           , OFS(cccreshare),              DEFAULT_CC_RESHARE),
-	DEF_OPT_INT8("cccignorereshare"     , OFS(cccignorereshare),        DEFAULT_CC_IGNRSHR),
-	DEF_OPT_INT8("cccstealth"           , OFS(cccstealth),              DEFAULT_CC_STEALTH),
+	DEF_OPT_INT32("cccmaxhops"                 , OFS(cccmaxhops),              DEFAULT_CC_MAXHOPS),
+	DEF_OPT_INT8("cccreshare"                  , OFS(cccreshare),              DEFAULT_CC_RESHARE),
+	DEF_OPT_INT8("cccignorereshare"            , OFS(cccignorereshare),        DEFAULT_CC_IGNRSHR),
+	DEF_OPT_INT8("cccstealth"                  , OFS(cccstealth),              DEFAULT_CC_STEALTH),
 #endif
 #ifdef CS_ANTICASC
-	DEF_OPT_INT32("fakedelay"           , OFS(ac_fakedelay),            -1),
-	DEF_OPT_INT32("numusers"            , OFS(ac_users),                DEFAULT_AC_USERS),
-	DEF_OPT_INT8("penalty"              , OFS(ac_penalty),              DEFAULT_AC_PENALTY),
-	DEF_OPT_INT8("acosc_max_active_sids"	, OFS(acosc_max_active_sids),	-1 ),
-	DEF_OPT_INT8("acosc_zap_limit"		, OFS(acosc_zap_limit),			-1 ),
-	DEF_OPT_INT8("acosc_penalty"		, OFS(acosc_penalty),			-1 ),
-	DEF_OPT_INT32("acosc_penalty_duration"	, OFS(acosc_penalty_duration),	-1 ),
-	DEF_OPT_INT32("acosc_delay"			, OFS(acosc_delay),				-1 ),
+	DEF_OPT_INT32("fakedelay"                  , OFS(ac_fakedelay),            -1),
+	DEF_OPT_INT32("numusers"                   , OFS(ac_users),                DEFAULT_AC_USERS),
+	DEF_OPT_INT8("penalty"                     , OFS(ac_penalty),              DEFAULT_AC_PENALTY),
+	DEF_OPT_INT8("acosc_max_active_sids"       , OFS(acosc_max_active_sids),   -1 ),
+	DEF_OPT_INT8("acosc_zap_limit"             , OFS(acosc_zap_limit),         -1 ),
+	DEF_OPT_INT8("acosc_penalty"               , OFS(acosc_penalty),           -1 ),
+	DEF_OPT_INT32("acosc_penalty_duration"     , OFS(acosc_penalty_duration),  -1 ),
+	DEF_OPT_INT32("acosc_delay"                , OFS(acosc_delay),             -1 ),
 #endif
 #ifdef WITH_LB
-	DEF_OPT_INT32("lb_nbest_readers"    , OFS(lb_nbest_readers),        -1),
-	DEF_OPT_INT32("lb_nfb_readers"      , OFS(lb_nfb_readers),          -1),
-	DEF_OPT_FUNC("lb_nbest_percaid"     , OFS(lb_nbest_readers_tab),    caidvaluetab_fn),
+	DEF_OPT_INT32("lb_nbest_readers"           , OFS(lb_nbest_readers),        -1),
+	DEF_OPT_INT32("lb_nfb_readers"             , OFS(lb_nfb_readers),          -1),
+	DEF_OPT_FUNC("lb_nbest_percaid"            , OFS(lb_nbest_readers_tab),    caidvaluetab_fn),
 #endif
 #ifdef CW_CYCLE_CHECK
-	DEF_OPT_INT8("cwc_disable"			, OFS(cwc_disable),			0),
+	DEF_OPT_INT8("cwc_disable"                 , OFS(cwc_disable),             0),
 #endif
 	DEF_LAST_OPT
 };
@@ -581,8 +588,8 @@ int32_t init_free_userdb(struct s_auth *ptr)
 		ftab_clear(&ptr->fchid);
 		tuntab_clear(&ptr->ttab);
 		caidtab_clear(&ptr->ctab);
-    	NULLFREE(ptr->cltab.aclass);
- 		NULLFREE(ptr->cltab.bclass);
+		NULLFREE(ptr->cltab.aclass);
+		NULLFREE(ptr->cltab.bclass);
 #ifdef CS_CACHEEX
 		cecspvaluetab_clear(&ptr->cacheex.filter_caidtab);
 #endif
