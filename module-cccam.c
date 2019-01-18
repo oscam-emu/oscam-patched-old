@@ -3844,7 +3844,7 @@ int32_t cc_cli_connect(struct s_client *cl)
 	uint8_t data[20];
 	uint8_t hash[SHA_DIGEST_LENGTH];
 	uint8_t *buf = cc->send_buffer;
-	char pwd[64];
+	char pwd[65];
 
 	// check cred config
 	if(rdr->device[0] == 0 || rdr->r_pwd[0] == 0 || rdr->r_usr[0] == 0
