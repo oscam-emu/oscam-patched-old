@@ -1223,7 +1223,7 @@ int32_t dvbapi_open_device(int32_t type, int32_t num, int32_t adapter)
 			struct sockaddr_un saddr;
 			memset(&saddr, 0, sizeof(saddr));
 			saddr.sun_family = AF_UNIX;
-			strncpy(saddr.sun_path, device_path, sizeof(saddr.sun_path));
+			strncpy(saddr.sun_path, device_path, strlen(saddr.sun_path));
 			dmx_fd = socket(AF_UNIX, SOCK_STREAM, 0);
 			ret = connect(dmx_fd, (struct sockaddr *)&saddr, sizeof(saddr));
 			if(ret < 0)
