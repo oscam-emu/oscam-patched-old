@@ -852,7 +852,7 @@ int8_t ViaccessEMM(uint8_t *emm, uint32_t *keysAdded)
 				break;
 			}
 			ui1 = ((emm[i+2] << 8) | (emm[i+1] << 16) | (emm[i] << 24) | emm[i+3]);
-			if(fletcher_crc32(emm + 3, emmLen - 11) != ui1) {
+			if(ccitt32_crc(emm + 3, emmLen - 11) != ui1) {
 				return 4;
 			}
 

@@ -941,7 +941,7 @@ static uint8_t PowervuUnmaskEcm(uint8_t *ecm, uint8_t *seedEcmCw, uint8_t *modeC
 	// Fix CRC (optional)
 	l = (((ecm[1] << 8) + ecm[2]) & 0xFFF) + 3 - 4;
 
-	crc = fletcher_crc32(ecm, l);
+	crc = ccitt32_crc(ecm, l);
 
 	ecm[l + 0] = crc >> 24;
 	ecm[l + 1] = crc >> 16;
@@ -1490,7 +1490,7 @@ int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_k
 
 	ecmCrc32 = b2i(4, ecm + ecmLen - 4);
 
-	if (fletcher_crc32(ecm, ecmLen - 4) != ecmCrc32)
+	if (ccitt32_crc(ecm, ecmLen - 4) != ecmCrc32)
 	{
 		return EMU_CHECKSUM_ERROR;
 	}
@@ -1863,7 +1863,7 @@ static void PowervuUnmaskEmm(uint8_t *emm)
 
 	// Fix CRC (optional)
 	l = (((emm[1] << 8) + emm[2]) & 0xFFF) + 3 - 4;
-	crc = fletcher_crc32(emm, l);
+	crc = ccitt32_crc(emm, l);
 
 	emm[l + 0] = crc >> 24;
 	emm[l + 1] = crc >> 16;
@@ -1924,7 +1924,7 @@ int8_t PowervuEMM(uint8_t *emm, uint32_t *keysAdded)
 	// looks like checksum does not work for all EMMs
 	//emmCrc32 = b2i(4, emm+emmLen-4);
 	//
-	//if(fletcher_crc32(emm, emmLen-4) != emmCrc32)
+	//if(ccitt32_crc(emm, emmLen-4) != emmCrc32)
 	//{
 	//	return EMU_CHECKSUM_ERROR;
 	//}
