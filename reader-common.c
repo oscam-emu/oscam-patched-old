@@ -19,7 +19,7 @@
 extern const struct s_cardsystem *cardsystems[];
 extern char *RDR_CD_TXT[];
 
-int32_t check_sct_len(const uchar *data, int32_t off)
+int32_t check_sct_len(const uint8_t *data, int32_t off)
 {
 	int32_t len = SCT_LEN(data);
 	if(len + off > MAX_LEN)
@@ -34,28 +34,28 @@ static void reader_nullcard(struct s_reader *reader)
 {
 	reader->csystem_active = false;
 	reader->csystem = NULL;
-	memset(reader->hexserial, 0   , sizeof(reader->hexserial));
-	memset(reader->prid     , 0xFF, sizeof(reader->prid));
+	memset(reader->hexserial, 0, sizeof(reader->hexserial));
+	memset(reader->prid, 0xFF, sizeof(reader->prid));
 	reader->caid = 0;
 	reader->nprov = 0;
 	cs_clear_entitlement(reader);
 }
 
-int32_t reader_cmd2icc(struct s_reader *reader, const uchar *buf, const int32_t l, uchar *cta_res, uint16_t *p_cta_lr)
+int32_t reader_cmd2icc(struct s_reader *reader, const uint8_t *buf, const int32_t l, uint8_t *cta_res, uint16_t *p_cta_lr)
 {
 	int32_t rc;
-	*p_cta_lr = CTA_RES_LEN - 1; //FIXME not sure whether this one is necessary
+	*p_cta_lr = CTA_RES_LEN - 1; // FIXME not sure whether this one is necessary
 	rdr_log_dump_dbg(reader, D_READER, buf, l, "write to cardreader");
-	rc = ICC_Async_CardWrite(reader, (uchar *)buf, (uint16_t)l, cta_res, p_cta_lr);
+	rc = ICC_Async_CardWrite(reader, (uint8_t *)buf, (uint16_t)l, cta_res, p_cta_lr);
 	return rc;
 }
 
 #define CMD_LEN 5
 
-int32_t card_write(struct s_reader *reader, const uchar *cmd, const uchar *data, uchar *response, uint16_t *response_length)
+int32_t card_write(struct s_reader *reader, const uint8_t *cmd, const uint8_t *data, uint8_t *response, uint16_t *response_length)
 {
 	int32_t datalen = MAX_ECM_SIZE; // default datalen is max ecm size defined
-	uchar buf[MAX_ECM_SIZE + CMD_LEN];
+	uint8_t buf[MAX_ECM_SIZE + CMD_LEN];
 	// always copy to be able to be able to use const buffer without changing all code
 	memcpy(buf, cmd, CMD_LEN); // copy command
 
@@ -63,7 +63,7 @@ int32_t card_write(struct s_reader *reader, const uchar *cmd, const uchar *data,
 	{
 		if(cmd[4])
 		{
-			datalen = cmd[4];			
+			datalen = cmd[4];
 		}
 		memcpy(buf + CMD_LEN, data, datalen);
 		return (reader_cmd2icc(reader, buf, CMD_LEN + datalen, response, response_length));
@@ -86,7 +86,7 @@ static int32_t reader_card_inserted(struct s_reader *reader)
 	if(ICC_Async_GetStatus(reader, &card))
 	{
 		rdr_log(reader, "Error getting card status.");
-		return 0; //corresponds with no card inside!!
+		return 0; // corresponds with no card inside!!
 	}
 	return (card);
 }
@@ -110,7 +110,7 @@ static int32_t reader_activate_card(struct s_reader *reader, ATR *atr, uint16_t 
 	}
 	if(ret) { return (0); }
 
-	//  rdr_log("ATR: %s", cs_hexdump(1, atr, atr_size, tmp, sizeof(tmp)));//FIXME
+	//rdr_log("ATR: %s", cs_hexdump(1, atr, atr_size, tmp, sizeof(tmp))); // FIXME
 	cs_sleepms(1000);
 	return (1);
 }
@@ -181,8 +181,8 @@ void cardreader_do_reset(struct s_reader *reader)
 	int16_t j = 0;
 	if (reader->typ == R_SMART && reader->smartdev_found >= 4) j = 1; else j = 1; // back to a single start
 
-	for (i= 0; i < j; i++) {
-
+	for (i= 0; i < j; i++)
+	{
 		ret = ICC_Async_Reset(reader, &atr, reader_activate_card, reader_get_cardsystem);
 
 		if(ret == -1)
@@ -192,26 +192,34 @@ void cardreader_do_reset(struct s_reader *reader)
 		{
 			uint16_t y;
 			uint16_t deprecated;
-			if (reader->typ == R_SMART && reader->smartdev_found >= 4) y = 2; else y= 2;
-//			rdr_log(reader, "the restart atempts in deprecated is %u", y);
+
+			if (reader->typ == R_SMART && reader->smartdev_found >= 4) y = 2; else y = 2;
+			//rdr_log(reader, "the restart atempts in deprecated is %u", y);
+
 			for(deprecated = reader->deprecated; deprecated < y; deprecated++)
 			{
 				if(!reader_activate_card(reader, &atr, deprecated)) { break; }
+
 				ret = reader_get_cardsystem(reader, &atr);
 				if(ret)
 					{ break; }
+
 				if(!deprecated)
 					{ rdr_log(reader, "Normal mode failed, reverting to Deprecated Mode"); }
 			}
 		}
-			if (ret){
-				rdr_log(reader,"THIS WAS A SUCCESSFUL START ATTEMPT No  %u out of max alloted of %u", (i+1), j);
-				break;
-			}
-			else {
-				rdr_log(reader, "THIS WAS A FAILED START ATTEMPT No %u out of max alloted of %u", (i+1), j);
-			}
+
+		if (ret)
+		{
+			rdr_log(reader,"THIS WAS A SUCCESSFUL START ATTEMPT No  %u out of max alloted of %u", (i + 1), j);
+			break;
+		}
+		else
+		{
+			rdr_log(reader, "THIS WAS A FAILED START ATTEMPT No %u out of max alloted of %u", (i + 1), j);
+		}
 	}
+
 	if(!ret)
 	{
 		reader->card_status = CARD_FAILURE;
@@ -225,7 +233,7 @@ void cardreader_do_reset(struct s_reader *reader)
 		reader->card_status = CARD_INSERTED;
 		do_emm_from_file(reader);
 		ICC_Async_DisplayMsg(reader, "AOK");
-		gbx_local_card_stat(2, reader->caid); //local card up
+		gbx_local_card_stat(2, reader->caid); // local card up
 	}
 
 	return;
@@ -233,12 +241,12 @@ void cardreader_do_reset(struct s_reader *reader)
 
 static int32_t cardreader_device_init(struct s_reader *reader)
 {
-	int32_t rc = -1; //FIXME
+	int32_t rc = -1; // FIXME
 	if(ICC_Async_Device_Init(reader))
 		{ rdr_log(reader, "Cannot open device: %s", reader->device); }
 	else
 		{ rc = OK; }
-	return ((rc != OK) ? 2 : 0); //exit code 2 means keep retrying, exit code 0 means all OK
+	return ((rc != OK) ? 2 : 0); // exit code 2 means keep retrying, exit code 0 means all OK
 }
 
 int32_t cardreader_do_checkhealth(struct s_reader *reader)
@@ -264,18 +272,20 @@ int32_t cardreader_do_checkhealth(struct s_reader *reader)
 			if(reader->csystem && reader->csystem->card_done)
 				reader->csystem->card_done(reader);
 			NULLFREE(reader->csystem_data);
+
 			if(cl)
 			{
 				cl->lastemm = 0;
 				cl->lastecm = 0;
 			}
 			led_status_card_ejected();
-			gbx_local_card_stat(1, reader->caid); 
+			gbx_local_card_stat(1, reader->caid);
 		}
 		reader->card_status = NO_CARD;
 	}
 	rdr_log_dbg(reader, D_READER, "%s: reader->card_status = %d, ret = %d", __func__,
-				   reader->card_status, reader->card_status == CARD_INSERTED);
+				reader->card_status, reader->card_status == CARD_INSERTED);
+
 	return reader->card_status == CARD_INSERTED;
 }
 
@@ -303,6 +313,7 @@ bool cardreader_init(struct s_reader *reader)
 	client->typ = 'r';
 	int8_t i = 0;
 	set_localhost_ip(&client->ip);
+
 	while((cardreader_device_init(reader) == 2) && i < 10)
 	{
 		cs_sleepms(2000);
@@ -310,6 +321,7 @@ bool cardreader_init(struct s_reader *reader)
 			{ return false; }
 		i++;
 	}
+
 	if (i >= 10)
 	{
 		reader->card_status = READER_DEVICE_ERROR;
@@ -317,19 +329,23 @@ bool cardreader_init(struct s_reader *reader)
 		reader->enable = 0;
 		return false;
 	}
-	else 
+	else
 	{
 		if(reader->typ == R_INTERNAL)
 		{
 			if(boxtype_is("dm8000") || boxtype_is("dm800") || boxtype_is("dm800se"))
 				{reader->cardmhz = 2700;}
+
 			if(boxtype_is("dm500") || boxtype_is("dm600pvr"))
 				{reader->cardmhz = 3150;}
+
 			if(boxtype_is("dm7025"))
 				{reader->cardmhz = 8300;}
+
 			if((!strncmp(boxtype_get(), "vu", 2 ))||(boxtype_is("ini-8000am")))
 				{reader->cardmhz = 2700; reader->mhz = 450;} // only one speed for vu+ and Atemio Nemesis due to usage of TDA8024
 		}
+
 		if((reader->cardmhz > 2000) && (reader->typ != R_SMART))
 		{
 			rdr_log(reader, "Reader initialized (device=%s, detect=%s%s, pll max=%.2f MHz, wanted mhz=%.2f MHz)",
@@ -358,8 +374,9 @@ bool cardreader_init(struct s_reader *reader)
 				if (reader->cardmhz >= 400)  reader->cardmhz =  400; else
 				if (reader->cardmhz >= 369)  reader->cardmhz =  369; else
 				if (reader->cardmhz == 357)  reader->cardmhz =  369; else // 357 not a default smartreader setting
-				if (reader->cardmhz >= 343)  reader->cardmhz =  343; else 
-				reader->cardmhz =  320;
+				if (reader->cardmhz >= 343)  reader->cardmhz =  343; else
+											 reader->cardmhz =  320;
+
 				if (reader->mhz >= 1600) reader->mhz = 1600; else
 				if (reader->mhz >= 1200) reader->mhz = 1200; else
 				if (reader->mhz >= 961)  reader->mhz =  961; else
@@ -373,9 +390,10 @@ bool cardreader_init(struct s_reader *reader)
 				if (reader->mhz >= 400)  reader->mhz =  369; else
 				if (reader->mhz >= 369)  reader->mhz =  369; else
 				if (reader->mhz == 357)  reader->mhz =  369; else // 357 not a default smartreader setting
-				if (reader->mhz >= 343)  reader->mhz =  343; else 
-				reader->mhz =  320;
-	    	}
+				if (reader->mhz >= 343)  reader->mhz =  343; else
+										 reader->mhz =  320;
+			}
+
 			if ((reader->typ == R_SMART || is_smargo_reader(reader)) && reader->autospeed == 1)
 			{
 				rdr_log(reader, "Reader initialized (device=%s, detect=%s%s, mhz= AUTO, cardmhz=%d)",
@@ -383,13 +401,16 @@ bool cardreader_init(struct s_reader *reader)
 						reader->detect & 0x80 ? "!" : "",
 						RDR_CD_TXT[reader->detect & 0x7f],
 						reader->cardmhz);
-			} else {
+			}
+			else
+			{
 				rdr_log(reader, "Reader initialized (device=%s, detect=%s%s, mhz=%d, cardmhz=%d)",
 						reader->device,
 						reader->detect & 0x80 ? "!" : "",
 						RDR_CD_TXT[reader->detect & 0x7f],
 						reader->mhz,
 						reader->cardmhz);
+
 				if (reader->typ == R_INTERNAL && !(reader->cardmhz > 2000))
 					rdr_log(reader,"Reader sci internal, detected box type: %s", boxtype_get());
 			}
@@ -443,12 +464,18 @@ int32_t cardreader_do_ecm(struct s_reader *reader, ECM_REQUEST *er, struct s_ecm
 int32_t cardreader_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 {
 	int32_t rc;
-	if (reader->typ == R_SMART ) {  // check health does not work with new card status check but is actually not needed for emm.
-	rc = 1;
-	} else {
-	rc = -1;
-	rc = cardreader_do_checkhealth(reader);
+
+	// check health does not work with new card status check but is actually not needed for emm.
+	if(reader->typ == R_SMART)
+	{
+		rc = 1;
 	}
+	else
+	{
+		rc = -1;
+		rc = cardreader_do_checkhealth(reader);
+	}
+
 	if(rc)
 	{
 		if((1 << (ep->emm[0] % 0x80)) & reader->b_nano)
@@ -459,33 +486,33 @@ int32_t cardreader_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 		else
 			{ rc = 0; }
 	}
-	if(rc > 0) { cs_ftime(&reader->emm_last); }  // last time emm written is now!
+
+	if(rc > 0) { cs_ftime(&reader->emm_last); } // last time emm written is now!
 	return (rc);
 }
 
 void cardreader_process_ecm(struct s_reader *reader, struct s_client *cl, ECM_REQUEST *er)
 {
-
 	cs_log_dump_dbg(D_ATR, er->ecm, er->ecmlen, "ecm:");
 
 	struct timeb tps, tpe;
 	struct s_ecm_answer ea;
 	memset(&ea, 0, sizeof(struct s_ecm_answer));
-	
+
 	cs_ftime(&tps);
 	int32_t rc = cardreader_do_ecm(reader, er, &ea);
 	cs_ftime(&tpe);
-	
+
 	rdr_log_dbg(reader, D_READER, "%s: cardreader_do_ecm returned rc=%d (ERROR=%d)", __func__, rc, ERROR);
 
-	ea.rc = E_FOUND; //default assume found
-	ea.rcEx = 0; //no special flag
+	ea.rc = E_FOUND; // default assume found
+	ea.rcEx = 0; // no special flag
 
 	if(rc == ERROR)
 	{
 		char buf[CS_SERVICENAME_SIZE];
 		rdr_log_dbg(reader, D_READER, "Error processing ecm for caid %04X, provid %06X, srvid %04X, servicename: %s",
-					   er->caid, er->prid, er->srvid, get_servicename(cl, er->srvid, er->prid, er->caid, buf, sizeof(buf)));
+						er->caid, er->prid, er->srvid, get_servicename(cl, er->srvid, er->prid, er->caid, buf, sizeof(buf)));
 		ea.rc = E_NOTFOUND;
 		ea.rcEx = 0;
 		ICC_Async_DisplayMsg(reader, "Eer");
@@ -495,20 +522,20 @@ void cardreader_process_ecm(struct s_reader *reader, struct s_client *cl, ECM_RE
 	{
 		char buf[CS_SERVICENAME_SIZE];
 		rdr_log_dbg(reader, D_READER, "Error processing ecm for caid %04X, provid %06X, srvid %04X, servicename: %s",
-					   er->caid, er->prid, er->srvid, get_servicename(cl, er->srvid, er->prid, er->caid, buf, sizeof(buf)));
+						er->caid, er->prid, er->srvid, get_servicename(cl, er->srvid, er->prid, er->caid, buf, sizeof(buf)));
 		ea.rc = E_NOTFOUND;
-		ea.rcEx = E2_WRONG_CHKSUM; //flag it as wrong checksum
+		ea.rcEx = E2_WRONG_CHKSUM; // flag it as wrong checksum
 		memcpy(ea.msglog, "Invalid ecm type for card", 25);
 	}
 
 	write_ecm_answer(reader, er, ea.rc, ea.rcEx, ea.cw, ea.msglog, ea.tier, &ea.cw_ex);
-	
+
 	cl->lastecm = time((time_t *)0);
 	char ecmd5[17 * 3];
 	cs_hexdump(0, er->ecmd5, 16, ecmd5, sizeof(ecmd5));
 
 	rdr_log_dbg(reader, D_READER, "ecm hash: %s real time: %"PRId64" ms", ecmd5, comp_timeb(&tpe, &tps));
-	
+
 	reader_post_process(reader);
 }
 
