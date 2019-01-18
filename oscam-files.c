@@ -65,11 +65,13 @@ char *get_tmp_dir_filename(char *dest, size_t destlen, const char *filename)
 
 /* Drop-in replacement for readdir_r as some plattforms strip the function from their libc.
    Furthermore, there are some security issues, see http://womble.decadent.org.uk/readdir_r-advisory.html */
+
 int32_t cs_readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result)
 {
 	/* According to POSIX the buffer readdir uses is not shared between directory streams.
 	   However readdir is not guaranteed to be thread-safe and some implementations may use global state.
 	   Thus we use a lock as we have many plattforms... */
+
 	int32_t rc;
 	cs_writelock(__func__, &readdir_lock);
 	errno = 0;
@@ -90,17 +92,21 @@ bool file_exists(const char *filename)
 	return access(filename, R_OK) == 0;
 }
 
-/* Copies a file from srcfile to destfile. If an error occured before writing, -1 is returned, else -2. On success, 0 is returned.*/
+/* Copies a file from srcfile to destfile. If an error occured before writing,
+   -1 is returned, else -2. On success, 0 is returned.*/
+
 int32_t file_copy(char *srcfile, char *destfile)
 {
 	FILE *src, *dest;
 	int32_t ch;
+
 	src = fopen(srcfile, "r");
 	if(!src)
 	{
 		cs_log("Error opening file %s for reading (errno=%d %s)!", srcfile, errno, strerror(errno));
 		return -1;
 	}
+
 	dest = fopen(destfile, "w");
 	if(!dest)
 	{
@@ -108,6 +114,7 @@ int32_t file_copy(char *srcfile, char *destfile)
 		fclose(src);
 		return -1;
 	}
+
 	while(1)
 	{
 		ch = fgetc(src);
@@ -132,7 +139,9 @@ int32_t file_copy(char *srcfile, char *destfile)
 	return (0);
 }
 
-/* Overwrites destfile with temp_file. If forceBakOverWrite = 0, the bakfile will not be overwritten if it exists, else it will be.*/
+/* Overwrites destfile with temp_file. If forceBakOverWrite = 0,
+   the bakfile will not be overwritten if it exists, else it will be.*/
+
 int32_t safe_overwrite_with_bak(char *destfile, char *temp_file, char *bakfile, int32_t forceBakOverWrite)
 {
 	int32_t rc;
@@ -151,6 +160,7 @@ int32_t safe_overwrite_with_bak(char *destfile, char *temp_file, char *bakfile, 
 			}
 		}
 	}
+
 	rc = file_copy(temp_file, destfile);
 	if(rc < 0)
 	{
@@ -165,6 +175,7 @@ int32_t safe_overwrite_with_bak(char *destfile, char *temp_file, char *bakfile, 
 		}
 		return 1;
 	}
+
 	if(unlink(temp_file) < 0)
 	{
 		cs_log("Error removing temp config file %s (errno=%d %s)!", temp_file, errno, strerror(errno));
@@ -177,6 +188,7 @@ char *get_gbox_filename(char *dest, size_t destlen, const char *filename)
 {
 	char *tmp_dir = get_tmp_dir();
 	const char *slash = "/";
+
 	if(cfg.gbox_tmp_dir != NULL)
 	{
 		if(cfg.gbox_tmp_dir[strlen(cfg.gbox_tmp_dir) - 1] == '/')

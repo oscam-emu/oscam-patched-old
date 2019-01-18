@@ -14,12 +14,16 @@ const char *weekdstr = "SUNMONTUEWEDTHUFRISATALL";
 char *mk_t_caidtab(CAIDTAB *caidtab)
 {
 	if (!caidtab || !caidtab->ctnum) return "";
+
 	// Max entry length is strlen("1234&ffff:1234,") == 15
 	int32_t i, maxlen = 16 * caidtab->ctnum, pos = 0;
+
 	char *ret;
 	if (!cs_malloc(&ret, maxlen))
 		return "";
+
 	const char *comma = "";
+
 	for(i = 0; i < caidtab->ctnum; i++)
 	{
 		CAIDTAB_DATA *d = &caidtab->ctdata[i];
@@ -42,12 +46,16 @@ char *mk_t_caidtab(CAIDTAB *caidtab)
 char *mk_t_tuntab(TUNTAB *ttab)
 {
 	if (!ttab || !ttab->ttnum) return "";
+
 	// Each entry max length is strlen("aaaa.bbbb:cccc,") == 15
 	int32_t i, maxlen = 16 * ttab->ttnum, pos = 0;
+
 	char *ret;
 	if (!cs_malloc(&ret, maxlen))
 		return "";
+
 	const char *comma = "";
+
 	for(i = 0; i < ttab->ttnum; i++)
 	{
 		TUNTAB_DATA *d = &ttab->ttdata[i];
@@ -75,9 +83,11 @@ char *mk_t_group(uint64_t grp)
 			if(i > 9) { needed += 1; }
 		}
 	}
+
 	char *value;
 	if(needed == 1 || !cs_malloc(&value, needed)) { return ""; }
 	char *saveptr = value;
+
 	for(i = 0; i < 64; i++)
 	{
 		if(grp & ((uint64_t)1 << i))
@@ -107,21 +117,29 @@ char *mk_t_group(uint64_t grp)
 char *mk_t_ftab(FTAB *ftab)
 {
 	if (!ftab || !ftab->nfilts) return "";
+
 	// Worst case scenario where each entry have different
 	// caid, ident and only one length in it is strlen("1234:123456,") == 12
 	int32_t i, j, maxlen = 13 * ftab->nfilts, pos = 0;
+
 	for(i = 0; i < ftab->nfilts; i++)
+	{
 		maxlen += ftab->filts[i].nprids * 7; /* strlen("123456,") == 7 */
+	}
+
 	char *ret;
 	if (!cs_malloc(&ret, maxlen))
 		return "";
+
 	const char *semicolon = "", *comma = "";
+
 	for(i = 0; i < ftab->nfilts; i++)
 	{
 		FILTER *cur = &ftab->filts[i];
 		pos += snprintf(ret + pos, maxlen - pos, "%s%04X:", semicolon, cur->caid);
 		semicolon = ";";
 		comma = "";
+
 		for (j = 0; j < cur->nprids; j++)
 		{
 			pos += snprintf(ret + pos, maxlen - pos, "%s%06X", comma, cur->prids[j]);
@@ -149,13 +167,14 @@ char *mk_t_camd35tcp_port(void)
 			needed += cfg.c35_tcp_ptab.ports[i].ncd->ncd_ftab.filts[0].nprids * 7;
 		}
 	}
+
 	char *value;
 	if(needed == 1 || !cs_malloc(&value, needed)) { return ""; }
 	char *saveptr = value;
 	char *dot1 = "", *dot2;
+
 	for(i = 0; i < cfg.c35_tcp_ptab.nports; ++i)
 	{
-
 		if(cfg.c35_tcp_ptab.ports[i].ncd && cfg.c35_tcp_ptab.ports[i].ncd->ncd_ftab.filts[0].caid)
 		{
 			pos += snprintf(value + pos, needed - (value - saveptr), "%s%d@%04X", dot1,
@@ -167,7 +186,8 @@ char *mk_t_camd35tcp_port(void)
 				dot2 = ":";
 				for(j = 0; j < cfg.c35_tcp_ptab.ports[i].ncd->ncd_ftab.filts[0].nprids; ++j)
 				{
-					pos += snprintf(value + pos, needed - (value - saveptr), "%s%06X", dot2, cfg.c35_tcp_ptab.ports[i].ncd->ncd_ftab.filts[0].prids[j]);
+					pos += snprintf(value + pos, needed - (value - saveptr), "%s%06X",
+									dot2, cfg.c35_tcp_ptab.ports[i].ncd->ncd_ftab.filts[0].prids[j]);
 					dot2 = ",";
 				}
 			}
@@ -175,7 +195,8 @@ char *mk_t_camd35tcp_port(void)
 		}
 		else
 		{
-			pos += snprintf(value + pos, needed - (value - saveptr), "%s%d", dot1, cfg.c35_tcp_ptab.ports[i].s_port);
+			pos += snprintf(value + pos, needed - (value - saveptr), "%s%d",
+							dot1, cfg.c35_tcp_ptab.ports[i].s_port);
 			dot1 = ";";
 		}
 	}
@@ -196,6 +217,7 @@ char *mk_t_cccam_port(void)
 	char *value;
 	if(!cs_malloc(&value, needed)) { return ""; }
 	char *dot = "";
+
 	for(i = 0; i < CS_MAXPORTS; i++)
 	{
 		if(!cfg.cc_port[i]) { break; }
@@ -218,6 +240,7 @@ char *mk_t_gbox_port(void)
 	char *value;
 	if(!cs_malloc(&value, needed)) { return ""; }
 	char *dot = "";
+
 	for(i = 0; i < CS_MAXPORTS; i++)
 	{
 		if(!cfg.gbox_port[i]) { break; }
@@ -227,6 +250,7 @@ char *mk_t_gbox_port(void)
 	}
 	return value;
 }
+
 /*
  * Creates a string ready to write as a token into config or WebIf for the gbox proxy card. You must free the returned value through free_mk_t().
  */
@@ -237,6 +261,7 @@ char *mk_t_gbox_proxy_card(void)
 	char *value;
 	if(!cs_malloc(&value, needed)) { return ""; }
 	char *dot = "";
+
 	for(i = 0; i < GBOX_MAX_PROXY_CARDS; i++)
 	{
 		if(!cfg.gbox_proxy_card[i]) { break; }
@@ -246,6 +271,7 @@ char *mk_t_gbox_proxy_card(void)
 	}
 	return value;
 }
+
 /*
  * Creates a string ready to write as a token into config or WebIf for the gbox ignore peer. You must free the returned value through free_mk_t().
  */
@@ -256,6 +282,7 @@ char *mk_t_gbox_ignored_peer(void)
 	char *value;
 	if(!cs_malloc(&value, needed)) { return ""; }
 	char *dot = "";
+
 	for(i = 0; i < GBOX_MAX_IGNORED_PEERS; i++)
 	{
 		if(!cfg.gbox_ignored_peer[i]) { break; }
@@ -265,6 +292,7 @@ char *mk_t_gbox_ignored_peer(void)
 	}
 	return value;
 }
+
 /*
  * Creates a string ready to write as a token into config or WebIf for the gbox accept_remm_peer. You must free the returned value through free_mk_t().
  */
@@ -275,6 +303,7 @@ char *mk_t_accept_remm_peer(void)
 	char *value;
 	if(!cs_malloc(&value, needed)) { return ""; }
 	char *dot = "";
+
 	for(i = 0; i < GBOX_MAX_REMM_PEERS; i++)
 	{
 		if(!cfg.accept_remm_peer[i]) { break; }
@@ -284,6 +313,7 @@ char *mk_t_accept_remm_peer(void)
 	}
 	return value;
 }
+
 /*
  * Creates a string ready to write as a token into config or WebIf for the gbox block ecm. You must free the returned value through free_mk_t().
  */
@@ -294,6 +324,7 @@ char *mk_t_gbox_block_ecm(void)
 	char *value;
 	if(!cs_malloc(&value, needed)) { return ""; }
 	char *dot = "";
+
 	for(i = 0; i < GBOX_MAX_BLOCKED_ECM; i++)
 	{
 		if(!cfg.gbox_block_ecm[i]) { break; }
@@ -313,6 +344,7 @@ char *mk_t_gbox_dest_peers(void)
 	char *value;
 	if(!cs_malloc(&value, needed)) { return ""; }
 	char *dot = "";
+
 	for(i = 0; i < GBOX_MAX_DEST_PEERS; i++)
 	{
 		if(!cfg.gbox_dest_peers[i]) { break; }
@@ -356,6 +388,7 @@ char *mk_t_aeskeys(struct s_reader *rdr)
 	char dot;
 	if(needed == 1) { tmp[0] = '\0'; }
 	char tmpkey[33];
+
 	while(current)
 	{
 		/* A change in the ident or caid means that we need to output caid and ident */
@@ -371,18 +404,32 @@ char *mk_t_aeskeys(struct s_reader *rdr)
 			dot = ':';
 		}
 		else { dot = ','; }
+
 		/* "0" keys are not saved so we need to check for gaps and output them! */
 		for(i = prevKeyid + 1; i < current->keyid; ++i)
 		{
 			pos += snprintf(tmp + pos, sizeof(tmp) - pos, "%c0", dot);
 			dot = ',';
 		}
+
 		tmp[pos] = dot;
 		++pos;
-		for(i = 0; i < 16; ++i) { snprintf(tmpkey + (i * 2), sizeof(tmpkey) - (i * 2), "%02X", current->plainkey[i]); }
+
+		for(i = 0; i < 16; ++i)
+		{
+			snprintf(tmpkey + (i * 2), sizeof(tmpkey) - (i * 2), "%02X", current->plainkey[i]);
+		}
+
 		/* A key consisting of only FFs has a special meaning (just return what the card outputted) and can be specified more compact */
-		if(strcmp(tmpkey, "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF") == 0) { pos += snprintf(tmp + pos, sizeof(tmp) - pos, "FF"); }
-		else { pos += snprintf(tmp + pos, sizeof(tmp) - pos, "%s", tmpkey); }
+		if(strcmp(tmpkey, "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF") == 0)
+		{
+			pos += snprintf(tmp + pos, sizeof(tmp) - pos, "FF");
+		}
+		else
+		{
+			pos += snprintf(tmp + pos, sizeof(tmp) - pos, "%s", tmpkey);
+		}
+
 		prevCaid = current->caid;
 		prevIdent = current->ident;
 		prevKeyid = current->keyid;
@@ -412,6 +459,7 @@ char *mk_t_newcamd_port(void)
 		if(cfg.ncd_ptab.ports[i].ncd)
 		{
 			if(cfg.ncd_ptab.ports[i].ncd->ncd_key_is_set) { needed += 30; }
+
 			if(cfg.ncd_ptab.ports[i].ncd->ncd_ftab.filts[0].nprids > 0)
 			{
 				needed += cfg.ncd_ptab.ports[i].ncd->ncd_ftab.filts[0].nprids * 7;
@@ -433,7 +481,9 @@ char *mk_t_newcamd_port(void)
 			{
 				pos += snprintf(value + pos, needed - pos, "{");
 				for(k = 0; k < (int32_t)sizeof(cfg.ncd_ptab.ports[i].ncd->ncd_key); k++)
-					{ pos += snprintf(value + pos, needed - pos, "%02X", cfg.ncd_ptab.ports[i].ncd->ncd_key[k]); }
+				{
+					pos += snprintf(value + pos, needed - pos, "%02X", cfg.ncd_ptab.ports[i].ncd->ncd_key[k]);
+				}
 				pos += snprintf(value + pos, needed - pos, "}");
 			}
 
@@ -488,8 +538,10 @@ char *mk_t_nano(uint16_t nano)
 	int32_t i, pos = 0, needed = 0;
 
 	for(i = 0; i < 16; i++)
+	{
 		if((1 << i) & nano)
 			{ needed++; }
+	}
 
 	char *value;
 	if(nano == 0xFFFF)
@@ -500,6 +552,7 @@ char *mk_t_nano(uint16_t nano)
 	else
 	{
 		if(needed == 0 || !cs_malloc(&value, needed * 3 + 1)) { return ""; }
+
 		value[0] = '\0';
 		for(i = 0; i < 16; i++)
 		{
@@ -520,6 +573,7 @@ char *mk_t_service(SIDTABS *sidtabs)
 	char *value;
 	struct s_sidtab *sidtab = cfg.sidtab;
 	if(!sidtab || (!sidtabs->ok && !sidtabs->no) || !cs_malloc(&value, 1024)) { return ""; }
+
 	value[0] = '\0';
 
 	for(i = pos = 0, dot = ""; sidtab; sidtab = sidtab->next, i++)
@@ -556,11 +610,13 @@ char *mk_t_logfile(void)
 		pos += snprintf(value + pos, needed - pos, "stdout");
 		dot = ";";
 	}
+
 	if(cfg.logtosyslog == 1)
 	{
 		pos += snprintf(value + pos, needed - pos, "%ssyslog", dot);
 		dot = ";";
 	}
+
 	if(cfg.logfile)
 	{
 		pos += snprintf(value + pos, needed - pos, "%s%s", dot, cfg.logfile);
@@ -574,28 +630,33 @@ char *mk_t_logfile(void)
 char *mk_t_ecm_whitelist(struct s_ecm_whitelist *ecm_whitelist)
 {
 	if (!ecm_whitelist || !ecm_whitelist->ewnum) return "";
+
 	// Worst case scenario where each entry have different
 	// caid, ident and only one length in it is strlen("1234@123456:01;") == 15
 	int32_t i, maxlen = 16 * ecm_whitelist->ewnum, pos = 0;
 	char *ret;
 	if (!cs_malloc(&ret, maxlen))
 		return "";
+
 	const char *semicolon = "", *comma = "";
 	ECM_WHITELIST_DATA *last = NULL;
+
 	for(i = 0; i < ecm_whitelist->ewnum; i++)
 	{
 		ECM_WHITELIST_DATA *cur = &ecm_whitelist->ewdata[i];
 		bool change = !last || last->caid != cur->caid || last->ident != cur->ident;
-		if (change)
+
+		if(change)
 		{
-			if (cur->caid && cur->ident)
+			if(cur->caid && cur->ident)
 				pos += snprintf(ret + pos, maxlen - pos, "%s%04X@%06X:", semicolon, cur->caid, cur->ident);
-			else if (cur->caid)
+			else if(cur->caid)
 				pos += snprintf(ret + pos, maxlen - pos, "%s%04X:", semicolon, cur->caid);
-			else if (cur->ident)
+			else if(cur->ident)
 				pos += snprintf(ret + pos, maxlen - pos, "%s@%06X:", semicolon, cur->ident);
 			else
 				pos += snprintf(ret + pos, maxlen - pos, "%s", semicolon);
+
 			semicolon = ";";
 			comma = "";
 		}
@@ -611,15 +672,18 @@ char *mk_t_ecm_whitelist(struct s_ecm_whitelist *ecm_whitelist)
  */
 char *mk_t_ecm_hdr_whitelist(struct s_ecm_hdr_whitelist *ecm_hdr_whitelist)
 {
-	if (!ecm_hdr_whitelist || !ecm_hdr_whitelist->ehnum) return "";
+	if(!ecm_hdr_whitelist || !ecm_hdr_whitelist->ehnum) return "";
+
 	// Worst case scenario where each entry have different
 	// caid, provid and only one header in it is strlen("1234@123456:0102030405060708091011121314151617181920;") == 52 ((sizeof(header) / 2) + 12)
 	int32_t i, r, maxlen = 53 * ecm_hdr_whitelist->ehnum, pos = 0;
 	char *ret;
 	if (!cs_malloc(&ret, maxlen))
 		return "";
+
 	const char *semicolon = "", *comma = "";
 	ECM_HDR_WHITELIST_DATA *last = NULL;
+
 	for(i = 0; i < ecm_hdr_whitelist->ehnum; i++)
 	{
 		ECM_HDR_WHITELIST_DATA *cur = &ecm_hdr_whitelist->ehdata[i];
@@ -634,6 +698,7 @@ char *mk_t_ecm_hdr_whitelist(struct s_ecm_hdr_whitelist *ecm_hdr_whitelist)
 				pos += snprintf(ret + pos, maxlen - pos, "%s@%06X:", semicolon, cur->provid);
 			else
 				pos += snprintf(ret + pos, maxlen - pos, "%s", semicolon);
+
 			semicolon = ";";
 			comma = "";
 		}
@@ -664,7 +729,9 @@ char *mk_t_iprange(struct s_ip *range)
 		if(!IP_EQUAL(cip->ip[0], cip->ip[1]))  { pos += snprintf(tmp + pos, needed - pos, "-%s", cs_inet_ntoa(cip->ip[1])); }
 		dot = ",";
 	}
+
 	if(pos == 0 || !cs_malloc(&value, pos + 1)) { return ""; }
+
 	memcpy(value, tmp, pos + 1);
 	return value;
 }
@@ -686,6 +753,7 @@ char *mk_t_cltab(CLASSTAB *clstab)
 		pos += snprintf(tmp + pos, needed - pos, "%s%02x", dot, (int32_t)clstab->aclass[i]);
 		dot = ",";
 	}
+
 	for(i = 0; i < clstab->bn; ++i)
 	{
 		pos += snprintf(tmp + pos, needed - pos, "%s!%02x", dot, (int32_t)clstab->bclass[i]);
@@ -693,6 +761,7 @@ char *mk_t_cltab(CLASSTAB *clstab)
 	}
 
 	if(pos == 0 || !cs_malloc(&value, pos + 1)) { return ""; }
+
 	memcpy(value, tmp, pos + 1);
 	return value;
 }
@@ -703,12 +772,14 @@ char *mk_t_cltab(CLASSTAB *clstab)
 char *mk_t_caidvaluetab(CAIDVALUETAB *caidvaluetab)
 {
 	if (!caidvaluetab || !caidvaluetab->cvnum) return "";
+
 	// Max entry length is strlen("1234@65535,") == 11
 	int32_t i, maxlen = 12 * caidvaluetab->cvnum, pos = 0;
 	char *ret;
 	if (!cs_malloc(&ret, maxlen))
 		return "";
 	const char *comma = "";
+
 	for(i = 0; i < caidvaluetab->cvnum; i++)
 	{
 		CAIDVALUETAB_DATA *d = &caidvaluetab->cvdata[i];
@@ -716,6 +787,7 @@ char *mk_t_caidvaluetab(CAIDVALUETAB *caidvaluetab)
 			pos += snprintf(ret + pos, maxlen - pos, "%s%02X:%d", comma, d->caid, d->value);
 		else
 			pos += snprintf(ret + pos, maxlen - pos, "%s%04X:%d", comma, d->caid, d->value);
+
 		comma = ",";
 	}
 	return ret;
@@ -724,16 +796,21 @@ char *mk_t_caidvaluetab(CAIDVALUETAB *caidvaluetab)
 char *mk_t_cacheex_valuetab(CECSPVALUETAB *tab)
 {
 	if (!tab || !tab->cevnum) return "";
-	int32_t i, size = 2 + tab->cevnum * (4 + 1 + 4 + 1 + 6 + 1 + 4 + 1 + 5 + 1 + 5 + 1); //caid&mask@provid$servid:awtime:dwtime","
+
+	int32_t i, size = 2 + tab->cevnum * (4 + 1 + 4 + 1 + 6 + 1 + 4 + 1 + 5 + 1 + 5 + 1); // caid&mask@provid$servid:awtime:dwtime","
+
 	char *buf;
 	if(!cs_malloc(&buf, size))
 		{ return ""; }
+
 	char *ptr = buf;
 
 	for(i = 0; i < tab->cevnum; i++)
 	{
 		CECSPVALUETAB_DATA *d = &tab->cevdata[i];
+
 		if(i) { ptr += snprintf(ptr, size - (ptr - buf), ","); }
+
 		if(d->caid >= 0)
 		{
 			if(d->caid == 0)
@@ -741,27 +818,41 @@ char *mk_t_cacheex_valuetab(CECSPVALUETAB *tab)
 				if(d->awtime > 0)
 					{ ptr += snprintf(ptr, size - (ptr - buf), "%d", d->caid); }
 			}
-			else if(d->caid < 256)   //Do not format 0D as 000D, its a shortcut for 0Dxx:
-				{ ptr += snprintf(ptr, size - (ptr - buf), "%02X", d->caid); }
+			else if(d->caid < 256) // Do not format 0D as 000D, its a shortcut for 0Dxx:
+			{
+				ptr += snprintf(ptr, size - (ptr - buf), "%02X", d->caid);
+			}
 			else
-				{ ptr += snprintf(ptr, size - (ptr - buf), "%04X", d->caid); }
+			{
+				ptr += snprintf(ptr, size - (ptr - buf), "%04X", d->caid);
+			}
 		}
+
 		if(d->cmask >= 0)
 			{ ptr += snprintf(ptr, size - (ptr - buf), "&%04X", d->cmask); }
+
 		if(d->prid >= 0)
 			{ ptr += snprintf(ptr, size - (ptr - buf), "@%06X", d->prid); }
+
 		if(d->srvid >= 0)
 			{ ptr += snprintf(ptr, size - (ptr - buf), "$%04X", d->srvid); }
+
 		if(d->awtime > 0)
 			{ ptr += snprintf(ptr, size - (ptr - buf), ":%d", d->awtime); }
+
 		if(!(d->dwtime > 0))
 			{ ptr += snprintf(ptr, size - (ptr - buf), ":0"); }
+
 		if(d->dwtime > 0)
 		{
 			if((d->caid <= 0) && (d->prid == -1) && (d->srvid == -1) && (d->srvid == -1) && (d->awtime <= 0))
-				{ ptr += snprintf(ptr, size - (ptr - buf), "%d", d->dwtime); }
+			{
+				ptr += snprintf(ptr, size - (ptr - buf), "%d", d->dwtime);
+			}
 			else
-				{ ptr += snprintf(ptr, size - (ptr - buf), ":%d", d->dwtime); }
+			{
+				ptr += snprintf(ptr, size - (ptr - buf), ":%d", d->dwtime);
+			}
 		}
 	}
 	*ptr = 0;
@@ -772,7 +863,8 @@ char *mk_t_cacheex_valuetab(CECSPVALUETAB *tab)
 char *mk_t_cacheex_cwcheck_valuetab(CWCHECKTAB *tab)
 {
 	if(!tab || !tab->cwchecknum) { return ""; }
-	int32_t i, size = 2 + tab->cwchecknum * (4 + 1 + 4 + 1 + 6 + 1 + 4 + 1 + 5 + 1 + 5 + 1); //caid[&mask][@provid][$servid]:mode:counter","
+
+	int32_t i, size = 2 + tab->cwchecknum * (4 + 1 + 4 + 1 + 6 + 1 + 4 + 1 + 5 + 1 + 5 + 1); // caid[&mask][@provid][$servid]:mode:counter","
 	char *buf;
 	if(!cs_malloc(&buf, size))
 		{ return ""; }
@@ -783,23 +875,35 @@ char *mk_t_cacheex_cwcheck_valuetab(CWCHECKTAB *tab)
 		CWCHECKTAB_DATA *d = &tab->cwcheckdata[i];
 
 		if(i) { ptr += snprintf(ptr, size - (ptr - buf), ","); }
+
 		if(d->caid >= 0)
 		{
 			if(d->caid == 0)
-				{ ptr += snprintf(ptr, size - (ptr - buf), "%d", d->caid); }
-			else if(d->caid < 256)   //Do not format 0D as 000D, its a shortcut for 0Dxx:
-				{ ptr += snprintf(ptr, size - (ptr - buf), "%02X", d->caid); }
+			{
+				ptr += snprintf(ptr, size - (ptr - buf), "%d", d->caid);
+			}
+			else if(d->caid < 256) // Do not format 0D as 000D, its a shortcut for 0Dxx:
+			{
+				ptr += snprintf(ptr, size - (ptr - buf), "%02X", d->caid);
+			}
 			else
-				{ ptr += snprintf(ptr, size - (ptr - buf), "%04X", d->caid); }
+			{
+				ptr += snprintf(ptr, size - (ptr - buf), "%04X", d->caid);
+			}
 		}
+
 		if(d->cmask >= 0)
 			{ ptr += snprintf(ptr, size - (ptr - buf), "&%04X", d->cmask); }
+
 		if(d->prid >= 0)
 			{ ptr += snprintf(ptr, size - (ptr - buf), "@%06X", d->prid); }
+
 		if(d->srvid >= 0)
 			{ ptr += snprintf(ptr, size - (ptr - buf), "$%04X", d->srvid); }
+
 		if(d->mode >= 0)
 			{ ptr += snprintf(ptr, size - (ptr - buf), ":%d", d->mode); }
+
 		if(d->counter > 0)
 			{ ptr += snprintf(ptr, size - (ptr - buf), ":%d", d->counter); }
 	}
@@ -810,7 +914,8 @@ char *mk_t_cacheex_cwcheck_valuetab(CWCHECKTAB *tab)
 char *mk_t_cacheex_hitvaluetab(CECSPVALUETAB *tab)
 {
 	if (!tab || !tab->cevnum) return "";
-	int32_t i, size = 2 + tab->cevnum * (4 + 1 + 4 + 1 + 6 + 1 + 4 + 1); //caid&mask@provid$servid","
+
+	int32_t i, size = 2 + tab->cevnum * (4 + 1 + 4 + 1 + 6 + 1 + 4 + 1); // caid&mask@provid$servid","
 	char *buf;
 	if(!cs_malloc(&buf, size))
 		{ return ""; }
@@ -819,17 +924,26 @@ char *mk_t_cacheex_hitvaluetab(CECSPVALUETAB *tab)
 	for(i = 0; i < tab->cevnum; i++)
 	{
 		CECSPVALUETAB_DATA *d = &tab->cevdata[i];
+
 		if(i) { ptr += snprintf(ptr, size - (ptr - buf), ","); }
+
 		if(d->caid > 0)
 		{
-			if(d->caid < 256)  //Do not format 0D as 000D, its a shortcut for 0Dxx:
-				{ ptr += snprintf(ptr, size - (ptr - buf), "%02X", d->caid); }
+			if(d->caid < 256) // Do not format 0D as 000D, its a shortcut for 0Dxx:
+			{
+				ptr += snprintf(ptr, size - (ptr - buf), "%02X", d->caid);
+			}
 			else
-				{ ptr += snprintf(ptr, size - (ptr - buf), "%04X", d->caid); }
+			{
+				ptr += snprintf(ptr, size - (ptr - buf), "%04X", d->caid);
+			}
+
 			if(d->cmask >= 0)
 				{ ptr += snprintf(ptr, size - (ptr - buf), "&%04X", d->cmask); }
+
 			if(d->prid >= 0)
 				{ ptr += snprintf(ptr, size - (ptr - buf), "@%06X", d->prid); }
+
 			if(d->srvid >= 0)
 				{ ptr += snprintf(ptr, size - (ptr - buf), "$%04X", d->srvid); }
 		}
@@ -859,6 +973,7 @@ char *mk_t_emmbylen(struct s_reader *rdr)
 		else if(blocklen->min != blocklen->max)
 			{ needed += 1 + 5 + 1; } // "-" + max digits of int16 + ","
 	}
+
 	// the trailing zero is already included: it's the first ","
 	if(!cs_malloc(&value, needed))
 		{ return ""; }
@@ -873,6 +988,7 @@ char *mk_t_emmbylen(struct s_reader *rdr)
 			{ num = snprintf(pos, needed, "%s%d-", dot, blocklen->min); }
 		else
 			{ num = snprintf(pos, needed, "%s%d-%d", dot, blocklen->min, blocklen->max); }
+
 		pos += num;
 		needed -= num;
 		dot = ",";
@@ -885,7 +1001,6 @@ char *mk_t_emmbylen(struct s_reader *rdr)
  */
 char *mk_t_allowedprotocols(struct s_auth *account)
 {
-
 	if(!account->allowedprotocols)
 		{ return ""; }
 
@@ -919,62 +1034,73 @@ char *mk_t_allowedtimeframe(struct s_auth *account)
 	char *result;
 	if(!cs_malloc(&result, MAXALLOWEDTF))
 		{ return ""; }
-		
+
 	if(account->allowedtimeframe_set)
 	{
-		char 	mytime[6];
+		char mytime[6];
 		uint8_t day;
 		uint8_t value_in_day = 0;
 		uint8_t intime = 0;
 		uint16_t minutes =0;
 		uint16_t hours;
-		char	septime[2] = {'\0'};
-		char	sepday[2] = {'\0'};
-		
-		for(day=0;day<SIZE_SHORTDAY;day++) {
-			for(hours=0;hours<24;hours++) {
-				for(minutes=0;minutes<60;minutes++) {
-					if(CHECK_BIT(account->allowedtimeframe[day][hours][minutes/30],(minutes % 30))) {
-							if(value_in_day == 0) {
-							strcat(result,&sepday[0]);
-							strcat(result,shortDay[day]);
-							strcat(result,"@");
+		char septime[2] = {'\0'};
+		char sepday[2] = {'\0'};
+
+		for(day = 0; day < SIZE_SHORTDAY; day++)
+		{
+			for(hours = 0; hours < 24; hours++)
+			{
+				for(minutes = 0; minutes < 60; minutes++)
+				{
+					if(CHECK_BIT(account->allowedtimeframe[day][hours][minutes / 30], (minutes % 30)))
+					{
+						if(value_in_day == 0)
+						{
+							strcat(result, &sepday[0]);
+							strcat(result, shortDay[day]);
+							strcat(result, "@");
 							value_in_day = 1;
-							intime=0;
-							sepday[0]=';';
-							septime[0]='\0';
+							intime = 0;
+							sepday[0] = ';';
+							septime[0] = '\0';
 						}
-						if(!intime) {
-							strcat(result,&septime[0]);
-							snprintf(mytime,6,"%02d:%02d", hours, minutes);
-							strcat(result,mytime);
-							strcat(result,"-");
-							septime[0]=',';
-							intime=1;
+
+						if(!intime)
+						{
+							strcat(result, &septime[0]);
+							snprintf(mytime, 6, "%02d:%02d", hours, minutes);
+							strcat(result, mytime);
+							strcat(result, "-");
+							septime[0] = ',';
+							intime = 1;
 						}
+
 						// Special case 23H59 is enabled we close the day at 24H00
-						if(((hours*60)+minutes)==1439) {
-							strcat(result,"24:00");
-							intime=0;
-							septime[0]='\0';
+						if(((hours * 60) + minutes) == 1439)
+						{
+							strcat(result, "24:00");
+							intime = 0;
+							septime[0] = '\0';
 							value_in_day = 0;
 						}
 					}
-					else if(intime) {
-							snprintf(mytime,6,"%02d:%02d", hours, minutes);
-							strcat(result,mytime);
-							septime[0]=',';
-							intime=0;
-						}
-				}	
+					else if(intime)
+					{
+						snprintf(mytime, 6, "%02d:%02d", hours, minutes);
+						strcat(result, mytime);
+						septime[0] = ',';
+						intime = 0;
+					}
+				}
 			}
 			value_in_day = 0;
 		}
 	}
-	else {
-		result="";
+	else
+	{
+		result = "";
 	}
-	return result; 
+	return result;
 }
 
 /*

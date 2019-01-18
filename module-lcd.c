@@ -215,12 +215,12 @@ static void refresh_lcd_file(void)
 				seconds = now - cl->lastecm;
 
 				if(cl->typ == 'c' && seconds < 15)
-				{		
+				{
 					type = "U";
 					idx = count_u;
 					label = cl->account->usr;
 					count_u++;
-							
+
 					get_servicename(cl, cl->last_srvid, cl->last_provid, cl->last_caid, channame, sizeof(channame));
 					fprintf(fpsave, "%s%d | %-10.10s | %-10.10s:%-17.17s| % 4d\n",
 							type,

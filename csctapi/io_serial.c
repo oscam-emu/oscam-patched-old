@@ -367,7 +367,7 @@ void IO_Serial_Flush(struct s_reader *reader)
 	struct timeb starttotal, endtotal;
 	struct timeb start, end;
 	cs_ftimeus(&starttotal);
-	endtotal = starttotal; 
+	endtotal = starttotal;
 	cs_ftimeus(&start);
 	end = start;
 	int64_t gone = 0;

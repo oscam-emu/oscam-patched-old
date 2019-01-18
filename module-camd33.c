@@ -9,7 +9,7 @@
 #include "oscam-net.h"
 #include "oscam-string.h"
 
-#define REQ_SIZE    4
+#define REQ_SIZE 4
 
 static int32_t camd33_send(uchar *buf, int32_t ml)
 {
@@ -128,7 +128,7 @@ static void camd33_send_dcw(struct s_client *UNUSED(client), ECM_REQUEST *er)
 
 static void camd33_process_ecm(uchar *buf, int32_t l)
 {
-	ECM_REQUEST *er;	
+	ECM_REQUEST *er;
 	if(l < 7)
 		{ return; }
 	if(!(er = get_ecmtask()))

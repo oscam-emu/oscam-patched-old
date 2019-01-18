@@ -155,26 +155,30 @@
 #define GRIFFIN_CMD_SEND_ECM          0x16
 #define GRIFFIN_CMD_SUBSCRIPTION_INFO 0x20
 
-#define cmd_buf_len  512
+#define cmd_buf_len 512
 
 struct griffin_data
 {
-	uint8_t         cmd_base; // Command base, depends on the card
+	uint8_t cmd_base; // Command base, depends on the card
 };
 
 // Sets cmd_buf and returns buf_len
 static uint32_t griffin_init_cmd(struct s_reader *rdr, uint8_t *cmd_buf, uint8_t cmd_op, const uint8_t *data, uint8_t data_len)
 {
 #define cmd_len 5
+
 	memset(cmd_buf, 0, cmd_buf_len);
 	cmd_buf[0] = 0xDC; // Command start
 	cmd_buf[1] = cmd_op;
 	cmd_buf[2] = 0x00;
 	cmd_buf[3] = 0x00;
 	cmd_buf[4] = data_len; // Set payload length
+
 	if(data && data_len)
 		{ memcpy(cmd_buf + cmd_len, data, data_len); }
+
 	uint32_t len = cmd_len + (data ? data_len : 0);
+
 	if(DEBUG)
 	{
 		char tmp[1024];
@@ -188,43 +192,43 @@ static int32_t griffin_exec_cmd(struct s_reader *rdr, uint8_t cmd_op, const uint
 	struct griffin_data *csystem_data = rdr->csystem_data;
 	uint8_t buf[cmd_buf_len];
 
-	int32_t ret = reader_cmd2icc(rdr, buf,
-								 griffin_init_cmd(rdr, buf, csystem_data->cmd_base + cmd_op, data, data_len),
-								 response, response_length);
+	int32_t ret = reader_cmd2icc(rdr, buf, griffin_init_cmd(rdr, buf, csystem_data->cmd_base + cmd_op,
+							data, data_len), response, response_length);
+
 	if(DEBUG)
 	{
 		char tmp[1024];
 		rdr_log(rdr, "RECV[1] <- %s (ret=%d resp_len=%d)", cs_hexdump(1, response, *response_length, tmp, sizeof(tmp)), ret, *response_length);
 	}
-	if(ret || *response_length < 2) { return ERROR; }  // Response is two short
-	if(response[0] != 0x90)         { return ERROR; }  // Invalid response
-	if(response[1] == 0)            { return OK; }     // Nothing to retrieve, command OK
+
+	if(ret || *response_length < 2) { return ERROR; } // Response is two short
+	if(response[0] != 0x90)         { return ERROR; } // Invalid response
+	if(response[1] == 0)            { return OK; }    // Nothing to retrieve, command OK
 
 	// Retrieve response
 	uint8_t cmd_read_response = 0x02;
 	if(csystem_data->cmd_base > 0x10)
 		{ cmd_read_response += csystem_data->cmd_base - 0x10; }
 
-	ret = reader_cmd2icc(rdr, buf,
-						 griffin_init_cmd(rdr, buf, cmd_read_response, NULL, response[1]),
-						 response, response_length);
+	ret = reader_cmd2icc(rdr, buf, griffin_init_cmd(rdr, buf, cmd_read_response, NULL, response[1]), response, response_length);
 
 	if(DEBUG)
 	{
 		char tmp[1024];
 		rdr_log(rdr, "RECV[2] <- %s (ret=%d resp_len=%d)", cs_hexdump(1, response, *response_length, tmp, sizeof(tmp)), ret, *response_length);
 	}
-	if(ret || *response_length < 2)            { return ERROR; }  // Response is two short
-	if(response[*response_length - 2] != 0x90) { return ERROR; }  // Invalid response
-	if(response[*response_length - 1] != 0x00) { return ERROR; }  // We don't expect command_op 0x12 to return more data
+
+	if(ret || *response_length < 2)            { return ERROR; } // Response is two short
+	if(response[*response_length - 2] != 0x90) { return ERROR; } // Invalid response
+	if(response[*response_length - 1] != 0x00) { return ERROR; } // We don't expect command_op 0x12 to return more data
 	return OK;
 }
 
 #define griffin_cmd(_cmd_op, _data, _data_len, _min_resp_len) \
-    do { \
-        if (!griffin_exec_cmd(rdr, _cmd_op, _data, _data_len, cta_res, &cta_lr) || cta_lr < _min_resp_len) \
-            return ERROR; \
-    } while(0)
+	do { \
+		if (!griffin_exec_cmd(rdr, _cmd_op, _data, _data_len, cta_res, &cta_lr) || cta_lr < _min_resp_len) \
+			return ERROR; \
+	} while(0)
 
 static int32_t griffin_card_init(struct s_reader *rdr, ATR *newatr)
 {
@@ -233,15 +237,22 @@ static int32_t griffin_card_init(struct s_reader *rdr, ATR *newatr)
 	def_resp
 
 	if(atr_size < 10)
-		{ return ERROR; }
+	{
+		return ERROR;
+	}
 
 	//       0  1  2  3  4  5  6  7  8  9
 	// ATR: 3B 08 yy 01 xx xx xx xx 10 00
 	if(atr[0] != 0x3b || atr[1] != 0x08 || atr[3] != 0x01 || atr[9] != 0x00)
-		{ return ERROR; }
+	{
+		return ERROR;
+	}
 
 	if(!cs_malloc(&rdr->csystem_data, sizeof(struct griffin_data)))
-		{ return ERROR; }
+	{
+		return ERROR;
+	}
+
 	struct griffin_data *csystem_data = rdr->csystem_data;
 
 	rdr->nprov = 1;
@@ -254,10 +265,7 @@ static int32_t griffin_card_init(struct s_reader *rdr, ATR *newatr)
 	csystem_data->cmd_base = atr[8];
 
 	rdr_log_sensitive(rdr, "[griffin-reader] card detected, cmd_base: %02X caid: %04X hexserial: {%02X %02X %02X %02X}",
-					  csystem_data->cmd_base,
-					  rdr->caid,
-					  rdr->hexserial[0], rdr->hexserial[1], rdr->hexserial[2], rdr->hexserial[3]
-					 );
+			csystem_data->cmd_base, rdr->caid, rdr->hexserial[0], rdr->hexserial[1], rdr->hexserial[2], rdr->hexserial[3]);
 
 	griffin_cmd(GRIFFIN_CMD_INIT, NULL, 0, 2);
 	csystem_data->cmd_base = cta_res[2]; // already set from ATR
@@ -274,10 +282,13 @@ static int32_t griffin_card_init(struct s_reader *rdr, ATR *newatr)
 	rdr->caid = (cta_res[2] << 8) | cta_res[3];
 
 	griffin_cmd(GRIFFIN_CMD_GET_CARD_ADDRESS, NULL, 0, 48);
+
 	for(i = 1 ; i < CS_MAXPROV; i++)
 	{
 		if(3 + (i * 16) + 4 > cta_lr)
-			{ break; }
+		{
+			break;
+		}
 		memcpy(rdr->sa[i - 1], cta_res + 3 + (i * 16), 4);
 	}
 
@@ -293,9 +304,8 @@ static int32_t griffin_card_init(struct s_reader *rdr, ATR *newatr)
 		if(array_has_nonzero_byte(rdr->sa[i], 4))
 		{
 			rdr_log_sensitive(rdr, "CAID: 0x%04X, Serial: {%s}, HexSerial: {%02X %02X %02X %02X} Addr: {%02X %02X %02X %02X}",
-							  rdr->caid, serial,
-							  rdr->hexserial[0], rdr->hexserial[1], rdr->hexserial[2], rdr->hexserial[3],
-							  rdr->sa[i][0], rdr->sa[i][1], rdr->sa[i][2], rdr->sa[i][3]);
+					rdr->caid, serial, rdr->hexserial[0], rdr->hexserial[1], rdr->hexserial[2], rdr->hexserial[3],
+					rdr->sa[i][0], rdr->sa[i][1], rdr->sa[i][2], rdr->sa[i][3]);
 		}
 	}
 
@@ -316,28 +326,32 @@ static int32_t griffin_get_emm_type(EMM_PACKET *ep, struct s_reader *rdr)
 	memcpy(ep->hexserial, ep->emm + 3, 4);
 	switch(ep->emm[0])
 	{
-	case 0x82:
-	case 0x83:
-		if(memcmp(ep->hexserial, rdr->sa[0], 4) == 0)
-		{
-			if(DEBUG)
-				rdr_log_sensitive(rdr, "SHARED EMM TYPE:%02X SA:{%02X %02X %02X %02X}",
-								  ep->emm[0], ep->emm[3], ep->emm[4], ep->emm[5], ep->emm[6]);
-			ep->type = SHARED;
-		}
-		if(memcmp(ep->hexserial, rdr->sa[1], 4) == 0)
-		{
-			if(DEBUG)
-				rdr_log_sensitive(rdr, "UNIQUE EMM TYPE:%02X SA:{%02X %02X %02X %02X}",
-								  ep->emm[0], ep->emm[3], ep->emm[4], ep->emm[5], ep->emm[6]);
-			ep->type = UNIQUE;
-		}
-		break;
-	default:
-		ep->type = UNKNOWN;
-		rdr_log_dbg(rdr, D_EMM, "UNKNOWN EMM TYPE:%02X SA:%02X %02X %02X %02X",
-					   ep->emm[0],
-					   ep->emm[3], ep->emm[4], ep->emm[5], ep->emm[6]);
+		case 0x82:
+		case 0x83:
+			if(memcmp(ep->hexserial, rdr->sa[0], 4) == 0)
+			{
+				if(DEBUG)
+				{
+					rdr_log_sensitive(rdr, "SHARED EMM TYPE:%02X SA:{%02X %02X %02X %02X}",
+									ep->emm[0], ep->emm[3], ep->emm[4], ep->emm[5], ep->emm[6]);
+				}
+				ep->type = SHARED;
+			}
+			if(memcmp(ep->hexserial, rdr->sa[1], 4) == 0)
+			{
+				if(DEBUG)
+				{
+					rdr_log_sensitive(rdr, "UNIQUE EMM TYPE:%02X SA:{%02X %02X %02X %02X}",
+									ep->emm[0], ep->emm[3], ep->emm[4], ep->emm[5], ep->emm[6]);
+				}
+				ep->type = UNIQUE;
+			}
+			break;
+
+		default:
+			ep->type = UNKNOWN;
+			rdr_log_dbg(rdr, D_EMM, "UNKNOWN EMM TYPE:%02X SA:%02X %02X %02X %02X",
+						ep->emm[0], ep->emm[3], ep->emm[4], ep->emm[5], ep->emm[6]);
 	}
 	return OK;
 }
@@ -355,7 +369,9 @@ static int32_t griffin_get_emm_filter(struct s_reader *rdr, struct s_csystem_emm
 	{
 		const unsigned int max_filter_count = 4;
 		if(!cs_malloc(emm_filters, max_filter_count * sizeof(struct s_csystem_emm_filter)))
-			{ return ERROR; }
+		{
+			return ERROR;
+		}
 
 		struct s_csystem_emm_filter *filters = *emm_filters;
 		*filter_count = 0;
@@ -363,59 +379,59 @@ static int32_t griffin_get_emm_filter(struct s_reader *rdr, struct s_csystem_emm
 		int32_t idx = 0;
 
 		filters[idx].type = EMM_SHARED;
-		filters[idx].enabled   = 1;
+		filters[idx].enabled = 1;
 		filters[idx].filter[0] = 0x82;
 		filters[idx].filter[1] = rdr->sa[0][0];
 		filters[idx].filter[2] = rdr->sa[0][1];
 		filters[idx].filter[3] = rdr->sa[0][2];
 		filters[idx].filter[4] = rdr->sa[0][3];
-		filters[idx].mask[0]   = 0xFF;
-		filters[idx].mask[1]   = 0xFF;
-		filters[idx].mask[2]   = 0xFF;
-		filters[idx].mask[3]   = 0xFF;
-		filters[idx].mask[4]   = 0xFF;
+		filters[idx].mask[0] = 0xFF;
+		filters[idx].mask[1] = 0xFF;
+		filters[idx].mask[2] = 0xFF;
+		filters[idx].mask[3] = 0xFF;
+		filters[idx].mask[4] = 0xFF;
 		idx++;
 
 		filters[idx].type = EMM_SHARED;
-		filters[idx].enabled   = 1;
+		filters[idx].enabled = 1;
 		filters[idx].filter[0] = 0x82;
 		filters[idx].filter[1] = rdr->sa[1][0];
 		filters[idx].filter[2] = rdr->sa[1][1];
 		filters[idx].filter[3] = rdr->sa[1][2];
 		filters[idx].filter[4] = rdr->sa[1][3];
-		filters[idx].mask[0]   = 0xFF;
-		filters[idx].mask[1]   = 0xFF;
-		filters[idx].mask[2]   = 0xFF;
-		filters[idx].mask[3]   = 0xFF;
-		filters[idx].mask[4]   = 0xFF;
+		filters[idx].mask[0] = 0xFF;
+		filters[idx].mask[1] = 0xFF;
+		filters[idx].mask[2] = 0xFF;
+		filters[idx].mask[3] = 0xFF;
+		filters[idx].mask[4] = 0xFF;
 		idx++;
 
 		filters[idx].type = EMM_UNIQUE;
-		filters[idx].enabled   = 1;
+		filters[idx].enabled = 1;
 		filters[idx].filter[0] = 0x83;
 		filters[idx].filter[1] = rdr->sa[0][0];
 		filters[idx].filter[2] = rdr->sa[0][1];
 		filters[idx].filter[3] = rdr->sa[0][2];
 		filters[idx].filter[4] = rdr->sa[0][3];
-		filters[idx].mask[0]   = 0xF0;
-		filters[idx].mask[1]   = 0xFF;
-		filters[idx].mask[2]   = 0xFF;
-		filters[idx].mask[3]   = 0xFF;
-		filters[idx].mask[4]   = 0xFF;
+		filters[idx].mask[0] = 0xF0;
+		filters[idx].mask[1] = 0xFF;
+		filters[idx].mask[2] = 0xFF;
+		filters[idx].mask[3] = 0xFF;
+		filters[idx].mask[4] = 0xFF;
 		idx++;
 
 		filters[idx].type = EMM_UNIQUE;
-		filters[idx].enabled   = 1;
+		filters[idx].enabled = 1;
 		filters[idx].filter[0] = 0x83;
 		filters[idx].filter[1] = rdr->sa[1][0];
 		filters[idx].filter[2] = rdr->sa[1][1];
 		filters[idx].filter[3] = rdr->sa[1][2];
 		filters[idx].filter[4] = rdr->sa[1][3];
-		filters[idx].mask[0]   = 0xF0;
-		filters[idx].mask[1]   = 0xFF;
-		filters[idx].mask[2]   = 0xFF;
-		filters[idx].mask[3]   = 0xFF;
-		filters[idx].mask[4]   = 0xFF;
+		filters[idx].mask[0] = 0xF0;
+		filters[idx].mask[1] = 0xFF;
+		filters[idx].mask[2] = 0xFF;
+		filters[idx].mask[3] = 0xFF;
+		filters[idx].mask[4] = 0xFF;
 		idx++;
 
 		*filter_count = idx;
@@ -431,7 +447,8 @@ static int32_t griffin_card_info(struct s_reader *rdr)
 	rdr_log(rdr, "Reading subscription info.");
 
 	griffin_cmd(GRIFFIN_CMD_SUBSCRIPTION_INFO, NULL, 0, 16);
-	if(cta_res[0] == 0x0b)    // Old cards
+
+	if(cta_res[0] == 0x0b) // Old cards
 	{
 		for(i = 0; i < cta_lr - 8; i += 9)
 		{
@@ -440,7 +457,7 @@ static int32_t griffin_card_info(struct s_reader *rdr)
 					cta_res[i + 5], cta_res[i + 6], cta_res[i + 7]);
 		}
 	}
-	else if(cta_res[0] == 0x1b)      // Newer cards
+	else if(cta_res[0] == 0x1b) // Newer cards
 	{
 		for(i = 0; i < cta_lr; i += 4)
 		{

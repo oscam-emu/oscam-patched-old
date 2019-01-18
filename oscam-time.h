@@ -30,7 +30,6 @@ void cs_gettime(struct timespec *ts);
 
 enum clock_type cs_getclocktype(void);
 
-
 void __cs_pthread_cond_init(const char *n, pthread_cond_t *cond);
 void cs_pthread_cond_init(const char *n, pthread_mutex_t *mutex, pthread_cond_t *cond);
 

@@ -15,15 +15,15 @@
 
 extern uint16_t len4caid[256];
 
-#define cs_srid             "oscam.srvid"
-#define cs_ratelimit        "oscam.ratelimit"
-#define cs_trid             "oscam.tiers"
-#define cs_l4ca             "oscam.guess"
-#define cs_sidt             "oscam.services"
-#define cs_whitelist        "oscam.whitelist"
-#define cs_provid           "oscam.provid"
-#define cs_fakecws          "oscam.fakecws"
-#define cs_twin             "oscam.twin"
+#define cs_srid      "oscam.srvid"
+#define cs_ratelimit "oscam.ratelimit"
+#define cs_trid      "oscam.tiers"
+#define cs_l4ca      "oscam.guess"
+#define cs_sidt      "oscam.services"
+#define cs_whitelist "oscam.whitelist"
+#define cs_provid    "oscam.provid"
+#define cs_fakecws   "oscam.fakecws"
+#define cs_twin      "oscam.twin"
 
 uint32_t cfg_sidtab_generation = 1;
 
@@ -296,7 +296,7 @@ int32_t init_provid(void)
 		int32_t i, l;
 		struct s_provid *new_provid = NULL;
 		char *tmp, *ptr1;
-		
+
 		tmp = trim(token);
 
 		if(tmp[0] == '#') { continue; }
@@ -304,23 +304,23 @@ int32_t init_provid(void)
 		if(!(payload = strchr(token, '|'))) { continue; }
 
 		*payload++ = '\0';
-		
+
 		if(!cs_malloc(&new_provid, sizeof(struct s_provid)))
 		{
 			NULLFREE(token);
 			fclose(fp);
 			return (1);
 		}
-				
+
 		new_provid->nprovid = 0;
 		for(i = 0, ptr1 = strtok_r(token, ":@", &saveptr1); ptr1; ptr1 = strtok_r(NULL, ":@", &saveptr1), i++)
 		{
 			if(i==0)
 			{
 				new_provid->caid = a2i(ptr1, 3);
-				continue;	
+				continue;
 			}
-			
+
 			new_provid->nprovid++;
 		}
 
@@ -336,10 +336,10 @@ int32_t init_provid(void)
 		for(i = 0; i < new_provid->nprovid ; i++)
 		{
 			new_provid->provid[i] = a2i(ptr1, 3);
-			
+
 			ptr1 = ptr1 + strlen(ptr1) + 1;
 		}
-		
+
 		for(i = 0, ptr1 = strtok_r(payload, "|", &saveptr1); ptr1; ptr1 = strtok_r(NULL, "|", &saveptr1), i++)
 		{
 			switch(i)
@@ -355,46 +355,46 @@ int32_t init_provid(void)
 				break;
 			}
 		}
-		
+
 		if(strlen(new_provid->prov) == 0)
 		{
 			NULLFREE(new_provid->provid);
 			NULLFREE(new_provid);
 			continue;
 		}
-		
+
 		nr++;
-				
+
 		if(provid_ptr)
 		{
 			provid_ptr->next = new_provid;
 		}
 		else
-		{ 
+		{
 			new_cfg_provid = new_provid;
-		}	
+		}
 		provid_ptr = new_provid;
 	}
-	
+
 	NULLFREE(token);
 	fclose(fp);
-	
+
 	if(nr > 0)
 		{ cs_log("%d provid's loaded", nr); }
-	
+
 	if(new_cfg_provid == NULL)
 	{
 		if(!cs_malloc(&new_cfg_provid, sizeof(struct s_provid)))
 		{
 			return (1);
-		}		
+		}
 	}
-	
+
 	cs_writelock(__func__, &config_lock);
-	
-	//this allows reloading of provids, so cleanup of old data is needed:
-	last_provid = cfg.provid; //old data
-	cfg.provid = new_cfg_provid; //assign after loading, so everything is in memory
+
+	// this allows reloading of provids, so cleanup of old data is needed:
+	last_provid = cfg.provid; // old data
+	cfg.provid = new_cfg_provid; // assign after loading, so everything is in memory
 
 	cs_writeunlock(__func__, &config_lock);
 
@@ -403,11 +403,11 @@ int32_t init_provid(void)
 		{ cl->last_providptr = NULL; }
 
 	struct s_provid *ptr, *nptr;
-	
+
 	if(last_provid)
 	{
 		ptr = last_provid;
-		while(ptr)    //cleanup old data:
+		while(ptr) // cleanup old data:
 		{
 			add_garbage(ptr->provid);
 			nptr = ptr->next;
@@ -415,7 +415,7 @@ int32_t init_provid(void)
 			ptr = nptr;
 		}
 	}
-			
+
 	return (0);
 }
 
@@ -424,7 +424,7 @@ int32_t init_srvid(void)
 	int8_t new_syntax = 1;
 	FILE *fp = open_config_file("oscam.srvid2");
 	if(!fp)
-	{ 
+	{
 		fp = open_config_file(cs_srid);
 		if(fp)
 		{
@@ -433,13 +433,13 @@ int32_t init_srvid(void)
 	}
 
 	if(!fp)
-	{ 
+	{
 		fp = create_config_file("oscam.srvid2");
 		if(fp)
 		{
 			flush_config_file(fp, "oscam.srvid2");
 		}
-		
+
 		return 0;
 	}
 
@@ -473,7 +473,7 @@ int32_t init_srvid(void)
 		if(!(srvidasc = strchr(token, ':'))) { continue; }
 		if(!(payload = strchr(token, '|'))) { continue; }
 		*payload++ = '\0';
-		
+
 		if(!cs_malloc(&srvid, sizeof(struct s_srvid)))
 		{
 			NULLFREE(token);
@@ -488,7 +488,7 @@ int32_t init_srvid(void)
 		const char *searchptr[4] = { NULL, NULL, NULL, NULL };
 		const char **ptrs[4] = { &srvid->prov, &srvid->name, &srvid->type, &srvid->desc };
 		uint32_t max_payload_length = MAXLINESIZE - (payload - token);
-		
+
 		if(new_syntax)
 		{
 			ptrs[0] = &srvid->name;
@@ -496,30 +496,30 @@ int32_t init_srvid(void)
 			ptrs[2] = &srvid->desc;
 			ptrs[3] = &srvid->prov;
 		}
-		
+
 		// allow empty strings as "||"
-		if(payload[0] == '|' && (strlen(payload)+2 < max_payload_length))
+		if(payload[0] == '|' && (strlen(payload) + 2 < max_payload_length))
 		{
 			memmove(payload+1, payload, strlen(payload)+1);
 			payload[0] = ' ';
 		}
-		
-		for(k=1; ((k < max_payload_length) && (payload[k] != '\0')); k++)
+
+		for(k = 1; ((k < max_payload_length) && (payload[k] != '\0')); k++)
 		{
-			if(payload[k-1] == '|' && payload[k] == '|')
+			if(payload[k - 1] == '|' && payload[k] == '|')
 			{
-				if(strlen(payload+k)+2 < max_payload_length-k)
+				if(strlen(payload + k) + 2 < max_payload_length-k)
 				{
-					memmove(payload+k+1, payload+k, strlen(payload+k)+1);
+					memmove(payload + k + 1, payload + k, strlen(payload + k) + 1);
 					payload[k] = ' ';
 				}
 				else
 				{
 					break;
-				}	
+				}
 			}
 		}
-	
+
 		for(i = 0, ptr1 = strtok_r(payload, "|", &saveptr1); ptr1 && (i < 4) ; ptr1 = strtok_r(NULL, "|", &saveptr1), ++i)
 		{
 			// check if string is in cache
@@ -589,7 +589,7 @@ int32_t init_srvid(void)
 			{ srvidtmp = dyn_word_atob(token) & 0xFFFF; }
 		else
 			{ srvidtmp = dyn_word_atob(srvidasc) & 0xFFFF; }
-			
+
 		if(srvidtmp < 0)
 		{
 			NULLFREE(tmpptr);
@@ -599,28 +599,28 @@ int32_t init_srvid(void)
 		else
 		{
 			srvid->srvid = srvidtmp;
-		}		
-		
+		}
+
 		srvid->ncaid = 0;
 		for(i = 0, ptr1 = strtok_r(new_syntax ? srvidasc : token, ",", &saveptr1); (ptr1); ptr1 = strtok_r(NULL, ",", &saveptr1), i++)
 		{
 			srvid->ncaid++;
 		}
-		
+
 		if(!cs_malloc(&srvid->caid, sizeof(struct s_srvid_caid) * srvid->ncaid))
 		{
 			NULLFREE(tmpptr);
 			NULLFREE(srvid);
 			return 0;
 		}
-		
+
 		ptr1 = new_syntax ? srvidasc : token;
 		for(i = 0; i < srvid->ncaid; i++)
 		{
 			prov = strchr(ptr1,'@');
-						
+
 			srvid->caid[i].nprovid = 0;
-			
+
 			if(prov)
 			{
 				if(prov[1] != '\0')
@@ -629,19 +629,19 @@ int32_t init_srvid(void)
 					{
 						srvid->caid[i].nprovid++;
 					}
-		    		
+
 					if(!cs_malloc(&srvid->caid[i].provid, sizeof(uint32_t) * srvid->caid[i].nprovid))
 					{
 						for(j = 0; j < i; j++)
-							{ NULLFREE(srvid->caid[j].provid); } 
+							{ NULLFREE(srvid->caid[j].provid); }
 						NULLFREE(srvid->caid);
 						NULLFREE(tmpptr);
 						NULLFREE(srvid);
 						return 0;
 					}
-					
-					ptr2 = prov+1;
-					for(j = 0;  j < srvid->caid[i].nprovid; j++)
+
+					ptr2 = prov + 1;
+					for(j = 0; j < srvid->caid[i].nprovid; j++)
 					{
 						srvid->caid[i].provid[j] = dyn_word_atob(ptr2) & 0xFFFFFF;
 						ptr2 = ptr2 + strlen(ptr2) + 1;
@@ -649,19 +649,19 @@ int32_t init_srvid(void)
 				}
 				else
 				{
-					ptr2 = prov+2;
+					ptr2 = prov + 2;
 				}
-				
+
 				prov[0] = '\0';
 			}
 
 			srvid->caid[i].caid = dyn_word_atob(ptr1) & 0xFFFF;
 			if(prov)
 				{ ptr1 = ptr2; }
-			else 
+			else
 				{ ptr1 = ptr1 + strlen(ptr1) + 1; }
 		}
-			
+
 		nr++;
 
 		if(new_cfg_srvid[srvid->srvid >> 12])
@@ -692,7 +692,7 @@ int32_t init_srvid(void)
 	}
 
 	cs_writelock(__func__, &config_lock);
-	//this allows reloading of srvids, so cleanup of old data is needed:
+	// this allows reloading of srvids, so cleanup of old data is needed:
 	memcpy(last_srvid, cfg.srvid, sizeof(last_srvid));  //old data
 	memcpy(cfg.srvid, new_cfg_srvid, sizeof(last_srvid));   //assign after loading, so everything is in memory
 
@@ -703,11 +703,11 @@ int32_t init_srvid(void)
 		{ cl->last_srvidptr = NULL; }
 
 	struct s_srvid *ptr, *nptr;
-	
+
 	for(i = 0; i < 16; i++)
 	{
 		ptr = last_srvid[i];
-		while(ptr)    //cleanup old data:
+		while(ptr) // cleanup old data:
 		{
 			for(j = 0; j < ptr->ncaid; j++)
 				{ add_garbage(ptr->caid[j].provid); }
@@ -726,7 +726,7 @@ int32_t init_fakecws(void)
 {
 	int32_t nr = 0, i, j, idx;
 	uint32_t alloccount[0x100], count[0x100], tmp, max_compares = 0, average_compares = 0;
-	char *token, cw_string[64]; 
+	char *token, cw_string[64];
 	uint8_t cw[16], wrong_checksum, c, have_fakecw = 0;
 	FILE *fp;
 
@@ -734,20 +734,20 @@ int32_t init_fakecws(void)
 	memset(count, 0, sizeof(alloccount));
 
 	cs_writelock(__func__, &config_lock);
-	for(i=0; i<0x100; i++)
+	for(i = 0; i < 0x100; i++)
 	{
 		cfg.fakecws[i].count = 0;
 		NULLFREE(cfg.fakecws[i].data);
 	}
 	cs_writeunlock(__func__, &config_lock);
-	
+
 	fp = open_config_file(cs_fakecws);
 	if(!fp)
 		{ return 0; }
-	
+
 	if(!cs_malloc(&token, MAXLINESIZE))
 		{ return 0; }
-	
+
 	while(fgets(token, MAXLINESIZE, fp))
 	{
 		if(sscanf(token, " %62s ", cw_string) == 1)
@@ -757,7 +757,7 @@ int32_t init_fakecws(void)
 				if(cs_atob(cw, cw_string, 16) == 16)
 				{
 					wrong_checksum = 0;
-					
+
 					for(i = 0; i < 16; i += 4)
 					{
 						c = ((cw[i] + cw[i + 1] + cw[i + 2]) & 0xff);
@@ -766,14 +766,14 @@ int32_t init_fakecws(void)
 							wrong_checksum = 1;
 						}
 					}
-					
+
 					if(wrong_checksum)
 					{
 						cs_log("skipping fake cw %s because of wrong checksum!", cw_string);
 					}
 					else
 					{
-						idx = ((cw[0]&0xF)<<4) | (cw[8]&0xF);
+						idx = ((cw[0] & 0xF) << 4) | (cw[8] & 0xF);
 						alloccount[idx]++;
 						have_fakecw = 1;
 					}
@@ -797,14 +797,14 @@ int32_t init_fakecws(void)
 		return 0;
 	}
 
-	for(i=0; i<0x100; i++)
+	for(i = 0; i < 0x100; i++)
 	{
 		if(alloccount[i] && !cs_malloc(&cfg.fakecws[i].data, sizeof(struct s_cw)*alloccount[i]))
 		{
 			alloccount[i] = 0;
 		}
 	}
-	
+
 	fseek(fp, 0, SEEK_SET);
 
 	while(fgets(token, MAXLINESIZE, fp))
@@ -816,7 +816,7 @@ int32_t init_fakecws(void)
 				if(cs_atob(cw, cw_string, 16) == 16)
 				{
 					wrong_checksum = 0;
-					
+
 					for(i = 0; i < 16; i += 4)
 					{
 						c = ((cw[i] + cw[i + 1] + cw[i + 2]) & 0xff);
@@ -825,11 +825,11 @@ int32_t init_fakecws(void)
 							wrong_checksum = 1;
 						}
 					}
-					
+
 					if(!wrong_checksum)
 					{
-						idx = ((cw[0]&0xF)<<4) | (cw[8]&0xF);
-						
+						idx = ((cw[0] & 0xF) << 4) | (cw[8] & 0xF);
+
 						if(count[idx] < alloccount[idx])
 						{
 							memcpy(cfg.fakecws[idx].data[count[idx]].cw, cw, 16);
@@ -841,42 +841,45 @@ int32_t init_fakecws(void)
 			}
 		}
 	}
-	
+
 	NULLFREE(token);
 	fclose(fp);
-	
+
 	if(nr > 0)
 		{ cs_log("%d fakecws's loaded", nr); }
-		
-	
+
+
 	cs_writelock(__func__, &config_lock);
-	for(i=0; i<0x100; i++)
+	for(i = 0; i < 0x100; i++)
 	{
 		cfg.fakecws[i].count = count[i];
 	}
 	cs_writeunlock(__func__, &config_lock);
-	
-	
-	for(i=0; i<0x100; i++)
+
+
+	for(i = 0; i < 0x100; i++)
 	{
 		if(count[i] > max_compares)
 			{ max_compares = count[i]; }
 	}
-	
-	for(i=0; i<(0x100-1); i++) {
-		for(j=i+1; j<0x100; j++) {
-			if(count[j] < count[i]) {
+
+	for(i = 0; i < (0x100 - 1); i++)
+	{
+		for(j = i + 1; j < 0x100; j++)
+		{
+			if(count[j] < count[i])
+			{
 				tmp = count[i];
 				count[i] = count[j];
 				count[j] = tmp;
 			}
 		}
 	}
-    average_compares = ((count[0x100/2] + count[0x100/2 - 1]) / 2);
+	average_compares = ((count[0x100 / 2] + count[0x100 / 2 - 1]) / 2);
 
 
 	cs_log("max %d fakecw compares required, on average: %d compares", max_compares, average_compares);
-			
+
 	return 0;
 }
 
@@ -924,8 +927,8 @@ static struct s_rlimit *ratelimit_read_int(void)
 		}
 
 		count++;
-		if (ratelimittime < 60) ratelimittime *=1000;
-		if (srvidholdtime < 60) srvidholdtime *=1000;
+		if (ratelimittime < 60) ratelimittime *= 1000;
+		if (srvidholdtime < 60) srvidholdtime *= 1000;
 		entry->rl.caid = caid;
 		entry->rl.provid = provid;
 		entry->rl.srvid = srvid;
@@ -935,7 +938,7 @@ static struct s_rlimit *ratelimit_read_int(void)
 		entry->rl.srvidholdtime = srvidholdtime;
 
 		cs_log_dbg(D_TRACE, "ratelimit: %04X@%06X:%04X:%04X:%d:%d:%d", entry->rl.caid, entry->rl.provid, entry->rl.srvid, entry->rl.chid,
-					  entry->rl.ratelimitecm, entry->rl.ratelimittime, entry->rl.srvidholdtime);
+					entry->rl.ratelimitecm, entry->rl.ratelimittime, entry->rl.srvidholdtime);
 
 		if(!new_rlimit)
 		{
@@ -1048,7 +1051,7 @@ int32_t init_tierid(void)
 		{
 			tierid->caid[i] = dyn_word_atob(ptr1);
 			tierid->ncaid = i + 1;
-			// cs_log("ld caid: %04X tierid: %04X name: %s",tierid->caid[i],tierid->tierid,tierid->name);
+			//cs_log("ld caid: %04X tierid: %04X name: %s",tierid->caid[i],tierid->tierid,tierid->name);
 		}
 		nr++;
 	}
@@ -1057,7 +1060,7 @@ int32_t init_tierid(void)
 	if(nr > 0)
 		{ cs_log("%d tier-id's loaded", nr); }
 	cs_writelock(__func__, &config_lock);
-	//reload function:
+	// reload function:
 	tierid = cfg.tierid;
 	cfg.tierid = new_cfg_tierid;
 	struct s_tierid *ptr;
@@ -1090,7 +1093,7 @@ int32_t chk_global_whitelist(ECM_REQUEST *er, uint32_t *line)
 
 	struct s_global_whitelist *entry;
 
-	//check mapping:
+	// check mapping:
 	if(cfg.global_whitelist_use_m)
 	{
 		entry = cfg.global_whitelist;
@@ -1110,7 +1113,7 @@ int32_t chk_global_whitelist(ECM_REQUEST *er, uint32_t *line)
 		}
 	}
 
-	if(cfg.global_whitelist_use_l)    //Check caid/prov/srvid etc matching, except ecm-len:
+	if(cfg.global_whitelist_use_l) // Check caid/prov/srvid etc matching, except ecm-len:
 	{
 		entry = cfg.global_whitelist;
 		int8_t caidprov_matches = 0;
@@ -1124,10 +1127,10 @@ int32_t chk_global_whitelist(ECM_REQUEST *er, uint32_t *line)
 					return 1;
 				}
 				if((!entry->caid || entry->caid == er->caid)
-						&& (!entry->provid || entry->provid == er->prid)
-						&& (!entry->srvid || entry->srvid == er->srvid)
-						&& (!entry->chid || entry->chid == er->chid)
-						&& (!entry->pid || entry->pid == er->pid))
+					&& (!entry->provid || entry->provid == er->prid)
+					&& (!entry->srvid || entry->srvid == er->srvid)
+					&& (!entry->chid || entry->chid == er->chid)
+					&& (!entry->pid || entry->pid == er->pid))
 				{
 					caidprov_matches = 1;
 					*line = entry->line;
@@ -1135,7 +1138,7 @@ int32_t chk_global_whitelist(ECM_REQUEST *er, uint32_t *line)
 			}
 			entry = entry->next;
 		}
-		if(caidprov_matches)  //...but not ecm-len!
+		if(caidprov_matches) // ...but not ecm-len!
 			{ return 0; }
 	}
 
@@ -1173,7 +1176,7 @@ static struct s_global_whitelist *global_whitelist_read_int(void)
 		{ return NULL; }
 
 	char token[1024], str1[1024];
-	unsigned char type;
+	uint8_t type;
 	int32_t i, ret, count = 0;
 	struct s_global_whitelist *new_whitelist = NULL, *entry, *last = NULL;
 	uint32_t line = 0;
@@ -1259,11 +1262,11 @@ static struct s_global_whitelist *global_whitelist_read_int(void)
 					{ cfg.global_whitelist_use_l = 1; }
 
 				if(type == 'm')
-					cs_log_dbg(D_TRACE,
-								  "whitelist: %c: %04X@%06X:%04X:%04X:%04X:%02X map to %04X@%06X", entry->type, entry->caid, entry->provid, entry->srvid, entry->pid, entry->chid, entry->ecmlen, entry->mapcaid, entry->mapprovid);
+					cs_log_dbg(D_TRACE, "whitelist: %c: %04X@%06X:%04X:%04X:%04X:%02X map to %04X@%06X",
+								entry->type, entry->caid, entry->provid, entry->srvid, entry->pid, entry->chid, entry->ecmlen, entry->mapcaid, entry->mapprovid);
 				else
-					cs_log_dbg(D_TRACE,
-								  "whitelist: %c: %04X@%06X:%04X:%04X:%04X:%02X", entry->type, entry->caid, entry->provid, entry->srvid, entry->pid, entry->chid, entry->ecmlen);
+					cs_log_dbg(D_TRACE, "whitelist: %c: %04X@%06X:%04X:%04X:%04X:%02X",
+								entry->type, entry->caid, entry->provid, entry->srvid, entry->pid, entry->chid, entry->ecmlen);
 
 				if(!new_whitelist)
 				{
@@ -1292,7 +1295,6 @@ static struct s_global_whitelist *global_whitelist_read_int(void)
 
 void global_whitelist_read(void)
 {
-
 	struct s_global_whitelist *entry, *old_list;
 
 	old_list = cfg.global_whitelist;
@@ -1379,18 +1381,20 @@ static struct s_twin *twin_read_int(void)
 		}
 
 		uint32_t caid = 0, provid = 0, srvid = 0, deg = 0, freq = 0;
-//		char hdeg[4], hfreq[4], hsrvid[4];
+		//char hdeg[4], hfreq[4], hsrvid[4];
 		memset(str1, 0, sizeof(str1));
 
 		ret = sscanf(token, "%4x:%6x:%d:%d:%d", &caid, &provid, &deg, &freq, &srvid);
 		if(ret < 1) { continue; }
-// 		snprintf(hdeg, 4, "%x", deg);
-// 		sscanf(hdeg, "%4x", &deg);
-// 		snprintf(hfreq, 4, "%x", freq);
-// 		sscanf(hfreq, "%4x", &freq);
-// 		snprintf(hsrvid, 4, "%x", srvid);
-// 		sscanf(hsrvid, "%4x", &srvid);
+
+		//snprintf(hdeg, 4, "%x", deg);
+		//sscanf(hdeg, "%4x", &deg);
+		//snprintf(hfreq, 4, "%x", freq);
+		//sscanf(hfreq, "%4x", &freq);
+		//snprintf(hsrvid, 4, "%x", srvid);
+		//sscanf(hsrvid, "%4x", &srvid);
 		strncat(str1, ",", sizeof(str1) - strlen(str1) - 1);
+
 		if(!cs_malloc(&entry, sizeof(struct s_twin)))
 		{
 			fclose(fp);
@@ -1404,8 +1408,8 @@ static struct s_twin *twin_read_int(void)
 		entry->tw.deg = deg;
 		entry->tw.freq = freq;
 
-		cs_debug_mask(D_TRACE, "channel: %04X:%06X:%d:%d:%d", entry->tw.caid, entry->tw.provid, entry->tw.deg,
-					  entry->tw.freq, entry->tw.srvid);
+		cs_debug_mask(D_TRACE, "channel: %04X:%06X:%d:%d:%d", entry->tw.caid,
+						entry->tw.provid, entry->tw.deg, entry->tw.freq, entry->tw.srvid);
 
 		if(!new_twin)
 		{

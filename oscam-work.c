@@ -34,7 +34,7 @@ static void free_job_data(struct job_data *data)
 		{ return; }
 	if(data->len && data->ptr)
 	{
-		//special free checks
+		// special free checks
 		if(data->action==ACTION_ECM_ANSWER_CACHE)
 		{
 			NULLFREE(((struct s_write_from_cache *)data->ptr)->er_cache);
@@ -48,22 +48,25 @@ static void free_job_data(struct job_data *data)
 void free_joblist(struct s_client *cl)
 {
 	int32_t lock_status = pthread_mutex_trylock(&cl->thread_lock);
-	
 	LL_ITER it = ll_iter_create(cl->joblist);
+
 	struct job_data *data;
 	while((data = ll_iter_next(&it)))
 	{
 		free_job_data(data);
 	}
+
 	ll_destroy(&cl->joblist);
 	cl->account = NULL;
-	if(cl->work_job_data)  // Free job_data that was not freed by work_thread
+
+	if(cl->work_job_data) // Free job_data that was not freed by work_thread
 		{ free_job_data(cl->work_job_data); }
+
 	cl->work_job_data = NULL;
-	
+
 	if(lock_status == 0)
 		{ SAFE_MUTEX_UNLOCK(&cl->thread_lock); }
-	
+
 	pthread_mutex_destroy(&cl->thread_lock);
 }
 
@@ -101,7 +104,7 @@ void *work_thread(void *ptr)
 	struct job_data *data = (struct job_data *)ptr;
 	struct s_client *cl = data->cl;
 	struct s_reader *reader = cl->reader;
-	struct timeb start, end;  // start time poll, end time poll
+	struct timeb start, end; // start time poll, end time poll
 
 	struct job_data tmp_data;
 	struct pollfd pfd[1];
@@ -113,20 +116,23 @@ void *work_thread(void *ptr)
 	set_work_thread_name(data);
 
 	struct s_module *module = get_module(cl);
-	uint16_t bufsize = module->bufsize; //CCCam needs more than 1024bytes!
+	uint16_t bufsize = module->bufsize; // CCCam needs more than 1024bytes!
 	if(!bufsize)
 		{ bufsize = DEFAULT_MODULE_BUFSIZE; }
 
 	uint8_t *mbuf;
 	if(!cs_malloc(&mbuf, bufsize))
 		{ return NULL; }
+
 	cl->work_mbuf = mbuf; // Track locally allocated data, because some callback may call cs_exit/cs_disconect_client/pthread_exit and then mbuf would be leaked
 	int32_t n = 0, rc = 0, i, idx, s;
 	uint8_t dcw[16];
 	int8_t restart_reader = 0;
+
 	while(cl->thread_active)
 	{
 		cs_ftime(&start); // register start time
+
 		while(cl->thread_active)
 		{
 			if(!cl || cl->kill || !is_valid_client(cl))
@@ -152,6 +158,7 @@ void *work_thread(void *ptr)
 			{
 				if(!cl->kill && cl->typ != 'r')
 					{ client_check_status(cl); } // do not call for physical readers as this might cause an endless job loop
+
 				SAFE_MUTEX_LOCK(&cl->thread_lock);
 				if(cl->joblist && ll_count(cl->joblist) > 0)
 				{
@@ -170,21 +177,25 @@ void *work_thread(void *ptr)
 				   for example: pfd=open("/dev/ttyUSB0"); */
 				if(!cl->pfd || module->listenertype == LIS_SERIAL)
 					{ break; }
+
 				pfd[0].fd = cl->pfd;
 				pfd[0].events = POLLIN | POLLPRI;
 
 				SAFE_MUTEX_LOCK(&cl->thread_lock);
 				cl->thread_active = 2;
 				SAFE_MUTEX_UNLOCK(&cl->thread_lock);
+
 				rc = poll(pfd, 1, 3000);
+
 				SAFE_MUTEX_LOCK(&cl->thread_lock);
 				cl->thread_active = 1;
 				SAFE_MUTEX_UNLOCK(&cl->thread_lock);
+
 				if(rc > 0)
 				{
 					cs_ftime(&end); // register end time
 					cs_log_dbg(D_TRACE, "[OSCAM-WORK] new event %d occurred on fd %d after %"PRId64" ms inactivity", pfd[0].revents,
-								  pfd[0].fd, comp_timeb(&end, &start));
+								pfd[0].fd, comp_timeb(&end, &start));
 					data = &tmp_data;
 					data->ptr = NULL;
 					cs_ftime(&start); // register start time for new poll next run
@@ -201,6 +212,7 @@ void *work_thread(void *ptr)
 						}
 						else
 							{ data->action = ACTION_CLIENT_TCP; }
+
 						if(pfd[0].revents & (POLLHUP | POLLNVAL | POLLERR))
 							{ cl->kill = 1; }
 					}
@@ -231,152 +243,176 @@ void *work_thread(void *ptr)
 
 			if(data != &tmp_data)
 				{ cl->work_job_data = data; } // Track the current job_data
+
 			switch(data->action)
 			{
-			case ACTION_READER_IDLE:
-				reader_do_idle(reader);
-				break;
-			case ACTION_READER_REMOTE:
-				s = check_fd_for_data(cl->pfd);
-				if(s == 0)  // no data, another thread already read from fd?
-					{ break; }
-				if(s < 0)
-				{
-					if(reader->ph.type == MOD_CONN_TCP)
-						{ network_tcp_connection_close(reader, "disconnect"); }
+				case ACTION_READER_IDLE:
+					reader_do_idle(reader);
 					break;
-				}
-				rc = reader->ph.recv(cl, mbuf, bufsize);
-				if(rc < 0)
-				{
-					if(reader->ph.type == MOD_CONN_TCP)
-						{ network_tcp_connection_close(reader, "disconnect on receive"); }
-					break;
-				}
-				cl->last = time(NULL); // *********************************** TO BE REPLACE BY CS_FTIME() LATER ****************
-				idx = reader->ph.c_recv_chk(cl, dcw, &rc, mbuf, rc);
-				if(idx < 0) { break; }  // no dcw received
-				if(!idx) { idx = cl->last_idx; }
-				reader->last_g = time(NULL); // *********************************** TO BE REPLACE BY CS_FTIME() LATER **************** // for reconnect timeout
-				for(i = 0, n = 0; i < cfg.max_pending && n == 0; i++)
-				{
-					if(cl->ecmtask[i].idx == idx)
+
+				case ACTION_READER_REMOTE:
+					s = check_fd_for_data(cl->pfd);
+					if(s == 0) // no data, another thread already read from fd?
+						{ break; }
+					if(s < 0)
 					{
-						cl->pending--;
-						casc_check_dcw(reader, i, rc, dcw);
-						n++;
+						if(reader->ph.type == MOD_CONN_TCP)
+							{ network_tcp_connection_close(reader, "disconnect"); }
+						break;
 					}
-				}
-				break;
-			case ACTION_READER_RESET:
-				cardreader_do_reset(reader);
-				break;
-			case ACTION_READER_ECM_REQUEST:
-				reader_get_ecm(reader, data->ptr);
-				break;
-			case ACTION_READER_EMM:
-				reader_do_emm(reader, data->ptr);
-				break;
-			case ACTION_READER_CARDINFO:
-				reader_do_card_info(reader);
-				break;
-			case ACTION_READER_POLL_STATUS:
-				cardreader_poll_status(reader);
-				break;
-			case ACTION_READER_INIT:
-				if(!cl->init_done)
-					{ reader_init(reader); }
-				break;
-			case ACTION_READER_RESTART:
-				cl->kill = 1;
-				restart_reader = 1;
-				break;
-			case ACTION_READER_RESET_FAST:
-				reader->card_status = CARD_NEED_INIT;
-				cardreader_do_reset(reader);
-				break;
-			case ACTION_READER_CHECK_HEALTH:
-				cardreader_do_checkhealth(reader);
-				break;
-			case ACTION_READER_CAPMT_NOTIFY:
-				if(reader->ph.c_capmt) { reader->ph.c_capmt(cl, data->ptr); }
-				break;
-			case ACTION_CLIENT_UDP:
-				n = module->recv(cl, data->ptr, data->len);
-				if(n < 0) { break; }
-				module->s_handler(cl, data->ptr, n);
-				break;
-			case ACTION_CLIENT_TCP:
-				s = check_fd_for_data(cl->pfd);
-				if(s == 0)  // no data, another thread already read from fd?
-					{ break; }
-				if(s < 0)    // system error or fd wants to be closed
-				{
-					cl->kill = 1; // kill client on next run
-					continue;
-				}
-				n = module->recv(cl, mbuf, bufsize);
-				if(n < 0)
-				{
-					cl->kill = 1; // kill client on next run
-					continue;
-				}
-				module->s_handler(cl, mbuf, n);
-				break;
-			case ACTION_CACHEEX1_DELAY:
-				cacheex_mode1_delay(data->ptr);
-				break;
-			case ACTION_CACHEEX_TIMEOUT:
-				cacheex_timeout(data->ptr);
-				break;
-			case ACTION_FALLBACK_TIMEOUT:
-				fallback_timeout(data->ptr);
-				break;
-			case ACTION_CLIENT_TIMEOUT:
-				ecm_timeout(data->ptr);
-				break;
-			case ACTION_ECM_ANSWER_READER:
-				chk_dcw(data->ptr);
-				break;
-			case ACTION_ECM_ANSWER_CACHE:
-				write_ecm_answer_fromcache(data->ptr);
-				break;
-			case ACTION_CLIENT_INIT:
-				if(module->s_init)
-					{ module->s_init(cl); }
-				cl->is_udp = module->type == MOD_CONN_UDP;
-				cl->init_done = 1;
-				break;
-			case ACTION_CLIENT_IDLE:
-				if(module->s_idle)
-					{ module->s_idle(cl); }
-				else
-				{
-					cs_log("user %s reached %d sec idle limit.", username(cl), cfg.cmaxidle);
+					rc = reader->ph.recv(cl, mbuf, bufsize);
+					if(rc < 0)
+					{
+						if(reader->ph.type == MOD_CONN_TCP)
+							{ network_tcp_connection_close(reader, "disconnect on receive"); }
+						break;
+					}
+					cl->last = time(NULL); // *********************************** TO BE REPLACE BY CS_FTIME() LATER ****************
+					idx = reader->ph.c_recv_chk(cl, dcw, &rc, mbuf, rc);
+					if(idx < 0) { break; }  // no dcw received
+					if(!idx) { idx = cl->last_idx; }
+					reader->last_g = time(NULL); // *********************************** TO BE REPLACE BY CS_FTIME() LATER **************** // for reconnect timeout
+					for(i = 0, n = 0; i < cfg.max_pending && n == 0; i++)
+					{
+						if(cl->ecmtask[i].idx == idx)
+						{
+							cl->pending--;
+							casc_check_dcw(reader, i, rc, dcw);
+							n++;
+						}
+					}
+					break;
+
+				case ACTION_READER_RESET:
+					cardreader_do_reset(reader);
+					break;
+
+				case ACTION_READER_ECM_REQUEST:
+					reader_get_ecm(reader, data->ptr);
+					break;
+
+				case ACTION_READER_EMM:
+					reader_do_emm(reader, data->ptr);
+					break;
+
+				case ACTION_READER_CARDINFO:
+					reader_do_card_info(reader);
+					break;
+
+				case ACTION_READER_POLL_STATUS:
+					cardreader_poll_status(reader);
+					break;
+
+				case ACTION_READER_INIT:
+					if(!cl->init_done)
+						{ reader_init(reader); }
+					break;
+
+				case ACTION_READER_RESTART:
 					cl->kill = 1;
-				}
-				break;
-			case ACTION_CACHE_PUSH_OUT:
-			{
-				cacheex_push_out(cl, data->ptr);
-				break;
-			}
-			case ACTION_CLIENT_KILL:
-				cl->kill = 1;
-				break;
-			case ACTION_CLIENT_SEND_MSG:
-			{
-				if (config_enabled(MODULE_CCCAM))
+					restart_reader = 1;
+					break;
+
+				case ACTION_READER_RESET_FAST:
+					reader->card_status = CARD_NEED_INIT;
+					cardreader_do_reset(reader);
+					break;
+
+				case ACTION_READER_CHECK_HEALTH:
+					cardreader_do_checkhealth(reader);
+					break;
+
+				case ACTION_READER_CAPMT_NOTIFY:
+					if(reader->ph.c_capmt) { reader->ph.c_capmt(cl, data->ptr); }
+					break;
+
+				case ACTION_CLIENT_UDP:
+					n = module->recv(cl, data->ptr, data->len);
+					if(n < 0) { break; }
+					module->s_handler(cl, data->ptr, n);
+					break;
+
+				case ACTION_CLIENT_TCP:
+					s = check_fd_for_data(cl->pfd);
+					if(s == 0) // no data, another thread already read from fd?
+						{ break; }
+					if(s < 0) // system error or fd wants to be closed
+					{
+						cl->kill = 1; // kill client on next run
+						continue;
+					}
+					n = module->recv(cl, mbuf, bufsize);
+					if(n < 0)
+					{
+						cl->kill = 1; // kill client on next run
+						continue;
+					}
+					module->s_handler(cl, mbuf, n);
+					break;
+
+				case ACTION_CACHEEX1_DELAY:
+					cacheex_mode1_delay(data->ptr);
+					break;
+
+				case ACTION_CACHEEX_TIMEOUT:
+					cacheex_timeout(data->ptr);
+					break;
+
+				case ACTION_FALLBACK_TIMEOUT:
+					fallback_timeout(data->ptr);
+					break;
+
+				case ACTION_CLIENT_TIMEOUT:
+					ecm_timeout(data->ptr);
+					break;
+
+				case ACTION_ECM_ANSWER_READER:
+					chk_dcw(data->ptr);
+					break;
+
+				case ACTION_ECM_ANSWER_CACHE:
+					write_ecm_answer_fromcache(data->ptr);
+					break;
+
+				case ACTION_CLIENT_INIT:
+					if(module->s_init)
+						{ module->s_init(cl); }
+					cl->is_udp = module->type == MOD_CONN_UDP;
+					cl->init_done = 1;
+					break;
+
+				case ACTION_CLIENT_IDLE:
+					if(module->s_idle)
+						{ module->s_idle(cl); }
+					else
+					{
+						cs_log("user %s reached %d sec idle limit.", username(cl), cfg.cmaxidle);
+						cl->kill = 1;
+					}
+					break;
+
+				case ACTION_CACHE_PUSH_OUT:
+					cacheex_push_out(cl, data->ptr);
+					break;
+
+				case ACTION_CLIENT_KILL:
+					cl->kill = 1;
+					break;
+
+				case ACTION_CLIENT_SEND_MSG:
 				{
-					struct s_clientmsg *clientmsg = (struct s_clientmsg *)data->ptr;
-					cc_cmd_send(cl, clientmsg->msg, clientmsg->len, clientmsg->cmd);
+					if (config_enabled(MODULE_CCCAM))
+					{
+						struct s_clientmsg *clientmsg = (struct s_clientmsg *)data->ptr;
+						cc_cmd_send(cl, clientmsg->msg, clientmsg->len, clientmsg->cmd);
+					}
+					break;
 				}
+
+				case ACTION_PEER_IDLE:
+					if(module->s_peer_idle)
+						{ module->s_peer_idle(cl); }
 				break;
-			}
-			case ACTION_PEER_IDLE:
-				if(module->s_peer_idle)
-					{ module->s_peer_idle(cl); }
-			break;
 			} // switch
 
 			__free_job_data(cl, data);
@@ -444,9 +480,9 @@ int32_t add_job(struct s_client *cl, enum actions action, void *ptr, int32_t len
 	}
 
 	data->action = action;
-	data->ptr    = ptr;
-	data->cl     = cl;
-	data->len    = len;
+	data->ptr = ptr;
+	data->cl = cl;
+	data->len = len;
 	cs_ftime(&data->time);
 
 	SAFE_MUTEX_LOCK(&cl->thread_lock);
@@ -459,11 +495,11 @@ int32_t add_job(struct s_client *cl, enum actions action, void *ptr, int32_t len
 			{ pthread_kill(cl->thread, OSCAM_SIGNAL_WAKEUP); }
 		SAFE_MUTEX_UNLOCK(&cl->thread_lock);
 		cs_log_dbg(D_TRACE, "add %s job action %d queue length %d %s",
-					  action > ACTION_CLIENT_FIRST ? "client" : "reader", action,
-					  ll_count(cl->joblist), username(cl));
+					action > ACTION_CLIENT_FIRST ? "client" : "reader", action,
+					ll_count(cl->joblist), username(cl));
 		return 1;
 	}
-	
+
 	/* pcsc doesn't like this; segfaults on x86, x86_64 */
 	int8_t modify_stacksize = 0;
 	struct s_reader *rdr = cl->reader;
@@ -473,14 +509,14 @@ int32_t add_job(struct s_client *cl, enum actions action, void *ptr, int32_t len
 	if(action != ACTION_READER_CHECK_HEALTH)
 	{
 		cs_log_dbg(D_TRACE, "start %s thread action %d",
-					  action > ACTION_CLIENT_FIRST ? "client" : "reader", action);
+					action > ACTION_CLIENT_FIRST ? "client" : "reader", action);
 	}
 
 	int32_t ret = start_thread("client work", work_thread, (void *)data, &cl->thread, 1, modify_stacksize);
 	if(ret)
 	{
 		cs_log("ERROR: can't create thread for %s (errno=%d %s)",
-			   action > ACTION_CLIENT_FIRST ? "client" : "reader", ret, strerror(ret));
+				action > ACTION_CLIENT_FIRST ? "client" : "reader", ret, strerror(ret));
 		free_job_data(data);
 	}
 

@@ -9,37 +9,37 @@
 
 #include "module-dvbapi.h"
 #include "module-dvbapi-coolapi.h"
-#include "oscam-string.h" 
+#include "oscam-string.h"
 
 
 #define MAX_COOL_DMX 4
 
-//kronos-Plattform (Coolsterem ZEE²)
+//kronos-Plattform (Coolsterem ZEE)
 //#define MAX_COOL_DMX 3
 
 
 #define DMX_MAX_FILTERS_PER_CHAN 16
 #define DMX_MAX_CHANNELS_PER_DMX 192
 //#define MAX_COOL_DMX_FILTERS 128
- 
+
 struct s_cool_chanhandle;
 
 typedef struct s_cool_filter
 {
-	int32_t     fd;
+	int32_t      fd;
 	struct s_cool_chanhandle *chanhandle;
-	void       *filter;
-	int32_t     filter_num;
-	uchar       filter16[16];
-	uchar       mask16[16];
+	void        *filter;
+	int32_t      filter_num;
+	uint8_t      filter16[16];
+	uint8_t      mask16[16];
 } S_COOL_FILTER;
 
 typedef struct s_cool_chanhandle
 {
 	int32_t     pid;
-	void       *buffer1; // filter Cbuf 1
-	void       *buffer2; // filter Cbuf 2
-	void       *channel;
+	void        *buffer1; // filter Cbuf 1
+	void        *buffer2; // filter Cbuf 2
+	void        *channel;
  	int32_t     demux_index;
 	struct s_cool_dmxhandle *dmx_handle;
 	uint32_t    allocated_filters;
@@ -163,7 +163,7 @@ extern int32_t cnxt_dmx_set_filter(void *handle, filter_set_t *arg, void *);
 extern int32_t cnxt_dmx_channel_suspend(void *handle, int32_t enable);
 
 /* Local coolapi functions */
-static int32_t coolapi_read(dmx_t *dmx, dmx_callback_data_t *dataa, uchar *buffer);
+static int32_t coolapi_read(dmx_t *dmx, dmx_callback_data_t *dataa, uint8_t *buffer);
 
 static int8_t dmx_opened;
 int32_t  cool_kal_opened = 0;
@@ -358,14 +358,14 @@ static void coolapi_read_data(dmx_t *dmx, dmx_callback_data_t *data)
 	}
 
 	int32_t ret;
-	uchar buffer[4096];
+	uint8_t buffer[4096];
 
 	SAFE_SETSPECIFIC(getclient, dvbapi_client);
 	SAFE_MUTEX_LOCK(&dmx->mutex);
 	memset(buffer, 0, sizeof(buffer));
 	ret = coolapi_read(dmx, data, buffer);
 	SAFE_MUTEX_UNLOCK(&dmx->mutex);
-	
+
 	if(ret > -1) {
 		uint16_t filters = data->num;
 		uint16_t flt;
@@ -422,7 +422,7 @@ static void dmx_callback(void *channel, dmx_t *dmx, int32_t type, dmx_callback_d
 	}
 }
 
-int32_t coolapi_set_filter(int32_t fd, int32_t num, int32_t pid, uchar *flt, uchar *mask, int32_t type)
+int32_t coolapi_set_filter(int32_t fd, int32_t num, int32_t pid, uint8_t *flt, uint8_t *mask, int32_t type)
 {
 	dmx_t *dmx = find_demux(fd, 0);
 	if(!dmx)
@@ -470,7 +470,7 @@ int32_t coolapi_set_filter(int32_t fd, int32_t num, int32_t pid, uchar *flt, uch
 
 		channel_open_arg_t chanarg;
 		memset(&chanarg, 0, sizeof(channel_open_arg_t));
-		
+
 		chanarg.type = 4;
 		result = cnxt_dmx_channel_open(dmx_handles[COOLDEMUX_DMX_DEV(fd)].handle, &handle_item->channel, &chanarg, dmx_callback, dmx);
 		coolapi_check_error("cnxt_dmx_channel_open", result);
@@ -645,7 +645,7 @@ int32_t coolapi_remove_filter(int32_t fd, int32_t num)
 		result = cnxt_dmx_channel_ctrl(channel, 0, 0);
 		coolapi_check_error("cnxt_dmx_channel_ctrl", result);
 		cs_log_dbg(D_DVBAPI, "closing channel %x", (int32_t) channel);
-		
+
 		result = cnxt_dmx_set_channel_pid(channel, 0x1FFF);
 		coolapi_check_error("cnxt_dmx_set_channel_pid", result);
 
@@ -657,7 +657,7 @@ int32_t coolapi_remove_filter(int32_t fd, int32_t num)
 
 		result = cnxt_cbuf_detach(handle_item->buffer2, 2, channel);
 		coolapi_check_error("cnxt_cbuf_detach", result);
-		
+
 		result = cnxt_dmx_channel_detach(channel, 0xB, 0, handle_item->buffer1);
 		coolapi_check_error("cnxt_dmx_channel_detach", result);
 
@@ -688,7 +688,7 @@ int32_t coolapi_remove_filter(int32_t fd, int32_t num)
 		result = cnxt_dmx_close_filter(filter);
 		coolapi_check_error("cnxt_dmx_close_filter", result);
  	}
-	
+
 	// COOLAPI2 - We don't want to close Channel on no ECM Filters (Makes AU / EMMs work)
 	if(dmx->type != TYPE_ECM)
 		{ return 0; }
@@ -789,7 +789,7 @@ int32_t coolapi_write_cw(int32_t mask, uint16_t *STREAMpids, int32_t count, ca_d
 	return 0;
 }
 
-static int32_t coolapi_read(dmx_t *dmx, dmx_callback_data_t *data, uchar *buffer)
+static int32_t coolapi_read(dmx_t *dmx, dmx_callback_data_t *data, uint8_t *buffer)
 {
 	if(!dmx)
 	{

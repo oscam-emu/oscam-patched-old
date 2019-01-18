@@ -44,20 +44,20 @@ void add_garbage(void *data)
 	}
 
 	SAFE_MUTEX_LOCK(&add_lock);
-	
+
 	int32_t bucket = counter++;
-	
+
 	if(counter >= HASH_BUCKETS)
 	{
 		counter = 0;
 	}
-	
+
 	SAFE_MUTEX_UNLOCK(&add_lock);
-	
+
 	struct cs_garbage *garbage = (struct cs_garbage*)malloc(sizeof(struct cs_garbage));
 	if(garbage == NULL)
 	{
-		cs_log("*** MEMORY FULL -> FREEING DIRECT MAY LEAD TO INSTABILITY!!!! ***");
+		cs_log("*** MEMORY FULL -> FREEING DIRECT MAY LEAD TO INSTABILITY!!! ***");
 		NULLFREE(data);
 		return;
 	}
@@ -91,9 +91,9 @@ void add_garbage(void *data)
 	}
 #endif
 
-	garbage->next = garbage_first[bucket];  
+	garbage->next = garbage_first[bucket];
 	garbage_first[bucket] = garbage;
-	
+
 	cs_writeunlock(__func__, &garbage_lock[bucket]);
 }
 
@@ -105,27 +105,27 @@ static void garbage_collector(void)
 	int32_t i,j;
 	struct cs_garbage *garbage, *next, *prev, *first;
 	set_thread_name(__func__);
-	int32_t timeout_time = 2*cfg.ctimeout/1000+6;
-		
+	int32_t timeout_time = 2 * cfg.ctimeout / 1000 + 6;
+
 	while(garbage_collector_active)
 	{
 		time_t deltime = time(NULL) - timeout_time;
-		
+
 		for(i = 0; i < HASH_BUCKETS; ++i)
 		{
 			j = 0;
 			cs_writelock(__func__, &garbage_lock[i]);
 			first = garbage_first[i];
-			
-			for(garbage = first, prev = NULL; garbage; prev = garbage, garbage = garbage->next,j++)
+
+			for(garbage = first, prev = NULL; garbage; prev = garbage, garbage = garbage->next, j++)
 			{
-				if(j==2)
+				if(j == 2)
  				{
 					j++;
 					cs_writeunlock(__func__, &garbage_lock[i]);
 				}
 
-				if(garbage->time < deltime)     // all following elements are too new
+				if(garbage->time < deltime) // all following elements are too new
 				{
 					if(prev)
 					{
@@ -139,7 +139,7 @@ static void garbage_collector(void)
 				}
 			}
 
-			if(j<3)
+			if(j < 3)
 			{
 				cs_writeunlock(__func__, &garbage_lock[i]);
 			}
@@ -162,9 +162,9 @@ void start_garbage_collector(int32_t debug)
 {
 	garbage_debug = debug;
 	int32_t i;
-	
+
 	SAFE_MUTEX_INIT(&add_lock, NULL);
-	
+
 	for(i = 0; i < HASH_BUCKETS; ++i)
 	{
 		cs_lock_create(__func__, &garbage_lock[i], "garbage_lock", 9000);
@@ -193,6 +193,7 @@ void stop_garbage_collector(void)
 		cs_sleepms(300);
 		SAFE_COND_SIGNAL(&sleep_cond);
 		SAFE_THREAD_JOIN(garbage_thread, NULL);
+
 		for(i = 0; i < HASH_BUCKETS; ++i)
 			{ cs_writelock(__func__, &garbage_lock[i]); }
 
@@ -206,15 +207,15 @@ void stop_garbage_collector(void)
 				garbage_first[i] = next;
 			}
 		}
-		
+
 		for(i = 0; i < HASH_BUCKETS; ++i)
-		{ 
+		{
 			cs_writeunlock(__func__, &garbage_lock[i]);
 			cs_lock_destroy(__func__, &garbage_lock[i]);
 		}
 
- 		pthread_mutex_destroy(&add_lock);
- 		pthread_cond_destroy(&sleep_cond);
+		pthread_mutex_destroy(&add_lock);
+		pthread_cond_destroy(&sleep_cond);
 		pthread_mutex_destroy(&sleep_cond_mutex);
 	}
 }

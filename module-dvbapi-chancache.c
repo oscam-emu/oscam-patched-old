@@ -17,7 +17,7 @@ static LLIST *channel_cache;
 void dvbapi_save_channel_cache(void)
 {
 	if(boxtype_is("dbox2")) return; // dont save channelcache on these boxes, they lack resources and will crash!
-	
+
 	if (USE_OPENXCAS) // Why?
 		return;
 
@@ -60,7 +60,7 @@ void dvbapi_save_channel_cache(void)
 void dvbapi_load_channel_cache(void)
 {
 	if(boxtype_is("dbox2")) return; // dont load channelcache on these boxes, they lack resources and will crash!
-	
+
 	if (USE_OPENXCAS) // Why?
 		return;
 
@@ -76,7 +76,7 @@ void dvbapi_load_channel_cache(void)
 		cs_log_dbg(D_TRACE, "dvbapi channelcache can't read from file %s", fname);
 		return;
 	}
-	
+
 	int32_t i = 1;
 	int32_t valid = 0;
 	char *ptr, *saveptr1 = NULL;

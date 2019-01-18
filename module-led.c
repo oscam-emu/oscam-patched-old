@@ -255,9 +255,9 @@ static void qboxhd_led_blink(int32_t color, int32_t duration)
 				break;
 			}
 			// set LED on with color
-			qbminiled.red = (uchar)((qboxhdmini_color & 0xFF0000) >> 16); // R
-			qbminiled.green = (uchar)((qboxhdmini_color & 0x00FF00) >> 8); // G
-			qbminiled.blue = (uchar)(qboxhdmini_color & 0x0000FF);     // B
+			qbminiled.red = (uint8_t)((qboxhdmini_color & 0xFF0000) >> 16);  // R
+			qbminiled.green = (uint8_t)((qboxhdmini_color & 0x00FF00) >> 8); // G
+			qbminiled.blue = (uint8_t)(qboxhdmini_color & 0x0000FF);         // B
 			ioctl(f, QBOXHDMINI_IOSET_RGB, &qbminiled);
 			cs_sleepms(duration);
 		}
