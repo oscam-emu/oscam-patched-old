@@ -2,13 +2,14 @@
 #ifdef READER_TONGFANG
 #include "reader-common.h"
 
-static int32_t cw_is_valid(unsigned char *cw) //returns 1 if cw_is_valid, returns 0 if cw is all zeros
+// returns 1 if cw_is_valid, returns 0 if cw is all zeros
+static int32_t cw_is_valid(uint8_t *cw)
 {
 	int32_t i;
 
 	for(i = 0; i < 8; i++)
 	{
-		if(cw[i] != 0)  //test if cw = 00
+		if(cw[i] != 0) // test if cw = 00
 		{
 			return OK;
 		}
@@ -16,9 +17,9 @@ static int32_t cw_is_valid(unsigned char *cw) //returns 1 if cw_is_valid, return
 	return ERROR;
 }
 
-static int32_t tongfang_read_data(struct s_reader *reader, uchar size, uchar *cta_res, uint16_t *status)
+static int32_t tongfang_read_data(struct s_reader *reader, uint8_t size, uint8_t *cta_res, uint16_t *status)
 {
-	uchar read_data_cmd[] = {0x00, 0xc0, 0x00, 0x00, 0xff};
+	uint8_t read_data_cmd[] = { 0x00, 0xc0, 0x00, 0x00, 0xff };
 	uint16_t cta_lr;
 
 	read_data_cmd[4] = size;
@@ -31,20 +32,23 @@ static int32_t tongfang_read_data(struct s_reader *reader, uchar size, uchar *ct
 
 static int32_t tongfang_card_init(struct s_reader *reader, ATR *newatr)
 {
-	static const uchar begin_cmd[] = {0x00, 0xa4, 0x04, 0x00, 0x05, 0xf9, 0x5a, 0x54, 0x00, 0x06};
-	static const uchar get_serial_cmd[] = {0x80, 0x46, 0x00, 0x00, 0x04, 0x01, 0x00, 0x00, 0x04};
-	uchar pairing_cmd[] = {0x80, 0x4c, 0x00, 0x00, 0x04, 0xFF, 0xFF, 0xFF, 0xFF};
+	static const uint8_t begin_cmd[] = { 0x00, 0xa4, 0x04, 0x00, 0x05, 0xf9, 0x5a, 0x54, 0x00, 0x06 };
+	static const uint8_t get_serial_cmd[] = { 0x80, 0x46, 0x00, 0x00, 0x04, 0x01, 0x00, 0x00, 0x04 };
+	uint8_t pairing_cmd[] = { 0x80, 0x4c, 0x00, 0x00, 0x04, 0xFF, 0xFF, 0xFF, 0xFF };
 
-	uchar data[257];
+	uint8_t data[257];
 	int32_t data_len = 0;
 	uint16_t status = 0;
-	uchar boxID[] = {0xFF, 0xFF, 0xFF, 0xFF};
+	uint8_t boxID[] = { 0xFF, 0xFF, 0xFF, 0xFF };
 	int32_t i;
 
 	def_resp;
 	get_hist;
 
-	if((hist_size < 4) || (memcmp(hist, "NTIC", 4))) { return ERROR; }
+	if((hist_size < 4) || (memcmp(hist, "NTIC", 4)))
+	{
+		return ERROR;
+	}
 
 	reader->caid = 0x4A02;
 	// For now, only one provider, 0000
@@ -54,14 +58,27 @@ static int32_t tongfang_card_init(struct s_reader *reader, ATR *newatr)
 	rdr_log(reader, "Tongfang card detected");
 
 	write_cmd(begin_cmd, begin_cmd + 5);
-	if((cta_res[cta_lr - 2] != 0x90) || (cta_res[cta_lr - 1] != 0x00)) { return ERROR; }
+	if((cta_res[cta_lr - 2] != 0x90) || (cta_res[cta_lr - 1] != 0x00))
+	{
+		return ERROR;
+	}
 
 	write_cmd(get_serial_cmd, get_serial_cmd + 5);
-	if((cta_res[cta_lr - 2] & 0xf0) != 0x60) { return ERROR; }
-	data_len = tongfang_read_data(reader, cta_res[cta_lr - 1], data, &status);
+	if((cta_res[cta_lr - 2] & 0xf0) != 0x60)
+	{
+		return ERROR;
+	}
 
-	if(data_len < 0) { return ERROR; }
-	if(status != 0x9000) { return ERROR; }
+	data_len = tongfang_read_data(reader, cta_res[cta_lr - 1], data, &status);
+	if(data_len < 0)
+	{
+		return ERROR;
+	}
+
+	if(status != 0x9000)
+	{
+		return ERROR;
+	}
 
 	memset(reader->hexserial, 0, 8);
 	memcpy(reader->hexserial + 2, data, 4); // might be incorrect offset
@@ -97,19 +114,23 @@ B2 3A 74 3D D1 D4
 */
 static int32_t tongfang_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, struct s_ecm_answer *ea)
 {
-	uchar ecm_cmd[200];
+	uint8_t ecm_cmd[200];
 	int32_t ecm_len;
-	const uchar *pbuf = er->ecm;
+	const uint8_t *pbuf = er->ecm;
 	char *tmp;
 	int32_t i = 0;
 	int32_t write_len = 0;
 	def_resp;
 	int32_t read_size = 0;
-	uchar data[100];
+	uint8_t data[100];
 	int32_t data_len = 0;
 	uint16_t status = 0;
 
-	if((ecm_len = check_sct_len(er->ecm, 3)) < 0) { return ERROR; }
+	if((ecm_len = check_sct_len(er->ecm, 3)) < 0)
+	{
+		return ERROR;
+	}
+
 	if(cs_malloc(&tmp, ecm_len * 3 + 1))
 	{
 		rdr_log_dbg(reader, D_IFD, "ECM: %s", cs_hexdump(1, er->ecm, ecm_len, tmp, ecm_len * 3 + 1));
@@ -127,7 +148,6 @@ static int32_t tongfang_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, s
 	write_len = pbuf[4] + 5;
 
 	memcpy(ecm_cmd, pbuf, write_len);
-
 	write_cmd(ecm_cmd, ecm_cmd + 5);
 
 	if((cta_lr - 2) >= 2)
@@ -148,7 +168,10 @@ static int32_t tongfang_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, s
 
 	data_len = tongfang_read_data(reader, read_size, data, &status);
 
-	if(data_len < 23) { return ERROR; }
+	if(data_len < 23)
+	{
+		return ERROR;
+	}
 
 	if(!(er->ecm[0] & 0x01))
 	{
@@ -161,7 +184,10 @@ static int32_t tongfang_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, s
 	}
 
 	// All zeroes is no valid CW, can be a result of wrong boxid
-	if(!cw_is_valid(ea->cw) || !cw_is_valid(ea->cw + 8)) { return ERROR; }
+	if(!cw_is_valid(ea->cw) || !cw_is_valid(ea->cw + 8))
+	{
+		return ERROR;
+	}
 
 	return OK;
 }
@@ -174,11 +200,14 @@ static int32_t tongfang_get_emm_type(EMM_PACKET *ep, struct s_reader *UNUSED(rea
 
 static int32_t tongfang_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 {
-	uchar emm_cmd[200];
+	uint8_t emm_cmd[200];
 	def_resp;
 	int32_t write_len;
 
-	if(SCT_LEN(ep->emm) < 8) { return ERROR; }
+	if(SCT_LEN(ep->emm) < 8)
+	{
+		return ERROR;
+	}
 
 	write_len = ep->emm[15] + 5;
 	memcpy(emm_cmd, ep->emm + 11, write_len);
@@ -190,12 +219,15 @@ static int32_t tongfang_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 
 static int32_t tongfang_card_info(struct s_reader *reader)
 {
-	static const uchar get_provider_cmd[] = {0x80, 0x44, 0x00, 0x00, 0x08};
+	static const uint8_t get_provider_cmd[] = {0x80, 0x44, 0x00, 0x00, 0x08};
 	def_resp;
 	int32_t i;
 
 	write_cmd(get_provider_cmd, NULL);
-	if((cta_res[cta_lr - 2] != 0x90) || (cta_res[cta_lr - 1] != 0x00)) { return ERROR; }
+	if((cta_res[cta_lr - 2] != 0x90) || (cta_res[cta_lr - 1] != 0x00))
+	{
+		return ERROR;
+	}
 
 	for(i = 0; i < 4; i++)
 	{
