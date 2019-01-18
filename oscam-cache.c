@@ -16,58 +16,56 @@
 
 
 // CACHE functions **************************************************************+
-struct s_pushclient {
+struct s_pushclient
+{
 	struct s_client *cl;
-	struct s_pushclient	*next_push;
+	struct s_pushclient *next_push;
 };
 
-typedef struct cw_t {
-	uchar			cw[16];
-	uint8_t			odd_even;			//odd/even byte (0x80 0x81)
-	uint8_t			cwc_cycletime;
-	uint8_t			cwc_next_cw_cycle;
-	uint8_t			got_bad_cwc;		//used by cycle check
-	uint16_t		caid;				//first caid received
-	uint32_t		prid;				//first prid received
-	uint16_t		srvid;				//first srvid received
-	struct s_reader	*selected_reader;   //first answering: reader
-	struct s_client *cacheex_src;  		//first answering: cacheex client
-
-	uint64_t		grp;				//updated grp
-	uint8_t			csp; 				//updated if answer from csp
-	uint8_t			cacheex; 			//updated if answer from cacheex
-	uint8_t			localcards;			//updated if answer from local cards (or proxy using localcards option)
-	uint8_t			proxy;				//updated if answer from local reader
-
-	uint32_t 		count;				//count of same cws receved
-
-	//for push out
+typedef struct cw_t
+{
+	uint8_t             cw[16];
+	uint8_t             odd_even;            // odd/even byte (0x80 0x81)
+	uint8_t             cwc_cycletime;
+	uint8_t             cwc_next_cw_cycle;
+	uint8_t             got_bad_cwc;         // used by cycle check
+	uint16_t            caid;                // first caid received
+	uint32_t            prid;                // first prid received
+	uint16_t            srvid;               // first srvid received
+	struct s_reader     *selected_reader;    // first answering: reader
+	struct s_client     *cacheex_src;        // first answering: cacheex client
+	uint64_t            grp;                 // updated grp
+	uint8_t             csp;                 // updated if answer from csp
+	uint8_t             cacheex;             // updated if answer from cacheex
+	uint8_t             localcards;          // updated if answer from local cards (or proxy using localcards option)
+	uint8_t             proxy;               // updated if answer from local reader
+	uint32_t            count;               // count of same cws receved
+	// for push out
 	pthread_rwlock_t    pushout_client_lock;
-	struct s_pushclient *pushout_client;	//list of clients that pushing cw
-	//end push out
-
-	node		    ht_node;  //node for hash table
-	node		    ll_node;  //node for linked list
+	struct s_pushclient *pushout_client;     // list of clients that pushing cw
+	// end push out
+	node                ht_node;             // node for hash table
+	node                ll_node;             // node for linked list
 } CW;
 
-typedef struct cache_t {
-	hash_table 		ht_cw;
-	list 			ll_cw;
-	struct timeb	upd_time; //updated time. Update time at each cw got
-	struct timeb	first_recv_time;  //time of first cw received
-	uint32_t			csp_hash;
-
-	node		    ht_node;  //node for hash table
-	node		    ll_node;  //node for linked list
+typedef struct cache_t
+{
+	hash_table          ht_cw;
+	list                ll_cw;
+	struct timeb        upd_time;            // updated time. Update time at each cw got
+	struct timeb        first_recv_time;     // time of first cw received
+	uint32_t            csp_hash;
+	node                ht_node;             // node for hash table
+	node                ll_node;             // node for linked list
 } ECMHASH;
-
 
 static pthread_rwlock_t cache_lock;
 static hash_table ht_cache;
 static list ll_cache;
 static int8_t cache_init_done = 0;
 
-void init_cache(void){
+void init_cache(void)
+{
 	init_hash_table(&ht_cache, &ll_cache);
 	if (pthread_rwlock_init(&cache_lock,NULL) != 0)
 		{ cs_log("Error creating lock cache_lock!"); }
@@ -75,45 +73,52 @@ void init_cache(void){
 		{ cache_init_done = 1; }
 }
 
-void free_cache(void){
+void free_cache(void)
+{
 	cleanup_cache(true);
 	cache_init_done = 0;
 	deinitialize_hash_table(&ht_cache);
 	pthread_rwlock_destroy(&cache_lock);
 }
 
-uint32_t cache_size(void){
+uint32_t cache_size(void)
+{
 	if(!cache_init_done)
 		{ return 0; }
-	
+
 	return count_hash_table(&ht_cache);
 }
 
-static uint8_t count_sort(CW *a, CW *b){
+static uint8_t count_sort(CW *a, CW *b)
+{
 	if (a->count == b->count) return 0;
-	return (a->count > b->count) ? -1 : 1; 	//DESC order by count
+	return (a->count > b->count) ? -1 : 1; // DESC order by count
 }
 
-uint8_t check_is_pushed(void *cwp, struct s_client *cl){
-
+uint8_t check_is_pushed(void *cwp, struct s_client *cl)
+{
 	struct s_pushclient *cl_tmp;
 	CW* cw = (CW*)cwp;
 	bool pushed=false;
 
 	SAFE_RWLOCK_RDLOCK(&cw->pushout_client_lock);
-	for (cl_tmp = cw->pushout_client; cl_tmp; cl_tmp = cl_tmp->next_push) {
-		if(cl_tmp->cl==cl){
+	for (cl_tmp = cw->pushout_client; cl_tmp; cl_tmp = cl_tmp->next_push)
+	{
+		if(cl_tmp->cl==cl)
+		{
 			pushed=true;
 			break;
 		}
 	}
 
-	if(!pushed){
+	if(!pushed)
+	{
 		SAFE_RWLOCK_UNLOCK(&cw->pushout_client_lock);
 		SAFE_RWLOCK_WRLOCK(&cw->pushout_client_lock);
 
 		struct s_pushclient *new_push_client;
-		if(cs_malloc(&new_push_client, sizeof(struct s_pushclient))){
+		if(cs_malloc(&new_push_client, sizeof(struct s_pushclient)))
+		{
 			new_push_client->cl=cl;
 
 			new_push_client->next_push=cw->pushout_client;
@@ -122,18 +127,22 @@ uint8_t check_is_pushed(void *cwp, struct s_client *cl){
 
 		SAFE_RWLOCK_UNLOCK(&cw->pushout_client_lock);
 		return 0;
-	}else{
+	}
+	else
+	{
 		SAFE_RWLOCK_UNLOCK(&cw->pushout_client_lock);
 		return 1;
 	}
 }
 
-uint8_t get_odd_even(ECM_REQUEST *er){
+uint8_t get_odd_even(ECM_REQUEST *er)
+{
 	return (er->ecm[0] != 0x80 && er->ecm[0] != 0x81 ? 0 : er->ecm[0]);
 }
 
 
-CW *get_first_cw(ECMHASH *ecmhash, ECM_REQUEST *er){
+CW *get_first_cw(ECMHASH *ecmhash, ECM_REQUEST *er)
+{
 	if(!ecmhash) return NULL;
 
 	node *j;
@@ -152,27 +161,33 @@ CW *get_first_cw(ECMHASH *ecmhash, ECM_REQUEST *er){
 	return NULL;
 }
 
-static int compare_csp_hash(const void *arg, const void *obj){
+static int compare_csp_hash(const void *arg, const void *obj)
+{
 	uint32_t h = ((const ECMHASH*)obj)->csp_hash;
 	return memcmp(arg, &h, 4);
 }
 
-static int compare_cw(const void *arg, const void *obj){
+static int compare_cw(const void *arg, const void *obj)
+{
 	return memcmp(arg, ((const CW*)obj)->cw, 16);
 }
 
 static bool cwcycle_check_cache(struct s_client *cl, ECM_REQUEST *er, CW *cw)
 {
 	(void)cl; (void)er; (void)cw;
+
 #ifdef CW_CYCLE_CHECK
 	if(cw->got_bad_cwc)
 		return 0;
+
 	uint8_t cwc_ct   = cw->cwc_cycletime > 0 ? cw->cwc_cycletime : 0;
 	uint8_t cwc_ncwc = cw->cwc_next_cw_cycle < 2 ? cw->cwc_next_cw_cycle : 2;
 	if(checkcwcycle(cl, er, NULL, cw->cw, 0, cwc_ct, cwc_ncwc) != 0)
 	{
 		cs_log_dbg(D_CWC | D_LB, "{client %s, caid %04X, srvid %04X} [check_cache] cyclecheck passed ecm in INT. cache.", (cl ? cl->account->usr : "-"), er->caid, er->srvid);
-	}else{
+	}
+	else
+	{
 		cs_log_dbg(D_CWC, "cyclecheck [BAD CW Cycle] from Int. Cache detected.. {client %s, caid %04X, srvid %04X} [check_cache] -> skip cache answer", (cl ? cl->account->usr : "-"), er->caid, er->srvid);
 		cw->got_bad_cwc = 1; // no need to check it again
 		return 0;
@@ -206,33 +221,24 @@ struct ecm_request_t *check_cache(ECM_REQUEST *er, struct s_client *cl)
 	if (!cw)
 		goto out_err;
 
-	if(
-			cw->csp    //csp have no grp!
-			||
-			!grp		   			     //csp client(no grp) searching for cache
-			||
-			(
-			  grp
-			  &&
-			  cw->grp  //ecm group --> only when readers/ex-clients answer (e_found) it
-			  && (grp & cw->grp)
-			)
-	){
-
-
+	if(cw->csp // csp have no grp!
+		|| !grp // csp client(no grp) searching for cache
+		|| (grp && cw->grp // ecm group --> only when readers/ex-clients answer (e_found) it
+		&& (grp & cw->grp)))
+	{
 #ifdef CS_CACHEEX
-
 		//if preferlocalcards=2 for this ecm request, we can server ONLY cw from localcards readers until stage<3
 		if(er->preferlocalcards==2 && !cw->localcards && er->stage<3){
 			goto out_err;
 		}
 
 		CWCHECK check_cw = get_cwcheck(er);
-		if((!cw->proxy && !cw->localcards)  //cw received from ONLY cacheex/csp peers
-		   && check_cw.counter>1
-		   && cw->count < check_cw.counter
-		   && (check_cw.mode || !er->cacheex_wait_time_expired)
-		){
+
+		if((!cw->proxy && !cw->localcards) // cw received from ONLY cacheex/csp peers
+			&& check_cw.counter>1
+			&& cw->count < check_cw.counter
+			&& (check_cw.mode || !er->cacheex_wait_time_expired))
+		{
 			goto out_err;
 		}
 #endif
@@ -240,7 +246,8 @@ struct ecm_request_t *check_cache(ECM_REQUEST *er, struct s_client *cl)
 		if (!cwcycle_check_cache(cl, er, cw))
 			goto out_err;
 
-		if (cs_malloc(&ecm, sizeof(ECM_REQUEST))){
+		if (cs_malloc(&ecm, sizeof(ECM_REQUEST)))
+		{
 			ecm->rc = E_FOUND;
 			ecm->rcEx = 0;
 			memcpy(ecm->cw, cw->cw, 16);
@@ -265,7 +272,7 @@ static void cacheex_cache_add(ECM_REQUEST *er, ECMHASH *result, CW *cw, bool add
 	er->cw_cache = cw;
 	cacheex_cache_push(er);
 
-	//cacheex debug log lines and cw diff stuff
+	// cacheex debug log lines and cw diff stuff
 	if(!check_client(er->cacheex_src))
 		return;
 
@@ -280,14 +287,14 @@ static void cacheex_cache_add(ECM_REQUEST *er, ECMHASH *result, CW *cw, bool add
 	if(!cw_first)
 		return;
 
-	//compare er cw with mostly counted cached cw
+	// compare er cw with mostly counted cached cw
 	if(memcmp(er->cw, cw_first->cw, sizeof(er->cw)) != 0)
 	{
 		er->cacheex_src->cwcacheexerrcw++;
 		if (er->cacheex_src->account)
 			er->cacheex_src->account->cwcacheexerrcw++;
 
-		if (((0x0200| 0x0800) & cs_dblevel)) //avoid useless operations if debug is not enabled
+		if (((0x0200| 0x0800) & cs_dblevel)) // avoid useless operations if debug is not enabled
 		{
 			char cw1[16*3+2], cw2[16*3+2];
 			cs_hexdump(0, er->cw, 16, cw1, sizeof(cw1));
@@ -310,7 +317,8 @@ static void cacheex_cache_add(ECM_REQUEST *er, ECMHASH *result, CW *cw, bool add
 #endif
 }
 
-void add_cache(ECM_REQUEST *er){
+void add_cache(ECM_REQUEST *er)
+{
 	if(!cache_init_done || !er->csp_hash) return;
 
 	ECMHASH *result = NULL;
@@ -319,7 +327,7 @@ void add_cache(ECM_REQUEST *er){
 
 	SAFE_RWLOCK_WRLOCK(&cache_lock);
 
-	//add csp_hash to cache
+	// add csp_hash to cache
 	result = find_hash_table(&ht_cache, &er->csp_hash, sizeof(uint32_t), &compare_csp_hash);
 	if(!result){
 		if(cs_malloc(&result, sizeof(ECMHASH))){
@@ -336,21 +344,23 @@ void add_cache(ECM_REQUEST *er){
 		}
 	}
 
-	cs_ftime(&result->upd_time);   //need to be updated at each cw! We use it for deleting this hash when no more cws arrive inside max_cache_time!
-
+	cs_ftime(&result->upd_time); // need to be updated at each cw! We use it for deleting this hash when no more cws arrive inside max_cache_time!
 
 	//add cw to this csp hash
 	cw = find_hash_table(&result->ht_cw, er->cw, sizeof(er->cw), &compare_cw);
 
-	if(!cw){
-
-		if(count_hash_table(&result->ht_cw)>=10){  //max 10 different cws stored
+	if(!cw)
+	{
+		if(count_hash_table(&result->ht_cw) >= 10) // max 10 different cws stored
+		{
 			SAFE_RWLOCK_UNLOCK(&cache_lock);
 			return;
 		}
 
-		while(1){
-			if(cs_malloc(&cw, sizeof(CW))){
+		while(1)
+		{
+			if(cs_malloc(&cw, sizeof(CW)))
+			{
 				memcpy(cw->cw, er->cw, sizeof(er->cw));
 				cw->odd_even = get_odd_even(er);
 				cw->cwc_cycletime = er->cwc_cycletime;
@@ -368,7 +378,8 @@ void add_cache(ECM_REQUEST *er){
 				cw->cacheex_src=er->cacheex_src;
 				cw->pushout_client = NULL;
 
-				while(1){
+				while(1)
+				{
 					if (pthread_rwlock_init(&cw->pushout_client_lock, NULL) == 0)
 						break;
 
@@ -376,9 +387,7 @@ void add_cache(ECM_REQUEST *er){
 					cs_sleepms(1);
 				}
 
-
 				add_hash_table(&result->ht_cw, &cw->ht_node, &result->ll_cw, &cw->ll_node, cw, cw->cw, sizeof(er->cw));
-
 				add_new_cw=true;
 				break;
 			}
@@ -388,19 +397,20 @@ void add_cache(ECM_REQUEST *er){
 		}
 	}
 
-	//update if answered from csp/cacheex/local_proxy
+	// update if answered from csp/cacheex/local_proxy
 	if(er->from_cacheex) cw->cacheex = 1;
 	if(er->from_csp) cw->csp = 1;
-	if(!er->cacheex_src){
+	if(!er->cacheex_src)
+	{
 		if(is_localreader(er->selected_reader, er)) cw->localcards=1;
 		else cw->proxy = 1;
 	}
 
-	//always update group and counter
+	// always update group and counter
 	cw->grp |= er->grp;
 	cw->count++;
 
-	//sort cw_list by counter (DESC order)
+	// sort cw_list by counter (DESC order)
 	if(cw->count>1)
 		sort_list(&result->ll_cw, count_sort);
 
@@ -409,7 +419,8 @@ void add_cache(ECM_REQUEST *er){
 	cacheex_cache_add(er, result, cw, add_new_cw);
 }
 
-void cleanup_cache(bool force){
+void cleanup_cache(bool force)
+{
 	ECMHASH *ecmhash;
 	CW *cw;
 	struct s_pushclient *pc, *nxt;
@@ -418,63 +429,63 @@ void cleanup_cache(bool force){
 	struct timeb now;
 	int64_t gone_first, gone_upd;
 
-
 	if(!cache_init_done)
 		{ return; }
 
 	SAFE_RWLOCK_WRLOCK(&cache_lock);
 
 	i = get_first_node_list(&ll_cache);
-	while (i) {
-	    i_next = i->next;
-	    ecmhash = get_data_from_node(i);
+	while(i)
+	{
+		i_next = i->next;
+		ecmhash = get_data_from_node(i);
 
-		if(!ecmhash){
+		if(!ecmhash)
+		{
 			i = i_next;
-			continue;	
+			continue;
 		}
-		
-	    cs_ftime(&now);
-	    gone_first = comp_timeb(&now, &ecmhash->first_recv_time);
-	    gone_upd = comp_timeb(&now, &ecmhash->upd_time);
 
-    	if(!force && gone_first<=(cfg.max_cache_time*1000)){ //not continue, useless check for nexts one!
-    		break;
-    	}
+		cs_ftime(&now);
+		gone_first = comp_timeb(&now, &ecmhash->first_recv_time);
+		gone_upd = comp_timeb(&now, &ecmhash->upd_time);
 
-    	if(force || gone_upd>(cfg.max_cache_time*1000)){
+		if(!force && gone_first<=(cfg.max_cache_time*1000)) // not continue, useless check for nexts one!
+		{
+			break;
+		}
 
-    		j = get_first_node_list(&ecmhash->ll_cw);
-    		while (j) {
-    			j_next = j->next;
-
-    			cw = get_data_from_node(j);
-    			if(cw){
+		if(force || gone_upd>(cfg.max_cache_time*1000))
+		{
+			j = get_first_node_list(&ecmhash->ll_cw);
+			while(j)
+			{
+				j_next = j->next;
+				cw = get_data_from_node(j);
+				if(cw)
+				{
 					pthread_rwlock_destroy(&cw->pushout_client_lock);
 					pc = cw->pushout_client;
 					cw->pushout_client=NULL;
-					while (pc) {
+					while(pc)
+					{
 						nxt = pc->next_push;
 						NULLFREE(pc);
 						pc = nxt;
 					}
-
 					remove_elem_list(&ecmhash->ll_cw, &cw->ll_node);
 					remove_elem_hash_table(&ecmhash->ht_cw, &cw->ht_node);
 					NULLFREE(cw);
-    			}
-
+				}
 				j = j_next;
-    		}
+			}
 
-    		deinitialize_hash_table(&ecmhash->ht_cw);
-    		remove_elem_list(&ll_cache, &ecmhash->ll_node);
-    		remove_elem_hash_table(&ht_cache, &ecmhash->ht_node);
-	    	NULLFREE(ecmhash);
-    	}
-
-	    i = i_next;
+			deinitialize_hash_table(&ecmhash->ht_cw);
+			remove_elem_list(&ll_cache, &ecmhash->ll_node);
+			remove_elem_hash_table(&ht_cache, &ecmhash->ht_node);
+			NULLFREE(ecmhash);
+		}
+		i = i_next;
 	}
-
 	SAFE_RWLOCK_UNLOCK(&cache_lock);
 }

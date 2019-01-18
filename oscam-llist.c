@@ -1,4 +1,3 @@
-
 /* singularly linked-list */
 
 #include "globals.h"
@@ -14,8 +13,6 @@ extern char *LOG_LIST;
   mutex lock is needed when...
   1. l->initial + l->last is modified/accessed
   2. LL_NODE nxt modified/accessed
-
-
 */
 
 #ifdef WITH_DEBUG
@@ -30,7 +27,7 @@ static void _destroy(LLIST *l)
 	if(!l) { return; }
 	if(!l->flag++)
 	{
-		cs_writelock(__func__, &l->lock); //just getting sure noone is using it
+		cs_writelock(__func__, &l->lock); // just getting sure noone is using it
 		cs_writeunlock(__func__, &l->lock);
 
 		cs_lock_destroy(__func__, &l->lock);
@@ -66,7 +63,6 @@ void ll_destroy_data(LLIST **pl)
 
 	_destroy(l);
 }
-
 
 void ll_destroy_free_data(LLIST **pl)
 {
@@ -263,7 +259,6 @@ LL_ITER ll_iter_create(LLIST *l)
 	return it;
 }
 
-
 void *ll_iter_next(LL_ITER *it)
 {
 	if(it && it->l && !it->l->flag)
@@ -286,7 +281,7 @@ void *ll_iter_remove_nolock(LL_ITER *it)
 		{
 			obj = del->obj;
 			LL_NODE *prv = it->prv;
-			if(it->ll_version != it->l->version || !prv)    // List has been modified so it->prv might be wrong!
+			if(it->ll_version != it->l->version || !prv) // List has been modified so it->prv might be wrong!
 			{
 				LL_NODE *n = it->l->initial;
 				prv = NULL;
@@ -453,7 +448,7 @@ int32_t ll_iter_move_first(LL_ITER *it)
 
 			LL_NODE *prv = it->prv;
 			cs_writelock(__func__, &it->l->lock);
-			if(it->ll_version != it->l->version || !prv)        // List has been modified so it->prv might be wrong!
+			if(it->ll_version != it->l->version || !prv) // List has been modified so it->prv might be wrong!
 			{
 				LL_NODE *n = it->l->initial;
 				prv = NULL;
@@ -614,7 +609,7 @@ void **ll_sort(const LLIST *l, void *compare, int32_t *size)
 	}
 	cs_readunlock(__func__, &((LLIST *)l)->lock);
 #ifdef WITH_DEBUG
-	//  if (chk_debugLog(it->l))
+	//if (chk_debugLog(it->l))
 	//cs_log_dbg(D_TRACE, "sort: count %d size %d", l->count, sizeof(p[0]));
 #endif
 	qsort(p, l->count, sizeof(p[0]), compare);
@@ -632,7 +627,7 @@ void ll_putall(LLIST *dest, LLIST *src)
 	}
 }
 
-//New Iterator:
+// New Iterator:
 LL_LOCKITER *ll_li_create(LLIST *l, int32_t writelock)
 {
 	if(!l || l->flag) { return NULL; }

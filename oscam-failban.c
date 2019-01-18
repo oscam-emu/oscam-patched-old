@@ -22,7 +22,7 @@ static int32_t cs_check_v(IN_ADDR_T ip, int32_t port, int32_t add, char *info, i
 	V_BAN *v_ban_entry;
 	int32_t ftime = cfg.failbantime * 60 * 1000;
 
-	//run over all banned entries to do housekeeping:
+	// run over all banned entries to do housekeeping:
 	while((v_ban_entry = ll_iter_next(&itr)))
 	{
 		// housekeeping:
@@ -49,23 +49,35 @@ static int32_t cs_check_v(IN_ADDR_T ip, int32_t port, int32_t add, char *info, i
 				if(v_ban_entry->v_count >= cfg.failbancount)
 				{
 					if(!v_ban_entry->acosc_entry)
-                    	{ cs_log_dbg(D_TRACE, "failban: banned ip %s:%d - %"PRId64" seconds left%s%s", cs_inet_ntoa(v_ban_entry->v_ip), v_ban_entry->v_port, (ftime - gone)/1000, info ? ", info: " : "", info ? info : ""); }
+					{
+						cs_log_dbg(D_TRACE, "failban: banned ip %s:%d - %"PRId64" seconds left %s%s",
+									cs_inet_ntoa(v_ban_entry->v_ip), v_ban_entry->v_port,
+									(ftime - gone) / 1000, info ? ", info: " : "", info ? info : "");
+					}
 					else
-						{ cs_log_dbg(D_TRACE, "failban: banned ip %s:%d - %"PRId64" seconds left%s%s", cs_inet_ntoa(v_ban_entry->v_ip), v_ban_entry->v_port, (v_ban_entry->acosc_penalty_dur - (gone/1000)), info?", info: ":"", info?info:""); }
+					{
+						cs_log_dbg(D_TRACE, "failban: banned ip %s:%d - %"PRId64" seconds left %s%s",
+									cs_inet_ntoa(v_ban_entry->v_ip), v_ban_entry->v_port,
+									(v_ban_entry->acosc_penalty_dur - (gone / 1000)),
+									info ? ", info: " : "", info ? info : "");
+					}
 
 				}
 				else
 				{
 					cs_log_dbg(D_TRACE, "failban: ip %s:%d chance %d of %d%s%s",
-								  cs_inet_ntoa(v_ban_entry->v_ip), v_ban_entry->v_port,
-								  v_ban_entry->v_count, cfg.failbancount, info ? ", info: " : "", info ? info : "");
+								cs_inet_ntoa(v_ban_entry->v_ip), v_ban_entry->v_port,
+								v_ban_entry->v_count, cfg.failbancount,
+								info ? ", info: " : "", info ? info : "");
+
 					v_ban_entry->v_count++;
 				}
 			}
 			else
 			{
-				cs_log_dbg(D_TRACE, "failban: banned ip %s:%d - already exist in list%s%s",
-							  cs_inet_ntoa(v_ban_entry->v_ip), v_ban_entry->v_port, info ? ", info: " : "", info ? info : "");
+				cs_log_dbg(D_TRACE, "failban: banned ip %s:%d - already exist in list %s%s",
+							cs_inet_ntoa(v_ban_entry->v_ip), v_ban_entry->v_port,
+							info ? ", info: " : "", info ? info : "");
 			}
 		}
 	}
@@ -80,18 +92,21 @@ static int32_t cs_check_v(IN_ADDR_T ip, int32_t port, int32_t add, char *info, i
 			v_ban_entry->v_count = 1;
 			v_ban_entry->acosc_entry = false;
 			v_ban_entry->acosc_penalty_dur = 0;
+
 			if(acosc_penalty_duration > 0)
 			{
 				v_ban_entry->v_count = cfg.failbancount +1; // set it to a higher level
 				v_ban_entry->acosc_entry = true;
 				v_ban_entry->acosc_penalty_dur = acosc_penalty_duration;
 			}
+
 			if(info)
 				{ v_ban_entry->info = cs_strdup(info); }
+
 			ll_iter_insert(&itr, v_ban_entry);
 			cs_log_dbg(D_TRACE, "failban: ban ip %s:%d with timestamp %ld%s%s",
-						  cs_inet_ntoa(v_ban_entry->v_ip), v_ban_entry->v_port, v_ban_entry->v_time.time,
-						  info ? ", info: " : "", info ? info : "");
+						cs_inet_ntoa(v_ban_entry->v_ip), v_ban_entry->v_port, v_ban_entry->v_time.time,
+						info ? ", info: " : "", info ? info : "");
 		}
 	}
 

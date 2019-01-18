@@ -17,7 +17,7 @@
 #include "oscam-string.h"
 #include "oscam-time.h"
 
-const int32_t CWS_NETMSGSIZE = 1024;  //csp 0.8.9 (default: 400). This is CWS_NETMSGSIZE. The old default was 240
+const int32_t CWS_NETMSGSIZE = 1024; // csp 0.8.9 (default: 400). This is CWS_NETMSGSIZE. The old default was 240
 
 #define NCD_CLIENT_ID 0x8888
 
@@ -66,10 +66,10 @@ typedef struct custom_data
 	uint16_t sid;
 	uint16_t caid;
 	int32_t provid;
-	uchar x;
+	uint8_t x;
 } custom_data_t;
 
-#define REQ_SIZE  2
+#define REQ_SIZE 2
 
 
 static int32_t network_message_send(int32_t handle, uint16_t *netMsgId, uint8_t *buffer,
@@ -104,8 +104,8 @@ static int32_t network_message_send(int32_t handle, uint16_t *netMsgId, uint8_t 
 		{
 			memcpy(netbuf + 4, cl->ncd_header + 4, 7);
 		}
-		netbuf[(cl->ncd_proto == NCD_524) ? 6 : 4] = (uchar)(sid >> 8); //sid
-		netbuf[(cl->ncd_proto == NCD_524) ? 7 : 5] = (uchar)(sid);
+		netbuf[(cl->ncd_proto == NCD_524) ? 6 : 4] = (uint8_t)(sid >> 8); //sid
+		netbuf[(cl->ncd_proto == NCD_524) ? 7 : 5] = (uint8_t)(sid);
 	}
 	//if ((!ncd_proto==NCD_524) && (buffer[0] >= 0xd1) && (buffer[0]<= 0xd8)) { // extended proto for mg
 	//cs_log_dbg(D_CLIENT, "newcamd: extended: msg");
@@ -157,7 +157,7 @@ static int32_t send_sid_list(void)
 		return 0;
 	}
 
-	uchar mbuf[CWS_NETMSGSIZE];
+	uint8_t mbuf[CWS_NETMSGSIZE];
 	int32_t n = 0, nr = 0, portion_sid_num = 0, i = 0, sid_num = 0,
 			portion_num = 0;
 	SIDTAB *sidtab = 0;
@@ -185,8 +185,8 @@ static int32_t send_sid_list(void)
 							cd.caid = cfg.ncd_ptab.ports[cl->port_idx].s_port;   //assigned port
 							cd.provid = 0x1; // mark as deny
 						}
-						mbuf[portion_sid_num * 3] = (uchar)(sidtab->srvid[i] >> 8);
-						mbuf[portion_sid_num * 3 + 1] = (uchar)(sidtab->srvid[i] & 0xFF);
+						mbuf[portion_sid_num * 3] = (uint8_t)(sidtab->srvid[i] >> 8);
+						mbuf[portion_sid_num * 3 + 1] = (uint8_t)(sidtab->srvid[i] & 0xFF);
 						mbuf[portion_sid_num * 3 + 2] = 0x1; // mark as deny
 
 						++sid_num;
@@ -226,7 +226,7 @@ static int32_t send_sid_list(void)
 }
 
 static int32_t network_message_receive(int32_t handle, uint16_t *netMsgId, uint8_t *buffer,
-									   uint8_t *deskey, comm_type_t commType)
+										uint8_t *deskey, comm_type_t commType)
 {
 	int32_t len, ncd_off, msgid;
 	uint8_t netbuf[CWS_NETMSGSIZE];
@@ -274,7 +274,7 @@ static int32_t network_message_receive(int32_t handle, uint16_t *netMsgId, uint8
 		return -1;
 	}
 	len += 2;
-	if((len = nc_des_decrypt(netbuf, len, deskey)) < 11)      // 15(newcamd525) or 11 ???
+	if((len = nc_des_decrypt(netbuf, len, deskey)) < 11) // 15(newcamd525) or 11 ???
 	{
 		cs_log_dbg(D_CLIENT, "nmr: can't decrypt, invalid des key?");
 		cs_sleepms(2000);
@@ -402,7 +402,7 @@ static int32_t connect_newcamd_server(void)
 	int32_t handle = 0;
 
 	uint32_t idx;
-	uchar passwdcrypt[120];
+	uint8_t passwdcrypt[120];
 	uint8_t login_answer;
 	int32_t bytes_received;
 	struct s_client *cl = cur_client();
@@ -440,7 +440,7 @@ static int32_t connect_newcamd_server(void)
 
 	// 3.1 Get login answer
 	login_answer = network_cmd_no_data_receive(handle, &cl->ncd_msgid,
-				   key, COMMTYPE_CLIENT);
+					key, COMMTYPE_CLIENT);
 	if(login_answer == MSG_CLIENT_2_SERVER_LOGIN_NAK)
 	{
 		cs_log("login failed for user '%s'", cl->reader->r_usr);
@@ -450,7 +450,7 @@ static int32_t connect_newcamd_server(void)
 	if(login_answer != MSG_CLIENT_2_SERVER_LOGIN_ACK)
 	{
 		cs_log("expected MSG_CLIENT_2_SERVER_LOGIN_ACK (%02X), received %02X",
-			   MSG_CLIENT_2_SERVER_LOGIN_ACK, login_answer);
+				MSG_CLIENT_2_SERVER_LOGIN_ACK, login_answer);
 		network_tcp_connection_close(cl->reader, "login error2");
 		return -3;
 	}
@@ -463,13 +463,13 @@ static int32_t connect_newcamd_server(void)
 	nc_des_login_key_get(cl->reader->ncd_key, passwdcrypt, strlen((char *)passwdcrypt), key);
 
 	network_cmd_no_data_send(handle, &cl->ncd_msgid, MSG_CARD_DATA_REQ,
-							 key, COMMTYPE_CLIENT);
+							key, COMMTYPE_CLIENT);
 	bytes_received = network_message_receive(handle, &cl->ncd_msgid, buf,
 					 key, COMMTYPE_CLIENT);
 	if(bytes_received < 16 || buf[2] != MSG_CARD_DATA)
 	{
 		cs_log("expected MSG_CARD_DATA (%02X), received %02X",
-			   MSG_CARD_DATA, buf[2]);
+				MSG_CARD_DATA, buf[2]);
 		network_tcp_connection_close(cl->reader, "receive error");
 		return -4;
 	}
@@ -508,7 +508,7 @@ static int32_t connect_newcamd_server(void)
 	// Only after connect() on cl->udp_fd (Linux)
 	cl->pfd = cl->udp_fd;
 
-	if(cl->reader->ncd_disable_server_filt)    //act like mgclient
+	if(cl->reader->ncd_disable_server_filt) // act like mgclient
 	{
 		network_cmd_no_data_send(handle, &cl->ncd_msgid, MSG_SERVER_2_CLIENT_GET_VERSION,
 								 key, COMMTYPE_CLIENT);
@@ -531,7 +531,7 @@ static int32_t newcamd_connect(void)
 }
 
 
-static int32_t newcamd_send(uchar *buf, int32_t ml, uint16_t sid)
+static int32_t newcamd_send(uint8_t *buf, int32_t ml, uint16_t sid)
 {
 	struct s_client *cl = cur_client();
 
@@ -539,10 +539,10 @@ static int32_t newcamd_send(uchar *buf, int32_t ml, uint16_t sid)
 		{ return (-1); }
 
 	return (network_message_send(cl->udp_fd, &cl->ncd_msgid,
-								 buf, ml, cl->reader->ncd_skey, COMMTYPE_CLIENT, sid, NULL));
+								buf, ml, cl->reader->ncd_skey, COMMTYPE_CLIENT, sid, NULL));
 }
 
-static int32_t newcamd_recv(struct s_client *client, uchar *buf, int32_t UNUSED(l))
+static int32_t newcamd_recv(struct s_client *client, uint8_t *buf, int32_t UNUSED(l))
 {
 	int32_t rc, rs;
 
@@ -634,7 +634,7 @@ static void mk_user_ftab(FILTER *filt)
 
 	// search CAID in client IDENT
 	cs_log_dbg(D_CLIENT, "client[%8lX].%s nfilts=%d, filt.caid=%04X", (unsigned long)pthread_self(),
-				  cl->account->usr, cl->ftab.nfilts, filt->caid);
+					cl->account->usr, cl->ftab.nfilts, filt->caid);
 
 	if(!filt->caid && cl->ftab.nfilts)
 	{
@@ -731,14 +731,14 @@ static void mk_user_ftab(FILTER *filt)
 static int8_t newcamd_auth_client(IN_ADDR_T ip, uint8_t *deskey)
 {
 	int32_t i, ok, rc, sid_list;
-	uchar *usr = NULL, *pwd = NULL;
+	uint8_t *usr = NULL, *pwd = NULL;
 	struct s_auth *account;
-	uchar buf[14];
-	uchar key[16];
-	uchar passwdcrypt[120];
+	uint8_t buf[14];
+	uint8_t key[16];
+	uint8_t passwdcrypt[120];
 	struct s_reader *aureader = NULL, *rdr = NULL;
 	struct s_client *cl = cur_client();
-	uchar mbuf[CWS_NETMSGSIZE];
+	uint8_t mbuf[CWS_NETMSGSIZE];
 
 	sid_list = 0;
 
@@ -765,7 +765,7 @@ static int8_t newcamd_auth_client(IN_ADDR_T ip, uint8_t *deskey)
 		if(mbuf[2] != MSG_CLIENT_2_SERVER_LOGIN)
 		{
 			cs_log_dbg(D_CLIENT, "expected MSG_CLIENT_2_SERVER_LOGIN (%02X), received %02X",
-						  MSG_CLIENT_2_SERVER_LOGIN, mbuf[2]);
+							MSG_CLIENT_2_SERVER_LOGIN, mbuf[2]);
 			return -1;
 		}
 		usr = mbuf + 5;
@@ -861,14 +861,14 @@ static int8_t newcamd_auth_client(IN_ADDR_T ip, uint8_t *deskey)
 			int32_t n;
 			if(!cfg.ncd_ptab.ports[cl->port_idx].ncd)
 				{ continue; }
-			
+
 			if(cfg.ncd_ptab.ports[cl->port_idx].ncd->ncd_ftab.filts[0].caid == 0
 				&& !rdr->audisabled && (is_network_reader(rdr) || rdr->card_status == CARD_INSERTED) )
-			{			
+			{
 				aureader = rdr;
-				break;				
+				break;
 			}
-			
+
 			for(n = 0; n < cfg.ncd_ptab.ports[cl->port_idx].ncd->ncd_ftab.filts[0].nprids; n++)
 			{
 				if(emm_reader_match(rdr, cfg.ncd_ptab.ports[cl->port_idx].ncd->ncd_ftab.filts[0].caid, cfg.ncd_ptab.ports[cl->port_idx].ncd->ncd_ftab.filts[0].prids[n]))
@@ -899,7 +899,7 @@ static int8_t newcamd_auth_client(IN_ADDR_T ip, uint8_t *deskey)
 	{
 		FILTER usr_filter;
 		FILTER *pufilt = &usr_filter;
-		
+
 		nc_des_login_key_get(deskey, passwdcrypt, strlen((char *)passwdcrypt), key);
 		memcpy(cl->ncd_skey, key, 16);
 
@@ -910,18 +910,18 @@ static int8_t newcamd_auth_client(IN_ADDR_T ip, uint8_t *deskey)
 			if(mbuf[2] != MSG_CARD_DATA_REQ)
 			{
 				cs_log_dbg(D_CLIENT, "expected MSG_CARD_DATA_REQ (%02X), received %02X",
-							  MSG_CARD_DATA_REQ, mbuf[2]);
+								MSG_CARD_DATA_REQ, mbuf[2]);
 				return -1;
 			}
-			
+
 			mk_user_ftab(&usr_filter);
-			
+
 			// set userfilter for au enabled clients
 			if(aureader)
 			{
 				mk_user_au_ftab(aureader, &usr_filter);
 			}
-			
+
 			ftab_clear(&cl->ftab);
 
 			if(!cfg.ncd_mgclient)
@@ -938,8 +938,8 @@ static int8_t newcamd_auth_client(IN_ADDR_T ip, uint8_t *deskey)
 			else
 				{ mbuf[3] = get_threadnum(cl) + 10; } // Unique user number
 
-			mbuf[4] = (uchar)(pufilt->caid >> 8);
-			mbuf[5] = (uchar)(pufilt->caid);
+			mbuf[4] = (uint8_t)(pufilt->caid >> 8);
+			mbuf[5] = (uint8_t)(pufilt->caid);
 			mbuf[6] = 0x00;
 			mbuf[7] = 0x00;
 
@@ -959,9 +959,9 @@ static int8_t newcamd_auth_client(IN_ADDR_T ip, uint8_t *deskey)
 				}
 				else
 				{
-					mbuf[15 + 11 * j] = (uchar)(pufilt->prids[j] >> 16);
-					mbuf[16 + 11 * j] = (uchar)(pufilt->prids[j] >> 8);
-					mbuf[17 + 11 * j] = (uchar)(pufilt->prids[j]);
+					mbuf[15 + 11 * j] = (uint8_t)(pufilt->prids[j] >> 16);
+					mbuf[16 + 11 * j] = (uint8_t)(pufilt->prids[j] >> 8);
+					mbuf[17 + 11 * j] = (uint8_t)(pufilt->prids[j]);
 				}
 				mbuf[18 + 11 * j] = 0x00;
 				mbuf[19 + 11 * j] = 0x00;
@@ -1012,9 +1012,9 @@ static int8_t newcamd_auth_client(IN_ADDR_T ip, uint8_t *deskey)
 					if(caid_is_betacrypt(pufilt->caid) || caid_is_irdeto(pufilt->caid))
 					{
 						mbuf[22 + 11 * j] = 0x00;
-						mbuf[23 + 11 * j] = (uchar)(pufilt->prids[j] >> 16);
-						mbuf[24 + 11 * j] = (uchar)(pufilt->prids[j] >> 8);
-						mbuf[25 + 11 * j] = (uchar)(pufilt->prids[j]);
+						mbuf[23 + 11 * j] = (uint8_t)(pufilt->prids[j] >> 16);
+						mbuf[24 + 11 * j] = (uint8_t)(pufilt->prids[j] >> 8);
+						mbuf[25 + 11 * j] = (uint8_t)(pufilt->prids[j]);
 					}
 					else
 					{
@@ -1063,7 +1063,7 @@ static void newcamd_send_dcw(struct s_client *client, ECM_REQUEST *er)
 {
 	int32_t len;
 	uint16_t cl_msgid;
-	uchar mbuf[19];
+	uint8_t mbuf[19];
 
 	if(!client->udp_fd)
 	{
@@ -1073,7 +1073,7 @@ static void newcamd_send_dcw(struct s_client *client, ECM_REQUEST *er)
 
 	cl_msgid = er->msgid;
 	mbuf[0] = er->ecm[0];
-	if(er->rc >= E_NOTFOUND /*not found*/)
+	if(er->rc >= E_NOTFOUND) /*not found*/
 	{
 		len = 3;
 		mbuf[1] = mbuf[2] = 0x00;
@@ -1091,7 +1091,7 @@ static void newcamd_send_dcw(struct s_client *client, ECM_REQUEST *er)
 						 client->ncd_skey, COMMTYPE_SERVER, 0, NULL);
 }
 
-static void newcamd_process_ecm(struct s_client *cl, uchar *buf, int32_t len)
+static void newcamd_process_ecm(struct s_client *cl, uint8_t *buf, int32_t len)
 {
 	int32_t pi;
 	ECM_REQUEST *er;
@@ -1101,16 +1101,16 @@ static void newcamd_process_ecm(struct s_client *cl, uchar *buf, int32_t len)
 		{ return; }
 
 	ecmlen = SCT_LEN((&buf[2]));
-	if(ecmlen < 3 || ecmlen > MAX_ECM_SIZE || ecmlen+2 > len)
+	if(ecmlen < 3 || ecmlen > MAX_ECM_SIZE || ecmlen + 2 > len)
 	{
 		return;
 	}
-	
+
 	if(!(er = get_ecmtask()))
 	{
 		return;
 	}
-	
+
 	// save client ncd_msgid
 	er->msgid = cl->ncd_msgid;
 	er->ecmlen = ecmlen;
@@ -1128,7 +1128,7 @@ static void newcamd_process_ecm(struct s_client *cl, uchar *buf, int32_t len)
 	get_cw(cl, er);
 }
 
-static void newcamd_process_emm(uchar *buf, int32_t len)
+static void newcamd_process_emm(uint8_t *buf, int32_t len)
 {
 	int32_t ok = 1, provid;
 	uint16_t caid = 0;
@@ -1137,44 +1137,44 @@ static void newcamd_process_emm(uchar *buf, int32_t len)
 
 	if(len < 3)
 		{ return; }
-	
+
 	memset(&epg, 0, sizeof(epg));
 
 	epg.emmlen = SCT_LEN(buf);
 	if(epg.emmlen > MAX_EMM_SIZE || epg.emmlen > len)
 		{ return; }
-	
+
 	caid = cfg.ncd_ptab.ports[cl->port_idx].ncd->ncd_ftab.filts[0].caid;
-	epg.caid[0] = (uchar)(caid >> 8);
-	epg.caid[1] = (uchar)(caid);
+	epg.caid[0] = (uint8_t)(caid >> 8);
+	epg.caid[1] = (uint8_t)(caid);
 
 	provid = cfg.ncd_ptab.ports[cl->port_idx].ncd->ncd_ftab.filts[0].prids[0];
-		
-	epg.provid[0] = (uchar)(provid>>24);
-	epg.provid[1] = (uchar)(provid>>16);
-	epg.provid[2] = (uchar)(provid>>8);
-	epg.provid[3] = (uchar)(provid);
-	
-	/*  if (caid == 0x0500)
-	  {
-	    uint16_t emm_head;
 
-	    emm_head = (buf[0]<<8) | buf[1];
-	    switch( emm_head )
-	    {
-	      case 0x8e70:  // EMM-S
-	        memcpy(epg.hexserial+1, buf+3, 4);
-	        epg.hexserial[4]=aureader->hexserial[4];
-	        break;
-	      case 0x8870:  // EMM-U
-	      case 0x8c70:  // confidential ?
-	      default:
-	        cs_log("unsupported emm type: %04X", emm_head);
-	        ok=0;
-	    }
-	    if( !ok ) cs_log("only EMM-S supported");
-	  }
-	  else*/
+	epg.provid[0] = (uint8_t)(provid >> 24);
+	epg.provid[1] = (uint8_t)(provid >> 16);
+	epg.provid[2] = (uint8_t)(provid >> 8);
+	epg.provid[3] = (uint8_t)(provid);
+
+	/*  if (caid == 0x0500)
+		{
+			uint16_t emm_head;
+
+			emm_head = (buf[0]<<8) | buf[1];
+			switch( emm_head )
+			{
+				case 0x8e70:  // EMM-S
+					memcpy(epg.hexserial+1, buf+3, 4);
+					epg.hexserial[4]=aureader->hexserial[4];
+					break;
+				case 0x8870:  // EMM-U
+				case 0x8c70:  // confidential ?
+				default:
+					cs_log("unsupported emm type: %04X", emm_head);
+					ok=0;
+			}
+			if( !ok ) cs_log("only EMM-S supported");
+		}
+		else*/
 
 	memcpy(epg.emm, buf, epg.emmlen);
 	if(ok)
@@ -1204,7 +1204,7 @@ static void newcamd_report_cards(struct s_client *client)
 	for(rdr = first_active_reader; rdr ; rdr = rdr->next)
 	{
 		int32_t flt = 0;
-		if(!(rdr->grp & client->grp)) { continue; }  //test - skip unaccesible readers
+		if(!(rdr->grp & client->grp)) { continue; } // test - skip unaccesible readers
 		if(rdr->ftab.filts)
 		{
 			for(j = 0; j < rdr->ftab.nfilts; j++)
@@ -1286,12 +1286,12 @@ static void newcamd_server_init(struct s_client *client)
 
 	if(cfg.ncd_ptab.ports[client->port_idx].ncd && cfg.ncd_ptab.ports[client->port_idx].ncd->ncd_key_is_set)
 	{
-		//port has a des key specified
+		// port has a des key specified
 		res = newcamd_auth_client(client->ip, cfg.ncd_ptab.ports[client->port_idx].ncd->ncd_key);
 	}
 	else
 	{
-		//default global des key
+		// default global des key
 		res = newcamd_auth_client(client->ip, cfg.ncd_key);
 	}
 
@@ -1315,7 +1315,7 @@ static void newcamd_server_init(struct s_client *client)
 
 static void newcamd_send_version(struct s_client *client)
 {
-	uchar buf[30];
+	uint8_t buf[30];
 	memset(buf, 0, sizeof(buf));
 	buf[0] = MSG_SERVER_2_CLIENT_GET_VERSION;
 	buf[1] = EXT_VERSION_LEN >> 8;
@@ -1324,7 +1324,7 @@ static void newcamd_send_version(struct s_client *client)
 	network_message_send(client->udp_fd, &client->ncd_msgid, buf, EXT_VERSION_LEN + 3, client->ncd_skey, COMMTYPE_SERVER, 0, NULL);
 }
 
-static void *newcamd_server(struct s_client *client, uchar *mbuf, int32_t len)
+static void *newcamd_server(struct s_client *client, uint8_t *mbuf, int32_t len)
 {
 	// check for clienttimeout, if timeout occurs try to send keepalive / wait for answer
 	// befor client was disconnected. If keepalive was disabled, exit after clienttimeout
@@ -1403,8 +1403,8 @@ int32_t newcamd_client_init(struct s_client *client)
 	client->ncd_proto = client->reader->ncd_proto;
 
 	cs_log("proxy %s:%d newcamd52%d (fd=%d%s)",
-		   client->reader->device, client->reader->r_port,
-		   (client->reader->ncd_proto == NCD_525) ? 5 : 4, client->udp_fd, ptxt);
+			 client->reader->device, client->reader->r_port,
+			 (client->reader->ncd_proto == NCD_525) ? 5 : 4, client->udp_fd, ptxt);
 
 	// try to connect. ignore possible failures
 	// idle reconnect (tcp_ito = -1) will trigger an additional connect anyway
@@ -1424,7 +1424,7 @@ static int32_t newcamd_send_ecm(struct s_client *client, ECM_REQUEST *er)
 	// check server filters
 	if(!chk_rsfilter(rdr, er))
 		{ return (-1); }
-	
+
 	uint8_t *buf;
 	if(!cs_malloc(&buf, er->ecmlen))
 	{ return (-1); }
@@ -1440,7 +1440,7 @@ static int32_t newcamd_send_ecm(struct s_client *client, ECM_REQUEST *er)
 	client->ncd_header[10] = er->prid & 0xFF;
 
 	int32_t rc = ((newcamd_send(buf, er->ecmlen, er->srvid) < 1) ? (-1) : 0);
-	
+
 	NULLFREE(buf);
 	return (rc);
 }
@@ -1448,7 +1448,7 @@ static int32_t newcamd_send_ecm(struct s_client *client, ECM_REQUEST *er)
 
 static int32_t newcamd_send_emm(EMM_PACKET *ep)
 {
-	uchar buf[ep->emmlen];
+	uint8_t buf[ep->emmlen];
 
 	if(!newcamd_connect())
 		{ return (-1); }
@@ -1457,7 +1457,7 @@ static int32_t newcamd_send_emm(EMM_PACKET *ep)
 	return ((newcamd_send(buf, ep->emmlen, 0) < 1) ? 0 : 1);
 }
 
-static int32_t newcamd_recv_chk(struct s_client *client, uchar *dcw, int32_t *rc, uchar *buf, int32_t n)
+static int32_t newcamd_recv_chk(struct s_client *client, uint8_t *dcw, int32_t *rc, uint8_t *buf, int32_t n)
 {
 	uint16_t idx = -1;
 
@@ -1469,7 +1469,7 @@ static int32_t newcamd_recv_chk(struct s_client *client, uchar *dcw, int32_t *rc
 	case 0x80:
 	case 0x81:
 		idx = (buf[0] << 8) | buf[1];
-		if(n == 5)  //not found on server
+		if(n == 5) // not found on server
 		{
 			*rc = 0;
 			memset(dcw, 0, 16);
@@ -1497,7 +1497,7 @@ static int32_t newcamd_recv_chk(struct s_client *client, uchar *dcw, int32_t *rc
 		return -1;
 
 	default:
-		if(buf[2] > 0x81 && buf[2] < 0x92)  //answer to emm
+		if(buf[2] > 0x81 && buf[2] < 0x92) // answer to emm
 		{
 			return -1;
 		}
