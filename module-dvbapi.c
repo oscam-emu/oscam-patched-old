@@ -1058,7 +1058,7 @@ static int32_t dvbapi_detect_api(void)
 		{
 			snprintf(device_path2, sizeof(device_path2), devices[i].demux_device, 0);
 			snprintf(device_path, sizeof(device_path), devices[i].path, n);
-			strncat(device_path, device_path2, sizeof(device_path) - strlen(device_path) - 1);
+			strncat(device_path, device_path2, sizeof(device_path) - strlen(device_path));
 
 			filtercount = 0;
 			while((dmx_fd = open(device_path, O_RDWR | O_NONBLOCK)) > 0 && filtercount < MAX_FILTER)
@@ -1197,7 +1197,7 @@ int32_t dvbapi_open_device(int32_t type, int32_t num, int32_t adapter)
 	{
 		snprintf(device_path2, sizeof(device_path2), devices[selected_box].demux_device, num);
 		snprintf(device_path, sizeof(device_path), devices[selected_box].path, adapter);
-		strncat(device_path, device_path2, sizeof(device_path) - strlen(device_path) - 1);
+		strncat(device_path, device_path2, sizeof(device_path) - strlen(device_path));
 	}
 	else
 	{
@@ -1213,7 +1213,7 @@ int32_t dvbapi_open_device(int32_t type, int32_t num, int32_t adapter)
 
 		snprintf(device_path2, sizeof(device_path2), devices[selected_box].ca_device, num + ca_offset);
 		snprintf(device_path, sizeof(device_path), devices[selected_box].path, adapter);
-		strncat(device_path, device_path2, sizeof(device_path) - strlen(device_path) - 1);
+		strncat(device_path, device_path2, sizeof(device_path) - strlen(device_path));
 	}
 
 	if(cfg.dvbapi_boxtype == BOXTYPE_SAMYGO)
@@ -1223,7 +1223,7 @@ int32_t dvbapi_open_device(int32_t type, int32_t num, int32_t adapter)
 			struct sockaddr_un saddr;
 			memset(&saddr, 0, sizeof(saddr));
 			saddr.sun_family = AF_UNIX;
-			strncpy(saddr.sun_path, device_path, sizeof(saddr.sun_path) - 1);
+			strncpy(saddr.sun_path, device_path, sizeof(saddr.sun_path));
 			dmx_fd = socket(AF_UNIX, SOCK_STREAM, 0);
 			ret = connect(dmx_fd, (struct sockaddr *)&saddr, sizeof(saddr));
 			if(ret < 0)
