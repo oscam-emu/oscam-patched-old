@@ -11,38 +11,55 @@
 
 #define REQ_SIZE 4
 
-static int32_t camd33_send(uchar *buf, int32_t ml)
+static int32_t camd33_send(uint8_t *buf, int32_t ml)
 {
 	int32_t l;
-	if(!cur_client()->pfd) { return (-1); }
+
+	if(!cur_client()->pfd)
+	{
+		return (-1);
+	}
+
 	l = boundary(4, ml);
 	memset(buf + ml, 0, l - ml);
 	cs_log_dump_dbg(D_CLIENT, buf, l, "send %d bytes to client", l);
+
 	if(cur_client()->crypted)
-		{ aes_encrypt_idx(cur_client()->aes_keys, buf, l); }
+	{
+		aes_encrypt_idx(cur_client()->aes_keys, buf, l);
+	}
+
 	return (send(cur_client()->pfd, buf, l, 0));
 }
 
-static int32_t camd33_recv(struct s_client *client, uchar *buf, int32_t l)
+static int32_t camd33_recv(struct s_client *client, uint8_t *buf, int32_t l)
 {
 	int32_t n;
-	if(!client->pfd) { return (-1); }
+
+	if(!client->pfd)
+	{
+		return (-1);
+	}
+
 	if((n = cs_recv(client->pfd, buf, l, 0)) > 0)
 	{
-		client->last = time((time_t *) 0);
+		client->last = time((time_t *)0);
 		if(client->crypted)
-			{ aes_encrypt_idx(cur_client()->aes_keys, buf, n); }
+		{
+			aes_encrypt_idx(cur_client()->aes_keys, buf, n);
+		}
 	}
 	cs_log_dump_dbg(D_CLIENT, buf, n, "received %d bytes from client", n);
+
 	return (n);
 }
 
 static void camd33_request_emm(void)
 {
-	uchar mbuf[20];
+	uint8_t mbuf[20];
 	struct s_reader *aureader = NULL, *rdr = NULL;
 
-	//TODO: just take the first reader in list
+	// TODO: just take the first reader in list
 	LL_ITER itr = ll_iter_create(cur_client()->aureader_list);
 	while((rdr = ll_iter_next(&itr)))
 	{
@@ -50,16 +67,21 @@ static void camd33_request_emm(void)
 		break;
 	}
 
-	if(!aureader) { return; }
+	if(!aureader)
+	{
+		return;
+	}
 
 	if(aureader->hexserial[0])
 	{
 		cs_log("%s emm-request sent (reader=%s, caid=%04X, auprovid=%06X)",
-			   username(cur_client()), aureader->label, aureader->caid,
-			   aureader->auprovid ? aureader->auprovid : b2i(4, aureader->prid[0]));
+				username(cur_client()), aureader->label, aureader->caid,
+				aureader->auprovid ? aureader->auprovid : b2i(4, aureader->prid[0]));
+
 		mbuf[0] = 0;
 		mbuf[1] = aureader->caid >> 8;
 		mbuf[2] = aureader->caid & 0xff;
+
 		memcpy(mbuf + 3, aureader->hexserial, 4);
 		memcpy(mbuf + 7, &aureader->prid[0][1], 3);
 		memcpy(mbuf + 10, &aureader->prid[2][1], 3);
@@ -67,18 +89,19 @@ static void camd33_request_emm(void)
 	}
 }
 
-static void camd33_auth_client(uchar *camdbug)
+static void camd33_auth_client(uint8_t *camdbug)
 {
 	int32_t i, rc;
-	uchar *usr = NULL, *pwd = NULL;
+	uint8_t *usr = NULL, *pwd = NULL;
 	struct s_auth *account;
-	uchar mbuf[1024];
+	uint8_t mbuf[1024];
 	struct s_client *cl = cur_client();
 
 	cl->crypted = cfg.c33_crypted;
-
 	if(cl->crypted)
-		{ cl->crypted = !check_ip(cfg.c33_plain, cl->ip); }
+	{
+		cl->crypted = !check_ip(cfg.c33_plain, cl->ip);
+	}
 
 	if(cl->crypted)
 	{
@@ -101,74 +124,113 @@ static void camd33_auth_client(uchar *camdbug)
 			pwd = usr + strlen((char *)usr) + 2;
 		}
 		else
-			{ memcpy(camdbug + 1, mbuf, camdbug[0] = i); }
+		{
+			memcpy(camdbug + 1, mbuf, camdbug[0] = i);
+		}
 	}
+
 	for(rc = -1, account = cfg.account; (usr) && (account) && (rc < 0); account = account->next)
+	{
 		if(streq((char *)usr, account->usr) && streq((char *)pwd, account->pwd))
-			{ rc = cs_auth_client(cl, account, NULL); }
+		{
+			rc = cs_auth_client(cl, account, NULL);
+		}
+	}
+
 	if(!rc)
-		{ camd33_request_emm(); }
+	{
+		camd33_request_emm();
+	}
 	else
 	{
-		if(rc < 0) { cs_auth_client(cl, 0, usr ? "invalid account" : "no user given"); }
+		if(rc < 0)
+		{
+			cs_auth_client(cl, 0, usr ? "invalid account" : "no user given");
+		}
 		cs_disconnect_client(cl);
 	}
 }
 
 static void camd33_send_dcw(struct s_client *UNUSED(client), ECM_REQUEST *er)
 {
-	uchar mbuf[128];
+	uint8_t mbuf[128];
+
 	mbuf[0] = 2;
-	memcpy(mbuf + 1, &er->msgid, 4);  // get pin
+	memcpy(mbuf + 1, &er->msgid, 4); // get pin
 	memcpy(mbuf + 5, er->cw, 16);
 	camd33_send(mbuf, 21);
+
 	if(!cfg.c33_passive)
-		{ camd33_request_emm(); }
+	{
+		camd33_request_emm();
+	}
 }
 
-static void camd33_process_ecm(uchar *buf, int32_t l)
+static void camd33_process_ecm(uint8_t *buf, int32_t l)
 {
 	ECM_REQUEST *er;
+
 	if(l < 7)
-		{ return; }
+	{
+		return;
+	}
+
 	if(!(er = get_ecmtask()))
-		{ return; }
+	{
+		return;
+	}
+
 	memcpy(&er->msgid, buf + 3, 4); // save pin
 	er->ecmlen = l - 7;
+
 	if(er->ecmlen < 0 || er->ecmlen > MAX_ECM_SIZE)
-		{ NULLFREE(er); return; }
+	{
+		NULLFREE(er);
+		return;
+	}
+
 	er->caid = b2i(2, buf + 1);
 	memcpy(er->ecm , buf + 7, er->ecmlen);
 	get_cw(cur_client(), er);
 }
 
-static void camd33_process_emm(uchar *buf, int32_t l)
+static void camd33_process_emm(uint8_t *buf, int32_t l)
 {
 	EMM_PACKET epg;
+
 	if(l < 7)
-		{ return; }
+	{
+		return;
+	}
+
 	memset(&epg, 0, sizeof(epg));
 	epg.emmlen = l - 7;
+
 	if(epg.emmlen < 3 || epg.emmlen > MAX_EMM_SIZE)
-		{ return; }
-	memcpy(epg.caid     , buf + 1, 2);
+	{
+		return;
+	}
+
+	memcpy(epg.caid, buf + 1, 2);
 	memcpy(epg.hexserial, buf + 3, 4);
-	memcpy(epg.emm      , buf + 7, epg.emmlen);
+	memcpy(epg.emm, buf + 7, epg.emmlen);
 	do_emm(cur_client(), &epg);
 }
 
-static void *camd33_server(struct s_client *UNUSED(client), uchar *mbuf, int32_t n)
+static void *camd33_server(struct s_client *UNUSED(client), uint8_t *mbuf, int32_t n)
 {
 	switch(mbuf[0])
 	{
-	case 2:
-		camd33_process_ecm(mbuf, n);
-		break;
-	case 3:
-		camd33_process_emm(mbuf, n);
-		break;
-	default:
-		cs_log_dbg(D_CLIENT, "unknown command !");
+		case 2:
+			camd33_process_ecm(mbuf, n);
+			break;
+
+		case 3:
+			camd33_process_emm(mbuf, n);
+			break;
+
+		default:
+			cs_log_dbg(D_CLIENT, "unknown command!");
 	}
 
 	return NULL;
@@ -176,7 +238,7 @@ static void *camd33_server(struct s_client *UNUSED(client), uchar *mbuf, int32_t
 
 static void camd33_server_init(struct s_client *UNUSED(client))
 {
-	uchar camdbug[256];
+	uint8_t camdbug[256];
 
 	camd33_auth_client(camdbug);
 }
@@ -186,7 +248,6 @@ void module_camd33(struct s_module *ph)
 	cfg.c33_crypted = array_has_nonzero_byte(cfg.c33_key, sizeof(cfg.c33_key));
 	ph->ptab.nports = 1;
 	ph->ptab.ports[0].s_port = cfg.c33_port;
-
 	ph->desc = "camd33";
 	ph->type = MOD_CONN_TCP;
 	ph->large_ecm_support = 1;

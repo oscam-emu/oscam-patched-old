@@ -23,14 +23,14 @@ typedef void  (CLONE_FN)(void *, void *);
 
 struct test_type
 {
-	char		*desc;		// Test textual description
-	void		*data;		// Pointer to basic data structure
-	void		*data_c;	// Pointer to data structure that will hold cloned data (for clone_ tests)
-	size_t		data_sz;	// Data structure size
-	CHK_FN		*chk_fn;	// chk_XXX() func for the data type
-	MK_T_FN		*mk_t_fn;	// mk_t_XXX() func for the data type
-	CLEAR_FN	*clear_fn;	// clear_XXX() func for the data type
-	CLONE_FN	*clone_fn;	// clone_XXX() func for the data type
+	char     *desc;         // Test textual description
+	void     *data;         // Pointer to basic data structure
+	void     *data_c;       // Pointer to data structure that will hold cloned data (for clone_ tests)
+	size_t   data_sz;       // Data structure size
+	CHK_FN   *chk_fn;       // chk_XXX() func for the data type
+	MK_T_FN  *mk_t_fn;      // mk_t_XXX() func for the data type
+	CLEAR_FN *clear_fn;     // clear_XXX() func for the data type
+	CLONE_FN *clone_fn;     // clone_XXX() func for the data type
 	const struct test_vec *test_vec; // Array of test vectors
 };
 

@@ -210,7 +210,6 @@ static const uint32_t Te2[256] =
 };
 static const uint32_t Te3[256] =
 {
-
 	0x6363a5c6U, 0x7c7c84f8U, 0x777799eeU, 0x7b7b8df6U,
 	0xf2f20dffU, 0x6b6bbdd6U, 0x6f6fb1deU, 0xc5c55491U,
 	0x30305060U, 0x01010302U, 0x6767a9ceU, 0x2b2b7d56U,
@@ -499,7 +498,6 @@ static const uint32_t Td2[256] =
 	0xf4cd65daU, 0xbed50605U, 0x621fd134U, 0xfe8ac4a6U,
 	0x539d342eU, 0x55a0a2f3U, 0xe132058aU, 0xeb75a4f6U,
 	0xec390b83U, 0xefaa4060U, 0x9f065e71U, 0x1051bd6eU,
-
 	0x8af93e21U, 0x063d96ddU, 0x05aedd3eU, 0xbd464de6U,
 	0x8db59154U, 0x5d0571c4U, 0xd46f0406U, 0x15ff6050U,
 	0xfb241998U, 0xe997d6bdU, 0x43cc8940U, 0x9e7767d9U,
@@ -689,10 +687,8 @@ static const uint32_t rcon[] =
 /**
  * Expand the cipher key into the encryption key schedule.
  */
-int AES_set_encrypt_key(const unsigned char *userKey, const int bits,
-						AES_KEY *key)
+int AES_set_encrypt_key(const uint8_t *userKey, const int bits, AES_KEY *key)
 {
-
 	uint32_t *rk;
 	int i = 0;
 	uint32_t temp;
@@ -800,10 +796,8 @@ int AES_set_encrypt_key(const unsigned char *userKey, const int bits,
 /**
  * Expand the cipher key into the decryption key schedule.
  */
-int AES_set_decrypt_key(const unsigned char *userKey, const int bits,
-						AES_KEY *key)
+int AES_set_decrypt_key(const uint8_t *userKey, const int bits, AES_KEY *key)
 {
-
 	uint32_t *rk;
 	int i, j, status;
 	uint32_t temp;
@@ -863,10 +857,8 @@ int AES_set_decrypt_key(const unsigned char *userKey, const int bits,
  * Encrypt a single block
  * in and out can overlap
  */
-void AES_encrypt(const unsigned char *in, unsigned char *out,
-				 const AES_KEY *key)
+void AES_encrypt(const uint8_t *in, uint8_t *out, const AES_KEY *key)
 {
-
 	const uint32_t *rk;
 	uint32_t s0, s1, s2, s3, t0, t1, t2, t3;
 #ifndef FULL_UNROLL
@@ -1059,10 +1051,8 @@ void AES_encrypt(const unsigned char *in, unsigned char *out,
  * Decrypt a single block
  * in and out can overlap
  */
-void AES_decrypt(const unsigned char *in, unsigned char *out,
-				 const AES_KEY *key)
+void AES_decrypt(const uint8_t *in, uint8_t *out, const AES_KEY *key)
 {
-
 	const uint32_t *rk;
 	uint32_t s0, s1, s2, s3, t0, t1, t2, t3;
 #ifndef FULL_UNROLL
@@ -1251,13 +1241,12 @@ void AES_decrypt(const unsigned char *in, unsigned char *out,
 	PUTU32(out + 12, s3);
 }
 
-void AES_cbc_encrypt(const unsigned char *in, unsigned char *out,
-					 const unsigned long length, const AES_KEY *key,
-					 unsigned char *ivec, const int enc)
+void AES_cbc_encrypt(const uint8_t *in, uint8_t *out, const unsigned long length,
+					 const AES_KEY *key, uint8_t *ivec, const int enc)
 {
 	unsigned long n;
 	unsigned long len = length;
-	unsigned char tmp[AES_BLOCK_SIZE];
+	uint8_t tmp[AES_BLOCK_SIZE];
 
 	assert(in && out && key && ivec);
 	assert((AES_ENCRYPT == enc)||(AES_DECRYPT == enc));
@@ -1266,7 +1255,7 @@ void AES_cbc_encrypt(const unsigned char *in, unsigned char *out,
 	{
 		while(len >= AES_BLOCK_SIZE)
 		{
-			for(n=0; n < AES_BLOCK_SIZE; ++n)
+			for(n = 0; n < AES_BLOCK_SIZE; ++n)
 				tmp[n] = in[n] ^ ivec[n];
 
 			AES_encrypt(tmp, out, key);
@@ -1278,10 +1267,10 @@ void AES_cbc_encrypt(const unsigned char *in, unsigned char *out,
 
 		if(len)
 		{
-			for(n=0; n < len; ++n)
+			for(n = 0; n < len; ++n)
 				tmp[n] = in[n] ^ ivec[n];
 
-			for(n=len; n < AES_BLOCK_SIZE; ++n)
+			for(n = len; n < AES_BLOCK_SIZE; ++n)
 				tmp[n] = ivec[n];
 
 			AES_encrypt(tmp, tmp, key);
@@ -1296,7 +1285,7 @@ void AES_cbc_encrypt(const unsigned char *in, unsigned char *out,
 			memcpy(tmp, in, AES_BLOCK_SIZE);
 			AES_decrypt(in, out, key);
 
-			for(n=0; n < AES_BLOCK_SIZE; ++n)
+			for(n = 0; n < AES_BLOCK_SIZE; ++n)
 				out[n] ^= ivec[n];
 
 			memcpy(ivec, tmp, AES_BLOCK_SIZE);
@@ -1310,7 +1299,7 @@ void AES_cbc_encrypt(const unsigned char *in, unsigned char *out,
 			memcpy(tmp, in, AES_BLOCK_SIZE);
 			AES_decrypt(tmp, tmp, key);
 
-			for(n=0; n < len; ++n)
+			for(n = 0; n < len; ++n)
 				out[n] ^= ivec[n];
 
 			memcpy(ivec, tmp, AES_BLOCK_SIZE);

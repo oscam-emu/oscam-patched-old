@@ -24,7 +24,7 @@
 extern CS_MUTEX_LOCK fakeuser_lock;
 
 static char *processUsername;
-static struct s_client *first_client_hashed[CS_CLIENT_HASHBUCKETS];  // Alternative hashed client list
+static struct s_client *first_client_hashed[CS_CLIENT_HASHBUCKETS]; // Alternative hashed client list
 
 /* Gets the unique thread number from the client. Used in monitor and newcamd. */
 int32_t get_threadnum(struct s_client *client)
@@ -32,12 +32,17 @@ int32_t get_threadnum(struct s_client *client)
 	struct s_client *cl;
 	int32_t count = 0;
 
-	for(cl = first_client->next; cl ; cl = cl->next)
+	for(cl = first_client->next; cl; cl = cl->next)
 	{
 		if(cl->typ == client->typ)
-			{ count++; }
+		{
+			count++;
+		}
+
 		if(cl == client)
-			{ return count; }
+		{
+			return count;
+		}
 	}
 	return 0;
 }
@@ -48,7 +53,9 @@ struct s_auth *get_account_by_name(char *name)
 	for(account = cfg.account; (account); account = account->next)
 	{
 		if(streq(name, account->usr))
-			{ return account; }
+		{
+			return account;
+		}
 	}
 	return NULL;
 }
@@ -57,10 +64,13 @@ int8_t is_valid_client(struct s_client *client)
 {
 	struct s_client *cl;
 	int32_t bucket = (uintptr_t)client / 16 % CS_CLIENT_HASHBUCKETS;
+
 	for(cl = first_client_hashed[bucket]; cl; cl = cl->nexthashed)
 	{
 		if(cl == client)
-			{ return 1; }
+		{
+			return 1;
+		}
 	}
 	return 0;
 }
@@ -75,28 +85,34 @@ const char *client_get_proto(struct s_client *cl)
 	const char *ctyp;
 	switch(cl->typ)
 	{
-	case 's':
-		ctyp = "server";
-		break;
-	case 'h':
-		ctyp = "http";
-		break;
-	case 'p':
-	case 'r':
-		ctyp = reader_get_type_desc(cl->reader, 1);
-		break;
-#ifdef CS_ANTICASC
-	case 'a':
-		ctyp = "anticascader";
-		break;
-#endif
-	case 'c':
-		if(cccam_client_extended_mode(cl)){
-			ctyp = "cccam_ext";
+		case 's':
+			ctyp = "server";
 			break;
-		} /* fallthrough */
-	default:
-		ctyp = get_module(cl)->desc;
+
+		case 'h':
+			ctyp = "http";
+			break;
+
+		case 'p':
+		case 'r':
+			ctyp = reader_get_type_desc(cl->reader, 1);
+			break;
+
+#ifdef CS_ANTICASC
+		case 'a':
+			ctyp = "anticascader";
+			break;
+
+#endif
+		case 'c':
+			if(cccam_client_extended_mode(cl))
+			{
+				ctyp = "cccam_ext";
+				break;
+			} /* fallthrough */
+
+		default:
+			ctyp = get_module(cl)->desc;
 	}
 	return ctyp;
 }
@@ -115,10 +131,12 @@ static void cs_fake_client(struct s_client *client, char *usr, int32_t uniq, IN_
 	 * Uniq = 4: set user only to fake if source ip is
 	 *           different, but only the last login will survive
 	 */
+
 	struct s_client *cl;
 	struct s_auth *account;
 	uint32_t con_count = 1;
 	cs_writelock(__func__, &fakeuser_lock);
+
 	for(cl = first_client->next; cl; cl = cl->next)
 	{
 		account = cl->account;
@@ -128,9 +146,10 @@ static void cs_fake_client(struct s_client *client, char *usr, int32_t uniq, IN_
 			char buf[20];
 
 			con_count++;
-
 			if(con_count <= account->max_connections)
-				{ continue; }
+			{
+				continue;
+			}
 
 			if(uniq == 3 || uniq == 4)
 			{
@@ -139,10 +158,12 @@ static void cs_fake_client(struct s_client *client, char *usr, int32_t uniq, IN_
 				cs_strncpy(buf, cs_inet_ntoa(cl->ip), sizeof(buf));
 				cs_log("client(%8lX) duplicate user '%s' from %s (prev %s) set to fake (uniq=%d)",
 						(unsigned long)cl->thread, usr, cs_inet_ntoa(ip), buf, uniq);
+
 				if(cl->failban & BAN_DUPLICATE)
 				{
 					cs_add_violation(cl, usr);
 				}
+
 				if(cfg.dropdups)
 				{
 					cs_writeunlock(__func__, &fakeuser_lock);
@@ -158,6 +179,7 @@ static void cs_fake_client(struct s_client *client, char *usr, int32_t uniq, IN_
 				cs_strncpy(buf, cs_inet_ntoa(ip), sizeof(buf));
 				cs_log("client(%8lX) duplicate user '%s' from %s (current %s) set to fake (uniq=%d)",
 						(unsigned long)pthread_self(), usr, cs_inet_ntoa(cl->ip), buf, uniq);
+
 				if(client->failban & BAN_DUPLICATE)
 				{
 					cs_add_violation_by_ip(ip, get_module(client)->ptab.ports[client->port_idx].s_port, usr);
@@ -186,6 +208,7 @@ static void cs_user_resolve(struct s_auth *account)
 		IN_ADDR_T lastip;
 		IP_ASSIGN(lastip, account->dynip);
 		cs_resolve(account->dyndns, &account->dynip, NULL, NULL);
+
 		if(!IP_EQUAL(lastip, account->dynip))
 		{
 			cs_log("%s: resolved ip=%s", account->dyndns, cs_inet_ntoa(account->dynip));
@@ -202,7 +225,9 @@ static void cs_user_resolve(struct s_auth *account)
 const char *username(struct s_client *client)
 {
 	if(!check_client(client))
-		{ return "NULL"; }
+	{
+		return "NULL";
+	}
 
 	if(client->typ == 's' || client->typ == 'h' || client->typ == 'a')
 	{
@@ -215,9 +240,13 @@ const char *username(struct s_client *client)
 		if(acc)
 		{
 			if(acc->usr[0])
-				{ return acc->usr; }
+			{
+				return acc->usr;
+			}
 			else
-				{ return "anonymous"; }
+			{
+				return "anonymous";
+			}
 		}
 		else
 		{
@@ -228,7 +257,9 @@ const char *username(struct s_client *client)
 	{
 		struct s_reader *rdr = client->reader;
 		if(rdr)
-			{ return rdr->label; }
+		{
+			return rdr->label;
+		}
 	}
 	return "NULL";
 }
@@ -239,7 +270,9 @@ struct s_client *create_client(IN_ADDR_T ip)
 	struct s_client *cl;
 	if(!cs_malloc(&cl, sizeof(struct s_client)))
 	{
-		cs_log("max connections reached (out of memory) -> reject client %s", IP_ISSET(ip) ? cs_inet_ntoa(ip) : "with null address");
+		cs_log("max connections reached (out of memory) -> reject client %s",
+				IP_ISSET(ip) ? cs_inet_ntoa(ip) : "with null address");
+
 		return NULL;
 	}
 
@@ -260,7 +293,9 @@ struct s_client *create_client(IN_ADDR_T ip)
 		{ ; } //ends with cl on last client
 
 	if (last)
+	{
 		last->next = cl;
+	}
 
 	int32_t bucket = (uintptr_t)cl / 16 % CS_CLIENT_HASHBUCKETS;
 	cl->nexthashed = first_client_hashed[bucket];
@@ -277,6 +312,7 @@ void init_first_client(void)
 	// get username OScam is running under
 	struct passwd pwd;
 	struct passwd *pwdbuf;
+
 #ifdef __ANDROID__
 	pwdbuf = getpwuid(getuid()); // This is safe
 	if(pwdbuf)
@@ -287,13 +323,17 @@ void init_first_client(void)
 #else
 	char buf[256];
 	if(getpwuid_r(getuid(), &pwd, buf, sizeof(buf), &pwdbuf) == 0)
-		{ processUsername = cs_strdup(pwd.pw_name); }
+	{
+		processUsername = cs_strdup(pwd.pw_name);
+	}
 #endif
+
 	if(!cs_malloc(&first_client, sizeof(struct s_client)))
 	{
 		fprintf(stderr, "Could not allocate memory for master client, exiting...");
 		exit(1);
 	}
+
 	memset(first_client_hashed, 0, sizeof(first_client_hashed));
 	int32_t bucket = (uintptr_t)first_client / 16 % CS_CLIENT_HASHBUCKETS;
 	first_client_hashed[bucket] = first_client;
@@ -322,7 +362,7 @@ void init_first_client(void)
 int32_t cs_auth_client(struct s_client *client, struct s_auth *account, const char *e_txt)
 {
 	int32_t rc = 0;
-	unsigned char md5tmp[MD5_DIGEST_LENGTH];
+	uint8_t md5tmp[MD5_DIGEST_LENGTH];
 	uint8_t i;
 	uint8_t j;
 	char buf[32];
@@ -366,117 +406,136 @@ int32_t cs_auth_client(struct s_client *client, struct s_auth *account, const ch
 	client->account = first_client->account;
 	switch((intptr_t)account)
 	{
-
-	case 0: // reject access
-	{
-		rc = 1;
-		cs_add_violation(client, NULL);
-		cs_log("%s %s-client %s%s (%s)",
-				client->crypted ? t_crypt : t_plain,
-				module->desc,
-				IP_ISSET(client->ip) ? cs_inet_ntoa(client->ip) : "",
-				IP_ISSET(client->ip) ? t_reject : t_reject + 1,
-				e_txt ? e_txt : t_msg[rc]);
-		break;
-	}
-
-	default: // grant/check access
-	{
-		if(IP_ISSET(client->ip) && account->dyndns)
+		case 0: // reject access
 		{
-			if(!IP_EQUAL(client->ip, account->dynip))
-				{ cs_user_resolve(account); }
-			if(!IP_EQUAL(client->ip, account->dynip))
-			{
-				cs_add_violation(client, account->usr);
-				rc = 2;
-			}
+			rc = 1;
+			cs_add_violation(client, NULL);
+			cs_log("%s %s-client %s%s (%s)",
+					client->crypted ? t_crypt : t_plain,
+					module->desc,
+					IP_ISSET(client->ip) ? cs_inet_ntoa(client->ip) : "",
+					IP_ISSET(client->ip) ? t_reject : t_reject + 1,
+					e_txt ? e_txt : t_msg[rc]);
+			break;
 		}
-		client->monlvl = account->monlvl;
-		client->account = account;
-		if(!rc)
+
+		default: // grant/check access
 		{
-			client->dup = 0;
-			if(client->typ == 'c' || client->typ == 'm')
-				{ client->pcrc = crc32(0L, MD5((uint8_t *)(ESTR(account->pwd)), strlen(ESTR(account->pwd)), md5tmp), MD5_DIGEST_LENGTH); }
-
-			if(client->typ == 'c')
+			if(IP_ISSET(client->ip) && account->dyndns)
 			{
-				client->last_caid = NO_CAID_VALUE;
-				client->last_provid = NO_PROVID_VALUE;
-				client->last_srvid = NO_SRVID_VALUE;
-				client->expirationdate = account->expirationdate;
-				client->disabled = account->disabled;
-				client->allowedtimeframe_set=account->allowedtimeframe_set;
-
-				for(i = 0; i < SIZE_SHORTDAY; i++)
+				if(!IP_EQUAL(client->ip, account->dynip))
+					{ cs_user_resolve(account); }
+				if(!IP_EQUAL(client->ip, account->dynip))
 				{
-					for(j = 0; j < 24; j++)
-					{
-						client->allowedtimeframe[i][j][0] = account->allowedtimeframe[i][j][0];
-						client->allowedtimeframe[i][j][1] = account->allowedtimeframe[i][j][1];
-					}
+					cs_add_violation(client, account->usr);
+					rc = 2;
+				}
+			}
+
+			client->monlvl = account->monlvl;
+			client->account = account;
+
+			if(!rc)
+			{
+				client->dup = 0;
+				if(client->typ == 'c' || client->typ == 'm')
+				{
+					client->pcrc = crc32(0L, MD5((uint8_t *)(ESTR(account->pwd)), strlen(ESTR(account->pwd)), md5tmp), MD5_DIGEST_LENGTH);
 				}
 
-				if(account->firstlogin == 0) { account->firstlogin = time((time_t *)0); }
+				if(client->typ == 'c')
+				{
+					client->last_caid = NO_CAID_VALUE;
+					client->last_provid = NO_PROVID_VALUE;
+					client->last_srvid = NO_SRVID_VALUE;
+					client->expirationdate = account->expirationdate;
+					client->disabled = account->disabled;
+					client->allowedtimeframe_set=account->allowedtimeframe_set;
 
-				client->failban = account->failban;
-				client->c35_suppresscmd08 = account->c35_suppresscmd08;
-				client->ncd_keepalive = account->ncd_keepalive;
-				client->grp = account->grp;
-				client->aureader_list = account->aureader_list;
-				client->autoau = account->autoau;
-				client->tosleep = (60 * account->tosleep);
-				client->c35_sleepsend = account->c35_sleepsend;
-				caidtab_clone(&account->ctab, &client->ctab);
-				if(account->uniq)
-					{ cs_fake_client(client, account->usr, account->uniq, client->ip); }
-				client->cltab = account->cltab; // CLASS filter
-				ftab_clone(&account->ftab, &client->ftab); // IDENT filter
-				ftab_clone(&account->fchid, &client->fchid); // CHID filter
-				client->sidtabs.ok = account->sidtabs.ok; // services
-				client->sidtabs.no = account->sidtabs.no; // services
-				tuntab_clone(&account->ttab, &client->ttab);
-				ac_init_client(client, account);
+					for(i = 0; i < SIZE_SHORTDAY; i++)
+					{
+						for(j = 0; j < 24; j++)
+						{
+							client->allowedtimeframe[i][j][0] = account->allowedtimeframe[i][j][0];
+							client->allowedtimeframe[i][j][1] = account->allowedtimeframe[i][j][1];
+						}
+					}
+
+					if(account->firstlogin == 0)
+					{
+						account->firstlogin = time((time_t *)0);
+					}
+
+					client->failban = account->failban;
+					client->c35_suppresscmd08 = account->c35_suppresscmd08;
+					client->ncd_keepalive = account->ncd_keepalive;
+					client->grp = account->grp;
+					client->aureader_list = account->aureader_list;
+					client->autoau = account->autoau;
+					client->tosleep = (60 * account->tosleep);
+					client->c35_sleepsend = account->c35_sleepsend;
+					caidtab_clone(&account->ctab, &client->ctab);
+
+					if(account->uniq)
+					{
+						cs_fake_client(client, account->usr, account->uniq, client->ip);
+					}
+
+					client->cltab = account->cltab; // CLASS filter
+					ftab_clone(&account->ftab, &client->ftab); // IDENT filter
+					ftab_clone(&account->fchid, &client->fchid); // CHID filter
+					client->sidtabs.ok = account->sidtabs.ok; // services
+					client->sidtabs.no = account->sidtabs.no; // services
+					tuntab_clone(&account->ttab, &client->ttab);
+					ac_init_client(client, account);
+				}
 			}
-		}
-	} /* fallthrough */
+		} /* fallthrough */
 
-	case -1: // anonymous grant access
-	{
-		if(rc)
+		case -1: // anonymous grant access
 		{
-			t_grant = t_reject;
-		}
-		else
-		{
-			if(client->typ == 'm')
+			if(rc)
 			{
-				snprintf(t_msg[0], sizeof(buf), "lvl=%d", client->monlvl);
+				t_grant = t_reject;
 			}
 			else
 			{
-				int32_t rcount = ll_count(client->aureader_list);
-				snprintf(buf, sizeof(buf), "au=");
-				if(!rcount)
-					{ snprintf(buf + 3, sizeof(buf) - 3, "off"); }
+				if(client->typ == 'm')
+				{
+					snprintf(t_msg[0], sizeof(buf), "lvl=%d", client->monlvl);
+				}
 				else
 				{
-					if(client->autoau)
-						{ snprintf(buf + 3, sizeof(buf) - 3, "auto (%d reader)", rcount); }
+					int32_t rcount = ll_count(client->aureader_list);
+					snprintf(buf, sizeof(buf), "au=");
+
+					if(!rcount)
+					{
+						snprintf(buf + 3, sizeof(buf) - 3, "off");
+					}
 					else
-						{ snprintf(buf + 3, sizeof(buf) - 3, "on (%d reader)", rcount); }
+					{
+						if(client->autoau)
+						{
+							snprintf(buf + 3, sizeof(buf) - 3, "auto (%d reader)", rcount);
+						}
+						else
+						{
+							snprintf(buf + 3, sizeof(buf) - 3, "on (%d reader)", rcount);
+						}
+					}
 				}
 			}
+
+			cs_log("%s %s-client %s%s (%s, %s)",
+					client->crypted ? t_crypt : t_plain,
+					e_txt ? e_txt : module->desc,
+					IP_ISSET(client->ip) ? cs_inet_ntoa(client->ip) : "",
+					IP_ISSET(client->ip) ? t_grant : t_grant + 1,
+					username(client), t_msg[rc]);
+
+			break;
 		}
-		cs_log("%s %s-client %s%s (%s, %s)",
-				client->crypted ? t_crypt : t_plain,
-				e_txt ? e_txt : module->desc,
-				IP_ISSET(client->ip) ? cs_inet_ntoa(client->ip) : "",
-				IP_ISSET(client->ip) ? t_grant : t_grant + 1,
-				username(client), t_msg[rc]);
-		break;
-	}
 	}
 	return rc;
 }
@@ -484,13 +543,22 @@ int32_t cs_auth_client(struct s_client *client, struct s_auth *account, const ch
 void cs_disconnect_client(struct s_client *client)
 {
 	char buf[32] = { 0 };
+
 	if(IP_ISSET(client->ip))
-		{ snprintf(buf, sizeof(buf), " from %s", cs_inet_ntoa(client->ip)); }
+	{
+		snprintf(buf, sizeof(buf), " from %s", cs_inet_ntoa(client->ip));
+	}
+
 	cs_log("%s disconnected%s", username(client), buf);
+
 	if(client == cur_client())
-		{ cs_exit(0); }
+	{
+		cs_exit(0);
+	}
 	else
-		{ kill_thread(client); }
+	{
+		kill_thread(client);
+	}
 }
 
 void kill_all_clients(void)
@@ -501,7 +569,9 @@ void kill_all_clients(void)
 		if(cl->typ == 'c' || cl->typ == 'm')
 		{
 			if(cl->account)
-				{ cs_log("killing client %s", cl->account->usr); }
+			{
+				cs_log("killing client %s", cl->account->usr);
+			}
 			kill_thread(cl);
 		}
 	}
@@ -511,7 +581,7 @@ void kill_all_clients(void)
 void cs_reinit_clients(struct s_auth *new_accounts)
 {
 	struct s_auth *account;
-	unsigned char md5tmp[MD5_DIGEST_LENGTH];
+	uint8_t md5tmp[MD5_DIGEST_LENGTH];
 	uint8_t i;
 	uint8_t j;
 
@@ -523,8 +593,11 @@ void cs_reinit_clients(struct s_auth *new_accounts)
 			for(account = new_accounts; (account) ; account = account->next)
 			{
 				if(!strcmp(cl->account->usr, account->usr))
-					{ break; }
+				{
+					break;
+				}
 			}
+
 			if(account && !account->disabled && cl->pcrc == crc32(0L, MD5((uint8_t *)ESTR(account->pwd), strlen(ESTR(account->pwd)), md5tmp), MD5_DIGEST_LENGTH))
 			{
 				cl->account = account;
@@ -565,12 +638,15 @@ void cs_reinit_clients(struct s_auth *new_accounts)
 					cl->failban = account->failban;
 
 					caidtab_clone(&account->ctab, &cl->ctab);
-
 					tuntab_clone(&account->ttab, &cl->ttab);
 
 					webif_client_reset_lastresponsetime(cl);
+
 					if(account->uniq)
-						{ cs_fake_client(cl, account->usr, (account->uniq == 1 || account->uniq == 2) ? account->uniq + 2 : account->uniq, cl->ip); }
+					{
+						cs_fake_client(cl, account->usr, (account->uniq == 1 || account->uniq == 2) ? account->uniq + 2 : account->uniq, cl->ip);
+					}
+
 					ac_init_client(cl, account);
 				}
 			}
@@ -597,73 +673,88 @@ void cs_reinit_clients(struct s_auth *new_accounts)
 void client_check_status(struct s_client *cl)
 {
 	if(!cl || cl->kill || !cl->init_done)
-		{ return; }
+	{
+		return;
+	}
+
 	switch(cl->typ)
 	{
-	case 'm':
-	case 'c':
-
-		if((get_module(cl)->listenertype & LIS_CCCAM) && cl->last && (time(NULL) - cl->last) > (time_t)12)
-		{
-			add_job(cl, ACTION_CLIENT_IDLE, NULL, 0);
-		}
-
-		//Check umaxidle to avoid client is killed for inactivity, it has priority than cmaxidle
-		if(!cl->account->umaxidle)
-		break;
-
-		// Check user for exceeding umaxidle by checking cl->last, except Newcamd & Gbox
-		if(!(cl->ncd_keepalive && (get_module(cl)->listenertype & LIS_NEWCAMD)) && !(get_module(cl)->listenertype & LIS_GBOX) && cl->account->umaxidle>0 && cl->last && (time(NULL) - cl->last) > (time_t)cl->account->umaxidle)
-		{
-			add_job(cl, ACTION_CLIENT_IDLE, NULL, 0);
-		}
-
-		// Check clients for exceeding cmaxidle by checking cl->last, except Newcamd & Gbox
-		if(!(cl->ncd_keepalive && (get_module(cl)->listenertype & LIS_NEWCAMD)) && !(get_module(cl)->listenertype & LIS_GBOX) && cl->last && cl->account->umaxidle==-1 && cfg.cmaxidle && (time(NULL) - cl->last) > (time_t)cfg.cmaxidle)
-		{
-			add_job(cl, ACTION_CLIENT_IDLE, NULL, 0);
-		}
-#ifdef MODULE_GBOX
-		if((get_module(cl)->listenertype & LIS_GBOX) &&	cl->last && (time(NULL) - cl->last) > (time_t)cfg.gbox_reconnect)
-		{
-			add_job(cl, ACTION_PEER_IDLE, NULL, 0);
-		}
-#endif
-		break;
-	case 'r':
-		cardreader_checkhealth(cl, cl->reader);
-		break;
-	case 'p':
-	{
-		struct s_reader *rdr = cl->reader;
-		if(!rdr || !rdr->enable || !rdr->active)  //reader is disabled or restarting at this moment
-			{ break; }
-		// execute reader do idle on proxy reader after a certain time (rdr->tcp_ito = inactivitytimeout)
-		// disconnect when no keepalive available
-		if((rdr->tcp_ito && is_cascading_reader(rdr)) || (rdr->typ == R_CCCAM) || (rdr->typ == R_CAMD35) || (rdr->typ == R_CS378X) || (rdr->typ == R_SCAM) || (rdr->tcp_ito != 0 && rdr->typ == R_RADEGAST))
-		{
-			time_t now = time(NULL);
-			int32_t time_diff = llabs(now - rdr->last_check);
-			if(time_diff > 60 || (time_diff > 12 && (rdr->typ == R_CCCAM || rdr->typ == R_CAMD35 || rdr->typ == R_CS378X)) || ((time_diff > (rdr->tcp_rto?rdr->tcp_rto:60)) && rdr->typ == R_RADEGAST))     //check 1x per minute or every 10s for cccam/camd35 or reconnecttimeout radegast if 0 defaut 60s
+		case 'm':
+		case 'c':
+			if((get_module(cl)->listenertype & LIS_CCCAM) && cl->last && (time(NULL) - cl->last) > (time_t)12)
 			{
-				add_job(rdr->client, ACTION_READER_IDLE, NULL, 0);
-				rdr->last_check = now;
+				add_job(cl, ACTION_CLIENT_IDLE, NULL, 0);
 			}
+
+			// Check umaxidle to avoid client is killed for inactivity, it has priority than cmaxidle
+			if(!cl->account->umaxidle)
+			{
+				break;
+			}
+
+			// Check user for exceeding umaxidle by checking cl->last, except Newcamd & Gbox
+			if(!(cl->ncd_keepalive && (get_module(cl)->listenertype & LIS_NEWCAMD)) && !(get_module(cl)->listenertype & LIS_GBOX) && cl->account->umaxidle>0 && cl->last && (time(NULL) - cl->last) > (time_t)cl->account->umaxidle)
+			{
+				add_job(cl, ACTION_CLIENT_IDLE, NULL, 0);
+			}
+
+			// Check clients for exceeding cmaxidle by checking cl->last, except Newcamd & Gbox
+			if(!(cl->ncd_keepalive && (get_module(cl)->listenertype & LIS_NEWCAMD)) && !(get_module(cl)->listenertype & LIS_GBOX) && cl->last && cl->account->umaxidle==-1 && cfg.cmaxidle && (time(NULL) - cl->last) > (time_t)cfg.cmaxidle)
+			{
+				add_job(cl, ACTION_CLIENT_IDLE, NULL, 0);
+			}
+
+#ifdef MODULE_GBOX
+			if((get_module(cl)->listenertype & LIS_GBOX) &&	cl->last && (time(NULL) - cl->last) > (time_t)cfg.gbox_reconnect)
+			{
+				add_job(cl, ACTION_PEER_IDLE, NULL, 0);
+			}
+#endif
+			break;
+
+		case 'r':
+			cardreader_checkhealth(cl, cl->reader);
+			break;
+
+		case 'p':
+		{
+			struct s_reader *rdr = cl->reader;
+			if(!rdr || !rdr->enable || !rdr->active) // reader is disabled or restarting at this moment
+			{
+				break;
+			}
+
+			// execute reader do idle on proxy reader after a certain time (rdr->tcp_ito = inactivitytimeout)
+			// disconnect when no keepalive available
+			if((rdr->tcp_ito && is_cascading_reader(rdr)) || (rdr->typ == R_CCCAM) || (rdr->typ == R_CAMD35) || (rdr->typ == R_CS378X) || (rdr->typ == R_SCAM) || (rdr->tcp_ito != 0 && rdr->typ == R_RADEGAST))
+			{
+				time_t now = time(NULL);
+				int32_t time_diff = llabs(now - rdr->last_check);
+
+				if(time_diff > 60 || (time_diff > 12 && (rdr->typ == R_CCCAM || rdr->typ == R_CAMD35 || rdr->typ == R_CS378X)) || ((time_diff > (rdr->tcp_rto?rdr->tcp_rto:60)) && rdr->typ == R_RADEGAST))     //check 1x per minute or every 10s for cccam/camd35 or reconnecttimeout radegast if 0 defaut 60s
+				{
+					add_job(rdr->client, ACTION_READER_IDLE, NULL, 0);
+					rdr->last_check = now;
+				}
+			}
+			break;
 		}
-		break;
-	}
 	}
 }
 
 void free_client(struct s_client *cl)
 {
 	if(!cl)
-		{ return; }
+	{
+		return;
+	}
+
 	struct s_reader *rdr = cl->reader;
 
 	// Remove client from client list. kill_thread also removes this client, so here just if client exits itself...
 	struct s_client *prev, *cl2;
 	cs_writelock(__func__, &clientlist_lock);
+
 	if(!cl->kill_started)
 	{
 		cl->kill_started = 1;
@@ -675,16 +766,22 @@ void free_client(struct s_client *cl)
 		return;
 	}
 	cl->kill = 1;
-	for(prev = first_client, cl2 = first_client->next;
-			prev->next != NULL;
-			prev = prev->next, cl2 = cl2->next)
+
+	for(prev = first_client, cl2 = first_client->next; prev->next != NULL; prev = prev->next, cl2 = cl2->next)
 	{
 		if(cl == cl2)
-			{ break; }
+		{
+			break;
+		}
 	}
-	if(cl == cl2)
-		{ prev->next = cl2->next; } // Remove client from list
+
+	if(cl == cl2) // Remove client from list
+	{
+		prev->next = cl2->next;
+	}
+
 	int32_t bucket = (uintptr_t)cl / 16 % CS_CLIENT_HASHBUCKETS;
+
 	// Remove client from hashed list
 	if(first_client_hashed[bucket] == cl)
 	{
@@ -693,17 +790,21 @@ void free_client(struct s_client *cl)
 	else
 	{
 		for(prev = first_client_hashed[bucket], cl2 = first_client_hashed[bucket]->nexthashed;
-				prev->nexthashed != NULL;
-				prev = prev->nexthashed, cl2 = cl2->nexthashed)
+			prev->nexthashed != NULL; prev = prev->nexthashed, cl2 = cl2->nexthashed)
 		{
 			if(cl == cl2)
-				{ break; }
+			{
+				break;
+			}
 		}
-		if(cl == cl2)
-			{ prev->nexthashed = cl2->nexthashed; }
-	}
-	cs_writeunlock(__func__, &clientlist_lock);
 
+		if(cl == cl2)
+		{
+			prev->nexthashed = cl2->nexthashed;
+		}
+	}
+
+	cs_writeunlock(__func__, &clientlist_lock);
 	cleanup_ecmtasks(cl);
 
 	// Clean reader. The cleaned structures should be only used by the reader thread, so we should be save without waiting
@@ -712,14 +813,23 @@ void free_client(struct s_client *cl)
 		ll_destroy_data(&rdr->emmstat);
 		remove_reader_from_active(rdr);
 
-		cs_sleepms(1000); //just wait a bit that really really nobody is accessing client data
+		cs_sleepms(1000); // just wait a bit that really really nobody is accessing client data
 
 		if(rdr->ph.cleanup)
-			{ rdr->ph.cleanup(cl); }
+		{
+			rdr->ph.cleanup(cl);
+		}
+
 		if(cl->typ == 'r')
-			{ cardreader_close(rdr); }
+		{
+			cardreader_close(rdr);
+		}
+
 		if(cl->typ == 'p')
-			{ network_tcp_connection_close(rdr, "cleanup"); }
+		{
+			network_tcp_connection_close(rdr, "cleanup");
+		}
+
 		cl->reader = NULL;
 	}
 
@@ -732,16 +842,20 @@ void free_client(struct s_client *cl)
 		cl->last_srvid = NO_SRVID_VALUE;
 		cs_statistics(cl);
 
-		cs_sleepms(1000); //just wait a bit that really really nobody is accessing client data
+		cs_sleepms(1000); // just wait a bit that really really nobody is accessing client data
 	}
 
 	struct s_module *module = get_module(cl);
 	if(module->cleanup)
-		{ module->cleanup(cl); }
+	{
+		module->cleanup(cl);
+	}
 
 	// Close network socket if not already cleaned by previous cleanup functions
 	if(cl->pfd)
-		{ close(cl->pfd); }
+	{
+		close(cl->pfd);
+	}
 
 	// Clean all remaining structures
 	free_joblist(cl);
