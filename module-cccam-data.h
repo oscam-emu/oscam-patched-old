@@ -10,12 +10,12 @@
 
 #define CAID_KEY 0x20
 
-#define CC_MAXMSGSIZE 0x400 //by Project::Keynation: Buffer size is limited on "O" CCCam to 1024 bytes
-#define CC_MAX_PROV   32
+#define CC_MAXMSGSIZE 0x400 // by Project::Keynation: Buffer size is limited on "O" CCCam to 1024 bytes
+#define CC_MAX_PROV 32
 #define SWAPC(X, Y) do { char p; p = *X; *X = *Y; *Y = p; } while(0)
 
 #if (defined(WIN32) || defined(__CYGWIN__)) && !defined(MSG_WAITALL)
-#  define MSG_WAITALL 0
+#define MSG_WAITALL 0
 #endif
 
 #define MINIMIZE_NONE 0
@@ -55,11 +55,11 @@ typedef enum
 	MSG_CMD_0D = 0x0d, // "
 	MSG_CMD_0E = 0x0e, // "
 	MSG_NEW_CARD_SIDINFO = 0x0f,
-	MSG_SLEEPSEND = 0x80, //Sleepsend support
-	MSG_CACHE_PUSH = 0x81, //CacheEx Cache-Push In/Out
-	MSG_CACHE_FILTER = 0x82, //CacheEx Cache-Filter Request
-	MSG_CW_NOK1 = 0xfe, //Node no more available
-	MSG_CW_NOK2 = 0xff, //No decoding
+	MSG_SLEEPSEND = 0x80, // Sleepsend support
+	MSG_CACHE_PUSH = 0x81, // CacheEx Cache-Push In/Out
+	MSG_CACHE_FILTER = 0x82, // CacheEx Cache-Filter Request
+	MSG_CW_NOK1 = 0xfe, // Node no more available
+	MSG_CW_NOK2 = 0xff, // No decoding
 	MSG_NO_HEADER = 0xffff
 } cc_msg_type_t;
 
@@ -82,14 +82,14 @@ struct cc_srvid_block
 {
 	uint16_t sid;
 	uint16_t chid;
-	uint8_t  ecmlen;
-	time_t   blocked_till;
+	uint8_t ecmlen;
+	time_t blocked_till;
 };
 
 struct cc_provider
 {
-	uint32_t prov;  //provider
-	uint8_t sa[4]; //shared address
+	uint32_t prov; // provider
+	uint8_t sa[4]; // shared address
 };
 
 typedef enum
@@ -113,12 +113,12 @@ struct cc_card
 	uint8_t hexserial[8]; // card serial (for au)
 	LLIST *providers; // providers (struct cc_provider)
 	LLIST *badsids; // sids that have failed to decode (struct cc_srvid_block)
-	LLIST *goodsids; //sids that could decoded (struct cc_srvid)
-	LLIST *remote_nodes; //remote note id, 8 bytes
-	struct s_reader  *origin_reader;
+	LLIST *goodsids; // sids that could decoded (struct cc_srvid)
+	LLIST *remote_nodes; // remote note id, 8 bytes
+	struct s_reader *origin_reader;
 	uint32_t origin_id;
 	cc_card_type card_type;
-	struct s_sidtab *sidtab; //pointer to sidtab entry if card_type = CT_CARD_BY_SERVICE
+	struct s_sidtab *sidtab; // pointer to sidtab entry if card_type = CT_CARD_BY_SERVICE
 	uint64_t grp;
 	uint8_t rdr_reshare;
 	SIDTABBITS sidtabno;
@@ -147,7 +147,6 @@ typedef enum
 	MODE_CMD_0x0C_IDEA = 5,
 } cc_cmd0c_mode;
 
-
 struct cc_extended_ecm_idx
 {
 	uint8_t send_idx;
@@ -155,7 +154,7 @@ struct cc_extended_ecm_idx
 	struct cc_card *card;
 	struct cc_srvid srvid;
 	uint8_t free_card;
-	struct timeb    tps;
+	struct timeb tps;
 	uint32_t cccam_id;
 };
 
@@ -166,10 +165,10 @@ struct cc_data
 
 	struct cc_crypt_block block[2]; // crypto state blocks
 
-	uint8_t node_id[8], // client node id
-			peer_node_id[8], // server node id
-			peer_version[8], // server version
-			dcw[16]; // control words
+	uint8_t node_id[8]; // client node id
+	uint8_t peer_node_id[8]; // server node id
+	uint8_t peer_version[8]; // server version
+	uint8_t dcw[16]; // control words
 	uint8_t cmd0b_aeskey[16];
 	uint8_t cmd05_aeskey[16];
 	struct cc_crypt_block cmd05_cryptkey;
@@ -196,15 +195,15 @@ struct cc_data
 	int32_t ecm_counter;
 	int32_t card_added_count;
 	int32_t card_removed_count;
-	uint8_t just_logged_in; //true for checking NOK direct after login
-	uint8_t key_table; //key for CMD 0B
+	uint8_t just_logged_in; // true for checking NOK direct after login
+	uint8_t key_table; // key for CMD 0B
 
-	LLIST *pending_emms; //pending emm list
+	LLIST *pending_emms; // pending emm list
 
 	uint32_t recv_ecmtask;
 
 	struct cc_card *last_emm_card;
-	int32_t server_ecm_pending;                    //initialized by server
+	int32_t server_ecm_pending; // initialized by server
 	uint16_t server_ecm_idx;
 
 	CS_MUTEX_LOCK lockcmd;
@@ -222,15 +221,15 @@ struct cc_data
 	uint32_t remote_build_nr;
 	uint8_t sleepsend;
 
-	//Extended Mode for SPECIAL clients:
+	// Extended Mode for SPECIAL clients:
 	uint8_t extended_mode;
 	LLIST *extended_ecm_idx;
 
-	//multics detection
+	// multics detection
 	int8_t multics_mode;
 	int8_t multics_version[2];
 
-	//stats:
+	// stats:
 	int32_t num_hop1;
 	int32_t num_hop2;
 	int32_t num_hopx;
