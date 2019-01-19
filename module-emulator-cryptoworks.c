@@ -322,7 +322,7 @@ static uint8_t CryptoworksProcessNano80(uint8_t *data, uint32_t caid, int32_t pr
 	else {
 		memcpy(key, opKey, 16);
 	}
-	_3DES(data, key);
+	des_ecb3_decrypt(data, key);
 	memcpy(desKey, data, 8);
 
 	memcpy(data, dat1, 8);
@@ -334,14 +334,14 @@ static uint8_t CryptoworksProcessNano80(uint8_t *data, uint32_t caid, int32_t pr
 		memcpy(key, &opKey[8], 8);
 		memcpy(&key[8], opKey, 8);
 	}
-	_3DES(data, key);
+	des_ecb3_decrypt(data, key);
 	memcpy(&desKey[8], data, 8);
 
 	for(i=8; i+7<nanoLength; i+=8) {
 		memcpy(dat1, &data[i], 8);
 		memcpy(dat2, dat1, 8);
 		memcpy(key, desKey, 16);
-		_3DES(dat1, key);
+		des_ecb3_decrypt(dat1, key);
 		for(j=0; j<8; j++) {
 			dat1[j] ^= t[j];
 		}
