@@ -69,41 +69,49 @@ static void write_attack_file (struct s_client *cli, uint8_t txt_id, uint16_t rc
 	char *fext= FILE_ATTACK_INFO;
 	char *fname = get_gbox_tmp_fname(fext);
 	FILE *fhandle = fopen(fname, "a");
+
 	if(!fhandle)
 	{
 		cs_log("Couldn't open %s: %s", fname, strerror(errno));
 		return;
 	}
+
 	if(txt_id == GBOX_ATTACK_LOCAL_PW)
 	{
 		fprintf(fhandle, "ATTACK ALERT FROM %04X  %s - peer sends wrong local password - %s",
 			rcvd_id, cs_inet_ntoa(cli->ip), tsbuf);
 	}
+
 	if(txt_id == GBOX_ATTACK_PEER_IGNORE)
 	{
 		fprintf(fhandle, "ATTACK ALERT FROM %04X  %s - peer is ignored - %s",
 			rcvd_id, cs_inet_ntoa(cli->ip), tsbuf);
 	}
+
 	if(txt_id == GBOX_ATTACK_PEER_PW)
 	{
 		fprintf(fhandle, "ATTACK ALERT FROM %04X  %s - peer sends unknown peer password - %s",
 			rcvd_id, cs_inet_ntoa(cli->ip), tsbuf);
 	}
+
 	if(txt_id == GBOX_ATTACK_AUTH_FAIL)
 	{
 		fprintf(fhandle, "ATTACK ALERT FROM %04X  %s - authentification failed - %s",
 			rcvd_id, cs_inet_ntoa(cli->ip), tsbuf);
 	}
+
 	if(txt_id == GBOX_ATTACK_ECM_BLOCKED)
 	{
 		fprintf(fhandle, "ATTACK ALERT FROM %04X  %s - ECM is blocked - %s",
 			rcvd_id, cs_inet_ntoa(cli->ip), tsbuf);
 	}
+
 	if(txt_id == GBOX_ATTACK_REMM_REQ_BLOCKED)
 	{
 		fprintf(fhandle, "ATTACK ALERT FROM %04X  %s - unaccepted peer sent REMM REQ - %s",
 			rcvd_id, cs_inet_ntoa(cli->ip), tsbuf);
 	}
+
 	fclose(fhandle);
 	return;
 }
@@ -113,6 +121,7 @@ void write_msg_info(struct s_client *cli, uint8_t msg_id, uint8_t txt_id, uint16
 	if (msg_id == MSGID_GSMS && misc == 0x31) {return;}
 	char *fext= FILE_MSG_INFO;
 	char *fname = get_gbox_tmp_fname(fext);
+
 	if (file_exists(fname))
 	{
 		char buf[120];
@@ -230,12 +239,18 @@ uint16_t gbox_convert_password_to_id(uint32_t password)
 
 static int8_t gbox_remove_all_bad_sids(ECM_REQUEST *er, uint16_t sid)
 {
-	if (!er) { return -1; }
+	if (!er)
+	{
+		return -1;
+	}
 
 	struct gbox_card_pending *pending = NULL;
 	LL_LOCKITER *li = ll_li_create(er->gbox_cards_pending, 0);
+
 	while ((pending = ll_li_next(li)))
-		{ gbox_remove_bad_sid(pending->id.peer, pending->id.slot, sid); }
+	{
+		gbox_remove_bad_sid(pending->id.peer, pending->id.slot, sid);
+	}
 	ll_li_destroy(li);
 	return 0;
 }
@@ -261,6 +276,7 @@ struct s_client *get_gbox_proxy(uint16_t gbox_id)
 	struct s_client *cl;
 	struct s_client *found = NULL;
 	cs_readlock(__func__, &clientlist_lock);
+
 	for(cl = first_client; cl; cl = cl->next)
 	{
 		if(cl->typ == 'p' && cl->gbox && cl->gbox_peer_id == gbox_id)
@@ -284,7 +300,10 @@ static int8_t gbox_peer_online(struct gbox_peer *peer, uint8_t online)
 
 static int8_t gbox_clear_peer(struct gbox_peer *peer)
 {
-	if (!peer) { return -1; }
+	if (!peer)
+	{
+		return -1;
+	}
 
 	peer->ecm_idx = 0;
 	peer->next_hello = 0;
@@ -298,11 +317,18 @@ static int8_t gbox_clear_peer(struct gbox_peer *peer)
 
 static int8_t gbox_reinit_proxy(struct s_client *proxy)
 {
-	if (!proxy) { return -1; }
+	if (!proxy)
+	{
+		return -1;
+	}
 
 	struct gbox_peer *peer = proxy->gbox;
 	gbox_clear_peer(peer);
-	if (!proxy->reader) { return -1; }
+
+	if (!proxy->reader)
+	{
+		return -1;
+	}
 
 	proxy->reader->tcp_connected = 0;
 	proxy->reader->card_status = CARD_NEED_INIT;
@@ -336,17 +362,26 @@ void gbox_send_hello_packet(struct s_client *cli, int8_t number, uint8_t *outbuf
 
 	// initial HELLO = 0, subsequent = 1
 	if(hello_stat > GBOX_STAT_HELLOS)
-		{ outbuf[10] = 1; }
+	{
+		outbuf[10] = 1;
+	}
 	else
-		{ outbuf[10] = 0; }
+	{
+		outbuf[10] = 0;
+	}
 	outbuf[11] = number; // 0x80 (if last packet) else 0x00 | packet number
 
 	if((number & 0x0F) == 0)
 	{
 		if(hello_stat != GBOX_STAT_HELLOL)
-			{ memcpy(++ptr, gbox_get_my_checkcode(), 7); }
+		{
+			memcpy(++ptr, gbox_get_my_checkcode(), 7);
+		}
 		else
-			{ memset(++ptr, 0, 7); }
+		{
+			memset(++ptr, 0, 7);
+		}
+
 		ptr += 7;
 		*ptr = local_gbox.minor_version;
 		*(++ptr) = local_gbox.cpu_api;
@@ -445,7 +480,9 @@ void gbox_send_hello(struct s_client *proxy, uint8_t hello_stat)
 				else if(card->type == GBOX_CARD_TYPE_CCCAM)
 				{
 					if(proxy->reader->gbox_cccam_reshare > proxy->reader->gbox_reshare)
-						{ proxy->reader->gbox_cccam_reshare = proxy->reader->gbox_reshare; }
+					{
+						proxy->reader->gbox_cccam_reshare = proxy->reader->gbox_reshare;
+					}
 
 					// cs_log_dbg(D_READER,"send to peer ccc-card %04X - level=%d crd-owner=%04X", card->caprovid >> 16, proxy->reader->gbox_cccam_reshare, card->id.peer);
 					*(++ptr) = card->caprovid >> 24;
@@ -520,6 +557,7 @@ void restart_gbox_peer(char *rdrlabel, uint8_t allrdr, uint16_t gbox_id)
 {
 	struct s_client *cl;
 	cs_readlock(__func__, &clientlist_lock);
+
 	for(cl = first_client; cl; cl = cl->next)
 	{
 		if(cl->gbox && cl->typ == 'p' &&
@@ -613,7 +651,9 @@ static void gbox_server_init(struct s_client *cl)
 	if(!cl->init_done)
 	{
 		if(IP_ISSET(cl->ip))
-			{ cs_log("new connection from %s", cs_inet_ntoa(cl->ip)); }
+		{
+			cs_log("new connection from %s", cs_inet_ntoa(cl->ip));
+		}
 
 		// We cannot authenticate here, because we don't know gbox pw
 		cl->gbox_peer_id = NO_GBOX_ID;
@@ -640,7 +680,7 @@ int8_t gbox_message_header(uint8_t *buf, uint16_t cmd, uint32_t peer_password, u
 	return 0;
 }
 
-//returns number of cards in a hello packet or -1 in case of error
+// returns number of cards in a hello packet or -1 in case of error
 int16_t read_cards_from_hello(uint8_t *ptr, uint8_t *len, CAIDTAB *ctab, uint8_t maxdist, struct gbox_peer *peer)
 {
 	uint8_t *current_ptr = 0;
@@ -662,7 +702,9 @@ int16_t read_cards_from_hello(uint8_t *ptr, uint8_t *len, CAIDTAB *ctab, uint8_t
 			while (ptr < current_ptr + 5 + current_ptr[4] * 4)
 			{
 				if ((ptr[1] & 0xf) <= maxdist)
-					{ gbox_add_card(ptr[2] << 8 | ptr[3], caprovid, ptr[0], ptr[1] >> 4, ptr[1] & 0xf, GBOX_CARD_TYPE_GBOX, peer); }
+				{
+					gbox_add_card(ptr[2] << 8 | ptr[3], caprovid, ptr[0], ptr[1] >> 4, ptr[1] & 0xf, GBOX_CARD_TYPE_GBOX, peer);
+				}
 				ptr += 4; // next card
 			} // end while cards for provider
 		}
@@ -744,8 +786,9 @@ int32_t gbox_cmd_hello_rcvd(struct s_client *cli, uint8_t *data, int32_t n)
 
 	if ((data[11] & 0xf) != peer->next_hello) // out of sync hellos
 	{
-		cs_log("-> out of sync hello from %s %s, expected: %02X, received: %02X"
-			,username(cli), cli->reader->device, peer->next_hello, data[11] & 0xf);
+		cs_log("-> out of sync hello from %s %s, expected: %02X, received: %02X",
+				username(cli), cli->reader->device, peer->next_hello, data[11] & 0xf);
+
 		peer->next_hello = 0;
 		gbox_send_hello(cli, GBOX_STAT_HELLOL);
 		return 0;
@@ -767,13 +810,15 @@ int32_t gbox_cmd_hello_rcvd(struct s_client *cli, uint8_t *data, int32_t n)
 			memcpy(peer->hostname, data + payload_len - 1 - hostname_len, hostname_len);
 			peer->hostname[hostname_len] = '\0';
 		}
+
 		gbox_checkcode_recv(cli, data + payload_len - footer_len - 1);
 		peer->gbox.minor_version = data[payload_len - footer_len - 1 + 7];
 		peer->gbox.cpu_api = data[payload_len - footer_len + 7];
 		peer->total_cards = 0;
 	}
 
-	cs_log_dbg(D_READER, "-> Hello packet no. %d received from %s %s", (data[11] & 0xF) + 1, username(cli), cli->reader->device);
+	cs_log_dbg(D_READER, "-> Hello packet no. %d received from %s %s",
+			(data[11] & 0xF) + 1, username(cli), cli->reader->device);
 
 	// read cards from hello
 	cards_number = read_cards_from_hello(ptr, data + payload_len - footer_len - 1, &cli->reader->ctab, cli->reader->gbox_maxdist, peer);
@@ -840,16 +885,25 @@ int32_t gbox_cmd_hello_rcvd(struct s_client *cli, uint8_t *data, int32_t n)
 			cli->reader->tcp_connected = CARD_INSERTED;
 
 			if(!peer->filtered_cards)
-				{ cli->reader->card_status = NO_CARD; }
+			{
+				cli->reader->card_status = NO_CARD;
+			}
 			else
-				{ cli->reader->card_status = CARD_INSERTED; }
+			{
+				cli->reader->card_status = CARD_INSERTED;
+			}
 		}
+
 		peer->next_hello = 0;
 		gbox_write_peer_onl();
 		gbox_write_share_cards_info();
-		cli->last = time((time_t *)0); //hello is activity on proxy
+		cli->last = time((time_t *)0); // hello is activity on proxy
 	}
-	else { peer->next_hello++; }
+	else
+	{
+		peer->next_hello++;
+	}
+
 	return 0;
 }
 
@@ -881,7 +935,9 @@ static int8_t is_blocked_peer(uint16_t peer_id)
 		for (i = 0; i < cfg.gbox_block_ecm_num; i++)
 		{
 			if (cfg.gbox_block_ecm[i] == peer_id)
-				{ return 1; }
+			{
+				return 1;
+			}
 		}
 	}
 	return 0;
@@ -895,7 +951,9 @@ static int8_t check_peer_ignored(uint16_t peer_id)
 		for (i = 0; i < cfg.gbox_ignored_peer_num; i++)
 		{
 			if (cfg.gbox_ignored_peer[i] == peer_id)
-				{ return 1; }
+			{
+				return 1;
+			}
 		}
 	}
 	return 0;
@@ -932,17 +990,28 @@ static int8_t gbox_incoming_ecm(struct s_client *cli, uint8_t *data, int32_t n)
 	int32_t diffcheck = 0;
 
 	peer = cli->gbox;
-	if (!peer || !peer->my_user) { return -1; }
+	if (!peer || !peer->my_user)
+	{
+		return -1;
+	}
 	cl = peer->my_user;
 
 	if(n < 21)
-		{ return -1; }
+	{
+		return -1;
+	}
 
 	// No ECMs with length < MIN_LENGTH expected
-	if ((((data[19] & 0x0f) << 8) | data[20]) < MIN_ECM_LENGTH) { return -1; }
+	if ((((data[19] & 0x0f) << 8) | data[20]) < MIN_ECM_LENGTH)
+	{
+		return -1;
+	}
 
 	// GBOX_MAX_HOPS not violated
-	if (data[n - 15] + 1 > GBOX_MAXHOPS) { return -1; }
+	if (data[n - 15] + 1 > GBOX_MAXHOPS)
+	{
+		return -1;
+	}
 
 	// ECM must not take more hops than allowed by gbox_reshare
 	if (data[n - 15] + 1 > cli->reader->gbox_reshare)
@@ -963,7 +1032,10 @@ static int8_t gbox_incoming_ecm(struct s_client *cli, uint8_t *data, int32_t n)
 	}
 
 	ECM_REQUEST *er;
-	if(!(er = get_ecmtask())) { return -1; }
+	if(!(er = get_ecmtask()))
+	{
+		return -1;
+	}
 
 	struct gbox_ecm_request_ext *ere;
 	if(!cs_malloc(&ere, sizeof(struct gbox_ecm_request_ext)))
@@ -979,21 +1051,32 @@ static int8_t gbox_incoming_ecm(struct s_client *cli, uint8_t *data, int32_t n)
 
 	er->gbox_ecm_id = peer->gbox.id;
 
-	if(peer->ecm_idx == 100) { peer->ecm_idx = 0; }
+	if(peer->ecm_idx == 100)
+	{
+		peer->ecm_idx = 0;
+	}
 
 	er->idx = peer->ecm_idx++;
 	er->ecmlen = SCT_LEN(ecm);
 
 	if(er->ecmlen < 3 || er->ecmlen > MAX_ECM_SIZE || er->ecmlen + 18 > n)
-		{ NULLFREE(ere); NULLFREE(er); return -1; }
+	{
+		NULLFREE(ere);
+		NULLFREE(er);
+		return -1;
+	}
 
 	er->pid = b2i(2, data + 10);
 	er->srvid = b2i(2, data + 12);
 
 	if(ecm[er->ecmlen + 5] == 0x05)
-		{ er->caid = (ecm[er->ecmlen + 5] << 8); }
+	{
+		er->caid = (ecm[er->ecmlen + 5] << 8);
+	}
 	else
-		{ er->caid = b2i(2, ecm + er->ecmlen + 5); }
+	{
+		er->caid = b2i(2, ecm + er->ecmlen + 5);
+	}
 
 	memcpy(er->ecm, data + 18, er->ecmlen);
 	ere->gbox_peer = b2i(2, ecm + er->ecmlen);
@@ -1014,13 +1097,16 @@ static int8_t gbox_incoming_ecm(struct s_client *cli, uint8_t *data, int32_t n)
 
 	peer->gbox_rev = ecm[er->ecmlen + 3];
 
-	cs_log_dbg(D_READER, "-> ECM (-> %d) caid: %04X sid: %04X from peer: %04X rev: %01X.%01X (%s:%d)", ere->gbox_hops, er->caid, er->srvid, ere->gbox_peer, peer->gbox_rev >>4, peer->gbox_rev & 0x0f , peer->hostname, cli->port);
+	cs_log_dbg(D_READER, "-> ECM (-> %d) caid: %04X sid: %04X from peer: %04X rev: %01X.%01X (%s:%d)",
+			ere->gbox_hops, er->caid, er->srvid, ere->gbox_peer, peer->gbox_rev >> 4,
+			peer->gbox_rev & 0x0f, peer->hostname, cli->port);
+
 	get_cw(cl, er);
 
 	// checkcode did not match gbox->peer checkcode
 	if(diffcheck)
 	{
-		//TODO: Send HelloS here?
+		// TODO: Send HelloS here?
 		//gbox->peer.hello_stat = GBOX_STAT_HELLOS;
 		//gbox_send_hello(cli);
 	}
@@ -1029,7 +1115,10 @@ static int8_t gbox_incoming_ecm(struct s_client *cli, uint8_t *data, int32_t n)
 
 static uint32_t gbox_get_pending_time(ECM_REQUEST *er, uint16_t peer_id, uint8_t slot)
 {
-	if(!er) { return 0; }
+	if(!er)
+	{
+		return 0;
+	}
 
 	uint32_t ret_time = 0;
 	struct gbox_card_pending *pending = NULL;
@@ -1050,15 +1139,22 @@ static uint32_t gbox_get_pending_time(ECM_REQUEST *er, uint16_t peer_id, uint8_t
 static int32_t gbox_recv_chk(struct s_client *cli, uint8_t *dcw, int32_t *rc, uint8_t *data, int32_t n)
 {
 	if(!cli || gbox_decode_cmd(data) != MSG_CW || n < 44)
-		{ return -1; }
+	{
+		return -1;
+	}
 
 	int i;
 	uint16_t id_card = 0;
 	struct s_client *proxy;
+
 	if(cli->typ != 'p')
-		{ proxy = get_gbox_proxy(cli->gbox_peer_id); }
+	{
+		proxy = get_gbox_proxy(cli->gbox_peer_id);
+	}
 	else
-		{ proxy = cli; }
+	{
+		proxy = cli;
+	}
 
 	if (!proxy || !proxy->reader)
 	{
@@ -1074,8 +1170,9 @@ static int32_t gbox_recv_chk(struct s_client *cli, uint8_t *dcw, int32_t *rc, ui
 	char tmp[32];
 
 	cs_log_dbg(D_READER, "-> dcw=%s, from peer=%04X, ecm_pid=%04X, sid=%04X, crc=%08X, type=%02X, dist=%01X, unkn=%01X, rev=%01X.%01X, chid=%04X",
-		cs_hexdump(0, dcw, 32, tmp, sizeof(tmp)),
-		data[10] << 8 | data[11], data[6] << 8 | data[7], data[8] << 8 | data[9], crc, data[41], data[42] & 0x0f, data[42] >> 4, data[43] >>4, data[43] & 0x0f, data[37] << 8 | data[38]);
+			cs_hexdump(0, dcw, 32, tmp, sizeof(tmp)), data[10] << 8 | data[11], data[6] << 8 | data[7],
+			data[8] << 8 | data[9], crc, data[41], data[42] & 0x0f, data[42] >> 4, data[43] >> 4,
+			data[43] & 0x0f, data[37] << 8 | data[38]);
 
 	struct timeb t_now;
 	cs_ftime(&t_now);
@@ -1092,7 +1189,9 @@ static int32_t gbox_recv_chk(struct s_client *cli, uint8_t *dcw, int32_t *rc, ui
 			gbox_remove_all_bad_sids(&proxy->ecmtask[i], proxy->ecmtask[i].srvid);
 
 			if(proxy->ecmtask[i].gbox_ecm_status == GBOX_ECM_NOT_ASKED || proxy->ecmtask[i].gbox_ecm_status == GBOX_ECM_ANSWERED)
-				{ return -1; }
+			{
+				return -1;
+			}
 
 			proxy->ecmtask[i].gbox_ecm_status = GBOX_ECM_ANSWERED;
 			proxy->ecmtask[i].gbox_ecm_id = id_card;
@@ -1115,8 +1214,17 @@ static int8_t gbox_received_dcw(struct s_client *cli, uint8_t *data, int32_t n)
 	uint8_t dcw[16];
 
 	idx = gbox_recv_chk(cli, dcw, &rc, data, n);
-	if(idx < 0) { return -1; } // no dcw received
-	if(!idx) { idx = cli->last_idx; }
+
+	if(idx < 0) // no dcw received
+	{
+		return -1;
+	}
+
+	if(!idx)
+	{
+		idx = cli->last_idx;
+	}
+
 	peer->gbox_rev = data[43];
 	cli->reader->last_g = time((time_t *)0); // for reconnect timeout
 
@@ -1134,7 +1242,10 @@ static int8_t gbox_received_dcw(struct s_client *cli, uint8_t *data, int32_t n)
 
 int32_t gbox_recv_cmd_switch(struct s_client *proxy, uint8_t *data, int32_t n)
 {
-	if (!data || !proxy) { return -1; }
+	if (!data || !proxy)
+	{
+		return -1;
+	}
 
 	uint16_t cmd = gbox_decode_cmd(data);
 	switch(cmd)
@@ -1180,7 +1291,9 @@ int32_t gbox_recv_cmd_switch(struct s_client *proxy, uint8_t *data, int32_t n)
 		case MSG_HELLO1:
 		case MSG_HELLO:
 			if(gbox_cmd_hello_rcvd(proxy, data, n) < 0)
-				{ return -1; }
+			{
+				return -1;
+			}
 			break;
 
 		case MSG_CW:
@@ -1190,9 +1303,13 @@ int32_t gbox_recv_cmd_switch(struct s_client *proxy, uint8_t *data, int32_t n)
 		case MSG_CHECKCODE:
 			gbox_checkcode_recv(proxy, data + 10);
 			if (cfg.log_hello)
-				{ cs_log("-> HelloC checkcode from %s - %s", username(proxy), proxy->reader->device);}
+			{
+				cs_log("-> HelloC checkcode from %s - %s", username(proxy), proxy->reader->device);
+			}
 			else
-				{ cs_log_dbg(D_READER,"-> HelloC checkcode from %s - %s", username(proxy), proxy->reader->device);}
+			{
+				cs_log_dbg(D_READER,"-> HelloC checkcode from %s - %s", username(proxy), proxy->reader->device);
+			}
 			break;
 
 		case MSG_ECM:
@@ -1207,12 +1324,12 @@ int32_t gbox_recv_cmd_switch(struct s_client *proxy, uint8_t *data, int32_t n)
 
 		default:
 			cs_log("-> unknown command %04X received from %s %s",
-				cmd, username(proxy), proxy->reader->device);
+					cmd, username(proxy), proxy->reader->device);
 
 			write_msg_info(proxy, MSGID_UNKNOWNMSG, 0, 0);
 
 			cs_log_dump_dbg(D_READER, data, n, "unknown data (%d bytes) received from %s %s",
-								n, username(proxy), proxy->reader->device);
+							n, username(proxy), proxy->reader->device);
 	} // end switch
 
 	if((time(NULL) - last_stats_written) > STATS_WRITE_TIME)
@@ -1237,10 +1354,11 @@ static void add_betatunnel_card(uint16_t caid, uint8_t slot)
 		for(i = 0; i < ttab->ttnum; i++)
 		{
 			// Check for Betatunnel on gbox account in oscam.user
-			if( cli->gbox && ttab->ttdata && caid == ttab->ttdata[i].bt_caidto )
+			if(cli->gbox && ttab->ttdata && caid == ttab->ttdata[i].bt_caidto)
 			{
 				gbox_add_card(local_gbox.id, gbox_get_caprovid(ttab->ttdata[i].bt_caidfrom, i), slot, DEFAULT_GBOX_RESHARE, 0, GBOX_CARD_TYPE_BETUN, NULL);
-				cs_log_dbg(D_READER, "gbox created betatunnel card for caid: %04X->%04X", ttab->ttdata[i].bt_caidfrom, caid);
+				cs_log_dbg(D_READER, "gbox created betatunnel card for caid: %04X->%04X",
+						ttab->ttdata[i].bt_caidfrom, caid);
 			}
 		}
 	}
@@ -1312,10 +1430,14 @@ static uint8_t gbox_add_local_cards(void)
 				{
 					it2 = ll_iter_create(card->providers);
 					while((provider = ll_iter_next(&it2)))
-						{ gbox_add_card(cc_peer_id, gbox_get_caprovid(card->caid, provider->prov), slot, DEFAULT_CCC_GBOX_RESHARE, card->hop, GBOX_CARD_TYPE_CCCAM, NULL); }
+					{
+						gbox_add_card(cc_peer_id, gbox_get_caprovid(card->caid, provider->prov), slot, DEFAULT_CCC_GBOX_RESHARE, card->hop, GBOX_CARD_TYPE_CCCAM, NULL);
+					}
 				}
 				else
-					{ gbox_add_card(cc_peer_id, gbox_get_caprovid(card->caid, 0), slot, DEFAULT_CCC_GBOX_RESHARE, card->hop, GBOX_CARD_TYPE_CCCAM, NULL); }
+				{
+					gbox_add_card(cc_peer_id, gbox_get_caprovid(card->caid, 0), slot, DEFAULT_CCC_GBOX_RESHARE, card->hop, GBOX_CARD_TYPE_CCCAM, NULL);
+				}
 			}
 		} // end cccam
 #endif
@@ -1448,7 +1570,10 @@ static int8_t gbox_check_header_recvd(struct s_client *cli, struct s_client *pro
 				peer = proxy->gbox;
 			}
 
-			if (!peer) { return -1; }
+			if (!peer)
+			{
+				return -1;
+			}
 
 			if (peer_received_pw != peer->gbox.password)
 			{
@@ -1476,7 +1601,11 @@ static int8_t gbox_check_header_recvd(struct s_client *cli, struct s_client *pro
 		handle_attack(cli, GBOX_ATTACK_LOCAL_PW, 0);
 		return -1;
 	}
-	if(!proxy) { return -1; }
+
+	if(!proxy)
+	{
+		return -1;
+	}
 
 	if(!IP_EQUAL(cli->ip, proxy->ip))
 	{
@@ -1486,7 +1615,10 @@ static int8_t gbox_check_header_recvd(struct s_client *cli, struct s_client *pro
 		return -1;
 	}
 
-	if(!peer) { return -1; }
+	if(!peer)
+	{
+		return -1;
+	}
 
 	if(!peer->authstat)
 	{
@@ -1503,23 +1635,36 @@ static int32_t gbox_recv(struct s_client *cli, uint8_t *buf, int32_t l)
 	int8_t ret = 0;
 
 	if(!cli->udp_fd || !cli->is_udp || cli->typ != 'c')
-		{ return -1; }
+	{
+		return -1;
+	}
 
 	n = recv_from_udpipe(buf);
 	if (n < MIN_GBOX_MESSAGE_LENGTH || n >= RECEIVE_BUFFER_SIZE) // protect against too short or too long messages
-		{ return -1; }
+	{
+		return -1;
+	}
 
 	struct s_client *proxy = get_gbox_proxy(cli->gbox_peer_id);
 
 	memcpy(&data[0], buf, n);
 
 	ret = gbox_check_header_recvd(cli, proxy, &data[0], n);
-	if (ret < 0) { return -1; }
+	if (ret < 0)
+	{
+		return -1;
+	}
 
 	// in case of new authentication the proxy gbox can now be found
-	if (ret) { proxy = get_gbox_proxy(cli->gbox_peer_id); }
+	if (ret)
+	{
+		proxy = get_gbox_proxy(cli->gbox_peer_id);
+	}
 
-	if (!proxy) { return -1; }
+	if (!proxy)
+	{
+		return -1;
+	}
 
 	cli->last = time((time_t *)0);
 	// clients may timeout - attach to peer's gbox/reader
@@ -1531,17 +1676,25 @@ static int32_t gbox_recv(struct s_client *cli, uint8_t *buf, int32_t l)
 	cs_writeunlock(__func__, &peer->lock);
 
 	if(tmp < 0)
-		{ return -1; }
+	{
+		return -1;
+	}
 
 	return 0;
 }
 
 static void gbox_send_dcw(struct s_client *cl, ECM_REQUEST *er)
 {
-	if (!cl || !er) { return; }
+	if (!cl || !er)
+	{
+		return;
+	}
 
 	struct s_client *cli = get_gbox_proxy(cl->gbox_peer_id);
-	if (!cli || !cli->gbox) { return; }
+	if (!cli || !cli->gbox)
+	{
+		return;
+	}
 	struct gbox_peer *peer = cli->gbox;
 
 	if(er->rc >= E_NOTFOUND)
@@ -1597,8 +1750,8 @@ static void gbox_send_dcw(struct s_client *cl, ECM_REQUEST *er)
 	buf[43] = ere->gbox_rev;
 	//buf[43] = local_gbx_rev;
 
-	//This copies the routing info from ECM to answer.
-	//Each hop adds one byte and number of hops is in er->gbox_hops.
+	// This copies the routing info from ECM to answer.
+	// Each hop adds one byte and number of hops is in er->gbox_hops.
 	memcpy(&buf[44], &ere->gbox_routing_info, ere->gbox_hops - 1);
 	buf[44 + ere->gbox_hops - 1] = ere->gbox_hops - 1; // Hops
 
@@ -1612,8 +1765,9 @@ static void gbox_send_dcw(struct s_client *cl, ECM_REQUEST *er)
 	if(ere->gbox_rev >> 4)
 		{ gbox_send_remm_req(cli, er); }
 
-	cs_log_dbg(D_READER, "<- CW (<- %d) from %04X to %04X rev:%01X.%01X %s port:%d  ",
-		ere->gbox_hops, ere->gbox_mypeer, ere->gbox_peer, ere->gbox_rev >> 4, ere->gbox_rev & 0x0f, cli->reader->label, cli->port);
+	cs_log_dbg(D_READER, "<- CW (<- %d) from %04X to %04X rev:%01X.%01X %s port:%d",
+			ere->gbox_hops, ere->gbox_mypeer, ere->gbox_peer, ere->gbox_rev >> 4,
+			ere->gbox_rev & 0x0f, cli->reader->label, cli->port);
 }
 
 /* // see r11270
@@ -1666,7 +1820,9 @@ void *gbox_rebroadcast_thread(struct gbox_rbc_thread_args *args)
 static int32_t gbox_send_ecm(struct s_client *cli, ECM_REQUEST *er)
 {
 	if(!cli || !er || !cli->reader)
-		{ return -1; }
+	{
+		return -1;
+	}
 
 	if(!cli->gbox || !cli->reader->tcp_connected)
 	{
@@ -1693,10 +1849,14 @@ static int32_t gbox_send_ecm(struct s_client *cli, ECM_REQUEST *er)
 	}
 
 	if(er->gbox_ecm_status == GBOX_ECM_ANSWERED)
-		{ cs_log_dbg(D_READER, "%s replied to this ecm already", cli->reader->label); }
+	{
+		cs_log_dbg(D_READER, "%s replied to this ecm already", cli->reader->label);
+	}
 
 	if(er->gbox_ecm_status == GBOX_ECM_NOT_ASKED)
-		{ er->gbox_cards_pending = ll_create("pending_gbox_cards"); }
+	{
+		er->gbox_cards_pending = ll_create("pending_gbox_cards");
+	}
 
 	if(er->gbox_ecm_id == peer->gbox.id)
 	{
@@ -1708,7 +1868,10 @@ static int32_t gbox_send_ecm(struct s_client *cli, ECM_REQUEST *er)
 	uint8_t send_buf[1024];
 	int32_t buflen, len1;
 
-	if(!er->ecmlen) { return 0; }
+	if(!er->ecmlen)
+	{
+		return 0;
+	}
 
 	len1 = er->ecmlen + 18; // length till end of ECM
 
@@ -1733,9 +1896,13 @@ static int32_t gbox_send_ecm(struct s_client *cli, ECM_REQUEST *er)
 	send_buf[len1 + 2] = cfg.gbox_my_vers;
 
 	if(check_valid_remm_peer( peer->gbox.id))
-		{ send_buf[len1 + 3] = local_gbx_rev; }
+	{
+		send_buf[len1 + 3] = local_gbx_rev;
+	}
 	else
-		{ send_buf[len1 + 3] = 0x00; }
+	{
+		send_buf[len1 + 3] = 0x00;
+	}
 
 	send_buf[len1 + 4] = gbox_get_my_cpu_api();
 
@@ -1746,8 +1913,11 @@ static int32_t gbox_send_ecm(struct s_client *cli, ECM_REQUEST *er)
 	buflen = len1 + 10;
 
 	nb_matching_crds = gbox_get_cards_for_ecm(&send_buf[0], len1 + 10, cli->reader->gbox_maxecmsend, er, &current_avg_card_time, peer->gbox.id);
+
 	if (nb_matching_crds == cli->reader->gbox_maxecmsend)
-		{ max_ecm_reached = 1; }
+	{
+		max_ecm_reached = 1;
+	}
 	buflen += nb_matching_crds * 3;
 
 	if(!nb_matching_crds && er->gbox_ecm_status == GBOX_ECM_NOT_ASKED)
@@ -1756,6 +1926,7 @@ static int32_t gbox_send_ecm(struct s_client *cli, ECM_REQUEST *er)
 		write_ecm_answer(cli->reader, er, E_NOTFOUND, E2_CCCAM_NOCARD, NULL, NULL, 0, NULL);
 		return -1;
 	}
+
 	if(nb_matching_crds)
 	{
 		send_buf[16] = nb_matching_crds; // Number of cards the ECM should be forwarded to
@@ -1773,6 +1944,7 @@ static int32_t gbox_send_ecm(struct s_client *cli, ECM_REQUEST *er)
 		struct gbox_card_pending *pending = NULL;
 		struct timeb t_now;
 		cs_ftime(&t_now);
+
 		for (i = 0; i < nb_matching_crds; i++)
 		{
 			if(!cs_malloc(&pending, sizeof(struct gbox_card_pending)))
@@ -1798,13 +1970,19 @@ static int32_t gbox_send_ecm(struct s_client *cli, ECM_REQUEST *er)
 		ll_li_destroy(li);
 
 		if(er->gbox_ecm_status > GBOX_ECM_NOT_ASKED)
-			{ er->gbox_ecm_status++; }
+		{
+			er->gbox_ecm_status++;
+		}
 		else
 		{
 			if(max_ecm_reached)
-				{ er->gbox_ecm_status = GBOX_ECM_SENT; }
+			{
+				er->gbox_ecm_status = GBOX_ECM_SENT;
+			}
 			else
-				{ er->gbox_ecm_status = GBOX_ECM_SENT_ALL; }
+			{
+				er->gbox_ecm_status = GBOX_ECM_SENT_ALL;
+			}
 			cli->pending++;
 		}
 
@@ -1857,17 +2035,20 @@ static int8_t init_local_gbox(void)
 		cs_log("error, no/invalid port=%d configured in oscam.conf!", cfg.gbox_port[0] ? cfg.gbox_port[0] : 0);
 		return -1;
 	}
+
 	if(!cfg.gbox_hostname || strlen(cfg.gbox_hostname) > 128)
 	{
 		cs_log("error, no/invalid hostname '%s' configured in oscam.conf!",
 			cfg.gbox_hostname ? cfg.gbox_hostname : "");
 		return -1;
 	}
-	if(!cfg.gbox_password )
+
+	if(!cfg.gbox_password)
 	{
 		cs_log("error, 'my_password' not configured in oscam.conf!");
 		return -1;
 	}
+
 	if(!cfg.gbox_reconnect || cfg.gbox_reconnect > GBOX_MAX_RECONNECT || cfg.gbox_reconnect < GBOX_MIN_RECONNECT)
 	{
 		cs_log("Invalid 'gbox_reconnect = %d' Using default: %d sec", cfg.gbox_reconnect, DEFAULT_GBOX_RECONNECT);
@@ -1879,7 +2060,8 @@ static int8_t init_local_gbox(void)
 
 	if(!local_gbox.id)
 	{
-		cs_log("invalid 'my_password' %08X -> local gbox id: %04X, choose another 'my_password'", cfg.gbox_password, local_gbox.id);
+		cs_log("invalid 'my_password' %08X -> local gbox id: %04X, choose another 'my_password'",
+				cfg.gbox_password, local_gbox.id);
 		return -1;
 	}
 
@@ -1889,8 +2071,8 @@ static int8_t init_local_gbox(void)
 	{
 		if(!cfg.gbox_port[i])
 		{
-		cs_log("we are online - %d port(s) to monitor", i);
-		break;
+			cs_log("we are online - %d port(s) to monitor", i);
+			break;
 		}
 	}
 
@@ -1908,7 +2090,10 @@ static int32_t gbox_peer_init(struct s_client *cli)
 		return -1;
 	}
 
-	if (local_gbox_initialized < 0) { return -1; }
+	if (local_gbox_initialized < 0)
+	{
+		return -1;
+	}
 
 	int8_t ret;
 	if(!local_gbox_initialized)
@@ -1926,7 +2111,9 @@ static int32_t gbox_peer_init(struct s_client *cli)
 	}
 
 	if(!cs_malloc(&cli->gbox, sizeof(struct gbox_peer)))
-		{ return -1; }
+	{
+		return -1;
+	}
 
 	struct s_reader *rdr = cli->reader;
 	struct gbox_peer *peer = cli->gbox;
@@ -1972,7 +2159,9 @@ static int32_t gbox_peer_init(struct s_client *cli)
 	memset((char *)&cli->udp_sa, 0, sizeof(cli->udp_sa));
 
 	if(!hostResolve(rdr))
-		{ return 0; }
+	{
+		return 0;
+	}
 
 	cli->port = rdr->r_port;
 	SIN_GET_FAMILY(cli->udp_sa) = AF_INET;
@@ -1987,17 +2176,25 @@ static int32_t gbox_peer_init(struct s_client *cli)
 	gbox_send_hello(cli, GBOX_STAT_HELLOL);
 
 	if(!cli->reader->gbox_maxecmsend)
-		{ cli->reader->gbox_maxecmsend = DEFAULT_GBOX_MAX_ECM_SEND; }
+	{
+		cli->reader->gbox_maxecmsend = DEFAULT_GBOX_MAX_ECM_SEND;
+	}
 
 	if(!cli->reader->gbox_maxdist)
-		{ cli->reader->gbox_maxdist = DEFAULT_GBOX_MAX_DIST; }
+	{
+		cli->reader->gbox_maxdist = DEFAULT_GBOX_MAX_DIST;
+	}
 
 	// value > GBOX_MAXHOPS not allowed in gbox network
 	if(cli->reader->gbox_reshare > GBOX_MAXHOPS)
-		{ cli->reader->gbox_reshare = GBOX_MAXHOPS; }
+	{
+		cli->reader->gbox_reshare = GBOX_MAXHOPS;
+	}
 
 	if(cli->reader->gbox_cccam_reshare > GBOX_MAXHOPS)
-		{ cli->reader->gbox_cccam_reshare = GBOX_MAXHOPS; }
+	{
+		cli->reader->gbox_cccam_reshare = GBOX_MAXHOPS;
+	}
 
 	return 0;
 }
@@ -2005,7 +2202,7 @@ static int32_t gbox_peer_init(struct s_client *cli)
 static void gbox_send_HERE(struct s_client *cli)
 {
 	struct gbox_peer *peer = cli->gbox;
-	uchar outbuf[32];
+	uint8_t outbuf[32];
 	int32_t hostname_len = strlen(cfg.gbox_hostname);
 	gbox_message_header(outbuf, MSG_HERE, peer->gbox.password, local_gbox.password);
 	outbuf[0xA] = cfg.gbox_my_vers;
@@ -2027,10 +2224,15 @@ static void gbox_peer_idle (struct s_client *cl)
 	if (proxy && proxy->gbox)
 	{
 		etime_elapsed = llabs(cl->lastecm - time(NULL));
-		if (llabs(proxy->last - time(NULL)) > etime_elapsed )
-			{ ptime_elapsed = etime_elapsed; }
+
+		if (llabs(proxy->last - time(NULL)) > etime_elapsed)
+		{
+			ptime_elapsed = etime_elapsed;
+		}
 		else
-			{ ptime_elapsed = llabs(proxy->last - time(NULL)); }
+		{
+			ptime_elapsed = llabs(proxy->last - time(NULL));
+		}
 
 		if (ptime_elapsed > (cfg.gbox_reconnect *2) && cl->gbox_peer_id != NO_GBOX_ID)
 		{
@@ -2089,7 +2291,9 @@ static int8_t gbox_send_peer_good_night(struct s_client *proxy)
 	int32_t hostname_len = 0;
 
 	if (cfg.gbox_hostname)
-		{ hostname_len = strlen(cfg.gbox_hostname); }
+	{
+		hostname_len = strlen(cfg.gbox_hostname);
+	}
 
 	int32_t len = hostname_len + 22;
 
@@ -2122,34 +2326,44 @@ void gbox_send_good_night(void)
 	gbox_free_cardlist();
 	struct s_client *cli;
 	cs_readlock(__func__, &clientlist_lock);
+
 	for(cli = first_client; cli; cli = cli->next)
 	{
 		if(cli->gbox && cli->typ == 'p')
-			{ gbox_send_peer_good_night(cli); }
+		{
+			gbox_send_peer_good_night(cli);
+		}
 	}
 	cs_readunlock(__func__, &clientlist_lock);
 }
 
 void gbox_send_goodbye(struct s_client *cli) // indication that requested ECM failed
 {
-		if (local_gbox.minor_version != 0x2A)
-		{
-			uint8_t outbuf[15];
-			struct gbox_peer *peer = cli->gbox;
-			gbox_message_header(outbuf, MSG_GOODBYE, peer->gbox.password, local_gbox.password);
-			cs_log_dbg(D_READER,"<- goodbye - requested ecm failed. Send info to requesting boxid: %04X", peer->gbox.id);
-			gbox_send(cli, outbuf, 10);
-		}
-		else
-		{ return; }
+	if (local_gbox.minor_version != 0x2A)
+	{
+		uint8_t outbuf[15];
+		struct gbox_peer *peer = cli->gbox;
+		gbox_message_header(outbuf, MSG_GOODBYE, peer->gbox.password, local_gbox.password);
+		cs_log_dbg(D_READER,"<- goodbye - requested ecm failed. Send info to requesting boxid: %04X", peer->gbox.id);
+		gbox_send(cli, outbuf, 10);
+	}
+	else
+	{
+		return;
+	}
 }
 
 void module_gbox(struct s_module *ph)
 {
 	int32_t i;
+
 	for(i = 0; i < CS_MAXPORTS; i++)
 	{
-		if(!cfg.gbox_port[i]) { break; }
+		if(!cfg.gbox_port[i])
+		{
+			break;
+		}
+
 		ph->ptab.nports++;
 		ph->ptab.ports[i].s_port = cfg.gbox_port[i];
 	}

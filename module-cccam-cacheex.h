@@ -8,8 +8,8 @@ void cc_cacheex_push_in(struct s_client *cl, uint8_t *buf);
 void cc_cacheex_module_init(struct s_module *ph);
 #else
 static inline void cc_cacheex_filter_out(struct s_client *UNUSED(cl)) { }
-static inline void cc_cacheex_filter_in(struct s_client *UNUSED(cl), uchar *UNUSED(buf)) { }
-static inline void cc_cacheex_push_in(struct s_client *UNUSED(cl), uchar *UNUSED(buf)) { }
+static inline void cc_cacheex_filter_in(struct s_client *UNUSED(cl), uint8_t *UNUSED(buf)) { }
+static inline void cc_cacheex_push_in(struct s_client *UNUSED(cl), uint8_t *UNUSED(buf)) { }
 static inline void cc_cacheex_module_init(struct s_module *UNUSED(ph)) { }
 #endif
 
