@@ -395,13 +395,13 @@ static void set_ecm_info(struct templatevars * vars)
 	tpl_printf(vars, TPLADD, "TOTAL_CWOK_READERS", PRINTF_LOCAL_F, totalrdrok);
 	tpl_printf(vars, TPLADD, "TOTAL_CWNOK_READERS", PRINTF_LOCAL_F, totalrdrnok);
 	tpl_printf(vars, TPLADD, "TOTAL_CWTOUT_READERS", PRINTF_LOCAL_F, totalrdrtout);
-	tpl_printf(vars, TPLADD, "REL_CWOK_READERS", "%.2f", totalrdrok * 100 / ecmsum);
-	tpl_printf(vars, TPLADD, "REL_CWNOK_READERS", "%.2f", totalrdrnok * 100 / ecmsum);
-	tpl_printf(vars, TPLADD, "REL_CWTOUT_READERS", "%.2f", totalrdrtout * 100 / ecmsum);
+	tpl_printf(vars, TPLADD, "REL_CWOK_READERS", "%.2f", ecmsum ? totalrdrok * 100 / ecmsum : 0);
+	tpl_printf(vars, TPLADD, "REL_CWNOK_READERS", "%.2f", ecmsum ? totalrdrnok * 100 / ecmsum : 0);
+	tpl_printf(vars, TPLADD, "REL_CWTOUT_READERS", "%.2f", ecmsum ? totalrdrtout * 100 / ecmsum : 0);
 	tpl_printf(vars, TPLADD, "TOTAL_CWPOS_READERS", PRINTF_LOCAL_F, totalrdrpos);
 	tpl_printf(vars, TPLADD, "TOTAL_CWNEG_READERS", PRINTF_LOCAL_F, totalrdrneg);
-	tpl_printf(vars, TPLADD, "REL_CWPOS_READERS", "%.2f", totalrdrpos * 100 / ecmsum);
-	tpl_printf(vars, TPLADD, "REL_CWNEG_READERS", "%.2f", totalrdrneg * 100 / ecmsum);
+	tpl_printf(vars, TPLADD, "REL_CWPOS_READERS", "%.2f", ecmsum ? totalrdrpos * 100 / ecmsum : 0);
+	tpl_printf(vars, TPLADD, "REL_CWNEG_READERS", "%.2f", ecmsum ? totalrdrneg * 100 / ecmsum : 0);
 	tpl_printf(vars, TPLADD, "TOTAL_ELENR", PRINTF_LOCAL_F, flen);
 	tpl_printf(vars, TPLADD, "TOTAL_EHEADR", PRINTF_LOCAL_F, fhead);
 	tpl_printf(vars, TPLADD, "TOTAL_SUM_ALL_READERS_ECM", PRINTF_LOCAL_F, ecmsum);
