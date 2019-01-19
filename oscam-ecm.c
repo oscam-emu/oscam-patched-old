@@ -984,7 +984,7 @@ int32_t send_dcw(struct s_client *client, ECM_REQUEST *er)
 			if(client->account->acosc_penalty_active > 0)
 			{
 				if(client->account->acosc_penalty_active == 3)
-					{ cs_log("[zaplist] ACoSC for Client: %s  penalty_duration: %ld seconds left(%s)", username(client), client->account->acosc_penalty_until - zaptime, info3); }
+					{ cs_log_dbg(D_TRACE, "[zaplist] ACoSC for Client: %s  penalty_duration: %ld seconds left(%s)", username(client), client->account->acosc_penalty_until - zaptime, info3); }
 
 				int16_t lt = get_module(client)->listenertype;
 				switch(penalty)
