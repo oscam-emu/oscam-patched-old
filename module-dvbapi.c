@@ -7375,16 +7375,16 @@ void dvbapi_write_ecminfo_file(struct s_client *client, ECM_REQUEST *er, uint8_t
 				case E_FOUND:
 					if(er->selected_reader)
 					{
-						fprintf(ecmtxt, "reader: %s\nfrom: %s\nprotocol: %s\nhops: %d\n",
-							reader_name, from_name, proto_name, hops);
+						fprintf(ecmtxt, "reader: %s\nfrom: %s:%d\nprotocol: %s\nhops: %d\n",
+							reader_name, from_name, from_port, proto_name, hops);
 					}
 					break;
 
 				case E_CACHE1:
 				case E_CACHE2:
 				case E_CACHEEX:
-					fprintf(ecmtxt, "reader: %s\nfrom: %s\nprotocol: %s\n",
-						reader_name, from_name, proto_name);
+					fprintf(ecmtxt, "reader: %s\nfrom: %s:%d\nprotocol: %s\n",
+						reader_name, from_name, from_port, proto_name);
 					break;
 			}
 
