@@ -5637,7 +5637,7 @@ static char *send_oscam_status(struct templatevars * vars, struct uriparams * pa
 													rcc->num_reshare0, rcc->num_reshare1, rcc->num_reshare2, rcc->num_resharex,
 													rcc->num_reshare0 > 0 ? "1" : "");
 										}
-									cs_log("Reader %s has total %d local%s hop1 %d hopx %d from total of %d card%s", cl->reader->label, locals, (locals > 1) ? "s" : "", rcc->num_hop2, rcc->num_hopx, cnt, (cnt > 1) ? "s" : "");
+									cs_log_dbg(D_TRACE, "Reader %s has total %d local%s hop1 %d hopx %d from total of %d card%s", cl->reader->label, locals, (locals > 1) ? "s" : "", rcc->num_hop2, rcc->num_hopx, cnt, (cnt > 1) ? "s" : "");
 									}
 								}
 							}
