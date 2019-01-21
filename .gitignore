@@ -18,12 +18,7 @@ tests.bin.debug
 
 # OSCam-Emu files
 .vscode
-cscrypt/viades.c
-cscrypt/viades.h
-dre2overcrypt.c
-dre2overcrypt.h
-via3surenc.c
-via3surenc.h
-SoftCam.Key
-git-svn-diff.sh
 oscam-emu.patch
+SoftCam.Key
+SoftCam.Key.o
+git-svn-diff.sh
