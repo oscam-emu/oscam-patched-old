@@ -1335,6 +1335,8 @@ struct s_client
 
 	struct s_client	*next;							// make client a linked list
 	struct s_client	*nexthashed;
+
+	int8_t			start_hidecards;
 };
 
 typedef struct s_ecm_whitelist_data
@@ -1821,12 +1823,13 @@ struct s_auth
 	int32_t			ac_users;						// 0 - unlimited
 	int8_t			ac_penalty;						// 0 - log, >0 - fake dw
 	struct s_acasc	ac_stat;
+	int8_t			acosc_max_ecms_per_minute;		// user value 0 - unlimited
 	int8_t			acosc_max_active_sids;			// user value 0 - unlimited
 	int8_t			acosc_zap_limit;				// user value 0 - unlimited
 	int8_t			acosc_penalty;					// user value penalty
 	int32_t			acosc_penalty_duration;			// user value how long is penalty activ in sek.
 	time_t			acosc_penalty_until;
-	int8_t			acosc_penalty_active;			// 0-deaktiv 1-max_active_sids 2-zap_limit 3-penaly_duration
+	int8_t			acosc_penalty_active;			// 0-deaktiv 1-max_active_sids 2-zap_limit 3-max_ecms_per_minute 4-penaly_duration
 	int32_t			acosc_delay;					// user value
 	int8_t			acosc_user_zap_count;
 	time_t			acosc_user_zap_count_start_time;
@@ -2233,6 +2236,7 @@ struct s_config
 	char			*ac_logfile;
 	struct s_cpmap	*cpmap;
 	int8_t			acosc_enabled;
+	int8_t			acosc_max_ecms_per_minute;		// global value 0 - unlimited
 	int8_t			acosc_max_active_sids;			// global value 0 - unlimited
 	int8_t			acosc_zap_limit;				// global value 0 - unlimited
 	int32_t			acosc_penalty_duration;			// global value how long is penalty activ in sek.

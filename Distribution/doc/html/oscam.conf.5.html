@@ -1727,6 +1727,15 @@ Can be overwritten per user in <B>oscam.user</B>.
 
 <P>
 
+<B>acosc_max_ecms_per_minute</B> = <B>count</B>
+<DL COMPACT><DT><DD>
+maximum ecms per minute, 0 = unlimited, default:0
+<P>
+Can be overwritten per user in <B>oscam.user</B>.
+</DL>
+
+<P>
+
 <B>acosc_zap_limit</B> = <B>count</B>
 <DL COMPACT><DT><DD>
 zap limit for anti-cascading over SID, 0 = unlimited, default:0
@@ -1736,7 +1745,7 @@ Can be overwritten per user in <B>oscam.user</B>.
 
 <P>
 
-<B>acosc_penalty</B> = <B>0</B>|<B>1</B>|<B>2</B>|<B>3</B>
+<B>acosc_penalty</B> = <B>0</B>|<B>1</B>|<B>2</B>|<B>3</B>|<B>4</B>
 <DL COMPACT><DT><DD>
 level of penalty with anti-cascading over SID count:
 <P>
@@ -1744,6 +1753,7 @@ level of penalty with anti-cascading over SID count:
 <BR>&nbsp;<B>1</B>&nbsp;=&nbsp;send&nbsp;fake&nbsp;CWs
 <BR>&nbsp;<B>2</B>&nbsp;=&nbsp;temporary&nbsp;user&nbsp;ban
 <BR>&nbsp;<B>3</B>&nbsp;=&nbsp;send&nbsp;delayed&nbsp;CWs
+<BR>&nbsp;<B>4</B>&nbsp;=&nbsp;temporary&nbsp;hidecards&nbsp;to&nbsp;the&nbsp;client
 <P>
 Can be overwritten per user in <B>oscam.user</B>.
 </DL>

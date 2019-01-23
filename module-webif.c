@@ -1610,6 +1610,7 @@ static char *send_oscam_config_anticasc(struct templatevars *vars, struct uripar
 
 	if(cfg.acosc_enabled == 1)
 		{ tpl_addVar(vars, TPLADD, "ACOSC_CHECKED", "checked"); }
+	tpl_printf(vars, TPLADD, "ACOSC_MAX_ECMS_PER_MINUTE", "%d", cfg.acosc_max_ecms_per_minute);
 	tpl_printf(vars, TPLADD, "ACOSC_MAX_ACTIVE_SIDS", "%d", cfg.acosc_max_active_sids);
 	tpl_printf(vars, TPLADD, "ACOSC_ZAP_LIMIT", "%d", cfg.acosc_zap_limit);
 	tpl_printf(vars, TPLADD, "TMP", "ACOSC_PENALTY%d", cfg.acosc_penalty);
@@ -3561,7 +3562,9 @@ static char *send_oscam_user_config_edit(struct templatevars *vars, struct uripa
 	{
 		tpl_printf(vars, TPLADD, "PENALTYVALUE", "%d", account->ac_penalty);
 	}
+	tpl_printf(vars, TPLADD, "ACOSC_MAX_ECMS_PER_MINUTE", "%d", account->acosc_max_ecms_per_minute);
 	tpl_printf(vars, TPLADD, "ACOSC_MAX_ACTIVE_SIDS", "%d", account->acosc_max_active_sids);
+	tpl_printf(vars, TPLADD, "CFG_ACOSC_MAX_ECMS_PER_MINUTE", "%d", cfg.acosc_max_ecms_per_minute);
 	tpl_printf(vars, TPLADD, "CFG_ACOSC_MAX_ACTIVE_SIDS", "%d", cfg.acosc_max_active_sids);
 	tpl_printf(vars, TPLADD, "ACOSC_ZAP_LIMIT", "%d", account->acosc_zap_limit);
 	tpl_printf(vars, TPLADD, "CFG_ACOSC_ZAP_LIMIT", "%d", cfg.acosc_zap_limit);
@@ -3586,6 +3589,9 @@ static char *send_oscam_user_config_edit(struct templatevars *vars, struct uripa
 				break;
 			case 3:
 				tmp = "(3) CW delayed";
+				break;
+			case 4:
+				tmp = "(4) Hidecards";
 				break;
 		}
 		tpl_addVar(vars, TPLADD, "CFG_ACOSC_PENALTY", tmp);

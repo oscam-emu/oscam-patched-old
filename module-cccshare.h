@@ -37,4 +37,8 @@ void merge_sids(struct cc_card *carddst, struct cc_card *cardsrc);
 
 void cccam_refresh_share(void);
 
+int32_t hide_card_to_client(struct cc_card *card, struct s_client *cl);
+int32_t unhide_card_to_client(struct cc_card *card, struct s_client *cl);
+int32_t hidecards_card_valid_for_client(struct s_client *cl, struct cc_card *card);
+
 #endif

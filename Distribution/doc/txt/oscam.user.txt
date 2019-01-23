@@ -83,19 +83,23 @@ DESCRIPTIONS
 	    0 = disable fake delay
 	   -1 = fake delay of oscam.conf (default)
 
+	    acosc_max_ecms_per_minute = count
+	  maximum ecms per minute, 0 = unlimited, default:0
+
        acosc_max_active_sids = count
 	  maximum active SIDs with anti-cascading over SID, 0 = unlimited, -1 = use global setting, default:0
 
        acosc_zap_limit = count
 	  zap limit for anti-cascading over SID, 0 = unlimited, -1 = use global setting, default:0
 
-       acosc_penalty = 0|1|2|3|-1
+       acosc_penalty = 0|1|2|3|4|-1
 	  level of penalty with anti-cascading over SID count:
 
 	    0 = only logging (default)
 	    1 = send fake CWs
 	    2 = temporary user ban
 	    3 = send delayed CWs
+	    4 = temporary hidecards to the client
 	   -1 = use global setting
 
        acosc_penalty_duration = seconds

@@ -349,6 +349,46 @@ static int32_t send_card_to_client(struct cc_card *card, struct s_client *cl)
 	return 1;
 }
 
+int32_t hide_card_to_client(struct cc_card *card, struct s_client *cl)
+{
+	if(!card || !card->id)
+		{ return 0; }
+
+	uint8_t buf[4];
+	buf[0] = card->id >> 24;
+	buf[1] = card->id >> 16;
+	buf[2] = card->id >> 8;
+	buf[3] = card->id & 0xFF;
+
+	struct s_clientmsg *clientmsg;
+	struct cc_data *cc = cl->cc;
+	if(cc && (cl->typ == 'c') && !cl->kill && (get_module(cl)->num == R_CCCAM)) //CCCam-Client!
+	{
+		if(card_valid_for_client(cl, card))
+		{
+			if(cs_malloc(&clientmsg, sizeof(struct s_clientmsg)))
+			{
+				memcpy(clientmsg->msg, buf, sizeof(buf));
+				clientmsg->len = sizeof(buf);
+				clientmsg->cmd = MSG_CARD_REMOVED;
+				add_job(cl, ACTION_CLIENT_SEND_MSG, clientmsg, sizeof(struct s_clientmsg));
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
+int32_t unhide_card_to_client(struct cc_card *card, struct s_client *cl)
+{
+	return send_card_to_client(card, cl);
+}
+
+int32_t hidecards_card_valid_for_client(struct s_client *cl, struct cc_card *card)
+{
+	return card_valid_for_client(cl, card);
+}
+
 int32_t send_card_to_all_clients(struct cc_card *card)
 {
 	int32_t count = 0;

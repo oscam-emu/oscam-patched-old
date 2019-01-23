@@ -23,6 +23,7 @@
 #include "oscam-string.h"
 #include "oscam-work.h"
 #include "reader-common.h"
+#include "module-cccam-data.h"
 
 extern CS_MUTEX_LOCK ecmcache_lock;
 extern struct ecm_request_t *ecmcwcache;
@@ -918,11 +919,13 @@ int32_t send_dcw(struct s_client *client, ECM_REQUEST *er)
 		int8_t penalty = 0;
 		int32_t penalty_duration = 0;
 		int32_t delay = 0;
+		int8_t max_ecms_per_minute = 0;
 		char *info1 = NULL;
 		char *info2 = NULL;
 		char *info3 = NULL;
 		char *info4 = NULL;
 		char *info5 = NULL;
+		char *info6 = NULL;
 
 		// **global or user value?
 		cs_writelock(__func__, &clientlist_lock);
@@ -942,15 +945,18 @@ int32_t send_dcw(struct s_client *client, ECM_REQUEST *er)
 		delay = client->account->acosc_delay == -1 ? cfg.acosc_delay : client->account->acosc_delay;
 		info4 = client->account->acosc_delay == -1 ? "Globalvalue" : "Uservalue";
 
+		max_ecms_per_minute = client->account->acosc_max_ecms_per_minute == -1 ? cfg.acosc_max_ecms_per_minute : client->account->acosc_max_ecms_per_minute;
+		info6 = client->account->acosc_max_ecms_per_minute == -1 ? "Globalvalue" : "Uservalue";
+
 		//**
 
-		if((er->rc < E_NOTFOUND && max_active_sids > 0) || zap_limit > 0)
+		if((er->rc < E_NOTFOUND && max_active_sids > 0) || zap_limit > 0 || max_ecms_per_minute > 0)
 		{
 			int8_t k = 0;
 			int8_t active_sid_count = 0;
 			time_t zaptime = time(NULL);
 
-			if(client->account->acosc_penalty_active == 3 && client->account->acosc_penalty_until <= zaptime) // reset penalty_active
+			if(client->account->acosc_penalty_active == 4 && client->account->acosc_penalty_until <= zaptime) // reset penalty_active
 			{
 				client->account->acosc_penalty_active = 0;
 				client->account->acosc_penalty_until = 0;
@@ -981,9 +987,21 @@ int32_t send_dcw(struct s_client *client, ECM_REQUEST *er)
 				client->account->acosc_penalty_until = zaptime + penalty_duration;
 			}
 
+			if(client->account->acosc_penalty_active == 0 && max_ecms_per_minute > 0 && client->n_request[1] >= max_ecms_per_minute && penalty != 4) // max ecms per minute reached
+			{
+				client->account->acosc_penalty_active = 3;
+				client->account->acosc_penalty_until = zaptime + penalty_duration;
+			}
+
+			if(client->account->acosc_penalty_active == 0 && max_ecms_per_minute > 0 && client->n_request[1] > 0 && penalty == 4) // max ecms per minute with hidecards penalty
+			{
+				client->account->acosc_penalty_active = 3;
+				client->account->acosc_penalty_until = zaptime + penalty_duration;
+			}
+
 			if(client->account->acosc_penalty_active > 0)
 			{
-				if(client->account->acosc_penalty_active == 3)
+				if(client->account->acosc_penalty_active == 4)
 					{ cs_log_dbg(D_TRACE, "[zaplist] ACoSC for Client: %s  penalty_duration: %ld seconds left(%s)", username(client), client->account->acosc_penalty_until - zaptime, info3); }
 
 				int16_t lt = get_module(client)->listenertype;
@@ -996,7 +1014,8 @@ int32_t send_dcw(struct s_client *client, ECM_REQUEST *er)
 							{ cs_log("[zaplist] ACoSC for Client: %s  max_activ_sids reached: %i:%i(%s) penalty: 1(%s) send null CW", username(client), active_sid_count, max_active_sids, info1, info2); }
 						if(client->account->acosc_penalty_active == 2)
 							{ cs_log("[zaplist] ACoSC for Client: %s  zap_limit reached: %i:%i(%s) penalty: 1(%s) send null CW", username(client), client->account->acosc_user_zap_count, zap_limit, info5, info2); }
-
+						if(client->account->acosc_penalty_active == 3)
+							{ cs_log("[maxecms] ACoSC for Client: %s  max_ecms_per_minute reached: ecms_last_minute=%i ecms_now=%i max=%i(%s) penalty: 1(%s) send null CW", username(client), client->n_request[0], client->n_request[1], max_ecms_per_minute, info6, info2); }
 						break;
 
 					case 2: // ban
@@ -1006,7 +1025,8 @@ int32_t send_dcw(struct s_client *client, ECM_REQUEST *er)
 								{ cs_log("[zaplist] ACoSC for Client: %s  max_activ_sids reached: %i:%i(%s) penalty: 2(%s) BAN Client - Kill and set Client to failban list for %i sec.", username(client), active_sid_count, max_active_sids, info1, info2, penalty_duration); }
 							if(client->account->acosc_penalty_active == 2)
 								{ cs_log("[zaplist] ACoSC for Client: %s  zap_limit reached: %i:%i(%s) penalty: 2(%s) BAN Client - Kill and set Client to failban list for %i sec.", username(client), client->account->acosc_user_zap_count, zap_limit, info5, info2, penalty_duration); }
-
+							if(client->account->acosc_penalty_active == 3)
+								{ cs_log("[maxecms] ACoSC for Client: %s  max_ecms_per_minute reached: ecms_last_minute=%i ecms_now=%i max=%i(%s) penalty: 2(%s) BAN Client - Kill and set Client to failban list for %i sec.", username(client), client->n_request[0], client->n_request[1], max_ecms_per_minute, info6, info2, penalty_duration); }
 							cs_add_violation_acosc(client, client->account->usr, penalty_duration);
 							add_job(client, ACTION_CLIENT_KILL, NULL, 0);
 						}
@@ -1022,23 +1042,33 @@ int32_t send_dcw(struct s_client *client, ECM_REQUEST *er)
 							{ cs_log("[zaplist] ACoSC for Client: %s  max_activ_sids reached: %i:%i(%s) penalty: 3(%s) delay CW: %ims(%s)", username(client), active_sid_count, max_active_sids, info1, info2, delay, info4); }
 						if(client->account->acosc_penalty_active == 2)
 							{ cs_log("[zaplist] ACoSC for Client: %s  zap_limit reached: %i:%i(%s) penalty: 3(%s) delay CW: %ims(%s)", username(client), client->account->acosc_user_zap_count, zap_limit, info5, info2, delay, info4);	}
+						if(client->account->acosc_penalty_active == 3)
+							{ cs_log("[maxecms] ACoSC for Client: %s  max_ecms_per_minute reached: ecms_last_minute=%i ecms_now=%i max=%i(%s) penalty: 3(%s) delay CW: %ims(%s)", username(client), client->n_request[0], client->n_request[1], max_ecms_per_minute, info6, info2, delay, info4); }
 						cs_writeunlock(__func__, &clientlist_lock);
 						cs_sleepms(delay);
 						cs_writelock(__func__, &clientlist_lock);
 						client->cwlastresptime += delay;
 						snprintf(sreason, sizeof(sreason)-1, " (%d ms penalty delay)", delay);
 						break;
-
+					case 4: // hidecards
+						if(client->account->acosc_penalty_active == 3)
+						{
+							cs_log("[maxecms] ACoSC for Client: %s ecms_last_minute=%i ecms_now=%i max=%i(%s) penalty: 4(%s) hidecards - hidecards to the client for %i sec", username(client), client->n_request[0], client->n_request[1], max_ecms_per_minute, info6, info2, penalty_duration);
+							client->start_hidecards = 1;
+						}
+						break;
 					default: // logging
 						if(client->account->acosc_penalty_active == 1)
 							{ cs_log("[zaplist] ACoSC for Client: %s  max_activ_sids reached: %i:%i(%s) penalty: 0(%s) only logging", username(client), active_sid_count, max_active_sids, info1, info2); }
 						if(client->account->acosc_penalty_active == 2)
 							{ cs_log("[zaplist] ACoSC for Client: %s  zap_limit reached: %i:%i(%s) penalty: 0(%s) only logging", username(client), client->account->acosc_user_zap_count, zap_limit, info5, info2);	}
-
+						if(client->account->acosc_penalty_active == 3)
+							{ cs_log("[maxecms] ACoSC for Client: %s  max_ecms_per_minute reached: ecms_last_minute=%i ecms_now=%i max=%i(%s) penalty: 0(%s) only logging", username(client), client->n_request[0], client->n_request[1], max_ecms_per_minute, info6, info2); }
 						break;
 				}
 				client->account->acosc_user_zap_count = 0; // we got already a penalty
 				client->account->acosc_penalty_active = 3;
+				client->account->acosc_penalty_active = 4;
 			}
 		}
 		cs_writeunlock(__func__, &clientlist_lock);
@@ -1088,6 +1118,16 @@ int32_t send_dcw(struct s_client *client, ECM_REQUEST *er)
 
 	if(is_fake)
 		{ er->rc = E_FAKE; }
+
+#ifdef CS_ANTICASC
+	cs_writelock(__func__, &clientlist_lock);
+	if(client->start_hidecards)
+	{
+		client->start_hidecards = 0;
+		add_job(client, ACTION_CLIENT_HIDECARDS, NULL, 0);
+	}
+	cs_writeunlock(__func__, &clientlist_lock);
+#endif
 
 	if(!(er->rc == E_SLEEPING && client->cwlastresptime == 0))
 	{

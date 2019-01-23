@@ -902,6 +902,9 @@ DESCRIPTIONS
        acosc_enabled = 0|1
 	  1 = enable anti-cascading over SID count, default:0
 
+       acosc_max_ecms_per_minute = count
+	  maximum ecms per minute, 0 = unlimited, default:0
+
        acosc_max_active_sids = count
 	  maximum active SIDs with anti-cascading over SID, 0 = unlimited, default:0
 
@@ -912,13 +915,14 @@ DESCRIPTIONS
 
 	  Can be overwritten per user in oscam.user.
 
-       acosc_penalty = 0|1|2|3
+       acosc_penalty = 0|1|2|3|4
 	  level of penalty with anti-cascading over SID count:
 
 	   0 = only logging (default)
 	   1 = send fake CWs
 	   2 = temporary user ban
 	   3 = send delayed CWs
+	   4 = temporary hidecards to the client
 
 	  Can be overwritten per user in oscam.user.
 
