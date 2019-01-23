@@ -146,6 +146,15 @@ set fake delay time individually for user:
 
 <P>
 
+<B>acosc_max_ecms_per_minute</B> = <B>count</B>
+<DL COMPACT><DT><DD>
+maximum ecms per minute, 0 = unlimited, default:0
+<P>
+Can be overwritten per user in <B>oscam.user</B>.
+</DL>
+
+<P>
+
 <B>acosc_max_active_sids</B> = <B>count</B>
 <DL COMPACT><DT><DD>
 maximum active SIDs with anti-cascading over SID, 0 = unlimited, -1 = use global setting, default:0
@@ -160,7 +169,7 @@ zap limit for anti-cascading over SID, 0 = unlimited, -1 = use global setting, d
 
 <P>
 
-<B>acosc_penalty</B> = <B>0</B>|<B>1</B>|<B>2</B>|<B>3</B>|<B>-1</B>
+<B>acosc_penalty</B> = <B>0</B>|<B>1</B>|<B>2</B>|<B>3</B>|<B>4</B>|<B>-1</B>
 <DL COMPACT><DT><DD>
 level of penalty with anti-cascading over SID count:
 <P>
@@ -168,6 +177,7 @@ level of penalty with anti-cascading over SID count:
 <BR>&nbsp;&nbsp;<B>1</B>&nbsp;=&nbsp;send&nbsp;fake&nbsp;CWs
 <BR>&nbsp;&nbsp;<B>2</B>&nbsp;=&nbsp;temporary&nbsp;user&nbsp;ban
 <BR>&nbsp;&nbsp;<B>3</B>&nbsp;=&nbsp;send&nbsp;delayed&nbsp;CWs
+<BR>&nbsp;&nbsp;<B>4</B>&nbsp;=&nbsp;temporary&nbsp;hidecards&nbsp;to&nbsp;the&nbsp;client
 <BR>&nbsp;<B>-1</B>&nbsp;=&nbsp;use&nbsp;global&nbsp;setting
 </DL>
 

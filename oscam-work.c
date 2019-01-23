@@ -11,6 +11,7 @@
 #include "oscam-string.h"
 #include "oscam-work.h"
 #include "reader-common.h"
+#include "module-cccam.h"
 #include "module-cccam-data.h"
 #include "module-cccshare.h"
 #include "oscam-time.h"
@@ -91,13 +92,13 @@ static void set_work_thread_name(struct job_data *data)
 }
 
 #define __free_job_data(client, job_data) \
-    do { \
-        client->work_job_data = NULL; \
-        if (job_data && job_data != &tmp_data) { \
-            free_job_data(job_data); \
-        } \
-        job_data = NULL; \
-    } while(0)
+	do { \
+		client->work_job_data = NULL; \
+		if(job_data && job_data != &tmp_data) { \
+			free_job_data(job_data); \
+		} \
+		job_data = NULL; \
+	} while(0)
 
 void *work_thread(void *ptr)
 {
@@ -412,7 +413,78 @@ void *work_thread(void *ptr)
 				case ACTION_PEER_IDLE:
 					if(module->s_peer_idle)
 						{ module->s_peer_idle(cl); }
-				break;
+					break;
+				case ACTION_CLIENT_HIDECARDS:
+				{
+#ifdef CS_ANTICASC
+					if(config_enabled(MODULE_CCCAM))
+					{
+						int32_t hidetime = (cl->account->acosc_penalty_duration == -1 ? cfg.acosc_penalty_duration : cl->account->acosc_penalty_duration);
+						if(hidetime)
+						{
+							int32_t hide_count;
+							int32_t cardsize;
+							int32_t ii, uu=0;
+							LLIST **sharelist = get_and_lock_sharelist();
+							LLIST *sharelist2 = ll_create("hidecards-sharelist");
+
+							for(ii = 0; ii < CAID_KEY; ii++)
+							{
+								if(sharelist[ii])
+								{
+									ll_putall(sharelist2, sharelist[ii]);
+								}
+							}
+
+							unlock_sharelist();
+
+							struct cc_card **cardarray = get_sorted_card_copy(sharelist2, 0, &cardsize);
+							ll_destroy(&sharelist2);
+
+							for(ii = 0; ii < cardsize; ii++)
+							{
+								if(hidecards_card_valid_for_client(cl, cardarray[ii]))
+								{
+									if (cardarray[ii]->id)
+									{
+										hide_count = hide_card_to_client(cardarray[ii], cl);
+										if(hide_count)
+										{
+											cs_log_dbg(D_TRACE, "Hiding card_%d caid=%04x remoteid=%08x from %s for %d %s",
+												 uu, cardarray[ii]->caid, cardarray[ii]->remote_id, username(cl), hidetime, hidetime>1 ? "secconds" : "seccond");
+											uu += 1;
+										}
+									}
+								}
+							}
+
+							cs_sleepms(hidetime * 1000);
+							uu = 0;
+
+							for(ii = 0; ii < cardsize; ii++)
+							{
+								if(hidecards_card_valid_for_client(cl, cardarray[ii]))
+								{
+									if (cardarray[ii]->id)
+									{
+										hide_count = unhide_card_to_client(cardarray[ii], cl);
+										if(hide_count)
+										{
+											cs_log_dbg(D_TRACE, "Unhiding card_%d caid=%04x remoteid=%08x for %s",
+											 uu, cardarray[ii]->caid, cardarray[ii]->remote_id, username(cl));
+											uu += 1;
+										}
+									}
+								}
+							}
+
+							NULLFREE(cardarray);
+						}
+					}
+#endif
+					break;
+				} // case ACTION_CLIENT_HIDECARDS
+
 			} // switch
 
 			__free_job_data(cl, data);

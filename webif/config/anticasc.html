@@ -20,6 +20,7 @@
 			<TR><TD><A>Denysamples:</A></TD><TD><input name="denysamples" class="short" type="text" maxlength="5" value="##DENYSAMPLES##"></TD></TR>
 			<TR><TH COLSPAN="2">Edit Anticascading over Sid Count (ACoSC) Config</TH></TR>
 			<TR><TD><A>ACoSC Enabled:</A></TD><TD><input name="acosc_enabled" type="checkbox" value="1" ##ACOSC_CHECKED##><label></label></TD></TR>
+			<TR><TD>ACoSC max_ecms_per_minute:</TD><TD><input name="acosc_max_ecms_per_minute" class="short" type="text" maxlength="3" value="##ACOSC_MAX_ECMS_PER_MINUTE##"></TD></TR>
 			<TR><TD><A>ACoSC max_active_sids:</A></TD><TD><input name="acosc_max_active_sids" class="short" type="text" maxlength="3" value="##ACOSC_MAX_ACTIVE_SIDS##"></TD></TR>
 			<TR><TD><A>ACoSC zap_limit:</A></TD><TD><input name="acosc_zap_limit" class="short" type="text" maxlength="3" value="##ACOSC_ZAP_LIMIT##"></TD></TR>
 			<TR><TD><A>ACoSC penalty:</A></TD>
@@ -28,7 +29,8 @@
 					<option value="1" ##ACOSC_PENALTY1##>1 - Fake CW</option>
 					<option value="2" ##ACOSC_PENALTY2##>2 - Ban</option>
 					<option value="3" ##ACOSC_PENALTY3##>3 - Real CW delayed</option>
+					<option value="4" ##ACOSC_PENALTY4##>4 - Hidecards</option>
 				</select></TD>
 			</TR>
- 			<TR><TD><A>ACoSC penalty_duration:</A></TD><TD><input name="acosc_penalty_duration" class="short" type="text" maxlength="5" value="##ACOSC_PENALTY_DURATION##"></TD></TR>
+			<TR><TD><A>ACoSC penalty_duration:</A></TD><TD><input name="acosc_penalty_duration" class="short" type="text" maxlength="5" value="##ACOSC_PENALTY_DURATION##"></TD></TR>
 			<TR><TD><A>ACoSC delay:</A></TD><TD><input name="acosc_delay" type="text" class="short" maxlength="5" value="##ACOSC_DELAY##"></TD></TR>

@@ -16,6 +16,10 @@
 					</TD>
 				</TR>
 				<TR><TH COLSPAN="2">User specific settings for AntiCascading over Sid Count (ACoSC)</TH></TR>
+				<TR><TD>ACoSC max_ecms_per_minute:</TD>
+					<TD><input name="acosc_max_ecms_per_minute" class="short" type="text" maxlength="3" value="##ACOSC_MAX_ECMS_PER_MINUTE##">
+					&nbsp;Global ACoSC max_ecms_per_minute value:<SPAN CLASS="global_conf" TITLE="This value is used if acosc_max_ecms_per_minute = -1"><A HREF="config.html?part=anticasc">##CFG_ACOSC_MAX_ECMS_PER_MINUTE##</A></SPAN></TD>
+				</TR>
 				<TR><TD><A>ACoSC max_active_sids:</A></TD>
 					<TD><input name="acosc_max_active_sids" class="short" type="text" maxlength="3" value="##ACOSC_MAX_ACTIVE_SIDS##">
 					&nbsp;Global ACoSC_max_active_sids value:<SPAN CLASS="global_conf" TITLE="This value is used if acosc_max_active_sids = -1"><A HREF="config.html?part=anticasc">##CFG_ACOSC_MAX_ACTIVE_SIDS##</A></SPAN></TD>
@@ -32,6 +36,7 @@
 							<option value="1" ##ACOSC_PENALTY1##>&nbsp;1 - Fake CW</option>
 							<option value="2" ##ACOSC_PENALTY2##>&nbsp;2 - Ban</option>
 							<option value="3" ##ACOSC_PENALTY3##>&nbsp;3 - Real CW delayed</option>
+							<option value="4" ##ACOSC_PENALTY4##>&nbsp;4 - Hidecards</option>
 						</select>
 						&nbsp;Global ACoSC-Penalty level:<SPAN CLASS="global_conf"><A HREF="config.html?part=anticasc" TITLE="This value is used if ACoSC penalty = -1">##CFG_ACOSC_PENALTY##</A></SPAN>
 					</TD>
