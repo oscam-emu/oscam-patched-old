@@ -88,10 +88,14 @@ static void ParseTsData(uint8_t table_id, uint8_t table_mask, uint8_t min_table_
 	uint16_t section_length, offset = 0;
 
 	if (len < 1)
-		{ return; }
+	{
+		return;
+	}
 
 	if (*flag == 0 && !payloadStart)
-		{ return; }
+	{
+		return;
+	}
 
 	if (*flag == 0)
 	{
@@ -104,7 +108,9 @@ static void ParseTsData(uint8_t table_id, uint8_t table_mask, uint8_t min_table_
 	}
 
 	if (len - offset < 1)
-		{ return; }
+	{
+		return;
+	}
 
 	free_data_length = data_length - *data_pos;
 	copySize = (len - offset) > free_data_length ? free_data_length : (len - offset);
@@ -144,7 +150,9 @@ static void ParseTsData(uint8_t table_id, uint8_t table_mask, uint8_t min_table_
 	*flag = 2;
 
 	if (*data_pos < 3)
-		{ return; }
+	{
+		return;
+	}
 
 	section_length = SCT_LEN(data);
 
@@ -155,7 +163,9 @@ static void ParseTsData(uint8_t table_id, uint8_t table_mask, uint8_t min_table_
 	}
 
 	if ((*data_pos) < section_length)
-		{ return; }
+	{
+		return;
+	}
 
 	func(cdata);
 
@@ -178,8 +188,11 @@ static void ParseTsData(uint8_t table_id, uint8_t table_mask, uint8_t min_table_
 			break;
 		}
 	}
+
 	if (!found_start)
-		{ *data_pos = 0; }
+	{
+		*data_pos = 0;
+	}
 
 	*flag = 1;
 }
@@ -193,9 +206,10 @@ static void ParsePatData(emu_stream_client_data *cdata)
 	for (i = 8; i + 7 < section_length; i += 4)
 	{
 		srvid = b2i(2, data + i);
-
 		if (srvid == 0)
-			{ continue; }
+		{
+			continue;
+		}
 
 		if (cdata->srvid == srvid)
 		{
@@ -225,7 +239,9 @@ static void ParsePmtData(emu_stream_client_data *cdata)
 	program_info_length = b2i(2, data + 10) & 0xFFF;
 
 	if (12 + program_info_length >= section_length)
-		{ return; }
+	{
+		return;
+	}
 
 	for (i = 12; i + 1 < 12 + program_info_length; i += descriptor_length + 2)
 	{
@@ -233,10 +249,14 @@ static void ParsePmtData(emu_stream_client_data *cdata)
 		descriptor_length = data[i + 1];
 
 		if (descriptor_length < 1)
-			{ break; }
+		{
+			break;
+		}
 
 		if (i + 1 + descriptor_length >= 12 + program_info_length)
-			{ break; }
+		{
+			break;
+		}
 
 		if (descriptor_tag == 0x09 && descriptor_length >= 4)
 		{
@@ -244,7 +264,10 @@ static void ParsePmtData(emu_stream_client_data *cdata)
 
 			if (caid_is_powervu(caid)) // add all supported caids here
 			{
-				if (cdata->caid == NO_CAID_VALUE) { cdata->caid = caid; }
+				if (cdata->caid == NO_CAID_VALUE)
+				{
+					cdata->caid = caid;
+				}
 				cdata->ecm_pid = b2i(2, data + i + 4) & 0x1FFF;
 				cs_log_dbg(D_READER, "Stream %i found ecm pid: 0x%04X (%i)",
 							cdata->connid, cdata->ecm_pid, cdata->ecm_pid);
@@ -294,7 +317,9 @@ static void ParsePmtData(emu_stream_client_data *cdata)
 			//case 0x??: // MPEG-H part 3 3D audio (ATSC 3.0) /* fixme: add the actual value when it gets published */
 			{
 				if (cdata->audio_pid_count >= EMU_STREAM_MAX_AUDIO_SUB_TRACKS)
-					{ continue; }
+				{
+					continue;
+				}
 
 				cdata->audio_pids[cdata->audio_pid_count] = elementary_pid;
 				cdata->audio_pid_count++;
@@ -314,13 +339,18 @@ static void ParseCatData(emu_stream_client_data *cdata)
 	for (i = 8; i < (b2i(2, data + 1) & 0xFFF) - 1; i += data[i + 1] + 2)
 	{
 		if (data[i] != 0x09)
-			{ continue; }
+		{
+			continue;
+		}
 
 		uint16_t caid = b2i(2, data + i + 2);
 
 		if (caid_is_powervu(caid)) // add all supported caids here
 		{
-			if (cdata->caid == NO_CAID_VALUE) { cdata->caid = caid; }
+			if (cdata->caid == NO_CAID_VALUE)
+			{
+				cdata->caid = caid;
+			}
 			cdata->emm_pid = b2i(2, data + i + 4) & 0x1FFF;;
 			cs_log_dbg(D_READER, "Stream %i found emm pid: 0x%04X (%i)",
 						cdata->connid, cdata->emm_pid, cdata->emm_pid);
@@ -349,7 +379,9 @@ static void ParseEcmData(emu_stream_client_data *cdata)
 	uint16_t section_length = SCT_LEN(data);
 
 	if (section_length < 11)
-		{ return; }
+	{
+		return;
+	}
 
 	if (caid_is_powervu(cdata->caid))
 	{
@@ -387,7 +419,9 @@ static void ParseTsPackets(emu_stream_client_data *data, uint8_t *stream_buf, ui
 		}
 
 		if (packetSize - offset < 1)
-			{ continue; }
+		{
+			continue;
+		}
 
 		if (pid == 0x0000 && data->have_pat_data != 1) // Search the PAT for the PMT pid
 		{
@@ -405,7 +439,9 @@ static void ParseTsPackets(emu_stream_client_data *data, uint8_t *stream_buf, ui
 
 		// We have bot PAT and PMT data - No need to search the rest of the packets
 		if (data->have_pat_data == 1 && data->have_pmt_data == 1)
-			{ break; }
+		{
+			break;
+		}
 	}
 }
 
@@ -447,7 +483,9 @@ static void DescrambleTsPacketsPowervu(emu_stream_client_data *data, uint8_t *st
 		}
 
 		if (packetSize - offset < 1)
-			{ continue; }
+		{
+			continue;
+		}
 
 		if (emu_stream_emm_enabled && pid == 0x0001 && data->have_cat_data != 1) // Search the CAT for EMM pids
 		{
@@ -485,7 +523,9 @@ static void DescrambleTsPacketsPowervu(emu_stream_client_data *data, uint8_t *st
 		}
 
 		if (scramblingControl == 0)
-			{ continue; }
+		{
+			continue;
+		}
 
 		if (!(stream_buf[i + 3] & 0x10))
 		{
@@ -695,10 +735,14 @@ static void DescrambleTsPacketsRosscrypt1(emu_stream_client_data *data, uint8_t 
 		}
 
 		if (packetSize - offset < 1)
-			{ continue; }
+		{
+			continue;
+		}
 
 		if (scramblingControl == 0)
-			{ continue; }
+		{
+			continue;
+		}
 
 		if (!(stream_buf[i + 3] & 0x10))
 		{
@@ -774,10 +818,14 @@ static void DescrambleTsPacketsCompel(emu_stream_client_data *data, uint8_t *str
 		}
 
 		if (packetSize - offset < 1)
-			{ continue; }
+		{
+			continue;
+		}
 
 		if (scramblingControl == 0)
-			{ continue; }
+		{
+			continue;
+		}
 
 		if (!(stream_buf[i + 3] & 0x10))
 		{
@@ -918,7 +966,9 @@ static int32_t connect_to_stream(char *http_buf, int32_t http_buf_len, char *str
 
 	int32_t streamfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (streamfd == -1)
-		{ return -1; }
+	{
+		return -1;
+	}
 
 	struct timeval tv;
 	tv.tv_sec = 2;
@@ -936,7 +986,9 @@ static int32_t connect_to_stream(char *http_buf, int32_t http_buf_len, char *str
 	cservaddr.sin_port = htons(emu_stream_source_port);
 
 	if (connect(streamfd, (struct sockaddr *)&cservaddr, sizeof(cservaddr)) == -1)
-		{ return -1; }
+	{
+		return -1;
+	}
 
 	if (emu_stream_source_auth)
 	{
@@ -957,7 +1009,9 @@ static int32_t connect_to_stream(char *http_buf, int32_t http_buf_len, char *str
 	}
 
 	if (send(streamfd, http_buf, strlen(http_buf), 0) == -1)
-		{ return -1; }
+	{
+		return -1;
+	}
 
 	return streamfd;
 }
@@ -1058,7 +1112,9 @@ static void *stream_client_handler(void *arg)
 	{
 		token = strtok_r(NULL, ":", &saveptr);
 		if (token == NULL)
-			{ break; }
+		{
+			break;
+		}
 	}
 
 	if (token != NULL)
@@ -1094,6 +1150,11 @@ static void *stream_client_handler(void *arg)
 
 	data->connid = conndata->connid;
 	data->caid = NO_CAID_VALUE;
+	data->have_pat_data = 0;
+	data->have_pmt_data = 0;
+	data->have_cat_data = 0;
+	data->have_ecm_data = 0;
+	data->have_emm_data = 0;
 
 	while (!exit_oscam && clientStatus != -1 && streamConnectErrorCount < 3
 			&& streamDataErrorCount < 15)
