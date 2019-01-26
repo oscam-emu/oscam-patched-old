@@ -504,7 +504,7 @@ static void *mca_main_thread(void *cli)
 				cs_log_dbg(D_DVBAPI, "OPENXCAS_PID_FILTER_CALLBACK");
 				memcpy(&data, msg.buf, msg.buf_len);
 				//openxcas_filter_callback_ex(msg.stream_id, msg.sequence, (struct stOpenXCAS_Data *)msg.buf);
-				mca_ex_callback(msg.stream_id, msg.sequence, data.cipher_index, data.pid, (uuint8_t *)&data.buf, data.len);
+				mca_ex_callback(msg.stream_id, msg.sequence, data.cipher_index, data.pid, (uint8_t *)&data.buf, data.len);
 				break;
 			case OPENXCAS_QUIT:
 				cs_log_dbg(D_DVBAPI, "OPENXCAS_QUIT");
