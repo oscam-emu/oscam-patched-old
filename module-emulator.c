@@ -882,7 +882,7 @@ void add_emu_reader(void)
 	LL_ITER itr;
 	struct s_reader *rdr;
 	int8_t haveEmuReader = 0;
-	char *emuName = "emulator";
+	char emuName[] = "emulator";
 	char *ctab, *ftab, *emu_auproviders, *disablecrccws_only_for;
 
 	// Check if emu [reader] entry already exists in oscam.server file and get it
@@ -910,8 +910,8 @@ void add_emu_reader(void)
 
 		rdr->enable = 1;
 		rdr->typ = R_EMU;
-		strncpy(rdr->label, emuName, strlen(emuName));
-		strncpy(rdr->device, emuName, strlen(emuName));
+		cs_strncpy(rdr->label, emuName, sizeof(emuName));
+		cs_strncpy(rdr->device, emuName, sizeof(emuName));
 
 		// CAIDs
 		ctab = strdup("0500,0604,090F,0E00,1010,1801,2600,2602,2610,4AE1,A101");
