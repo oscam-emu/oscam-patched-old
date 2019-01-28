@@ -15,6 +15,11 @@
 #include "oscam-time.h"
 #include "oscam-chk.h"
 
+#define STREAM_UNDEFINED 0x00
+#define STREAM_VIDEO     0x01
+#define STREAM_AUDIO     0x02
+#define STREAM_SUBTITLE  0x03
+
 extern int32_t exit_oscam;
 
 typedef struct
@@ -221,6 +226,83 @@ static void ParsePatData(emu_stream_client_data *cdata)
 	}
 }
 
+static void ParseDescriptors(uint8_t *buffer, uint16_t info_length, uint8_t *type)
+{
+	uint8_t descriptor_tag = buffer[0], descriptor_length = 0;
+	uint32_t j, k;
+
+	static const char format_identifiers_audio[10][5] =
+	{
+		// "HDMV" format identifier is removed
+		// OSCam does not need to know about Blu-ray
+		"AC-3", "BSSD", "dmat", "DRA1", "DTS1",
+		"DTS2", "DTS3", "EAC3", "mlpa", "Opus",
+	};
+
+	if (info_length < 1)
+	{
+		return;
+	}
+
+	for (j = 0; j + 1 < info_length; j += descriptor_length + 2)
+	{
+		descriptor_tag = buffer[j];
+		descriptor_length = buffer[j + 1];
+
+		switch (descriptor_tag)
+		{
+			case 0x05: // registration descriptor
+			{
+				for (k = 0; k < 10; k++)
+				{
+					if (memcmp(buffer + j + 2, format_identifiers_audio[k], 4) == 0)
+					{
+						*type = STREAM_AUDIO;
+						break;
+					}
+				}
+				break;
+			}
+
+			//case 0x09: // CA descriptor
+			//{
+			//	break;
+			//}
+
+			case 0x59: // subtitling descriptor (DVB)
+			{
+				*type = STREAM_SUBTITLE;
+				break;
+			}
+
+			case 0x6A: // AC-3 descriptor (DVB)
+			case 0x7A: // enhanced AC-3 descriptor (DVB)
+			case 0x7B: // DTS descriptor (DVB)
+			case 0x7C: // AAC descriptor (DVB)
+			case 0x81: // AC-3 descriptor (ATSC)
+			{
+				*type = STREAM_AUDIO;
+				break;
+			}
+
+			case 0x7F: // extension descriptor (DVB)
+			{
+				uint8_t extension_descriptor_tag = buffer[j + 2];
+
+				switch (extension_descriptor_tag)
+				{
+					case 0x0E: // DTS-HD descriptor (DVB)
+					case 0x0F: // DTS Neural descriptor (DVB)
+					case 0x15: // AC-4 descriptor (DVB)
+						*type = STREAM_AUDIO;
+						break;
+				}
+				break;
+			}
+		}
+	}
+}
+
 static void ParsePmtData(emu_stream_client_data *cdata)
 {
 	int32_t i;
@@ -243,6 +325,7 @@ static void ParsePmtData(emu_stream_client_data *cdata)
 		return;
 	}
 
+	// parse program descriptors (we are looking only for CA descriptor here)
 	for (i = 12; i + 1 < 12 + program_info_length; i += descriptor_length + 2)
 	{
 		descriptor_tag = data[i];
@@ -292,7 +375,6 @@ static void ParsePmtData(emu_stream_client_data *cdata)
 			case 0x24: // HEVC video
 			case 0x25: // HEVC video
 			case 0x42: // Chinese video
-			case 0x80: // DigiCipher 2 video
 			case 0xD1: // Dirac video
 			case 0xEA: // VC-1 video
 			{
@@ -304,17 +386,11 @@ static void ParsePmtData(emu_stream_client_data *cdata)
 
 			case 0x03: // MPEG-1 part 3 audio (MP1, MP2, MP3)
 			case 0x04: // MPEG-2 part 3 audio (MP1, MP2, MP3)
-			case 0x06: // AC-3, Enhanced AC-3, AC-4, DTS, DTS-HD and DTS-UHD audio (DVB)
 			case 0x0F: // MPEG-2 part 7 audio (AAC)
 			case 0x11: // MPEG-4 part 3 audio (AAC, HE AAC and AAC v2)
 			case 0x1C: // MPEG-4 part 3 audio (DST, ALS, SLS)
 			case 0x2D: // MPEG-H part 3 3D audio (main stream)
 			case 0x2E: // MPEG-H part 3 3D audio (auxiliary stream)
-			case 0x81: // AC-3 audio (ATSC)
-			case 0x87: // Enhanced AC-3 audio (ATSC)
-			//case 0x88: // DTS-HD audio (ATSC 2.0) /* fixme: has ATSC 2.0 ever been used? */
-			//case 0x??: // AC-4 audio (ATSC 3.0) /* fixme: add the actual value when it gets published */
-			//case 0x??: // MPEG-H part 3 3D audio (ATSC 3.0) /* fixme: add the actual value when it gets published */
 			{
 				if (cdata->audio_pid_count >= EMU_STREAM_MAX_AUDIO_SUB_TRACKS)
 				{
@@ -325,6 +401,31 @@ static void ParsePmtData(emu_stream_client_data *cdata)
 				cdata->audio_pid_count++;
 				cs_log_dbg(D_READER, "Stream %i found audio pid: 0x%04X (%i)",
 							cdata->connid, elementary_pid, elementary_pid);
+				break;
+			}
+
+			case 0x06: // AC-3, Enhanced AC-3, AC-4, DTS, DTS-HD and DTS-UHD audio (DVB)
+			case 0x81: // AC-3 audio (ATSC)
+			case 0x87: // Enhanced AC-3 audio (ATSC)
+			//case 0x88: // DTS-HD audio (ATSC 2.0) /* fixme: has ATSC 2.0 ever been used? */
+			//case 0x??: // AC-4 audio (ATSC 3.0) /* fixme: add the actual value when it gets published */
+			//case 0x??: // MPEG-H part 3 3D audio (ATSC 3.0) /* fixme: add the actual value when it gets published */
+			{
+				uint8_t type = STREAM_UNDEFINED;
+				ParseDescriptors(data + i + 5, es_info_length, &type);
+
+				if (type == STREAM_AUDIO)
+				{
+					if (cdata->audio_pid_count >= EMU_STREAM_MAX_AUDIO_SUB_TRACKS)
+					{
+						continue;
+					}
+
+					cdata->audio_pids[cdata->audio_pid_count] = elementary_pid;
+					cdata->audio_pid_count++;
+					cs_log_dbg(D_READER, "Stream %i found audio pid: 0x%04X (%i)",
+								cdata->connid, elementary_pid, elementary_pid);
+				}
 				break;
 			}
 		}
