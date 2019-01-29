@@ -1294,6 +1294,13 @@ how many samples should be penalized, default:8
 1 = enable anti-cascading over SID count, default:0
 .RE
 .PP
+\fBacosc_max_ecms_per_minute\fP = \fBcount\fP
+.RS 3n
+maximum ecms per minute, 0 = unlimited, default:0
+
+Can be overwritten per user in \fBoscam.user\fR.
+.RE
+.PP
 \fBacosc_max_active_sids\fP = \fBcount\fP
 .RS 3n
 maximum active SIDs with anti-cascading over SID, 0 = unlimited, default:0
@@ -1308,7 +1315,7 @@ zap limit for anti-cascading over SID, 0 = unlimited, default:0
 Can be overwritten per user in \fBoscam.user\fR.
 .RE
 .PP
-\fBacosc_penalty\fP = \fB0\fP|\fB1\fP|\fB2\fP|\fB3\fP
+\fBacosc_penalty\fP = \fB0\fP|\fB1\fP|\fB2\fP|\fB3\fP|\fB4\fP
 .RS 3n
 level of penalty with anti-cascading over SID count:
 
@@ -1316,6 +1323,7 @@ level of penalty with anti-cascading over SID count:
  \fB1\fP = send fake CWs
  \fB2\fP = temporary user ban
  \fB3\fP = send delayed CWs
+ \fB4\fP = temporary hidecards to the client
 
 Can be overwritten per user in \fBoscam.user\fR.
 .RE
