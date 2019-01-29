@@ -6,6 +6,9 @@ Distribution/list_smargo-*
 *~
 *.swp
 
+# IDE resources
+.vscode
+
 # build directories
 /build/
 
@@ -16,9 +19,6 @@ webif/is_defined.txt
 tests.bin
 tests.bin.debug
 
-# OSCam-Emu files
-.vscode
-oscam-emu.patch
-SoftCam.Key
-SoftCam.Key.o
-git-svn-diff.sh
+# Emu files
+*.patch
+SoftCam.*
