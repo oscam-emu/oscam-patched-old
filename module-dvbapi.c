@@ -4006,7 +4006,7 @@ int32_t dvbapi_parse_capmt(uint8_t *buffer, uint32_t length, int32_t connfd, cha
 
 	for(i = program_info_length + program_info_start; i + 4 < length; i += es_info_length + 5)
 	{
-		uint8_t stream_type = buffer[i], type = STREAM_UNDEFINED;
+		uint8_t stream_type = buffer[i], type = STREAM_AUDIO; // default to audio - quick fix for missing audio when recording
 		uint16_t elementary_pid = b2i(2, buffer + i + 1) & 0x1FFF;
 		es_info_length = b2i(2, buffer + i + 3) & 0x0FFF;
 
@@ -7181,28 +7181,28 @@ void dvbapi_send_dcw(struct s_client *client, ECM_REQUEST *er)
 				if(er->cw_ex.mode == CW_MODE_MULTIPLE_CW)
 				{
 					int32_t key_pos_a = 0;
-					uint8_t *cw;
 					demux[i].ECMpids[j].useMultipleIndices = 1;
 
 					for(k = 0; k < demux[i].STREAMpidcount; k++)
 					{
 						if(demux[i].STREAMpidsType[k] == STREAM_VIDEO)
 						{
-							cw = er->cw;
+							dvbapi_write_cw(i, er->cw, j, k, er->cw_ex.algo, er->cw_ex.algo_mode, er->msgid);
 						}
 						else if(demux[i].STREAMpidsType[k] == STREAM_AUDIO)
 						{
-							cw = er->cw_ex.audio[key_pos_a];
-							if(key_pos_a < 3)
+							if(key_pos_a < 4)
 							{
+								dvbapi_write_cw(i, er->cw_ex.audio[key_pos_a], j, k, er->cw_ex.algo, er->cw_ex.algo_mode, er->msgid);
 								key_pos_a++;
 							}
 						}
-						else // Data
-						{
-							cw = er->cw_ex.data;
-						}
-						dvbapi_write_cw(i, cw, j, k, er->cw_ex.algo, er->cw_ex.algo_mode, er->msgid);
+						// Every channel that uses the extended cw has unencrypted subtitle streams,
+						// so disable CW writing to save indices for audio streams and recordings.
+						//else // Data
+						//{
+						//	dvbapi_write_cw(i, er->cw_ex.data, j, k, er->cw_ex.algo, er->cw_ex.algo_mode, er->msgid);
+						//}
 					}
 				}
 				else

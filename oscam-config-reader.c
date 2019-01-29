@@ -1034,8 +1034,7 @@ static void cooldowntime_fn(const char *UNUSED(token), char *value, void *settin
 	// It is only set by WebIf as convenience
 }
 
-
-static void reader_fixups_fn(void *var)
+void reader_fixups_fn(void *var)
 {
 	struct s_reader *rdr = var;
 #ifdef WITH_LB
@@ -1056,7 +1055,6 @@ static void reader_fixups_fn(void *var)
 			{ rdr->keepalive = 0; } // with NO-cacheex, and UDP, keepalive is not required!
 	}
 }
-
 
 #define OFS(X) offsetof(struct s_reader, X)
 #define SIZEOF(X) sizeof(((struct s_reader *)0)->X)
