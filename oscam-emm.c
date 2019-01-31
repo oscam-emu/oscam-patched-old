@@ -492,12 +492,29 @@ void do_emm(struct s_client *client, EMM_PACKET *ep)
 		}
 
 #ifdef READER_CRYPTOWORKS
-		if ((ep->type == GLOBAL) && ((caid == 0x0D96) || (caid == 0x0D98)) && ((aureader->blockemm & EMM_GLOBAL) == EMM_GLOBAL) && ((aureader->blockemm & EMM_SHARED) != EMM_SHARED) && (aureader->needsglobalfirst == 1))
+		if ((ep->type == GLOBAL) && ((caid == 0x0D96) || (caid == 0x0D98)) && ((aureader->blockemm & EMM_GLOBAL) != EMM_GLOBAL) && ((aureader->blockemm & EMM_SHARED) != EMM_SHARED) && (aureader->needsglobalfirst == 1))
 		{
 			// save global EMM
 			cs_log_dbg(D_EMM,"save global EMM for caid 0x%04X",caid);
+			ep->client = client;
 			memcpy(aureader->last_g_emm, ep, sizeof(EMM_PACKET));
 			aureader->last_g_emm_valid = true;
+
+			aureader->emmblocked[ep->type]++;
+			aureader->webif_emmblocked[ep->type]++;
+			is_blocked = aureader->emmblocked[ep->type];
+
+			if(aureader->logemm & 0x08)
+			{
+				rdr_log(aureader, "%s emmtype=%s, len=%d (hex: 0x%02X), idx=0, cnt=%d: blocked & saved (0 ms)",
+						client->account->usr,
+						typtext[ep->type],
+						SCT_LEN(ep->emm)-3,
+						SCT_LEN(ep->emm)-3,
+						is_blocked);
+			}
+			saveemm(aureader, ep, "blocked & saved");
+			continue;
 		}
 #endif
 
@@ -599,7 +616,7 @@ void do_emm(struct s_client *client, EMM_PACKET *ep)
 						rdr_log_dbg(aureader, D_EMM, "Last stored global EMM for caid 0x%04X is being sent to Reader first", caid);
 						memcpy(emm_pack_global, aureader->last_g_emm, sizeof(EMM_PACKET));
 						add_job(aureader->client, ACTION_READER_EMM, emm_pack_global, sizeof(EMM_PACKET));
-						saveemm(aureader, aureader->last_g_emm, "written");
+						saveemm(aureader, aureader->last_g_emm, "written stored global");
 						cs_log_dump_dbg(D_EMM,emm_pack_global->emm, emm_pack_global->emmlen, "Last stored global EMM to be written before shared EMM:");
 					}
 				}
