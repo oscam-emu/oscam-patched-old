@@ -813,7 +813,7 @@ static void DescrambleTsPacketsPowervu(emu_stream_client_data *data, uint8_t *st
 
 static void DescrambleTsPacketsRosscrypt1(emu_stream_client_data *data, uint8_t *stream_buf, uint32_t bufLength, uint16_t packetSize)
 {
-	int8_t is_av_pid = 0;
+	int8_t is_av_pid;
 	int32_t j;
 
 	uint8_t scramblingControl;
@@ -850,6 +850,8 @@ static void DescrambleTsPacketsRosscrypt1(emu_stream_client_data *data, uint8_t 
 			stream_buf[i + 3] &= 0x3F;
 			continue;
 		}
+
+		is_av_pid = 0;
 
 		if (pid == data->video_pid)
 		{
@@ -896,7 +898,7 @@ static void DescrambleTsPacketsRosscrypt1(emu_stream_client_data *data, uint8_t 
 
 static void DescrambleTsPacketsCompel(emu_stream_client_data *data, uint8_t *stream_buf, uint32_t bufLength, uint16_t packetSize)
 {
-	int8_t is_av_pid = 0;
+	int8_t is_av_pid;
 	int32_t j;
 
 	uint8_t scramblingControl;
@@ -933,6 +935,8 @@ static void DescrambleTsPacketsCompel(emu_stream_client_data *data, uint8_t *str
 			stream_buf[i + 3] &= 0x3F;
 			continue;
 		}
+
+		is_av_pid = 0;
 
 		if (pid == data->video_pid)
 		{
