@@ -345,7 +345,7 @@ static void ParsePmtData(emu_stream_client_data *cdata)
 		{
 			caid = b2i(2, data + i + 2);
 
-			if (caid_is_powervu(caid)) // add all supported caids here
+			if (caid_is_powervu(caid) || caid == 0xA101) // add all supported caids here
 			{
 				if (cdata->caid == NO_CAID_VALUE)
 				{
