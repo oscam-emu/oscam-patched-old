@@ -154,8 +154,8 @@ void load_emmstat_from_file(void)
 		valid = (i == 6);
 		if(valid)
 		{
-			strncpy(buf, split[0], sizeof(buf) - 1);
-			key_atob_l(split[1], s->emmd5, MD5_DIGEST_LENGTH*2);
+			cs_strncpy(buf, split[0], sizeof(buf));
+			key_atob_l(split[1], s->emmd5, MD5_DIGEST_LENGTH * 2);
 			s->firstwritten.time = atol(split[2]);
 			s->lastwritten.time = atol(split[3]);
 			s->type = a2i(split[4], 2);

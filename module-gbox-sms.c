@@ -239,7 +239,7 @@ int gbox_direct_send_gsms(uint16_t boxid, uint8_t num, char *gsms)
 		gsms_len = GBOX_MAX_MSG_TXT;
 		cs_log("GBOX message is too long so it will be truncated to max. [%d]", GBOX_MAX_MSG_TXT);
 	}
-	cs_strncpy(text,gsms,gsms_len + 1);
+	cs_strncpy(text, gsms, sizeof(text));
 
 	switch(num)
 	{

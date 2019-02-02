@@ -1179,9 +1179,9 @@ static int32_t sc8in1_init(struct s_reader *reader)
 		rdr_log_dbg(reader, D_DEVICE, "%s opening SC8in1", __func__);
 		//open physical device
 		char deviceName[128];
-		strncpy(deviceName, reader->device, 128);
+		cs_strncpy(deviceName, reader->device, 128);
 		deviceName[pos] = 0;
-		reader->handle = open(deviceName,  O_RDWR | O_NOCTTY | O_NONBLOCK);
+		reader->handle = open(deviceName, O_RDWR | O_NOCTTY | O_NONBLOCK);
 		if(reader->handle < 0)
 		{
 			rdr_log(reader, "ERROR: Opening device %s with real device %s (errno=%d %s)", reader->device, deviceName, errno, strerror(errno));

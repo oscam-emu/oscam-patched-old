@@ -1,5 +1,7 @@
 #include "globals.h"
 #include "oscam-string.h"
+#pragma GCC diagnostic ignored "-Wstringop-truncation"
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
 
 /* This function encapsulates malloc. It automatically adds an error message
    to the log if it failed and calls cs_exit(quiterror) if quiterror > -1.

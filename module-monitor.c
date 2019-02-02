@@ -461,7 +461,7 @@ static void monitor_process_details_reader(struct s_client *cl)
 	}
 	else
 	{
-		strncpy(valid_to, "n/a", 4);
+		cs_strncpy(valid_to, "n/a", sizeof(valid_to));
 	}
 
 	snprintf(tmpbuf, sizeof(tmpbuf) - 1, "Cardsystem: %s Reader: %s ValidTo: %s HexSerial: %s ATR: %s",

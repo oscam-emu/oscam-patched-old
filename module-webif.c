@@ -3220,8 +3220,8 @@ static char *send_oscam_user_config_edit(struct templatevars *vars, struct uripa
 
 	if(!apicall) { setActiveMenu(vars, MNU_USERS); }
 
-	if(strcmp(getParam(params, "action"), "Save As") == 0) { cs_strncpy(user, getParam(params, "newuser"), sizeof(user) / sizeof(char)); }
-	else { cs_strncpy(user, getParam(params, "user"), sizeof(user) / sizeof(char)); }
+	if(strcmp(getParam(params, "action"), "Save As") == 0) { cs_strncpy(user, getParam(params, "newuser"), sizeof(user)); }
+	else { cs_strncpy(user, getParam(params, "user"), sizeof(user)); }
 
 	account = NULL;
 	for(chk = cfg.account; chk != NULL; chk = chk->next)
@@ -5337,9 +5337,9 @@ static char *send_oscam_status(struct templatevars * vars, struct uriparams * pa
 								tpl_addVar(vars, TPLADD, "LBLVALUE", xml_encode(vars, cl->lastreader));
 								if(strstr(cl->lastreader, " (cache)"))
 								{
-									char lastreader_tmp[strlen(cl->lastreader)-8];
+									char lastreader_tmp[strlen(cl->lastreader) - 8];
 									tpl_addVar(vars, TPLADD, "CLIENTLBVALUE", tpl_getVar(vars, "LBLRPSTRVALUE"));
-									strncpy(lastreader_tmp, cl->lastreader, strlen(cl->lastreader)-8);
+									cs_strncpy(lastreader_tmp, cl->lastreader, sizeof(lastreader_tmp));
 									tpl_addVar(vars, TPLADD, "LBLVALUEENC", urlencode(vars, lastreader_tmp));
 									tpl_addVar(vars, TPLADD, "LBLVALUETITLE", xml_encode(vars, lastreader_tmp));
 								}
