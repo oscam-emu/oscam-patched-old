@@ -98,18 +98,20 @@ char *emu_keyfile_path = NULL;
 
 void set_emu_keyfile_path(const char *path)
 {
+	uint32_t pathLength;
+
 	if (emu_keyfile_path != NULL)
 	{
 		free(emu_keyfile_path);
 	}
 
-	emu_keyfile_path = (char *)malloc(strlen(path) + 1);
+	pathLength = strlen(path);
+	emu_keyfile_path = (char *)malloc(pathLength + 1);
 	if (emu_keyfile_path == NULL)
 	{
 		return;
 	}
-	memcpy(emu_keyfile_path, path, strlen(path));
-	emu_keyfile_path[strlen(path)] = 0;
+	cs_strncpy(emu_keyfile_path, path, pathLength + 1);
 }
 
 int8_t CharToBin(uint8_t *out, const char *in, uint32_t inLen)
@@ -181,13 +183,13 @@ static void WriteKeyToFile(char identifier, uint32_t provider, const char *keyNa
 	{
 		return;
 	}
-	strncpy(path, emu_keyfile_path, pathLength + 1);
+	cs_strncpy(path, emu_keyfile_path, pathLength + 1);
 
 	pathLength = strlen(path);
 	if (pathLength >= fileNameLen && strcasecmp(path + pathLength - fileNameLen, EMU_KEY_FILENAME) == 0)
 	{
 		// cut file name
-		path[pathLength-fileNameLen] = '\0';
+		path[pathLength - fileNameLen] = '\0';
 	}
 
 	pathLength = strlen(path);
@@ -209,7 +211,7 @@ static void WriteKeyToFile(char identifier, uint32_t provider, const char *keyNa
 	{
 		if (strcasecmp(pDirent->d_name, EMU_KEY_FILENAME) == 0)
 		{
-			strncpy(filename, pDirent->d_name, sizeof(filename));
+			cs_strncpy(filename, pDirent->d_name, sizeof(filename));
 			break;
 		}
 	}
@@ -217,7 +219,7 @@ static void WriteKeyToFile(char identifier, uint32_t provider, const char *keyNa
 
 	if (pDirent == NULL)
 	{
-		strncpy(filename, EMU_KEY_FILENAME, sizeof(filename));
+		cs_strncpy(filename, EMU_KEY_FILENAME, sizeof(filename));
 	}
 
 	pathLength = strlen(path) + 1 + strlen(filename) + 1;
@@ -393,7 +395,7 @@ int8_t SetKey(char identifier, uint32_t provider, char *keyName, uint8_t *orgKey
 			newKeyData->provider = provider;
 			if (strlen(keyName) < EMU_MAX_CHAR_KEYNAME)
 			{
-				strncpy(newKeyData->keyName, keyName, EMU_MAX_CHAR_KEYNAME);
+				cs_strncpy(newKeyData->keyName, keyName, EMU_MAX_CHAR_KEYNAME);
 			}
 			else
 			{
@@ -435,7 +437,7 @@ int8_t SetKey(char identifier, uint32_t provider, char *keyName, uint8_t *orgKey
 
 			if (identifier == 'F') // Update keyName (i.e. expiration date) for BISS
 			{
-				strncpy(KeyDB->EmuKeys[i].keyName, keyName, EMU_MAX_CHAR_KEYNAME);
+				cs_strncpy(KeyDB->EmuKeys[i].keyName, keyName, EMU_MAX_CHAR_KEYNAME);
 			}
 
 			if (writeKey)
@@ -476,7 +478,7 @@ int8_t SetKey(char identifier, uint32_t provider, char *keyName, uint8_t *orgKey
 	KeyDB->EmuKeys[KeyDB->keyCount].provider = provider;
 	if (strlen(keyName) < EMU_MAX_CHAR_KEYNAME)
 	{
-		strncpy(KeyDB->EmuKeys[KeyDB->keyCount].keyName, keyName, EMU_MAX_CHAR_KEYNAME);
+		cs_strncpy(KeyDB->EmuKeys[KeyDB->keyCount].keyName, keyName, EMU_MAX_CHAR_KEYNAME);
 	}
 	else
 	{
@@ -565,7 +567,7 @@ int8_t FindKey(char identifier, uint32_t provider, uint32_t providerIgnoreMask, 
 
 			if (identifier == 'F') // Report the keyName of found key back to BissGetKey()
 			{
-				strncpy(keyName, tmpKeyData->keyName, EMU_MAX_CHAR_KEYNAME);
+				cs_strncpy(keyName, tmpKeyData->keyName, EMU_MAX_CHAR_KEYNAME);
 			}
 
 			if (getProvider != NULL)
@@ -703,13 +705,13 @@ uint8_t read_emu_keyfile(struct s_reader *rdr, const char *opath)
 	{
 		return 0;
 	}
-	strncpy(path, opath, pathLength + 1);
+	cs_strncpy(path, opath, pathLength + 1);
 
 	pathLength = strlen(path);
 	if (pathLength >= fileNameLen && strcasecmp(path + pathLength - fileNameLen, EMU_KEY_FILENAME) == 0)
 	{
 		// cut file name
-		path[pathLength-fileNameLen] = '\0';
+		path[pathLength - fileNameLen] = '\0';
 	}
 
 	pathLength = strlen(path);
@@ -731,7 +733,7 @@ uint8_t read_emu_keyfile(struct s_reader *rdr, const char *opath)
 	{
 		if (strcasecmp(pDirent->d_name, EMU_KEY_FILENAME) == 0)
 		{
-			strncpy(filename, pDirent->d_name, sizeof(filename));
+			cs_strncpy(filename, pDirent->d_name, sizeof(filename));
 			break;
 		}
 	}
@@ -867,12 +869,12 @@ void read_emu_eebin(const char *path, const char *name)
 	uint8_t i, buffer[64][32], dummy[2][32];
 	uint32_t prvid;
 
-	// Set path
+	// Path is set
 	if (path != NULL)
 	{
 		snprintf(tmp, 256, "%s%s", path, name);
 	}
-	else // No path set, use SoftCam.Keys's path
+	else // No path is set, use SoftCam.Keys's path
 	{
 		snprintf(tmp, 256, "%s%s", emu_keyfile_path, name);
 	}
