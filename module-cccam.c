@@ -2362,8 +2362,8 @@ int32_t cc_parse_msg(struct s_client *cl, uint8_t *buf, int32_t l)
 			memcpy(cc->cmd0b_aeskey, cc->peer_node_id, 8);
 			memcpy(cc->cmd0b_aeskey + 8, cc->peer_version, 8);
 
-			strncpy(cc->remote_version, (char *)data + 8, sizeof(cc->remote_version) - 1);
-			strncpy(cc->remote_build, (char *)data + 40, sizeof(cc->remote_build) - 1);
+			cs_strncpy(cc->remote_version, (char *)data + 8, sizeof(cc->remote_version));
+			cs_strncpy(cc->remote_build, (char *)data + 40, sizeof(cc->remote_build));
 			cc->remote_build_nr = atoi(cc->remote_build);
 
 			// multics server response
@@ -2647,7 +2647,7 @@ int32_t cc_parse_msg(struct s_client *cl, uint8_t *buf, int32_t l)
 			{
 				//When Data starts with "PARTNER:" we have an Oscam-cccam-compatible client/server!
 
-				strncpy(cc->remote_oscam, msg + 9, sizeof(cc->remote_oscam) - 1);
+				cs_strncpy(cc->remote_oscam, msg + 9, sizeof(cc->remote_oscam));
 				int32_t has_param = check_extended_mode(cl, msg);
 				if(!cc->is_oscam_cccam)
 				{
@@ -3722,7 +3722,7 @@ int32_t cc_srv_connect(struct s_client *cl)
 	if(i == 20)
 	{
 		cc_crypt(&cc->block[DECRYPT], buf, 20, DECRYPT);
-		strncpy(usr, (char *) buf, sizeof(usr));
+		cs_strncpy(usr, (char *)buf, sizeof(usr));
 
 		// test for nonprintable characters:
 		for(i = 0; i < 20; i++)
@@ -3902,8 +3902,8 @@ int32_t cc_srv_connect(struct s_client *cl)
 		ccbuild_pos++;
 	}
 
-	strncpy(cc->remote_version, (char *)buf + ccversion_pos, sizeof(cc->remote_version) - 1);
-	strncpy(cc->remote_build, (char *)buf + ccbuild_pos, sizeof(cc->remote_build) - 1);
+	cs_strncpy(cc->remote_version, (char *)buf + ccversion_pos, sizeof(cc->remote_version));
+	cs_strncpy(cc->remote_build, (char *)buf + ccbuild_pos, sizeof(cc->remote_build));
 
 	cs_log_dbg(D_CLIENT, "%s client '%s' (%s) running v%s (%s)", getprefix(), buf + 4,
 				cs_hexdump(0, cc->peer_node_id, 8, tmp_dbg, sizeof(tmp_dbg)), cc->remote_version, cc->remote_build);
@@ -4151,8 +4151,8 @@ int32_t cc_cli_connect(struct s_client *cl)
 
 	//cs_log_dbg(D_CLIENT, "cccam: 'CCcam' xor");
 	memcpy(buf, "CCcam", 5);
-	strncpy(pwd, rdr->r_pwd, sizeof(pwd) - 1);
-	cc_crypt(&cc->block[ENCRYPT], (uint8_t *) pwd, strlen(pwd), ENCRYPT);
+	cs_strncpy(pwd, rdr->r_pwd, sizeof(pwd));
+	cc_crypt(&cc->block[ENCRYPT], (uint8_t *)pwd, strlen(pwd), ENCRYPT);
 	cc_cmd_send(cl, buf, 6, MSG_NO_HEADER); // send 'CCcam' xor w/ pwd
 
 	if((n = cc_recv_to(cl, data, 20)) != 20)

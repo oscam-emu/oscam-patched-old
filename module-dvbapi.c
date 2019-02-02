@@ -1223,7 +1223,7 @@ int32_t dvbapi_open_device(int32_t type, int32_t num, int32_t adapter)
 			struct sockaddr_un saddr;
 			memset(&saddr, 0, sizeof(saddr));
 			saddr.sun_family = AF_UNIX;
-			strncpy(saddr.sun_path, device_path, strlen(saddr.sun_path));
+			cs_strncpy(saddr.sun_path, device_path, sizeof(saddr.sun_path));
 			dmx_fd = socket(AF_UNIX, SOCK_STREAM, 0);
 			ret = connect(dmx_fd, (struct sockaddr *)&saddr, sizeof(saddr));
 			if(ret < 0)
@@ -5990,8 +5990,7 @@ static void *dvbapi_main_local(void *cli)
 #define PMT_SERVER_SOCKET "/tmp/.listen.camd.socket"
 	struct sockaddr_un saddr;
 	saddr.sun_family = AF_UNIX;
-	strncpy(saddr.sun_path, PMT_SERVER_SOCKET, 107);
-	saddr.sun_path[107] = '\0';
+	cs_strncpy(saddr.sun_path, PMT_SERVER_SOCKET, sizeof(saddr.sun_path));
 	int32_t rc, pfdcount, g, connfd, clilen;
 	int32_t ids[maxpfdsize], fdn[maxpfdsize], type[maxpfdsize];
 	struct SOCKADDR servaddr;

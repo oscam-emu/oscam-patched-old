@@ -1138,16 +1138,13 @@ static void gbox_dest_peers_fn(const char *token, char *value, void *UNUSED(sett
 
 static void gbox_msg_txt_fn(const char *token, char *value, void *UNUSED(setting), FILE *f)
 {
-	int len = 0;
 	if (value)
 	{
-		len = strlen(value);
-		if (len > GBOX_MAX_MSG_TXT) { len = GBOX_MAX_MSG_TXT; }
-		cs_strncpy(cfg.gbox_msg_txt,value, len+1);
+		cs_strncpy(cfg.gbox_msg_txt, value, sizeof(cfg.gbox_msg_txt));
 		return;
 	}
 
-	if ((cfg.gbox_msg_txt[0]!='\0') && cfg.gbox_save_gsms)
+	if ((cfg.gbox_msg_txt[0] != '\0') && cfg.gbox_save_gsms)
 	{
 		fprintf_conf(f, token, "%s\n", cfg.gbox_msg_txt);
 	}
