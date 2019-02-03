@@ -874,6 +874,14 @@ static void DescrambleTsPacketsRosscrypt1(emu_stream_client_data *data, uint8_t 
 			static uint8_t dyn_key[184];
 			static uint8_t last_packet[184];
 
+			// Reset key on channel change
+			if (data->reset_key_data == 1)
+			{
+				memset(dyn_key, 0x00, 184);
+				memset(last_packet, 0x00, 184);
+				data->reset_key_data = 0;
+			}
+
 			if (memcmp(last_packet, stream_buf + i + 4, 184) == 0)
 			{
 				if (memcmp(dyn_key, stream_buf + i + 4, 184) != 0)
@@ -1260,6 +1268,7 @@ static void *stream_client_handler(void *arg)
 	data->have_cat_data = 0;
 	data->have_ecm_data = 0;
 	data->have_emm_data = 0;
+	data->reset_key_data = 1;
 
 	while (!exit_oscam && clientStatus != -1 && streamConnectErrorCount < 3
 			&& streamDataErrorCount < 15)
