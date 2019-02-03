@@ -500,9 +500,11 @@ void do_emm(struct s_client *client, EMM_PACKET *ep)
 			memcpy(aureader->last_g_emm, ep, sizeof(EMM_PACKET));
 			aureader->last_g_emm_valid = true;
 
+#ifdef WEBIF
 			aureader->emmblocked[ep->type]++;
 			aureader->webif_emmblocked[ep->type]++;
 			is_blocked = aureader->emmblocked[ep->type];
+#endif
 
 			if(aureader->logemm & 0x08)
 			{
