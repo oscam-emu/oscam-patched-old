@@ -226,7 +226,7 @@ static void show_subs(struct s_reader *reader, const uint8_t *emm)
 			char szGeo[256];
 
 			memset(szGeo, 0, 256);
-			strncpy(szGeo, (char *)emm + 2, emm[1]);
+			cs_strncpy(szGeo, (char *)emm + 2, emm[1]);
 			rdr_log(reader, "nano A6: geo %s", szGeo);
 			break;
 		}

@@ -718,7 +718,7 @@ static int32_t cryptoworks_card_info(struct s_reader *reader)
 
 		if(read_record(reader, 0xD6, cta_res) >= 16)
 		{
-			cs_strncpy(l_name + 8, (const char *)cta_res + 2, sizeof(l_name) - 9);
+			cs_strncpy(l_name + 8, (const char *)cta_res + 2, sizeof(l_name) - 8);
 			l_name[sizeof(l_name) - 1] = 0;
 			trim(l_name + 8);
 		}

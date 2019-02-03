@@ -152,7 +152,7 @@ void load_stat_from_file(void)
 			valid = (i == 11);
 			if(valid)
 			{
-				strncpy(buf, split[0], sizeof(buf) - 1);
+				cs_strncpy(buf, split[0], sizeof(buf));
 				s->rc = atoi(split[1]);
 				s->caid = a2i(split[2], 4);
 				s->prid = a2i(split[3], 6);

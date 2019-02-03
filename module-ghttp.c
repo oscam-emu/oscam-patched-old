@@ -116,7 +116,7 @@ int32_t ghttp_client_init(struct s_client *cl)
 	if(!str)
 	{
 		char host[128];
-		cs_strncpy(host, cl->reader->device, sizeof(cl->reader->device));
+		cs_strncpy(host, cl->reader->device, sizeof(host));
 		snprintf(cl->reader->device, sizeof(cl->reader->device), "%.115s.appspot.com", host);
 	}
 
