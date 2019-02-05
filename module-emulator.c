@@ -224,7 +224,7 @@ static int32_t emu_card_info(struct s_reader *rdr)
 	clear_emu_keydata();
 
 	// Read keys built in the OSCam-Emu binary
-#if !defined(__APPLE__) && !defined(__ANDROID__)
+#if defined(WITH_SOFTCAM) && !defined(__APPLE__) && !defined(__ANDROID__)
 	read_emu_keymemory(rdr);
 #endif
 

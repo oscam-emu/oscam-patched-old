@@ -805,7 +805,7 @@ uint8_t read_emu_keyfile(struct s_reader *rdr, const char *opath)
 	return 1;
 }
 
-#if !defined(__APPLE__) && !defined(__ANDROID__)
+#if defined(WITH_SOFTCAM) && !defined(__APPLE__) && !defined(__ANDROID__)
 extern uint8_t SoftCamKey_Data[]    __asm__("_binary_SoftCam_Key_start");
 extern uint8_t SoftCamKey_DataEnd[] __asm__("_binary_SoftCam_Key_end");
 
