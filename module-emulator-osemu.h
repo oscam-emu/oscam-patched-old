@@ -73,7 +73,7 @@ void set_emu_keyfile_path(const char *path);
 void clear_emu_keydata(void);
 uint8_t read_emu_keyfile(struct s_reader *rdr, const char *path);
 
-#if !defined(__APPLE__) && !defined(__ANDROID__)
+#if defined(WITH_SOFTCAM) && !defined(__APPLE__) && !defined(__ANDROID__)
 void read_emu_keymemory(struct s_reader *rdr);
 #endif
 
