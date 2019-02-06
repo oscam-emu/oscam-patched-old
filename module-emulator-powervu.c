@@ -457,6 +457,7 @@ static const uint8_t table19[] = { 0x02, 0x03, 0x05, 0x10 };
 static const uint8_t table1A[] = { 0x01, 0x05, 0x08, 0x10 };
 static const uint8_t table1B[] = { 0x03, 0x07, 0x08, 0x10 };
 static const uint8_t table1C[] = { 0x03, 0x05, 0x0A, 0x10 };
+static const uint8_t table1D[] = { 0x03, 0x07, 0x0A, 0x10 };
 
 static void PowervuHashModes19to27Tables3(uint8_t *data, uint8_t *hash, const uint8_t *table)
 {
@@ -604,6 +605,10 @@ static void PowervuCreateHash(uint8_t *data, int len, uint8_t *hash, int mode)
 
 		case 28:
 			PowervuHashModes19to27Tables3(dataPadded, hash, table1C);
+			break;
+
+		case 29:
+			PowervuHashModes19to27Tables3(dataPadded, hash, table1D);
 			break;
 
 		default:
