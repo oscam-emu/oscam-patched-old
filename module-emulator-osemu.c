@@ -320,7 +320,7 @@ int8_t SetKey(char identifier, uint32_t provider, char *keyName, uint8_t *orgKey
 		}
 	}
 
-	// fix checksum for BISS keys with a length of 6
+	// Fix checksum for BISS keys with a length of 6
 	if (identifier == 'F' && keyLength == 6)
 	{
 		tmpKey = (uint8_t *)malloc(8 * sizeof(uint8_t));
@@ -351,13 +351,13 @@ int8_t SetKey(char identifier, uint32_t provider, char *keyName, uint8_t *orgKey
 		memcpy(tmpKey, orgKey, keyLength);
 	}
 
-	// fix patched mgcamd format for Irdeto
+	// Fix patched mgcamd format for Irdeto
 	if (identifier == 'I' && provider < 0xFFFF)
 	{
 		provider = provider << 8;
 	}
 
-	// key already exists on db, update its value
+	// Key already exists on db, update its value
 	for (i = 0; i < KeyDB->keyCount; i++)
 	{
 		if (KeyDB->EmuKeys[i].provider != provider)
@@ -371,10 +371,10 @@ int8_t SetKey(char identifier, uint32_t provider, char *keyName, uint8_t *orgKey
 			continue;
 		}
 
-		// allow multiple keys for Irdeto
+		// Allow multiple keys for Irdeto
 		if (identifier == 'I')
 		{
-			// reject duplicates
+			// Reject duplicates
 			tmpKeyData = &KeyDB->EmuKeys[i];
 			do
 			{
@@ -387,7 +387,7 @@ int8_t SetKey(char identifier, uint32_t provider, char *keyName, uint8_t *orgKey
 			}
 			while(tmpKeyData != NULL);
 
-			// add new key
+			// Add new key
 			newKeyData = (KeyData *)malloc(sizeof(KeyData));
 			if (newKeyData == NULL)
 			{
@@ -451,7 +451,7 @@ int8_t SetKey(char identifier, uint32_t provider, char *keyName, uint8_t *orgKey
 		return 1;
 	}
 
-	// key does not exist on db
+	// Key does not exist on db
 	if (KeyDB->keyCount + 1 > KeyDB->keyMax)
 	{
 		if (KeyDB->EmuKeys == NULL) // db is empty
@@ -530,9 +530,9 @@ int8_t FindKey(char identifier, uint32_t provider, uint32_t providerIgnoreMask, 
 			continue;
 		}
 
-		//matchLength cannot be used when multiple keys are allowed
-		//for a single provider/keyName combination.
-		//Currently this is only the case for Irdeto keys.
+		// "matchLength" cannot be used when multiple keys are allowed
+		// for a single provider/keyName combination.
+		// Currently this is the case only for Irdeto keys.
 		if (matchLength && KeyDB->EmuKeys[i].keyLength != maxKeyLength)
 		{
 			continue;
@@ -565,10 +565,11 @@ int8_t FindKey(char identifier, uint32_t provider, uint32_t providerIgnoreMask, 
 			memcpy(key, tmpKeyData->key, tmpKeyData->keyLength > maxKeyLength ? maxKeyLength : tmpKeyData->keyLength);
 			if (tmpKeyData->keyLength < maxKeyLength)
 			{
-				memset(key+tmpKeyData->keyLength, 0, maxKeyLength - tmpKeyData->keyLength);
+				memset(key + tmpKeyData->keyLength, 0, maxKeyLength - tmpKeyData->keyLength);
 			}
 
-			if (identifier == 'F') // Report the keyName of found key back to BissGetKey()
+			// Report the keyName (i.e. expiration date) of found key back to BissGetKey()
+			if (identifier == 'F')
 			{
 				cs_strncpy(keyName, tmpKeyData->keyName, EMU_MAX_CHAR_KEYNAME);
 			}
@@ -675,10 +676,10 @@ void clear_emu_keydata(void)
 
 	if (total != 0)
 	{
-		cs_log("Freeing keys in memory: W:%d V:%d N:%d I:%d S:%d F:%d P:%d D:%d T:%d A:%d", \
-						CwKeys.keyCount, ViKeys.keyCount, NagraKeys.keyCount, \
-						IrdetoKeys.keyCount, NDSKeys.keyCount, BissKeys.keyCount, \
-						PowervuKeys.keyCount, DreKeys.keyCount, TandbergKeys.keyCount, StreamKeys.keyCount);
+		cs_log("Freeing keys in memory: W:%d V:%d N:%d I:%d S:%d F:%d P:%d D:%d T:%d A:%d",
+				CwKeys.keyCount, ViKeys.keyCount, NagraKeys.keyCount, IrdetoKeys.keyCount,
+				NDSKeys.keyCount, BissKeys.keyCount, PowervuKeys.keyCount, DreKeys.keyCount,
+				TandbergKeys.keyCount, StreamKeys.keyCount);
 
 		DeleteKeysInContainer('W');
 		DeleteKeysInContainer('V');
@@ -957,28 +958,17 @@ static const char *GetProcessECMErrorReason(int8_t result)
 {
 	switch (result)
 	{
-		case 0:
-			return "No error";
-		case 1:
-			return "ECM not supported";
-		case 2:
-			return "Key not found";
-		case 3:
-			return "Nano80 problem";
-		case 4:
-			return "Corrupt data";
-		case 5:
-			return "CW not found";
-		case 6:
-			return "CW checksum error";
-		case 7:
-			return "Out of memory";
-		case 8:
-			return "ECM checksum error";
-		case 9:
-			return "ICG error";
-		default:
-			return "Unknown";
+		case 0: return "No error";
+		case 1: return "ECM not supported";
+		case 2: return "Key not found";
+		case 3: return "Nano80 problem";
+		case 4: return "Corrupt data";
+		case 5: return "CW not found";
+		case 6: return "CW checksum error";
+		case 7: return "Out of memory";
+		case 8: return "ECM checksum error";
+		case 9: return "ICG error";
+		default: return "Unknown";
 	}
 }
 
@@ -1047,28 +1037,17 @@ static const char *GetProcessEMMErrorReason(int8_t result)
 {
 	switch (result)
 	{
-		case 0:
-			return "No error";
-		case 1:
-			return "EMM not supported";
-		case 2:
-			return "Key not found";
-		case 3:
-			return "Nano80 problem";
-		case 4:
-			return "Corrupt data";
-		case 5:
-			return "Unknown";
-		case 6:
-			return "Checksum error";
-		case 7:
-			return "Out of memory";
-		case 8:
-			return "EMM checksum error";
-		case 9:
-			return "Wrong provider";
-		default:
-			return "Unknown";
+		case 0: return "No error";
+		case 1: return "EMM not supported";
+		case 2: return "Key not found";
+		case 3: return "Nano80 problem";
+		case 4: return "Corrupt data";
+		case 5: return "Unknown";
+		case 6: return "Checksum error";
+		case 7: return "Out of memory";
+		case 8: return "EMM checksum error";
+		case 9: return "Wrong provider";
+		default: return "Unknown";
 	}
 }
 

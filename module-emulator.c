@@ -250,10 +250,10 @@ static int32_t emu_card_info(struct s_reader *rdr)
 	read_emu_eebin(rdr->extee56, "ee56.bin");           // Read "ee56.bin"
 	read_emu_deskey(rdr->des_key, rdr->des_key_length); // Read overcrypt keys for DreCrypt ADEC
 
-	cs_log("Total keys in memory: W:%d V:%d N:%d I:%d S:%d F:%d P:%d D:%d T:%d A:%d", \
-					CwKeys.keyCount, ViKeys.keyCount, NagraKeys.keyCount, \
-					IrdetoKeys.keyCount, NDSKeys.keyCount, BissKeys.keyCount, \
-					PowervuKeys.keyCount, DreKeys.keyCount, TandbergKeys.keyCount, StreamKeys.keyCount);
+	cs_log("Total keys in memory: W:%d V:%d N:%d I:%d S:%d F:%d P:%d D:%d T:%d A:%d",
+			CwKeys.keyCount, ViKeys.keyCount, NagraKeys.keyCount, IrdetoKeys.keyCount,
+			NDSKeys.keyCount, BissKeys.keyCount, PowervuKeys.keyCount, DreKeys.keyCount,
+			TandbergKeys.keyCount, StreamKeys.keyCount);
 
 	// Inform OSCam about all available keys.
 	// This is used for listing the "entitlements" in the webif's reader page.
@@ -281,8 +281,8 @@ int32_t emu_get_via3_emm_type(EMM_PACKET *ep, struct s_reader *rdr)
 
 	if(ep->emm[3] == 0x90 && ep->emm[4] == 0x03)
 	{
-		provid = b2i(3, ep->emm+5);
-		provid &=0xFFFFF0;
+		provid = b2i(3, ep->emm + 5);
+		provid &= 0xFFFFF0;
 		i2b_buf(4, provid, ep->provid);
 	}
 
@@ -345,8 +345,8 @@ int32_t emu_get_ird2_emm_type(EMM_PACKET *ep, struct s_reader *rdr)
 		memcpy(ep->hexserial, ep->emm + 4, l);
 		cs_hexdump(1, rdr->hexserial, l, dumprdrserial, sizeof(dumprdrserial));
 		cs_hexdump(1, ep->hexserial, l, dumpemmserial, sizeof(dumpemmserial));
-		rdr_log_dbg_sensitive(rdr, D_EMM, "SHARED l = %d ep = {%s} rdr = {%s} base = %02x", l,
-								 dumpemmserial, dumprdrserial, base);
+		rdr_log_dbg_sensitive(rdr, D_EMM, "SHARED l = %d ep = {%s} rdr = {%s} base = %02x",
+								l, dumpemmserial, dumprdrserial, base);
 		return 1;
 
 	case 3:
@@ -356,8 +356,8 @@ int32_t emu_get_ird2_emm_type(EMM_PACKET *ep, struct s_reader *rdr)
 		memcpy(ep->hexserial, ep->emm + 4, l);
 		cs_hexdump(1, rdr->hexserial, l, dumprdrserial, sizeof(dumprdrserial));
 		cs_hexdump(1, ep->hexserial, l, dumpemmserial, sizeof(dumpemmserial));
-		rdr_log_dbg_sensitive(rdr, D_EMM, "UNIQUE l = %d ep = {%s} rdr = {%s} base = %02x", l,
-								 dumpemmserial, dumprdrserial, base);
+		rdr_log_dbg_sensitive(rdr, D_EMM, "UNIQUE l = %d ep = {%s} rdr = {%s} base = %02x",
+								l, dumpemmserial, dumprdrserial, base);
 		return 1;
 
 	default:
@@ -533,7 +533,7 @@ static int32_t emu_get_ird2_emm_filter(struct s_reader* rdr, struct s_csystem_em
 
 	if(*emm_filters == NULL)
 	{
-		const unsigned int max_filter_count = have_serial + (2*(have_provid ? emu_provids->nprids : 0));
+		const unsigned int max_filter_count = have_serial + (2 * (have_provid ? emu_provids->nprids : 0));
 		if(!cs_malloc(emm_filters, max_filter_count * sizeof(struct s_csystem_emm_filter)))
 			{ return CS_ERROR; }
 
