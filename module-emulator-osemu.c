@@ -138,6 +138,7 @@ KeyDataContainer BissKeys = { NULL, 0, 0 };
 KeyDataContainer PowervuKeys = { NULL, 0, 0 };
 KeyDataContainer DreKeys = { NULL, 0, 0 };
 KeyDataContainer TandbergKeys = { NULL, 0, 0 };
+KeyDataContainer StreamKeys = { NULL, 0, 0 };
 
 KeyDataContainer *GetKeyContainer(char identifier)
 {
@@ -161,6 +162,8 @@ KeyDataContainer *GetKeyContainer(char identifier)
 			return &DreKeys;
 		case 'T':
 			return &TandbergKeys;
+		case 'A':
+			return &StreamKeys;
 		default:
 			return NULL;
 	}
@@ -668,13 +671,14 @@ void clear_emu_keydata(void)
 	total += PowervuKeys.keyCount;
 	total += DreKeys.keyCount;
 	total += TandbergKeys.keyCount;
+	total += StreamKeys.keyCount;
 
 	if (total != 0)
 	{
-		cs_log("Freeing keys in memory: W:%d V:%d N:%d I:%d S:%d F:%d P:%d D:%d T:%d", \
+		cs_log("Freeing keys in memory: W:%d V:%d N:%d I:%d S:%d F:%d P:%d D:%d T:%d A:%d", \
 						CwKeys.keyCount, ViKeys.keyCount, NagraKeys.keyCount, \
 						IrdetoKeys.keyCount, NDSKeys.keyCount, BissKeys.keyCount, \
-						PowervuKeys.keyCount, DreKeys.keyCount, TandbergKeys.keyCount);
+						PowervuKeys.keyCount, DreKeys.keyCount, TandbergKeys.keyCount, StreamKeys.keyCount);
 
 		DeleteKeysInContainer('W');
 		DeleteKeysInContainer('V');
@@ -685,6 +689,7 @@ void clear_emu_keydata(void)
 		DeleteKeysInContainer('P');
 		DeleteKeysInContainer('D');
 		DeleteKeysInContainer('T');
+		DeleteKeysInContainer('A');
 	}
 }
 

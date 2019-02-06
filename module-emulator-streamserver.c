@@ -226,6 +226,19 @@ static void ParsePatData(emu_stream_client_data *cdata)
 	}
 }
 
+static int8_t stream_client_get_caid(emu_stream_client_data *cdata)
+{
+	uint32_t tmp1 = (cdata->srvid << 16) | cdata->pmt_pid;
+	uint8_t tmp2[2];
+
+	if (FindKey('A', tmp1, 0, "FAKE", tmp2, 2, 0, 0, 0, NULL))
+	{
+		cdata->caid = b2i(2, tmp2);
+		return 1;
+	}
+	return 0;
+}
+
 static void ParseDescriptors(uint8_t *buffer, uint16_t info_length, uint8_t *type)
 {
 	uint8_t descriptor_tag = buffer[0], descriptor_length = 0;
@@ -429,6 +442,14 @@ static void ParsePmtData(emu_stream_client_data *cdata)
 				break;
 			}
 		}
+	}
+
+	// If we haven't found a CAID for this service,
+	// search the keyDB for a fake one
+	if (cdata->caid == NO_CAID_VALUE && stream_client_get_caid(cdata) == 1)
+	{
+		cs_log_dbg(D_READER, "Stream %i found fake caid: 0x%04X (%i)",
+					cdata->connid, cdata->caid, cdata->caid);
 	}
 }
 

@@ -113,6 +113,12 @@ static void refresh_entitlements(struct s_reader *rdr)
 
 	cs_clear_entitlement(rdr);
 
+	for (i = 0; i < StreamKeys.keyCount; i++)
+	{
+		emu_add_entitlement(rdr, b2i(2, StreamKeys.EmuKeys[i].key), StreamKeys.EmuKeys[i].provider, StreamKeys.EmuKeys[i].key,
+							StreamKeys.EmuKeys[i].keyName, StreamKeys.EmuKeys[i].keyLength, 1);
+	}
+
 	for (i = 0; i < ViKeys.keyCount; i++)
 	{
 		emu_add_entitlement(rdr, 0x0500, ViKeys.EmuKeys[i].provider, ViKeys.EmuKeys[i].key,
@@ -244,10 +250,10 @@ static int32_t emu_card_info(struct s_reader *rdr)
 	read_emu_eebin(rdr->extee56, "ee56.bin");           // Read "ee56.bin"
 	read_emu_deskey(rdr->des_key, rdr->des_key_length); // Read overcrypt keys for DreCrypt ADEC
 
-	cs_log("Total keys in memory: W:%d V:%d N:%d I:%d S:%d F:%d P:%d D:%d T:%d", \
+	cs_log("Total keys in memory: W:%d V:%d N:%d I:%d S:%d F:%d P:%d D:%d T:%d A:%d", \
 					CwKeys.keyCount, ViKeys.keyCount, NagraKeys.keyCount, \
 					IrdetoKeys.keyCount, NDSKeys.keyCount, BissKeys.keyCount, \
-					PowervuKeys.keyCount, DreKeys.keyCount, TandbergKeys.keyCount);
+					PowervuKeys.keyCount, DreKeys.keyCount, TandbergKeys.keyCount, StreamKeys.keyCount);
 
 	// Inform OSCam about all available keys.
 	// This is used for listing the "entitlements" in the webif's reader page.

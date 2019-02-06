@@ -64,6 +64,7 @@ extern KeyDataContainer BissKeys;
 extern KeyDataContainer PowervuKeys;
 extern KeyDataContainer DreKeys;
 extern KeyDataContainer TandbergKeys;
+extern KeyDataContainer StreamKeys;
 extern uint8_t viasat_const[];
 extern char *emu_keyfile_path;
 extern pthread_mutex_t emu_key_data_mutex;
