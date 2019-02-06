@@ -920,7 +920,7 @@ void add_emu_reader(void)
 		cs_strncpy(rdr->device, emuName, sizeof(emuName));
 
 		// CAIDs
-		ctab = strdup("0500,0604,090F,0E00,1010,1801,2600,2602,2610,4AE1,A101");
+		ctab = strdup("0500,0604,090F,0E00,1010,1801,2600,2602,2610,4AE1");
 		chk_caidtab(ctab, &rdr->ctab);
 		NULLFREE(ctab);
 
@@ -935,7 +935,6 @@ void add_emu_reader(void)
 					  "2602:000000;"
 					  "2610:000000;"
 					  "4AE1:000011,000014,0000FE;"
-					  "A101:000000;"
 					 );
 		chk_ftab(ftab, &rdr->ftab);
 		NULLFREE(ftab);
