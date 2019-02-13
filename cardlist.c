@@ -1,14 +1,14 @@
 #include <string.h>
 #include "globals.h"
 #include "cardlist.h"
-
+/*
 static const uint8_t data50[81]	= { "\x00" };
 static const uint8_t mod50[81]	= { "\x00" };
 static const uint8_t key60[97]	= { "\x00" };
 static const uint8_t exp60[97]	= { "\x00" };
 static const uint8_t mod1[113]	= { "\x00" };
 static const uint8_t nuid[5]	= { "\x00" };
-
+*/
 struct atrlist current;
 struct known_cards
 {
@@ -53,16 +53,6 @@ hdplus04a = { "HD-Plus 04a"   ,0,12,"3F FF 95 00 FF 91 81 71 FE 57 00 44 4E 41 5
 unity_01  = { "Unity Media 01",0,12,"3F FF 95 00 FF 91 81 71 FE 47 00 44 4E 41 53 50 31 31 30 20 52 65 76 41 32 32 15",80,0,"\x00","\x00"},
 unity_02  = { "Unity Media 02",0,12,"3F FF 95 00 FF 91 81 71 FE 47 00 44 4E 41 53 50 31 34 32 20 52 65 76 47 30 36 12",80,0,"\x00","\x00"};
 
-struct atrlist
-{
-	int found;
-	int ishd03;
-	int badcard;
-	int ishd04;
-	char providername[32];
-	char atr[80];
-} current = { 0, 0, 0, 0, "\0", "\0" };
-
 void findatr(struct s_reader *reader)
 {
 	current.found = 0;
@@ -74,9 +64,9 @@ void findatr(struct s_reader *reader)
 	{
 		if ( !strncmp(hdplus01.rsakey, "0", 1) == 0 )
 	{
-			memcpy(reader->boxkey, hdplus01.boxkey, 9);
+/*			memcpy(reader->boxkey, hdplus01.boxkey, 9);
 			memcpy(reader->rsa_mod, hdplus01.rsakey, 65);
-			reader->rsa_mod_length = 64;
+*/			reader->rsa_mod_length = 64;
 		}
 		memcpy(current.providername, hdplus01.providername, strlen(hdplus01.providername));
 		reader->saveemm = hdplus01.saveemm;
@@ -88,9 +78,9 @@ void findatr(struct s_reader *reader)
 	{
 		if ( !strncmp(hdplus02.rsakey, "0", 1) == 0 )
 	{
-			memcpy(reader->boxkey, hdplus02.boxkey, 9);
+/*			memcpy(reader->boxkey, hdplus02.boxkey, 9);
 			memcpy(reader->rsa_mod, hdplus02.rsakey, 65);
-			reader->rsa_mod_length = 64;
+*/			reader->rsa_mod_length = 64;
 		}
 		memcpy(current.providername, hdplus02.providername, strlen(hdplus02.providername));
 		reader->saveemm = hdplus02.saveemm;
@@ -105,7 +95,7 @@ void findatr(struct s_reader *reader)
 		memcpy(current.providername, hdplus03.providername, strlen(hdplus03.providername));
 		reader->saveemm = hdplus03.saveemm;
 		reader->blockemm = hdplus03.blockemm;
-
+/*
 		memcpy(reader->data50, data50,  80);
 		memcpy(reader->mod50,   mod50,  80);
 		memcpy(reader->key60,   key60,  96);
@@ -119,7 +109,7 @@ void findatr(struct s_reader *reader)
 		reader->exp60_length  =  96;
 		reader->nuid_length   =   4;
 		reader->mod1_length   = 112;
-
+*/
 		current.found = 1;
 		return;
 
@@ -131,7 +121,7 @@ void findatr(struct s_reader *reader)
 		memcpy(current.providername, hdplus03a.providername, strlen(hdplus03a.providername));
 		reader->saveemm = hdplus03a.saveemm;
 		reader->blockemm = hdplus03a.blockemm;
-
+/*
 		memcpy(reader->data50, data50,  80);
 		memcpy(reader->mod50,   mod50,  80);
 		memcpy(reader->key60,   key60,  96);
@@ -145,7 +135,7 @@ void findatr(struct s_reader *reader)
 		reader->exp60_length  =  96;
 		reader->nuid_length   =   4;
 		reader->mod1_length   = 112;
-
+*/
 		current.found = 1;
 		return;
 
@@ -156,7 +146,7 @@ void findatr(struct s_reader *reader)
 		memcpy(current.providername, hdplus03b.providername, strlen(hdplus03b.providername));
 		reader->saveemm = hdplus03b.saveemm;
 		reader->blockemm = hdplus03b.blockemm;
-
+/*
 		memcpy(reader->data50, data50,  80);
 		memcpy(reader->mod50,   mod50,  80);
 		memcpy(reader->key60,   key60,  96);
@@ -170,7 +160,7 @@ void findatr(struct s_reader *reader)
 		reader->exp60_length  =  96;
 		reader->nuid_length   =   4;
 		reader->mod1_length   = 112;
-
+*/
 		current.found = 1;
 		return;
 
@@ -181,7 +171,7 @@ void findatr(struct s_reader *reader)
 		memcpy(current.providername, hdplus04.providername, strlen(hdplus04.providername));
 		reader->saveemm = hdplus04.saveemm;
 		reader->blockemm = hdplus04.blockemm;
-
+/*
 		memcpy(reader->data50, data50,  80);
 		memcpy(reader->mod50,   mod50,  80);
 		memcpy(reader->key60,   key60,  96);
@@ -195,7 +185,7 @@ void findatr(struct s_reader *reader)
 		reader->exp60_length  =  96;
 		reader->nuid_length   =   4;
 		reader->mod1_length   = 112;
-
+*/
 		current.found = 1;
 		return;
 
@@ -206,7 +196,7 @@ void findatr(struct s_reader *reader)
 		memcpy(current.providername, hdplus04a.providername, strlen(hdplus04a.providername));
 		reader->saveemm = hdplus04a.saveemm;
 		reader->blockemm = hdplus04a.blockemm;
-
+/*
 		memcpy(reader->data50, data50,  80);
 		memcpy(reader->mod50,   mod50,  80);
 		memcpy(reader->key60,   key60,  96);
@@ -220,7 +210,7 @@ void findatr(struct s_reader *reader)
 		reader->exp60_length  =  96;
 		reader->nuid_length   =   4;
 		reader->mod1_length   = 112;
-
+*/
 		current.found = 1;
 		return;
 
@@ -229,9 +219,9 @@ void findatr(struct s_reader *reader)
 	{
 		if ( !strncmp(unity_01.rsakey, "0", 1) == 0 )
 		{
-			memcpy(reader->boxkey, unity_01.boxkey, 9);
+/*			memcpy(reader->boxkey, unity_01.boxkey, 9);
 			memcpy(reader->rsa_mod, unity_01.rsakey, 65);
-			reader->rsa_mod_length = 64;
+*/			reader->rsa_mod_length = 64;
 		}
 		memcpy(current.providername, unity_01.providername, strlen(unity_01.providername));
 		reader->saveemm = unity_01.saveemm;
@@ -243,9 +233,9 @@ void findatr(struct s_reader *reader)
 	{
 		if ( !strncmp(unity_02.rsakey, "0", 1) == 0 )
 	{
-			memcpy(reader->boxkey, unity_02.boxkey, 9);
+/*			memcpy(reader->boxkey, unity_02.boxkey, 9);
 			memcpy(reader->rsa_mod, unity_02.rsakey, 65);
-			reader->rsa_mod_length = 64;
+*/			reader->rsa_mod_length = 64;
 		}
 		memcpy(current.providername, unity_02.providername, strlen(unity_02.providername));
 		reader->saveemm = unity_02.saveemm;
@@ -257,9 +247,9 @@ void findatr(struct s_reader *reader)
 	{
 		if ( !strncmp(kdg_02.rsakey, "0", 1) == 0 )
 	{
-			memcpy(reader->boxkey, kdg_02.boxkey, 9);
+/*			memcpy(reader->boxkey, kdg_02.boxkey, 9);
 			memcpy(reader->rsa_mod, kdg_02.rsakey, 65);
-			reader->rsa_mod_length = 64;
+*/			reader->rsa_mod_length = 64;
 		}
 		memcpy(current.providername, kdg_02.providername, strlen(kdg_02.providername));
 		reader->saveemm = kdg_02.saveemm;
@@ -271,9 +261,9 @@ void findatr(struct s_reader *reader)
 	{
 		if ( !strncmp(rlmega.rsakey, "0", 1) == 0 )
 		{
-			memcpy(reader->boxkey, rlmega.boxkey, 5);
+/*			memcpy(reader->boxkey, rlmega.boxkey, 5);
 			memcpy(reader->des_key, rlmega.rsakey, 17);
-			reader->des_key_length = 16;
+*/			reader->des_key_length = 16;
 		}
 		memcpy(current.providername, rlmega.providername, strlen(rlmega.providername));
 		reader->saveemm = rlmega.saveemm;
@@ -312,7 +302,7 @@ void findatr(struct s_reader *reader)
 	{
 		if ( !strncmp(tivusatd.rsakey, "0", 1) == 0 )
 	{
-			memcpy(reader->rsa_mod, tivusatd.rsakey, 121);
+//			memcpy(reader->rsa_mod, tivusatd.rsakey, 121);
 			reader->rsa_mod_length = 120;
 		}
 		memcpy(current.providername, tivusatd.providername, strlen(tivusatd.providername));
@@ -325,7 +315,7 @@ void findatr(struct s_reader *reader)
 	{
 		if ( !strncmp(tivusate.rsakey, "0", 1) == 0 )
 		{
-			memcpy(reader->rsa_mod, tivusate.rsakey, 121);
+//			memcpy(reader->rsa_mod, tivusate.rsakey, 121);
 			reader->rsa_mod_length = 120;
 		}
 		memcpy(current.providername, tivusate.providername, strlen(tivusate.providername));
@@ -396,5 +386,3 @@ void findatr(struct s_reader *reader)
 		}
 	}
 }
-
-#endif
