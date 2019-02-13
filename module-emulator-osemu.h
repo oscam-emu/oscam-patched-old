@@ -72,11 +72,7 @@ extern pthread_mutex_t emu_key_data_mutex;
 void emu_set_keyfile_path(const char *path);
 void emu_clear_keydata(void);
 uint8_t emu_read_keyfile(struct s_reader *rdr, const char *path);
-
-#if defined(WITH_SOFTCAM) && !defined(__APPLE__) && !defined(__ANDROID__)
 void emu_read_keymemory(struct s_reader *rdr);
-#endif
-
 void emu_read_eebin(const char *path, const char *name);
 void emu_read_deskey(uint8_t *dreOverKey, uint8_t len);
 

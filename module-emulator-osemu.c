@@ -874,6 +874,8 @@ void emu_read_keymemory(struct s_reader *rdr)
 	}
 	free(keyData);
 }
+#else
+void emu_read_keymemory(struct s_reader *UNUSED(rdr)) { }
 #endif
 
 void emu_read_eebin(const char *path, const char *name)
