@@ -105,7 +105,7 @@ void load_stat_from_file(void)
 	file = fopen(fname, "r");
 	if(!file)
 	{
-		cs_log("loadbalancer: could not open %s for reading (errno=%d %s)", fname, errno, strerror(errno));
+		cs_log_dbg(D_LB, "loadbalancer: could not open %s for reading (errno=%d %s)", fname, errno, strerror(errno));
 		return;
 	}
 

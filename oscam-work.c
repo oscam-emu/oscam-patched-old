@@ -417,7 +417,7 @@ void *work_thread(void *ptr)
 				case ACTION_CLIENT_HIDECARDS:
 				{
 #ifdef CS_ANTICASC
-					if(config_enabled(MODULE_CCCAM))
+					if(config_enabled(MODULE_CCCSHARE))
 					{
 						int32_t hidetime = (cl->account->acosc_penalty_duration == -1 ? cfg.acosc_penalty_duration : cl->account->acosc_penalty_duration);
 						if(hidetime)
