@@ -231,7 +231,7 @@ static int8_t stream_client_get_caid(emu_stream_client_data *cdata)
 	uint32_t tmp1 = (cdata->srvid << 16) | cdata->pmt_pid;
 	uint8_t tmp2[2];
 
-	if (FindKey('A', tmp1, 0, "FAKE", tmp2, 2, 0, 0, 0, NULL))
+	if (emu_find_key('A', tmp1, 0, "FAKE", tmp2, 2, 0, 0, 0, NULL))
 	{
 		cdata->caid = b2i(2, tmp2);
 		return 1;
@@ -485,7 +485,7 @@ static void ParseEmmData(emu_stream_client_data *cdata)
 {
 	uint32_t keysAdded = 0;
 
-	ProcessEMM(NULL, cdata->caid, 0, cdata->emm_data, &keysAdded);
+	emu_process_emm(NULL, cdata->caid, 0, cdata->emm_data, &keysAdded);
 
 	if (keysAdded)
 	{
@@ -510,12 +510,12 @@ static void ParseEcmData(emu_stream_client_data *cdata)
 		if (data[11] > cdata->ecm_nb || (cdata->ecm_nb == 255 && data[11] == 0) || ((cdata->ecm_nb - data[11]) > 5))
 		{
 			cdata->ecm_nb = data[11];
-			PowervuECM(data, dcw, cdata->srvid, &cdata->key, NULL);
+			powervu_ecm(data, dcw, cdata->srvid, &cdata->key, NULL);
 		}
 	}
 	//else if () // All other caids
 	//{
-		//ProcessECM();
+		//emu_process_ecm();
 	//}
 }
 

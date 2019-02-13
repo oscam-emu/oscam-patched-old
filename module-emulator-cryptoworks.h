@@ -3,7 +3,7 @@
 
 #ifdef WITH_EMU
 
-int8_t CryptoworksECM(uint32_t caid, uint8_t *ecm, uint8_t *cw);
+int8_t cryptoworks_ecm(uint32_t caid, uint8_t *ecm, uint8_t *cw);
 
 #endif // WITH_EMU
 

@@ -3,8 +3,8 @@
 
 #ifdef WITH_EMU
 
-int8_t DirectorEcm(uint8_t *ecm, uint8_t *dw);
-int8_t DirectorEmm(uint8_t *emm, uint32_t *keysAdded);
+int8_t director_ecm(uint8_t *ecm, uint8_t *dw);
+int8_t director_emm(uint8_t *emm, uint32_t *keysAdded);
 
 #endif // WITH_EMU
 

@@ -7,7 +7,7 @@
 #include "module-emulator-osemu.h"
 #include "oscam-string.h"
 
-static void BissUnifyOrbitals(uint32_t *namespace)
+static void unify_orbitals(uint32_t *namespace)
 {
 	// Unify orbitals to produce same namespace among users
 	// Set positions according to http://satellites-xml.org
@@ -157,7 +157,8 @@ static void BissUnifyOrbitals(uint32_t *namespace)
 	*namespace = (*namespace & 0xF000FFFF) | (pos << 16);
 }
 
-static void BissAnnotate(char *buf, uint8_t len, const uint8_t *ecm, uint16_t ecmLen, uint32_t hash, int8_t isNamespaceHash, int8_t datecoded)
+static void annotate(char *buf, uint8_t len, const uint8_t *ecm, uint16_t ecmLen,
+						uint32_t hash, int8_t isNamespaceHash, int8_t datecoded)
 {
 	// Extract useful information to append to the "Example key ..." message.
 	//
@@ -184,14 +185,14 @@ static void BissAnnotate(char *buf, uint8_t len, const uint8_t *ecm, uint16_t ec
 
 	if (datecoded)
 	{
-		Date2Str(timeStr1, sizeof(timeStr1), 4, 3);
+		date_to_str(timeStr1, sizeof(timeStr1), 4, 3);
 	}
 	else
 	{
 		snprintf(timeStr1, sizeof(timeStr1), "00000000");
 	}
 
-	Date2Str(timeStr2, sizeof(timeStr2), 0, 2);
+	date_to_str(timeStr2, sizeof(timeStr2), 0, 2);
 
 	if (isNamespaceHash) // Namespace hash
 	{
@@ -237,7 +238,7 @@ static void BissAnnotate(char *buf, uint8_t len, const uint8_t *ecm, uint16_t ec
 	}
 }
 
-static int8_t BissIsCommonHash(uint32_t hash)
+static int8_t is_common_hash(uint32_t hash)
 {
 	// Check universal hash against a number of commnon universal
 	// hashes in order to warn users about potential key clashes
@@ -271,7 +272,7 @@ static int8_t BissIsCommonHash(uint32_t hash)
 	}
 }
 
-static int8_t BissIsValidNamespace(uint32_t namespace)
+static int8_t is_valid_namespace(uint32_t namespace)
 {
 	// Note to developers:
 	// If we ever have a satellite at 0.0E, edit to allow stripped namespace
@@ -292,11 +293,11 @@ static int8_t BissIsValidNamespace(uint32_t namespace)
 	return 0;
 }
 
-static int8_t BissGetKey(uint32_t provider, uint8_t *key, int8_t dateCoded, int8_t printMsg)
+static int8_t get_key(uint32_t provider, uint8_t *key, int8_t dateCoded, int8_t printMsg)
 {
 	// If date-coded keys are enabled in the webif, this function evaluates the expiration date
-	// of the keys found. Expired keys are not sent to the calling function. If date-coded keys
-	// are disabled, then all keys found are sent without any evaluation. It takes the "provider"
+	// of the found keys. Expired keys are not sent to the calling function. If date-coded keys
+	// are disabled, then all found keys are sent without any evaluation. It takes the "provider"
 	// as input and outputs the "key". Returns 0 (Key not found, or expired) or 1 (Key found).
 
 	// printMsg: 0 => No message
@@ -305,12 +306,12 @@ static int8_t BissGetKey(uint32_t provider, uint8_t *key, int8_t dateCoded, int8
 
 	char keyExpDate[9] = "00000000";
 
-	if (FindKey('F', provider, 0, keyExpDate, key, 8, 0, 0, 0, NULL)) // Key found
+	if (emu_find_key('F', provider, 0, keyExpDate, key, 8, 0, 0, 0, NULL)) // Key found
 	{
 		if (dateCoded) // Date-coded keys are enabled, evaluate expiration date
 		{
 			char currentDate[9];
-			Date2Str(currentDate, sizeof(currentDate), 0, 3);
+			date_to_str(currentDate, sizeof(currentDate), 0, 3);
 
 			if (strncmp("00000000", keyExpDate, 9) == 0 || strncmp(currentDate, keyExpDate, 9) < 0) // Evergreen or not expired
 			{
@@ -337,7 +338,8 @@ static int8_t BissGetKey(uint32_t provider, uint8_t *key, int8_t dateCoded, int8
 	}
 }
 
-int8_t Biss1Mode1Ecm(struct s_reader *rdr, uint16_t caid, const uint8_t *ecm, uint8_t *dw, uint16_t srvid, uint16_t ecmpid)
+static int8_t biss1_mode1_ecm(struct s_reader *rdr, uint16_t caid, const uint8_t *ecm,
+								uint8_t *dw, uint16_t srvid, uint16_t ecmpid)
 {
 	// Oscam's fake ecm consists of [sid] [pmtpid] [pid1] [pid2] ... [pidx] [tsid] [onid] [namespace]
 	//
@@ -371,7 +373,7 @@ int8_t Biss1Mode1Ecm(struct s_reader *rdr, uint16_t caid, const uint8_t *ecm, ui
 	// used in the namespace hash, universal hash and the default "All Feeds" key.
 
 	uint32_t i, ens = 0, hash = 0;
-	uint16_t pid = 0, ecmLen = GetEcmLen(ecm);
+	uint16_t pid = 0, ecmLen = get_ecm_len(ecm);
 	uint8_t ecmCopy[ecmLen];
 	char tmpBuffer1[17], tmpBuffer2[90] = "0", tmpBuffer3[90] = "0";
 
@@ -381,9 +383,9 @@ int8_t Biss1Mode1Ecm(struct s_reader *rdr, uint16_t caid, const uint8_t *ecm, ui
 		memcpy(ecmCopy, ecm, ecmLen);
 		ens = b2i(4, ecm + ecmLen - 4); // Namespace will be the last 4 bytes
 
-		if (BissIsValidNamespace(ens)) // An r752+ extended ecm with valid namespace
+		if (is_valid_namespace(ens)) // An r752+ extended ecm with valid namespace
 		{
-			BissUnifyOrbitals(&ens);
+			unify_orbitals(&ens);
 			i2b_buf(4, ens, ecmCopy + ecmLen - 4);
 
 			for (i = 0; i < 5; i++) // Find key matching hash made with frequency modified to: f+0, then f-1, f+1, f-2, lastly f+2
@@ -401,7 +403,7 @@ int8_t Biss1Mode1Ecm(struct s_reader *rdr, uint16_t caid, const uint8_t *ecm, ui
 					hash = crc32(caid, ecmCopy + ecmLen - 10, 10);
 				}
 
-				if (BissGetKey(hash, dw, rdr->emu_datecodedenabled, i == 0 ? 2 : 1)) // Do not print "key not found" for frequency off by 1, 2
+				if (get_key(hash, dw, rdr->emu_datecodedenabled, i == 0 ? 2 : 1)) // Do not print "key not found" for frequency off by 1, 2
 				{
 					memcpy(dw + 8, dw, 8);
 					return 0;
@@ -409,7 +411,7 @@ int8_t Biss1Mode1Ecm(struct s_reader *rdr, uint16_t caid, const uint8_t *ecm, ui
 
 				if (i == 0) // No key found matching our hash: create example SoftCam.Key BISS line for the live log
 				{
-					BissAnnotate(tmpBuffer2, sizeof(tmpBuffer2), ecmCopy, ecmLen, hash, 1, rdr->emu_datecodedenabled);
+					annotate(tmpBuffer2, sizeof(tmpBuffer2), ecmCopy, ecmLen, hash, 1, rdr->emu_datecodedenabled);
 				}
 
 				if (0 == (ens & 0xFFFF)) // Namespace without frequency - Do not iterate
@@ -437,14 +439,14 @@ int8_t Biss1Mode1Ecm(struct s_reader *rdr, uint16_t caid, const uint8_t *ecm, ui
 			memcpy(ecmCopy, ecm, ecmLen - 8); // Make a new ecmCopy from the original ecm as the old ecmCopy may be altered in namespace hash (skip [tsid] [onid] [namespace])
 			hash = crc32(caid, ecmCopy + 3, ecmLen - 3 - 8); // ecmCopy doesn't have [tsid] [onid] [namespace] part
 
-			if (BissGetKey(hash, dw, rdr->emu_datecodedenabled, 2)) // Key found
+			if (get_key(hash, dw, rdr->emu_datecodedenabled, 2)) // Key found
 			{
 				memcpy(dw + 8, dw, 8);
 				return 0;
 			}
 
 			// No key found matching our hash: create example SoftCam.Key BISS line for the live log
-			BissAnnotate(tmpBuffer3, sizeof(tmpBuffer3), ecmCopy, ecmLen, hash, 0, rdr->emu_datecodedenabled);
+			annotate(tmpBuffer3, sizeof(tmpBuffer3), ecmCopy, ecmLen, hash, 0, rdr->emu_datecodedenabled);
 		}
 	}
 
@@ -454,7 +456,7 @@ int8_t Biss1Mode1Ecm(struct s_reader *rdr, uint16_t caid, const uint8_t *ecm, ui
 		ens = b2i(4, ecmCopy + ecmLen - 4); // Namespace will be last 4 bytes
 
 		// We have an r752+ style ecm with stripped namespace, thus a valid [tsid][onid] combo to use as provider
-		if ((ens & 0xE000FFFF) == 0xA0000000 && BissGetKey(b2i(4, ecm + ecmLen - 8), dw, 0, 2))
+		if ((ens & 0xE000FFFF) == 0xA0000000 && get_key(b2i(4, ecm + ecmLen - 8), dw, 0, 2))
 		{
 			memcpy(dw + 8, dw, 8);
 			return 0;
@@ -469,7 +471,7 @@ int8_t Biss1Mode1Ecm(struct s_reader *rdr, uint16_t caid, const uint8_t *ecm, ui
 	// Try using ecmpid if it seems to be faulty (should be 0x1FFF always for BISS)
 	if (ecmpid != 0x1FFF && ecmpid != 0)
 	{
-		if (BissGetKey((srvid << 16) | ecmpid, dw, 0, 2))
+		if (get_key((srvid << 16) | ecmpid, dw, 0, 2))
 		{
 			memcpy(dw + 8, dw, 8);
 			return 0;
@@ -485,7 +487,7 @@ int8_t Biss1Mode1Ecm(struct s_reader *rdr, uint16_t caid, const uint8_t *ecm, ui
 		{
 			pid = b2i(2, ecm + i);
 
-			if (BissGetKey((srvid << 16) | pid, dw, 0, 2))
+			if (get_key((srvid << 16) | pid, dw, 0, 2))
 			{
 				memcpy(dw + 8, dw, 8);
 				return 0;
@@ -496,7 +498,7 @@ int8_t Biss1Mode1Ecm(struct s_reader *rdr, uint16_t caid, const uint8_t *ecm, ui
 	// Try using the standard BISS ecm pid
 	if (ecmpid == 0x1FFF || ecmpid == 0)
 	{
-		if (BissGetKey((srvid << 16) | 0x1FFF, dw, 0, 2))
+		if (get_key((srvid << 16) | 0x1FFF, dw, 0, 2))
 		{
 			memcpy(dw + 8, dw, 8);
 			return 0;
@@ -504,7 +506,7 @@ int8_t Biss1Mode1Ecm(struct s_reader *rdr, uint16_t caid, const uint8_t *ecm, ui
 	}
 
 	// Default BISS key for events with many feeds sharing same key
-	if (ecmpid != 0 && BissGetKey(0xA11FEED5, dw, rdr->emu_datecodedenabled, 2)) // Limit to local ecms, block netwotk ecms
+	if (ecmpid != 0 && get_key(0xA11FEED5, dw, rdr->emu_datecodedenabled, 2)) // Limit to local ecms, block netwotk ecms
 	{
 		memcpy(dw + 8, dw, 8);
 		cs_hexdump(0, dw, 8, tmpBuffer1, sizeof(tmpBuffer1));
@@ -517,17 +519,17 @@ int8_t Biss1Mode1Ecm(struct s_reader *rdr, uint16_t caid, const uint8_t *ecm, ui
 	if (strncmp(tmpBuffer3, "0", 2)) cs_log("Example key based on universal hash: %s", tmpBuffer3);
 
 	// Check if universal hash is common and warn user
-	if (BissIsCommonHash(hash)) cs_log("Feed has commonly used pids, universal hash clashes in SoftCam.Key are likely!");
+	if (is_common_hash(hash)) cs_log("Feed has commonly used pids, universal hash clashes in SoftCam.Key are likely!");
 
 	return 2;
 }
 
-int8_t BissEcm(struct s_reader *rdr, uint16_t caid, const uint8_t *ecm, uint8_t *dw, uint16_t srvid, uint16_t ecmpid)
+int8_t biss_ecm(struct s_reader *rdr, uint16_t caid, const uint8_t *ecm, uint8_t *dw, uint16_t srvid, uint16_t ecmpid)
 {
 	switch (caid)
 	{
 		case 0x2600:
-			return Biss1Mode1Ecm(rdr, caid, ecm, dw, srvid, ecmpid);
+			return biss1_mode1_ecm(rdr, caid, ecm, dw, srvid, ecmpid);
 
 		case 0x2602:
 			cs_log("Unsupported Biss 2 Mode 1/E ecm (caid %04X) - Please report!", caid);

@@ -13,7 +13,7 @@
 
 // Shared functions
 
-static uint16_t DirectorChecksum(uint8_t *data, uint8_t length)
+static uint16_t calculate_checksum(uint8_t *data, uint8_t length)
 {
 	/*
 	 * ECM and EMM checksum calculation
@@ -37,7 +37,7 @@ static uint16_t DirectorChecksum(uint8_t *data, uint8_t length)
 	return checksum;
 }
 
-static inline int8_t DirectorGetKey(uint32_t keyIndex, char *keyName, uint8_t *key, uint32_t keyLength)
+static inline int8_t get_key(uint32_t keyIndex, char *keyName, uint8_t *key, uint32_t keyLength)
 {
 	/*
 	 * keyIndex meaning for:
@@ -51,7 +51,7 @@ static inline int8_t DirectorGetKey(uint32_t keyIndex, char *keyName, uint8_t *k
 	 * aes keys --> "AES"
 	*/
 
-	return FindKey('T', keyIndex, 0, keyName, key, keyLength, 1, 0, 0, NULL);
+	return emu_find_key('T', keyIndex, 0, keyName, key, keyLength, 1, 0, 0, NULL);
 }
 
 /*************************************************************************************************/
@@ -61,15 +61,15 @@ static inline int8_t DirectorGetKey(uint32_t keyIndex, char *keyName, uint8_t *k
  * Supported versions: v4, v5, v6 (not working correctly)
 */
 
-int8_t DirectorEcm(uint8_t *ecm, uint8_t *dw)
+int8_t director_ecm(uint8_t *ecm, uint8_t *dw)
 {
 	uint8_t nanoType, nanoLength;
-	uint8_t* nanoData;
+	uint8_t *nanoData;
 	uint32_t pos = 3;
 	uint32_t entitlementId;
 	uint32_t ks[32];
 	uint8_t ecmKey[8];
-	uint16_t ecmLen = GetEcmLen(ecm);
+	uint16_t ecmLen = get_ecm_len(ecm);
 
 	if (ecmLen < 5)
 	{
@@ -90,7 +90,7 @@ int8_t DirectorEcm(uint8_t *ecm, uint8_t *dw)
 
 		// ECM validation
 		uint16_t payloadChecksum = (nanoData[nanoLength - 2] << 8) | nanoData[nanoLength - 1];
-		uint16_t calculatedChecksum = DirectorChecksum(nanoData, nanoLength - 2);
+		uint16_t calculatedChecksum = calculate_checksum(nanoData, nanoLength - 2);
 
 		if (calculatedChecksum != payloadChecksum)
 		{
@@ -112,7 +112,7 @@ int8_t DirectorEcm(uint8_t *ecm, uint8_t *dw)
 				entitlementId = b2i(4, nanoData);
 				cs_log_dbg(D_READER, "INFO: Using entitlement id %.4X", entitlementId);
 
-				if (!DirectorGetKey(entitlementId, "01", ecmKey, 8))
+				if (!get_key(entitlementId, "01", ecmKey, 8))
 				{
 					return EMU_KEY_NOT_FOUND;
 				}
@@ -179,7 +179,7 @@ int8_t DirectorEcm(uint8_t *ecm, uint8_t *dw)
 					cs_hexdump(0, aesKey, 16, tmpBuffer, sizeof(tmpBuffer));
 					cs_log_dbg(D_READER, "INFO: Using AES key index: %02X, value: %s", aesKeyIndex, tmpBuffer);
 
-					if (!DirectorGetKey(aesKeyIndex, "AES", aesKey, 16))
+					if (!get_key(aesKeyIndex, "AES", aesKey, 16))
 					{
 						return EMU_KEY_NOT_FOUND;
 					}
@@ -212,7 +212,7 @@ int8_t DirectorEcm(uint8_t *ecm, uint8_t *dw)
 				entitlementId = b2i(4, nanoData);
 				cs_log_dbg(D_READER, "INFO: Using entitlement id %.4X", entitlementId);
 
-				if (!DirectorGetKey(entitlementId, "01", ecmKey, 8))
+				if (!get_key(entitlementId, "01", ecmKey, 8))
 				{
 					return EMU_KEY_NOT_FOUND;
 				}
@@ -254,7 +254,7 @@ int8_t DirectorEcm(uint8_t *ecm, uint8_t *dw)
 				entitlementId = b2i(4, nanoData);
 				cs_log_dbg(D_READER, "INFO: Using entitlement id %.4X", entitlementId);
 
-				if (!DirectorGetKey(entitlementId, "01", ecmKey, 8))
+				if (!get_key(entitlementId, "01", ecmKey, 8))
 				{
 					return EMU_KEY_NOT_FOUND;
 				}
@@ -289,7 +289,7 @@ int8_t DirectorEcm(uint8_t *ecm, uint8_t *dw)
  * Supported versions: v4, v5, v6 (same as v5)
 */
 
-static uint8_t MixTable[] =
+static const uint8_t MixTable[] =
 {
 	0x12, 0x78, 0x4B, 0x19, 0x13, 0x80, 0x2F, 0x84, 0x86, 0x4C, 0x09, 0x53, 0x15, 0x79, 0x6B, 0x49,
 	0x10, 0x4D, 0x33, 0x43, 0x18, 0x37, 0x83, 0x38, 0x82, 0x1B, 0x6E, 0x24, 0x2A, 0x85, 0x3C, 0x3D,
@@ -302,7 +302,7 @@ static uint8_t MixTable[] =
 };
 
 /*
-static void DirectorRotateBytes(uint8_t *in, int8_t n)
+static void rotate_bytes(uint8_t *in, int8_t n)
 {
 	if (n > 1)
 	{
@@ -318,11 +318,11 @@ static void DirectorRotateBytes(uint8_t *in, int8_t n)
 }
 */
 
-static void DirectorDecryptEcmKey(uint8_t *emmKey, uint8_t *tagData, uint8_t *ecmKey)
+static void decrypt_ecm_key(uint8_t *emmKey, uint8_t *tagData, uint8_t *ecmKey)
 {
 	uint8_t temp, *e, *payLoad, iv[8] = { 0 };
 
-	//DirectorRotateBytes(emmKey, 8);
+	//rotate_bytes(emmKey, 8);
 
 	e = emmKey + 8 - 1;
 	do
@@ -346,7 +346,7 @@ static void DirectorDecryptEcmKey(uint8_t *emmKey, uint8_t *tagData, uint8_t *ec
 	ecmKey[7] = payLoad[0x08];
 }
 
-static int8_t DirectorParseEmmNanoTags(uint8_t* data, uint32_t length, uint8_t keyIndex, uint32_t *keysAdded)
+static int8_t parse_emm_nano_tags(uint8_t *data, uint32_t length, uint8_t keyIndex, uint32_t *keysAdded)
 {
 	uint8_t tagType, tagLength, *tagData, blockIndex, emmKey[8], tagDataDecrypted[16][8];
 	uint32_t pos = 0, entitlementId, ks[32];
@@ -386,13 +386,13 @@ static int8_t DirectorParseEmmNanoTags(uint8_t* data, uint32_t length, uint8_t k
 							return EMU_NOT_SUPPORTED;
 						}
 
-						if (!DirectorGetKey(keyIndex, "MK01", emmKey, 8))
+						if (!get_key(keyIndex, "MK01", emmKey, 8))
 						{
 							return EMU_KEY_NOT_FOUND;
 						}
 
 						uint8_t iv[8] = { 0 };
-						uint8_t* tagPayload = tagData + 2;
+						uint8_t *tagPayload = tagData + 2;
 						des_cbc_decrypt(tagPayload, iv, emmKey, 136);
 
 						for (k = 0; k < 16; k++) // loop 16 keys
@@ -408,7 +408,7 @@ static int8_t DirectorParseEmmNanoTags(uint8_t* data, uint32_t length, uint8_t k
 						SAFE_MUTEX_LOCK(&emu_key_data_mutex);
 						for (i = 0; i < 16; i++)
 						{
-							SetKey('T', (blockIndex << 4) + i, "MK01", tagDataDecrypted[i], 8, 0, NULL, NULL);
+							emu_set_key('T', (blockIndex << 4) + i, "MK01", tagDataDecrypted[i], 8, 0, NULL, NULL);
 						}
 						SAFE_MUTEX_UNLOCK(&emu_key_data_mutex);
 					}
@@ -422,7 +422,7 @@ static int8_t DirectorParseEmmNanoTags(uint8_t* data, uint32_t length, uint8_t k
 							return EMU_NOT_SUPPORTED;
 						}
 
-						if (!DirectorGetKey(keyIndex, "MK", emmKey, 8))
+						if (!get_key(keyIndex, "MK", emmKey, 8))
 						{
 							return EMU_KEY_NOT_FOUND;
 						}
@@ -439,7 +439,7 @@ static int8_t DirectorParseEmmNanoTags(uint8_t* data, uint32_t length, uint8_t k
 						SAFE_MUTEX_LOCK(&emu_key_data_mutex);
 						for (i = 0; i < 16; i++)
 						{
-							SetKey('T', (blockIndex << 4) + i, "MK", tagData + 2 + (i * 8), 8, 0, NULL, NULL);
+							emu_set_key('T', (blockIndex << 4) + i, "MK", tagData + 2 + (i * 8), 8, 0, NULL, NULL);
 						}
 						SAFE_MUTEX_UNLOCK(&emu_key_data_mutex);
 					}
@@ -468,7 +468,7 @@ static int8_t DirectorParseEmmNanoTags(uint8_t* data, uint32_t length, uint8_t k
 
 						entitlementId = b2i(4, tagData);
 
-						if (!DirectorGetKey(keyIndex, "MK", emmKey, 8))
+						if (!get_key(keyIndex, "MK", emmKey, 8))
 						{
 							return EMU_KEY_NOT_FOUND;
 						}
@@ -483,7 +483,7 @@ static int8_t DirectorParseEmmNanoTags(uint8_t* data, uint32_t length, uint8_t k
 						}
 
 						SAFE_MUTEX_LOCK(&emu_key_data_mutex);
-						if (UpdateKey('T', entitlementId, "01", tagData + 4 + 5, 8, 1, NULL))
+						if (emu_update_key('T', entitlementId, "01", tagData + 4 + 5, 8, 1, NULL))
 						{
 							(*keysAdded)++;
 							cs_hexdump(0, tagData + 4 + 5, 8, keyValue, sizeof(keyValue));
@@ -503,13 +503,13 @@ static int8_t DirectorParseEmmNanoTags(uint8_t* data, uint32_t length, uint8_t k
 
 						entitlementId = b2i(4, tagData);
 
-						if (!DirectorGetKey(keyIndex, "MK01", emmKey, 8))
+						if (!get_key(keyIndex, "MK01", emmKey, 8))
 						{
 							return EMU_KEY_NOT_FOUND;
 						}
 
 						uint8_t ecmKey[8] = { 0 };
-						DirectorDecryptEcmKey(emmKey, tagData, ecmKey);
+						decrypt_ecm_key(emmKey, tagData, ecmKey);
 
 						if (ecmKey[7] != 0x00) // check if key looks valid (last byte 0x00)
 						{
@@ -518,7 +518,7 @@ static int8_t DirectorParseEmmNanoTags(uint8_t* data, uint32_t length, uint8_t k
 						}
 
 						SAFE_MUTEX_LOCK(&emu_key_data_mutex);
-						if (UpdateKey('T', entitlementId, "01", ecmKey, 8, 1, NULL))
+						if (emu_update_key('T', entitlementId, "01", ecmKey, 8, 1, NULL))
 						{
 							(*keysAdded)++;
 							cs_hexdump(0, ecmKey, 8, keyValue, sizeof(keyValue));
@@ -546,7 +546,8 @@ static int8_t DirectorParseEmmNanoTags(uint8_t* data, uint32_t length, uint8_t k
 	return EMU_OK;
 }
 
-static int8_t DirectorParseEmmNanoData(uint8_t* data, uint32_t* nanoLength, uint32_t maxLength, uint8_t keyIndex, uint32_t *keysAdded)
+static int8_t parse_emm_nano_data(uint8_t *data, uint32_t *nanoLength, uint32_t maxLength,
+									uint8_t keyIndex, uint32_t *keysAdded)
 {
 	uint32_t pos = 0;
 	uint16_t sectionLength;
@@ -566,7 +567,7 @@ static int8_t DirectorParseEmmNanoData(uint8_t* data, uint32_t* nanoLength, uint
 		return EMU_CORRUPT_DATA;
 	}
 
-	ret = DirectorParseEmmNanoTags(data + pos + 2, sectionLength, keyIndex, keysAdded);
+	ret = parse_emm_nano_tags(data + pos + 2, sectionLength, keyIndex, keysAdded);
 
 	pos += 2 + sectionLength;
 
@@ -574,10 +575,10 @@ static int8_t DirectorParseEmmNanoData(uint8_t* data, uint32_t* nanoLength, uint
 	return ret;
 }
 
-int8_t DirectorEmm(uint8_t *emm, uint32_t *keysAdded)
+int8_t director_emm(uint8_t *emm, uint32_t *keysAdded)
 {
 	uint8_t keyIndex, ret = EMU_OK;
-	uint16_t emmLen = GetEcmLen(emm);
+	uint16_t emmLen = get_ecm_len(emm);
 	uint32_t pos = 3;
 	uint32_t permissionDataType;
 	uint32_t nanoLength = 0;
@@ -616,7 +617,7 @@ int8_t DirectorEmm(uint8_t *emm, uint32_t *keysAdded)
 		// so they do not affect the calculated checksum.
 		uint16_t payloadChecksum = (emm[pos + 2] << 8) | emm[pos + 3];
 		memset(emm + pos + 2, 0, 2);
-		uint16_t calculatedChecksum = DirectorChecksum(emm + 3, emmLen - 3);
+		uint16_t calculatedChecksum = calculate_checksum(emm + 3, emmLen - 3);
 
 		if (calculatedChecksum != payloadChecksum)
 		{
@@ -626,7 +627,7 @@ int8_t DirectorEmm(uint8_t *emm, uint32_t *keysAdded)
 		// End of EMM validation
 
 		pos += 0x04;
-		ret = DirectorParseEmmNanoData(emm + pos, &nanoLength, emmLen - pos, keyIndex, keysAdded);
+		ret = parse_emm_nano_data(emm + pos, &nanoLength, emmLen - pos, keyIndex, keysAdded);
 		pos += nanoLength;
 	}
 

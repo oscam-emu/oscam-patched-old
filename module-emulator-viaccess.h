@@ -3,8 +3,8 @@
 
 #ifdef WITH_EMU
 
-int8_t ViaccessECM(uint8_t *ecm, uint8_t *dw);
-int8_t ViaccessEMM(uint8_t *emm, uint32_t *keysAdded);
+int8_t viaccess_ecm(uint8_t *ecm, uint8_t *dw);
+int8_t viaccess_emm(uint8_t *emm, uint32_t *keysAdded);
 
 #endif // WITH_EMU
 

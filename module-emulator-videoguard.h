@@ -3,7 +3,7 @@
 
 #ifdef WITH_EMU
 
-int8_t SoftNDSECM(uint16_t caid, uint8_t *ecm, uint8_t *dw);
+int8_t videoguard_ecm(uint16_t caid, uint8_t *ecm, uint8_t *dw);
 
 #endif // WITH_EMU
 

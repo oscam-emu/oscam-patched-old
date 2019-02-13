@@ -21,8 +21,8 @@
 #define PVU_CONVCW_UTL_ECM	0x02	// UTiLity
 #define PVU_CONVCW_VBI_ECM	0x01	// Vertical Blanking Interval
 
-int8_t PowervuECM(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_key_data *cdata, EXTENDED_CW* cw_ex);
-int8_t PowervuEMM(uint8_t *emm, uint32_t *keysAdded);
+int8_t powervu_ecm(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_key_data *cdata, EXTENDED_CW *cw_ex);
+int8_t powervu_emm(uint8_t *emm, uint32_t *keysAdded);
 
 /*
  * This function searches for EMM keys and sends their Unique Address (UA) back to OSCam as
@@ -40,7 +40,7 @@ int8_t PowervuEMM(uint8_t *emm, uint32_t *keysAdded);
  * all serials are returned (no service id filtering is done). Return value is 0 on error,
  * 1 on success.
 */
-int8_t PowervuGetHexserials(uint16_t srvid, uint8_t hexserials[][4], uint32_t maxCount, uint32_t *count);
+int8_t powervu_get_hexserials(uint16_t srvid, uint8_t hexserials[][4], uint32_t maxCount, uint32_t *count);
 
 #endif // WITH_EMU
 

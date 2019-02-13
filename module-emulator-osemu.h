@@ -69,38 +69,39 @@ extern uint8_t viasat_const[];
 extern char *emu_keyfile_path;
 extern pthread_mutex_t emu_key_data_mutex;
 
-void set_emu_keyfile_path(const char *path);
-void clear_emu_keydata(void);
-uint8_t read_emu_keyfile(struct s_reader *rdr, const char *path);
+void emu_set_keyfile_path(const char *path);
+void emu_clear_keydata(void);
+uint8_t emu_read_keyfile(struct s_reader *rdr, const char *path);
 
 #if defined(WITH_SOFTCAM) && !defined(__APPLE__) && !defined(__ANDROID__)
-void read_emu_keymemory(struct s_reader *rdr);
+void emu_read_keymemory(struct s_reader *rdr);
 #endif
 
-void read_emu_eebin(const char *path, const char *name);
-void read_emu_deskey(uint8_t *dreOverKey, uint8_t len);
+void emu_read_eebin(const char *path, const char *name);
+void emu_read_deskey(uint8_t *dreOverKey, uint8_t len);
 
-extern uint16_t GetEcmLen(const uint8_t *ecm);
-int8_t isValidDCW(uint8_t *dw);
-int8_t CharToBin(uint8_t *out, const char *in, uint32_t inLen);
-void Date2Str(char *dateStr, uint8_t len, int8_t offset, uint8_t format);
-KeyDataContainer *GetKeyContainer(char identifier);
+extern uint16_t get_ecm_len(const uint8_t *ecm);
+int8_t is_valid_dcw(uint8_t *dw);
+int8_t char_to_bin(uint8_t *out, const char *in, uint32_t inLen);
+void date_to_str(char *dateStr, uint8_t len, int8_t offset, uint8_t format);
 
-int8_t ProcessECM(struct s_reader *rdr, int16_t ecmDataLen, uint16_t caid, uint32_t provider,
-				const uint8_t *ecm, uint8_t *dw, uint16_t srvid, uint16_t ecmpid, EXTENDED_CW* cw_ex);
+KeyDataContainer *emu_get_key_container(char identifier);
 
-int8_t ProcessEMM(struct s_reader *rdr, uint16_t caid, uint32_t provider, const uint8_t *emm,
-				uint32_t *keysAdded);
+int8_t emu_process_ecm(struct s_reader *rdr, int16_t ecmDataLen, uint16_t caid, uint32_t provider,
+						const uint8_t *ecm, uint8_t *dw, uint16_t srvid, uint16_t ecmpid, EXTENDED_CW* cw_ex);
 
-int8_t FindKey(char identifier, uint32_t provider, uint32_t providerIgnoreMask, char *keyName,
-				uint8_t *key, uint32_t maxKeyLength, uint8_t isCriticalKey, uint32_t keyRef,
-				uint8_t matchLength, uint32_t *getProvider);
+int8_t emu_process_emm(struct s_reader *rdr, uint16_t caid, uint32_t provider, const uint8_t *emm,
+						uint32_t *keysAdded);
 
-int8_t SetKey(char identifier, uint32_t provider, char *keyName, uint8_t *orgKey, uint32_t keyLength,
-				uint8_t writeKey, char *comment, struct s_reader *rdr);
+int8_t emu_find_key(char identifier, uint32_t provider, uint32_t providerIgnoreMask, char *keyName,
+					uint8_t *key, uint32_t maxKeyLength, uint8_t isCriticalKey, uint32_t keyRef,
+					uint8_t matchLength, uint32_t *getProvider);
 
-int8_t UpdateKey(char identifier, uint32_t provider, char *keyName, uint8_t *key, uint32_t keyLength,
-				uint8_t writeKey, char *comment);
+int8_t emu_set_key(char identifier, uint32_t provider, char *keyName, uint8_t *orgKey, uint32_t keyLength,
+					uint8_t writeKey, char *comment, struct s_reader *rdr);
+
+int8_t emu_update_key(char identifier, uint32_t provider, char *keyName, uint8_t *key, uint32_t keyLength,
+						uint8_t writeKey, char *comment);
 
 #endif // WITH_EMU
 

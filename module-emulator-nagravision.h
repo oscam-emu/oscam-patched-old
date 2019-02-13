@@ -3,7 +3,7 @@
 
 #ifdef WITH_EMU
 
-int8_t Nagra2ECM(uint8_t *ecm, uint8_t *dw);
+int8_t nagra2_ecm(uint8_t *ecm, uint8_t *dw);
 
 #endif // WITH_EMU
 
