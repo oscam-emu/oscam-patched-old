@@ -85,11 +85,11 @@
 #endif
 
 #ifdef WITH_STAPI
-#define CARDREADER_STAPI 1
+//#define CARDREADER_STAPI 1
 #endif
 
 #ifdef WITH_STAPI5
-#define CARDREADER_STAPI5 1
+//#define CARDREADER_STAPI5 1
 #endif
 
 #ifdef READER_DRE
