@@ -109,10 +109,6 @@
 
 #include "cscrypt/aes.h"
 
-#ifndef uchar
-typedef unsigned char uchar;
-#endif
-
 #ifdef IPV6SUPPORT
 #define IN_ADDR_T struct in6_addr
 #define SOCKADDR sockaddr_storage
@@ -881,12 +877,12 @@ struct s_module
 	//int32_t		s_port;
 	IN_ADDR_T		s_ip;
 	uint16_t		bufsize;
-	void			*(*s_handler)(struct s_client *, uchar *, int32_t);
+	void			*(*s_handler)(struct s_client *, uint8_t *, int32_t);
 	void			(*s_init)(struct s_client *);
-	int32_t			(*recv)(struct s_client *, uchar *, int32_t);
+	int32_t			(*recv)(struct s_client *, uint8_t *, int32_t);
 	void			(*send_dcw)(struct s_client *, struct ecm_request_t *);
 	void			(*cleanup)(struct s_client *);
-	int32_t			(*c_recv_chk)(struct s_client *, uchar *, int32_t *, uchar *, int32_t);
+	int32_t			(*c_recv_chk)(struct s_client *, uint8_t *, int32_t *, uint8_t *, int32_t);
 	int32_t			(*c_init)(struct s_client *);
 	int32_t			(*c_send_ecm)(struct s_client *, struct ecm_request_t *);
 	int32_t			(*c_send_emm)(struct emm_packet_t *);
@@ -939,11 +935,11 @@ struct s_cardreader
 	void			(*lock)(struct s_reader *);
 	void			(*unlock)(struct s_reader *);
 	int32_t			(*close)(struct s_reader *);
-	int32_t			(*set_parity)(struct s_reader *, uchar parity);
+	int32_t			(*set_parity)(struct s_reader *, uint8_t parity);
 	int32_t			(*write_settings)(struct s_reader *, struct s_cardreader_settings *s);
 	int32_t			(*set_protocol)(struct s_reader *, uint8_t *params, uint32_t *length, uint32_t len_request);
 	int32_t			(*set_baudrate)(struct s_reader *, uint32_t baud); // set only for readers which need baudrate setting and timings need to be guarded by OSCam
-	int32_t			(*card_write)(struct s_reader *pcsc_reader, const uchar *buf, uint8_t *cta_res, uint16_t *cta_lr, int32_t l);
+	int32_t			(*card_write)(struct s_reader *pcsc_reader, const uint8_t *buf, uint8_t *cta_res, uint16_t *cta_lr, int32_t l);
 	void			(*display_msg)(struct s_reader *, char *msg);
 
 	int32_t			(*do_reset)(struct s_reader *, struct s_ATR *, int32_t (*rdr_activate_card)(struct s_reader *, struct s_ATR *, uint16_t deprecated), int32_t (*rdr_get_cardsystem)(struct s_reader *, struct s_ATR *));

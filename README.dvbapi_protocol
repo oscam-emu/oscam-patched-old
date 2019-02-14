@@ -127,9 +127,9 @@ uint8_t                  demux index
 uint8_t                  filter number
 *** The following data are the fields from the dmx_sct_filter_params structure (added separately to avoid padding problems)
 uint16_t                 pid
-uchar[16]                filter data (filter.filter)
-uchar[16]                filter mask (filter.mask)
-uchar[16]                filter mode (filter.mode)
+uint8_t[16]              filter data (filter.filter)
+uint8_t[16]              filter mask (filter.mask)
+uint8_t[16]              filter mode (filter.mode)
 uint32_t                 timeout
 uint32_t                 flags
 
@@ -142,7 +142,7 @@ type/size                description
 uint32_t                 operation code -> DVBAPI_FILTER_DATA
 uint8_t                  demux index
 uint8_t                  filter number
-uchar[]                  filtered data from demux
+uint8_t[]                filtered data from demux
 
 When OSCam is able to decrypt a channel it firstly send the list of PIDs associated with the descrambler index using this packet:
 
