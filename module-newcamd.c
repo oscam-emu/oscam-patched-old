@@ -1018,19 +1018,23 @@ static int8_t newcamd_auth_client(IN_ADDR_T ip, uint8_t *deskey)
 						if(caid_is_dre(pufilt->caid))
 						{
 							found = 1;
-							memset(&mbuf[22 + 11 * j] ,0 ,4);
-							switch((uchar)(pufilt->prids[j]))
+							memset(&mbuf[22 + 11 * j], 0, 4);
+
+							switch((uint8_t)(pufilt->prids[j]))
 							{
 								case 0x11:
 									mbuf[22 + 11 * j] = aureader->dre36_force_group;
 									break;
+
 								case 0x14:
 									mbuf[22 + 11 * j] = aureader->dre56_force_group;
 									break;
+
 								case 0xfe:
 									mbuf[22 + 11 * j] = 0xED;
 									mbuf[25 + 11 * j] = 0x02;
 									break;
+
 								default:
 									found = 0;
 							}

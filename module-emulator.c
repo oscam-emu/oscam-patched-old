@@ -880,8 +880,8 @@ static int32_t emu_activate(struct s_reader *UNUSED(reader), struct s_ATR *UNUSE
 static int32_t emu_transmit(struct s_reader *UNUSED(reader), uint8_t *UNUSED(buffer), uint32_t UNUSED(size), uint32_t UNUSED(expectedlen), uint32_t UNUSED(delay), uint32_t UNUSED(timeout)) { return CR_OK; }
 static int32_t emu_receive(struct s_reader *UNUSED(reader), uint8_t *UNUSED(buffer), uint32_t UNUSED(size), uint32_t UNUSED(delay), uint32_t UNUSED(timeout)) { return CR_OK; }
 static int32_t emu_write_settings(struct s_reader *UNUSED(reader), struct s_cardreader_settings *UNUSED(s)) { return CR_OK; }
-static int32_t emu_card_write(struct s_reader *UNUSED(pcsc_reader),const uchar *UNUSED(buf) ,uint8_t *UNUSED(cta_res), uint16_t *UNUSED(cta_lr),int32_t UNUSED(l)) { return CR_OK; }
-static int32_t emu_set_protocol(struct s_reader *UNUSED(rdr),uint8_t *UNUSED(params),uint32_t *UNUSED(length), uint32_t UNUSED(len_request)) { return CR_OK; }
+static int32_t emu_card_write(struct s_reader *UNUSED(pcsc_reader), const uint8_t *UNUSED(buf), uint8_t *UNUSED(cta_res), uint16_t *UNUSED(cta_lr), int32_t UNUSED(l)) { return CR_OK; }
+static int32_t emu_set_protocol(struct s_reader *UNUSED(rdr), uint8_t *UNUSED(params), uint32_t *UNUSED(length), uint32_t UNUSED(len_request)) { return CR_OK; }
 
 const struct s_cardreader cardreader_emu =
 {
