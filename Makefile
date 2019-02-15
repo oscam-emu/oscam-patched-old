@@ -239,7 +239,6 @@ SRC-$(CONFIG_LIB_MDC2) += cscrypt/mdc2.c
 SRC-$(CONFIG_LIB_FAST_AES) += cscrypt/fast_aes.c
 SRC-$(CONFIG_LIB_SHA256) += cscrypt/sha256.c
 
-SRC-$(CONFIG_WITH_CARDREADER) += cardlist.c
 SRC-$(CONFIG_WITH_CARDREADER) += csctapi/atr.c
 SRC-$(CONFIG_WITH_CARDREADER) += csctapi/icc_async.c
 SRC-$(CONFIG_WITH_CARDREADER) += csctapi/io_serial.c
