@@ -19,6 +19,7 @@
 #define STREAM_VIDEO     0x01
 #define STREAM_AUDIO     0x02
 #define STREAM_SUBTITLE  0x03
+#define STREAM_TELETEXT  0x04
 
 extern int32_t exit_oscam;
 
@@ -282,6 +283,13 @@ static void ParseDescriptors(uint8_t *buffer, uint16_t info_length, uint8_t *typ
 			//	break;
 			//}
 
+			case 0x46: // VBI teletext descriptor (DVB)
+			case 0x56: // teletext descriptor (DVB)
+			{
+				*type = STREAM_TELETEXT;
+				break;
+			}
+
 			case 0x59: // subtitling descriptor (DVB)
 			{
 				*type = STREAM_SUBTITLE;
@@ -437,6 +445,12 @@ static void ParsePmtData(emu_stream_client_data *cdata)
 					cdata->audio_pids[cdata->audio_pid_count] = elementary_pid;
 					cdata->audio_pid_count++;
 					cs_log_dbg(D_READER, "Stream %i found audio pid: 0x%04X (%i)",
+								cdata->connid, elementary_pid, elementary_pid);
+				}
+				else if (type == STREAM_TELETEXT)
+				{
+					cdata->teletext_pid = elementary_pid;
+					cs_log_dbg(D_READER, "Stream %i found teletext pid: 0x%04X (%i)",
 								cdata->connid, elementary_pid, elementary_pid);
 				}
 				break;
@@ -927,8 +941,9 @@ static void DescrambleTsPacketsRosscrypt1(emu_stream_client_data *data, uint8_t 
 
 static void DescrambleTsPacketsCompel(emu_stream_client_data *data, uint8_t *stream_buf, uint32_t bufLength, uint16_t packetSize)
 {
-	int8_t is_av_pid;
+	int8_t is_pes_pid; // any PES pid
 	int32_t j;
+	const int8_t limit = 4;
 
 	uint8_t scramblingControl;
 	uint16_t pid, offset;
@@ -965,11 +980,15 @@ static void DescrambleTsPacketsCompel(emu_stream_client_data *data, uint8_t *str
 			continue;
 		}
 
-		is_av_pid = 0;
+		is_pes_pid = 0;
 
 		if (pid == data->video_pid)
 		{
-			is_av_pid = 1;
+			is_pes_pid = 1;
+		}
+		else if (pid == data->teletext_pid)
+		{
+			is_pes_pid = 1;
 		}
 		else
 		{
@@ -977,119 +996,227 @@ static void DescrambleTsPacketsCompel(emu_stream_client_data *data, uint8_t *str
 			{
 				if (pid == data->audio_pids[j])
 				{
-					is_av_pid = 1;
+					is_pes_pid = 1;
 					break;
 				}
 			}
 		}
 
-		if (is_av_pid)
+		if (is_pes_pid)
 		{
 			static uint8_t dyn_key[184];
+			static uint8_t found_key_bytes[184];
+			static uint8_t found_key_bytes_count = 8;
+			static uint8_t lastScramblingControl = 0xFF;
 
 			int8_t matches00 = 0;
 			int8_t matchesFF = 0;
 			int8_t last00_was_good = 0;
 			int8_t lastFF_was_good = 0;
-			int8_t limit = 64;
 
-			for (j = 0; j < 184; j++)
+			// Reset key when scrambling control changes from odd to even
+			// and vice versa (every ~53 seconds) or when we change channel
+			if (lastScramblingControl != scramblingControl)
 			{
+				memset(dyn_key, 0x00, 184);
+				memset(found_key_bytes, 0, 184);
+				found_key_bytes_count = 8;
+				lastScramblingControl = scramblingControl;
+
+				//cs_log_dbg(D_READER, "resetting key data (scrambling control: %02X)", scramblingControl);
+			}
+
+			for (j = 8; j < 184; j++)
+			{
+				if (found_key_bytes_count == 184)
+				{
+					break;
+				}
+
 				if (stream_buf[i + 4 + j] == 0x00)
 				{
 					last00_was_good = 1;
 					matches00++;
-					if (matches00 > limit) dyn_key[j] = 0x00;
+
+					if (matches00 > limit && found_key_bytes[j] == 0)
+					{
+						dyn_key[j] = 0x00;
+						found_key_bytes[j] = 1;
+						found_key_bytes_count++;
+					}
 				}
 				else if (stream_buf[i + 4 + j] == 0x3F)
 				{
 					last00_was_good = 1;
 					matches00++;
-					if (matches00 > limit) dyn_key[j] = 0x3F;
+
+					if (matches00 > limit && found_key_bytes[j] == 0)
+					{
+						dyn_key[j] = 0x3F;
+						found_key_bytes[j] = 1;
+						found_key_bytes_count++;
+					}
 				}
 				else
 				{
-					if (last00_was_good) matches00--;
-					else matches00 -= 2;
+					if (last00_was_good == 1)
+					{
+						last00_was_good = 0;
+						matches00--;
+					}
+					else
+					{
+						matches00 -= 2;
+					}
 
-					if (matches00 < 0) matches00 = 0;
-					last00_was_good = 0;
+					if (matches00 < 0)
+					{
+						matches00 = 0;
+					}
 				}
 
 				if (stream_buf[i + 4 + j] == 0xC0)
 				{
 					lastFF_was_good = 1;
 					matchesFF++;
-					if (matchesFF > limit) dyn_key[j] = 0x3F;
+
+					if (matchesFF > limit && found_key_bytes[j] == 0)
+					{
+						dyn_key[j] = 0x3F;
+						found_key_bytes[j] = 1;
+						found_key_bytes_count++;
+					}
 				}
 				else if (stream_buf[i + 4 + j] == 0xFF)
 				{
 					lastFF_was_good = 1;
 					matchesFF++;
-					if (matchesFF > limit) dyn_key[j] = 0x00;
+
+					if (matchesFF > limit && found_key_bytes[j] == 0)
+					{
+						dyn_key[j] = 0x00;
+						found_key_bytes[j] = 1;
+						found_key_bytes_count++;
+					}
 				}
 				else
 				{
-					if (lastFF_was_good) matchesFF--;
-					else matchesFF -= 2;
+					if (lastFF_was_good == 1)
+					{
+						lastFF_was_good = 0;
+						matchesFF--;
+					}
+					else
+					{
+						matchesFF -= 2;
+					}
 
-					if (matchesFF < 0) matchesFF = 0;
-					lastFF_was_good = 0;
+					if (matchesFF < 0)
+					{
+						matchesFF = 0;
+					}
 				}
 			}
 
-			for (j = 183; j >= 0; j--)
+			for (j = 183; j >= 8; j--)
 			{
+				if (found_key_bytes_count == 184)
+				{
+					break;
+				}
+
 				if (stream_buf[i + 4 + j] == 0x00)
 				{
 					last00_was_good = 1;
 					matches00++;
-					if (matches00 > limit) dyn_key[j] = 0x00;
+
+					if (matches00 > limit && found_key_bytes[j] == 0)
+					{
+						dyn_key[j] = 0x00;
+						found_key_bytes[j] = 1;
+						found_key_bytes_count++;
+					}
 				}
 				else if (stream_buf[i + 4 + j] == 0x3F)
 				{
 					last00_was_good = 1;
 					matches00++;
-					if (matches00 > limit) dyn_key[j] = 0x3F;
+
+					if (matches00 > limit && found_key_bytes[j] == 0)
+					{
+						dyn_key[j] = 0x3F;
+						found_key_bytes[j] = 1;
+						found_key_bytes_count++;
+					}
 				}
 				else
 				{
-					if (last00_was_good) matches00--;
-					else matches00 -= 2;
+					if (last00_was_good == 1)
+					{
+						last00_was_good = 0;
+						matches00--;
+					}
+					else
+					{
+						matches00 -= 2;
+					}
 
-					if (matches00 < 0) matches00 = 0;
-					last00_was_good = 0;
+					if (matches00 < 0)
+					{
+						matches00 = 0;
+					}
 				}
 
 				if (stream_buf[i + 4 + j] == 0xC0)
 				{
 					lastFF_was_good = 1;
 					matchesFF++;
-					if (matchesFF > limit) dyn_key[j] = 0x3F;
+
+					if (matchesFF > limit && found_key_bytes[j] == 0)
+					{
+						dyn_key[j] = 0x3F;
+						found_key_bytes[j] = 1;
+						found_key_bytes_count++;
+					}
 				}
 				else if (stream_buf[i + 4 + j] == 0xFF)
 				{
 					lastFF_was_good = 1;
 					matchesFF++;
-					if (matchesFF > limit) dyn_key[j] = 0x00;
+
+					if (matchesFF > limit && found_key_bytes[j] == 0)
+					{
+						dyn_key[j] = 0x00;
+						found_key_bytes[j] = 1;
+						found_key_bytes_count++;
+					}
 				}
 				else
 				{
-					if (lastFF_was_good) matchesFF--;
-					else matchesFF -= 2;
+					if (lastFF_was_good == 1)
+					{
+						lastFF_was_good = 0;
+						matchesFF--;
+					}
+					else
+					{
+						matchesFF -= 2;
+					}
 
-					if (matchesFF < 0) matchesFF = 0;
-					lastFF_was_good = 0;
+					if (matchesFF < 0)
+					{
+						matchesFF = 0;
+					}
 				}
 			}
 
-			for (j = 0; j < 184; j++)
+			for (j = 8; j < 184; j++)
 			{
 				stream_buf[i + 4 + j] ^= dyn_key[j];
 			}
-
-			stream_buf[i + 3] &= 0x3F;
 		}
+
+		stream_buf[i + 3] &= 0x3F; // Clear scrambling bits
 	}
 }
 
