@@ -8,14 +8,14 @@
 #include "ifd_phoenix.h"
 #include "../oscam-time.h"
 #include "../oscam-work.h"
-#include "../cardlist.h"
-struct atrlist current;
 #ifdef READER_NAGRA_MERLIN
 #include "../cscrypt/fast_aes.h"
 #include "../cscrypt/sha256.h"
 #include "../cscrypt/mdc2.h"
 #include "../cscrypt/idea.h"
 #endif
+
+int ishd04 = 0, ishd03 = 0;
 
 #define OK 0
 #define ERROR 1
@@ -217,27 +217,10 @@ int32_t ICC_Async_Activate(struct s_reader *reader, ATR *atr, uint16_t deprecate
 	unsigned char atrarr[ATR_MAX_SIZE];
 	uint32_t atr_size;
 	ATR_GetRaw(atr, atrarr, &atr_size);
-	char tmp1[atr_size * 3 + 1];
-	memcpy(current.atr, cs_hexdump(1, atrarr, atr_size, tmp1, sizeof(tmp1)), atr_size * 3 - 1);
-	current.atr[atr_size * 3 - 1] = '\0';
-	rdr_log(reader, "ATR: %s", current.atr);
+	char tmp[atr_size * 3 + 1];
+	rdr_log(reader, "ATR: %s", cs_hexdump(1, atrarr, atr_size, tmp, sizeof(tmp)));
 	memcpy(reader->card_atr, atrarr, atr_size);
 	reader->card_atr_length = atr_size;
-	findatr(reader);
-	if ( current.found == 1 )
-	{
-		rdr_log(reader, "%s recognized", current.providername);
-	}
-
-	if(current.badcard == 1 ) // set badcard in cardlist.h
-	{
-		current.badcard = 0;
-		rdr_log(reader, "Bad Card -> quick restart");
-		add_job(reader->client, ACTION_READER_RESTART, NULL, 0);
-		return ERROR;
-	}
-	else
-	{
 
 		// Get ICC reader->convention
 		if(ATR_GetConvention(atr, &(reader->convention)) != ATR_OK)
@@ -265,16 +248,14 @@ int32_t ICC_Async_Activate(struct s_reader *reader, ATR *atr, uint16_t deprecate
 		{
 			return ERROR;
 		}
-	}
-#ifdef READER_NAGRA_MERLIN
-	char tmp[atr_size * 3 + 1];
 
-	if(current.ishd04 == 1)
+#ifdef READER_NAGRA_MERLIN
+	if(ishd04 == 1)
 	{
 		rdr_log_dbg(reader, D_READER, "HD04 merlin handling");
 		calculate_cak7_vars(reader, atr);
 	}
-	else if(current.ishd03 == 1) // Switch ROM
+	else if(ishd03 == 1) // Switch ROM
 	{
 		uint8_t changerom_handshake[] = { 0x80, 0xCA, 0x00, 0x00, 0x11, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10 };
 
