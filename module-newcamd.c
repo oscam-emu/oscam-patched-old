@@ -922,7 +922,7 @@ static int8_t newcamd_auth_client(IN_ADDR_T ip, uint8_t *deskey)
 #ifdef WITH_EMU
 				if(aureader->typ == R_EMU)
 				{
-					usr_filter = * get_emu_prids_for_caid(aureader, cfg.ncd_ptab.ports[cl->port_idx].ncd->ncd_ftab.filts[0].caid);
+					usr_filter = *get_emu_prids_for_caid(aureader, cfg.ncd_ptab.ports[cl->port_idx].ncd->ncd_ftab.filts[0].caid);
 				}
 				else
 #endif

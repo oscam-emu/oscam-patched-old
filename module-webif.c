@@ -1233,8 +1233,6 @@ static char *send_oscam_config_scam(struct templatevars *vars, struct uriparams 
 #endif
 
 #ifdef WITH_EMU
-#include "module-emulator-streamserver.h"
-
 static char *send_oscam_config_streamrelay(struct templatevars *vars, struct uriparams *params)
 {
 	char *value;

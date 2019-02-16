@@ -216,7 +216,7 @@ int32_t emm_reader_match(struct s_reader *reader, uint16_t caid, uint32_t provid
 #ifdef WITH_EMU
 	if(reader->typ == R_EMU)
 	{
-		FILTER* emu_provids = get_emu_prids_for_caid(reader, caid);
+		FILTER *emu_provids = get_emu_prids_for_caid(reader, caid);
 		if(emu_provids != NULL)
 		{
 			for(i = 0; i < emu_provids->nprids; i++)
