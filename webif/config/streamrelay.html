@@ -1,0 +1,26 @@
+		<input name="part" type="hidden" value="streamrelay">
+		<TABLE CLASS="config">
+			<TR><TH COLSPAN="2">Edit Stream Relay Config</TH></TR>
+			<TR><TD><A>Mode (requires OSCam restart)</A></TD>
+				<TD>
+					<select name="stream_relay_enabled">
+						<option value="0" ##STREAMRELAYENABLEDSELECTED0##>0 - disabled</option>
+						<option value="1" ##STREAMRELAYENABLEDSELECTED1##>1 - enabled</option>
+					</select>
+				</TD>
+			</TR>
+			<TR><TD><A>Caid:</A></TD><TD><input name="stream_relay_ctab" type="text" maxlength="160" value="##STREAM_RELAY_CTAB##"></TD></TR>
+			<TR><TD><A>Source Stream Host:</A></TD><TD><input name="stream_source_host" type="text" maxlength="15" value="##STREAM_SOURCE_HOST##"></TD></TR>
+			<TR><TD><A>Source Stream Port:</A></TD><TD><input name="stream_source_port" class="short" type="text" maxlength="5" value="##STREAM_SOURCE_PORT##"></TD></TR>
+			<TR><TD><A>Source Stream User:</A></TD><TD><input name="stream_source_auth_user" type="text" value="##STREAM_SOURCE_AUTH_USER##"></TD></TR>
+			<TR><TD><A>Source Stream Password:</A></TD><TD><input name="stream_source_auth_password" type="text" value="##STREAM_SOURCE_AUTH_PASSWORD##"></TD></TR>
+			<TR><TD><A>Relay Port:</A></TD><TD><input name="stream_relay_port" class="short" type="text" maxlength="5" value="##STREAM_RELAY_PORT##"></TD></TR>
+			<TR><TD><A>ECM fix delay:</A></TD><TD><input name="stream_ecm_delay" class="short" type="text" maxlength="5" value="##STREAM_ECM_DELAY##"></TD></TR>
+			<TR><TD><A>Process EMM from stream:</A></TD>
+				<TD>
+					<select name="stream_emm_enabled">
+						<option value="0" ##STREAMEMMENABLEDSELECTED0##>0 - disabled</option>
+						<option value="1" ##STREAMEMMENABLEDSELECTED1##>1 - enabled</option>
+					</select>
+				</TD>
+			</TR>

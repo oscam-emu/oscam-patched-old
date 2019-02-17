@@ -40,6 +40,7 @@ static int8_t cs_emmlen_is_blocked(struct s_reader *rdr, int16_t len)
 static int8_t do_simple_emm_filter(struct s_reader *rdr, const struct s_cardsystem *csystem, EMM_PACKET *ep, int8_t cl_dvbapi)
 {
 	if(is_network_reader(rdr)) { return 1; } // don't evaluate on network readers, server with local reader will check it
+	if(rdr->typ == R_EMU) { return 1; } // don't evalutate on emu reader
 
 	//copied and enhanced from module-dvbapi.c
 	//dvbapi_start_emm_filter()
@@ -211,6 +212,24 @@ int32_t emm_reader_match(struct s_reader *reader, uint16_t caid, uint32_t provid
 		prid &= 0xFFFFF0;
 		rdr_log_dbg(reader, D_EMM, "reader auprovid = %06X fixup to %06X (ignoring last digit)", reader->auprovid, prid);
 	}
+
+#ifdef WITH_EMU
+	if(reader->typ == R_EMU)
+	{
+		FILTER *emu_provids = get_emu_prids_for_caid(reader, caid);
+		if(emu_provids != NULL)
+		{
+			for(i = 0; i < emu_provids->nprids; i++)
+			{
+				if(provid == emu_provids->prids[i])
+				{
+					return 1;
+				}
+			}
+		}
+		return 0;
+	}
+#endif
 
 	if(prid == provid)
 	{

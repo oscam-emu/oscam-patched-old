@@ -897,7 +897,7 @@ void check_lb_auto_betatunnel_mode(ECM_REQUEST *er)
 
 uint16_t get_rdr_caid(struct s_reader *rdr)
 {
-	if(is_network_reader(rdr))
+	if(is_network_reader(rdr) || rdr->typ == R_EMU)
 	{
 		return 0; // reader caid is not real caid
 	}
@@ -1288,7 +1288,7 @@ void stat_get_best_reader(ECM_REQUEST *er)
 		for(ea = er->matching_rdr; ea; ea = ea->next)
 		{
 			rdr = ea->reader;
-			if(is_network_reader(rdr)) // reader caid is not real caid
+			if(is_network_reader(rdr) || rdr->typ == R_EMU) // reader caid is not real caid
 			{
 				prv = ea;
 				continue; // proxy can convert or reject

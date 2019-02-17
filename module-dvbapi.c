@@ -1697,7 +1697,14 @@ void dvbapi_start_emm_filter(int32_t demux_index)
 
 			if(match)
 			{
-				csystem = get_cardsystem_by_caid(caid);
+				if(rdr->typ == R_EMU)
+				{
+					csystem = rdr->csystem;
+				}
+				else
+				{
+					csystem = get_cardsystem_by_caid(caid);
+				}
 				if(csystem)
 				{
 					if(caid != ncaid)
@@ -1717,7 +1724,14 @@ void dvbapi_start_emm_filter(int32_t demux_index)
 					}
 					else if(csystem->get_emm_filter)
 					{
-						csystem->get_emm_filter(rdr, &dmx_filter, &filter_count);
+						if(rdr->typ == R_EMU)
+						{
+							csystem->get_emm_filter_adv(rdr, &dmx_filter, &filter_count, caid, provid, demux[demux_index].program_number);
+						}
+						else
+						{
+							csystem->get_emm_filter(rdr, &dmx_filter, &filter_count);
+						}
 					}
 				}
 				else
@@ -5141,6 +5155,7 @@ void dvbapi_process_input(int32_t demux_id, int32_t filter_num, uint8_t *buffer,
 	if(filtertype == TYPE_ECM)
 	{
 		uint32_t chid = 0x10000;
+		int8_t pvu_skip = 0;
 		ECM_REQUEST *er;
 		if(len != 0) // len = 0 receiver encountered an internal bufferoverflow!
 		{
@@ -5169,7 +5184,24 @@ void dvbapi_process_input(int32_t demux_id, int32_t filter_num, uint8_t *buffer,
 				return;
 			}
 
-			if(curpid->table == buffer[0] && !caid_is_irdeto(curpid->CAID)) // wait for odd / even ecm change (only not for irdeto!)
+#ifdef WITH_EMU
+			if(caid_is_powervu(curpid->CAID)) // ecm counter for powervu
+			{
+				pvu_skip = 1;
+
+				if(sctlen - 11 > buffer[9])
+				{
+					if(buffer[11 + buffer[9]] > curpid->pvu_counter
+						|| (curpid->pvu_counter == 255 && buffer[11 + buffer[9]] == 0)
+						|| ((curpid->pvu_counter - buffer[11 + buffer[9]]) > 5))
+					{
+						curpid->pvu_counter = buffer[11 + buffer[9]];
+						pvu_skip = 0;
+					}
+				}
+			}
+#endif
+			if((curpid->table == buffer[0] && !caid_is_irdeto(curpid->CAID)) || pvu_skip) // wait for odd / even ecm change (only not for irdeto!)
 			{
 				if(!(er = get_ecmtask()))
 				{
@@ -5498,6 +5530,35 @@ void dvbapi_process_input(int32_t demux_id, int32_t filter_num, uint8_t *buffer,
 			return;
 		}
 
+#ifdef WITH_EMU
+		if(caid_is_director(demux[demux_id].demux_fd[filter_num].caid))
+		{
+			uint32_t i;
+			uint32_t emmhash;
+
+			if(sctlen < 4)
+			{
+				return;
+			}
+
+			for(i = 0; i + 2 < sctlen; i++)
+			{
+				if(buffer[i] == 0xF0 && (buffer[i + 2] == 0xE1 || buffer[i + 2] == 0xE4))
+				{
+					emmhash = (buffer[3] << 8) | buffer[sctlen - 2];
+					if(demux[demux_id].demux_fd[filter_num].cadata == emmhash)
+					{
+						return;
+					}
+
+					demux[demux_id].demux_fd[filter_num].cadata = emmhash;
+					dvbapi_process_emm(demux_id, filter_num, buffer, sctlen);
+					return;
+				}
+			}
+			return;
+		}
+#endif
 		// fix to handle more than one irdeto emm packet
 		uint8_t *pbuf = buffer;
 		int32_t done = 0;
@@ -7151,6 +7212,9 @@ void dvbapi_send_dcw(struct s_client *client, ECM_REQUEST *er)
 
 		delayer(er, delay);
 
+#ifdef WITH_EMU
+		if(!chk_ctab_ex(er->caid, &cfg.emu_stream_relay_ctab) || !cfg.emu_stream_relay_enabled)
+#endif
 		switch(selected_api)
 		{
 #if defined(WITH_STAPI) || defined(WITH_STAPI5)

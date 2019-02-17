@@ -141,6 +141,9 @@ struct s_ecmpids
 	int8_t useMultipleIndices;
 	uint32_t streams;
 	uint32_t cadata;
+#ifdef WITH_EMU
+	int16_t pvu_counter;
+#endif
 };
 
 typedef struct filter_s
@@ -162,6 +165,9 @@ typedef struct filter_s
 	int32_t NumSlots;
 	uint32_t SlotHandle[10];
 	uint32_t BufferHandle[10];
+#endif
+#ifdef WITH_EMU
+	uint32_t cadata;
 #endif
 } FILTERTYPE;
 

@@ -427,6 +427,8 @@ static void write_versionfile(bool use_stdout)
 		case CLOCK_TYPE_MONOTONIC: write_conf(CLOCKFIX, "Clockfix with monotonic clock"); break;
 	}
 	write_conf(IPV6SUPPORT, "IPv6 support");
+	write_conf(WITH_EMU, "Emulator support");
+	write_conf(WITH_SOFTCAM, "Built-in SoftCam.Key");
 
 	fprintf(fp, "\n");
 	write_conf(MODULE_CAMD33, "camd 3.3x");
@@ -1641,6 +1643,9 @@ const struct s_cardreader *cardreaders[] =
 #endif
 #ifdef CARDREADER_STINGER
 	&cardreader_stinger,
+#endif
+#ifdef WITH_EMU
+	&cardreader_emu,
 #endif
 
 	NULL
