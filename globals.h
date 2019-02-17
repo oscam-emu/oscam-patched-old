@@ -390,7 +390,7 @@
 // Support for multiple CWs per channel and other encryption algos
 //#define WITH_EXTENDED_CW		1
 
-#if defined(READER_DRE) || defined(READER_DRECAS) || defined(READER_VIACCESS)
+#if defined(READER_DRE) || defined(READER_DRECAS) || defined(READER_VIACCESS) || defined(WITH_EMU)
 #define MAX_ECM_SIZE			1024
 #define MAX_EMM_SIZE			1024
 #else
@@ -398,7 +398,11 @@
 #define MAX_EMM_SIZE			512
 #endif
 
+#ifdef WITH_EMU
+#define CS_EMMCACHESIZE			1024	// nr of EMMs that EMU reader will cache
+#else
 #define CS_EMMCACHESIZE			512		// nr of EMMs that each reader will cache
+#endif
 #define MSGLOGSIZE				64		// size of string buffer for a ecm to return messages
 
 #define D_TRACE					0x0001	// Generate very detailed error/trace messages per routine
@@ -430,6 +434,7 @@
 #define R_SMART					0x7		// Smartreader+
 #define R_PCSC					0x8		// PCSC
 #define R_DRECAS				0x9		// Reader DRECAS
+#define R_EMU					0x17	// Reader EMU
 /////// proxy readers after R_CS378X
 #define R_CAMD35				0x20	// Reader cascading camd 3.5x
 #define R_CAMD33				0x21	// Reader cascading camd 3.3x
@@ -858,6 +863,13 @@ typedef struct s_entitlement						// contains entitlement Info
 	uint32_t		class;							// the class needed for some systems
 	time_t			start;							// startdate
 	time_t			end;							// enddate
+#ifdef WITH_EMU
+	bool			isKey;
+	bool			isData;
+	char			name[8];
+	uint8_t			*key;
+	uint32_t		keyLength;
+#endif
 } S_ENTITLEMENT;
 
 struct s_client;
@@ -972,6 +984,7 @@ struct s_cardsystem
 	void			(*post_process)(struct s_reader *);
 	int32_t			(*get_emm_type)(struct emm_packet_t *, struct s_reader *);
 	int32_t			(*get_emm_filter)(struct s_reader *, struct s_csystem_emm_filter **, uint32_t *);
+	int32_t			(*get_emm_filter_adv)(struct s_reader *, struct s_csystem_emm_filter **, uint32_t *, uint16_t, uint32_t, uint16_t);
 	int32_t			(*get_tunemm_filter)(struct s_reader *, struct s_csystem_emm_filter **, uint32_t *);
 };
 
@@ -1768,6 +1781,14 @@ struct s_reader										// contains device info, reader info and card info
 #ifdef MODULE_GHTTP
 	uint8_t			ghttp_use_ssl;
 #endif
+#ifdef WITH_EMU
+	FTAB			emu_auproviders;				// AU providers for Emu reader
+	int8_t			emu_datecodedenabled;			// date-coded keys for BISS
+	char			*extee36;						// path to "ee36.bin" - Set by the user via the webif
+	char			*extee56;						// path to "ee56.bin" - Set by the user via the webif
+	uint8_t			dre36_force_group;
+	uint8_t			dre56_force_group;
+#endif
 	uint8_t			cnxlastecm;						// == 0 - last ecm has not been paired ecm, > 0 last ecm has been paired ecm
 	LLIST			*emmstat;						// emm stats
 	CS_MUTEX_LOCK	emmstat_lock;
@@ -2267,6 +2288,18 @@ struct s_config
 	struct s_ip		*scam_allowed;
 #endif
 
+#ifdef WITH_EMU
+	char			*emu_stream_source_host;
+	int32_t			emu_stream_source_port;
+	char			*emu_stream_source_auth_user;
+	char			*emu_stream_source_auth_password;
+	int32_t			emu_stream_relay_port;
+	uint32_t		emu_stream_ecm_delay;
+	int8_t			emu_stream_relay_enabled;
+	int8_t			emu_stream_emm_enabled;
+	CAIDTAB			emu_stream_relay_ctab;			// use the stream server for these caids
+#endif
+
 	int32_t			max_cache_time;					// seconds ecms are stored in ecmcwcache
 	int32_t			max_hitcache_time;				// seconds hits are stored in cspec_hitcache (to detect dyn wait_time)
 
@@ -2437,5 +2470,9 @@ static inline bool caid_is_nagra(uint16_t caid) { return caid >> 8 == 0x18; }
 static inline bool caid_is_bulcrypt(uint16_t caid) { return caid == 0x5581 || caid == 0x4AEE; }
 static inline bool caid_is_dre(uint16_t caid) { return caid == 0x4AE0 || caid == 0x4AE1 || caid == 0x2710;}
 const char *get_cardsystem_desc_by_caid(uint16_t caid);
+
+#ifdef WITH_EMU
+FILTER *get_emu_prids_for_caid(struct s_reader *rdr, uint16_t caid);
+#endif
 
 #endif

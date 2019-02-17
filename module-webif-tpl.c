@@ -459,6 +459,7 @@ char *tpl_getUnparsedTpl(const char *name, int8_t removeHeader, const char *subd
 											check_conf(WITH_SSL, ptr2);
 											check_conf(WITH_STAPI, ptr2);
 											check_conf(WITH_STAPI5, ptr2);
+											check_conf(WITH_EMU, ptr2);
 										} // for
 										if(ok == 0)
 										{

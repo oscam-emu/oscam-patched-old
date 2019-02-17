@@ -81,11 +81,13 @@ CONFIGMENUMONITOR             config/menu_monitor.html                          
 CONFIGMENUNEWCAMD             config/menu_newcamd.html                                    MODULE_NEWCAMD
 CONFIGMENURADEGAST            config/menu_radegast.html                                   MODULE_RADEGAST
 CONFIGMENUSCAM                config/menu_scam.html                                       MODULE_SCAM
+CONFIGMENUSTREAMRELAY         config/menu_streamrelay.html                                WITH_EMU
 CONFIGMENUSERIAL              config/menu_serial.html                                     MODULE_SERIAL
 CONFIGMONITOR                 config/monitor.html                                         MODULE_MONITOR
 CONFIGNEWCAMD                 config/newcamd.html                                         MODULE_NEWCAMD
 CONFIGRADEGAST                config/radegast.html                                        MODULE_RADEGAST
 CONFIGSCAM                    config/scam.html                                            MODULE_SCAM
+CONFIGSTREAMRELAY             config/streamrelay.html                                     WITH_EMU
 CONFIGSERIAL                  config/serial.html                                          MODULE_SERIAL
 CONFIGSERIALDEVICEBIT         config/serial_devices.html                                  MODULE_SERIAL
 CONFIGWEBIF                   config/webif.html
@@ -119,6 +121,7 @@ FILEMENUDVBAPI                files/menu_dvbapi.html                            
 FILEMENUFAKECWS               files/menu_fakecws.html                                     CS_CACHEEX
 FILEMENUGBOX                  files/menu_gbox.html                                        MODULE_GBOX
 FILEMENUTWIN                  files/menu_twin.html                                        MODULE_SERIAL
+FILEMENUSOFTCAMKEY            files/menu_softcamkey.html                                  WITH_EMU
 
 AUTOCONF                      ghttp/autoconf.html                                         MODULE_GHTTP
 PREAUTOCONF                   ghttp/pre_autoconf.html                                     MODULE_GHTTP
@@ -183,6 +186,7 @@ READERCONFIG                  readerconfig/readerconfig.html
 READEREDITCACHEEXBIT          readerconfig/readerconfig_cacheexbit.html                   CS_CACHEEX
 READERCONFIGCAMD35BIT         readerconfig/readerconfig_camd35bit.html                    MODULE_CAMD35
 READERCONFIGCCCAMBIT          readerconfig/readerconfig_cccambit.html                     MODULE_CCCAM
+READERCONFIGEMUBIT            readerconfig/readerconfig_emubit.html                       WITH_EMU
 READERCONFIGCS378XBIT         readerconfig/readerconfig_cs378xbit.html                    MODULE_CAMD35_TCP
 READERCONFIGGBOXBIT           readerconfig/readerconfig_gboxbit.html                      MODULE_GBOX
 READERINFOGBOXREMM            readerconfig/readerinfo_gbox_remm.html                      MODULE_GBOX
