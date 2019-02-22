@@ -271,20 +271,6 @@ SRC-$(CONFIG_CS_CACHEEX) += module-cccam-cacheex.c
 SRC-$(CONFIG_MODULE_CCCAM) += module-cccam.c
 SRC-$(CONFIG_MODULE_CCCSHARE) += module-cccshare.c
 SRC-$(CONFIG_MODULE_CONSTCW) += module-constcw.c
-SRC-$(CONFIG_WITH_EMU) += module-emulator.c
-ifeq "$(CONFIG_WITH_EMU)" "y"
-ifeq "$(CONFIG_WITH_SOFTCAM)" "y"
-UNAME := $(shell uname -s)
-ifneq ($(UNAME),Darwin)
-ifndef ANDROID_NDK
-ifndef ANDROID_STANDALONE_TOOLCHAIN
-TOUCH_SK := $(shell touch SoftCam.Key)
-override LDFLAGS += -Wl,--format=binary -Wl,SoftCam.Key -Wl,--format=default
-endif
-endif
-endif
-endif
-endif
 SRC-$(CONFIG_CS_CACHEEX) += module-csp.c
 SRC-$(CONFIG_CW_CYCLE_CHECK) += module-cw-cycle-check.c
 SRC-$(CONFIG_WITH_AZBOX) += module-dvbapi-azbox.c
