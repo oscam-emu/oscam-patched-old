@@ -456,6 +456,7 @@ static const uint8_t table1A[] = { 0x01, 0x05, 0x08, 0x10 };
 static const uint8_t table1B[] = { 0x03, 0x07, 0x08, 0x10 };
 static const uint8_t table1C[] = { 0x03, 0x05, 0x0A, 0x10 };
 static const uint8_t table1D[] = { 0x03, 0x07, 0x0A, 0x10 };
+static const uint8_t table1E[] = { 0x01, 0x05, 0x0B, 0x10 };
 
 static void hash_modes_19_to_27_tables_3(uint8_t *data, uint8_t *hash, const uint8_t *table)
 {
@@ -607,6 +608,10 @@ static void create_hash(uint8_t *data, int len, uint8_t *hash, int mode)
 
 		case 29:
 			hash_modes_19_to_27_tables_3(dataPadded, hash, table1D);
+			break;
+
+		case 30:
+			hash_modes_19_to_27_tables_3(dataPadded, hash, table1E);
 			break;
 
 		default:
