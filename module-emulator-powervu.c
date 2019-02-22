@@ -1838,7 +1838,7 @@ int8_t powervu_ecm(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_
 						if (csaUsed)
 						{
 							cw_ex->algo = CW_ALGO_CSA;
-							cw_ex->algo_mode = CW_ALGO_MODE_ECB;
+							cw_ex->algo_mode = CW_ALGO_MODE_CBC;
 						}
 						else
 						{
