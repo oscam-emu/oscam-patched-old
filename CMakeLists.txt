@@ -420,22 +420,6 @@ endif (HAVE_PCSC)
 # Manage config.h based on command line parameters
 # Manipulate config file based on given parameters and read unset parameters
 
-execute_process (COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/config.sh --enabled WITH_EMU OUTPUT_VARIABLE CONFIG_WITH_EMU OUTPUT_STRIP_TRAILING_WHITESPACE)
-if (CONFIG_WITH_EMU MATCHES "Y" AND NOT WITH_EMU EQUAL 1)
-	add_definitions ("-DWITH_EMU")
-	set (WITH_EMU "1")
-	message (STATUS "  EMU is added by config compiling with EMU")
-endif (CONFIG_WITH_EMU MATCHES "Y" AND NOT WITH_EMU EQUAL 1)
-
-if (WITH_EMU)
-	execute_process (COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/config.sh --enabled WITH_SOFTCAM OUTPUT_VARIABLE CONFIG_WITH_SOFTCAM OUTPUT_STRIP_TRAILING_WHITESPACE)
-	if (CONFIG_WITH_SOFTCAM MATCHES "Y" AND NOT WITH_SOFTCAM EQUAL 1)
-		add_definitions ("-DWITH_SOFTCAM")
-		set (WITH_SOFTCAM "1")
-		message (STATUS "  SOFTCAM is added by config linking SoftCam.Key")
-	endif (CONFIG_WITH_SOFTCAM MATCHES "Y" AND NOT WITH_SOFTCAM EQUAL 1)
-endif (WITH_EMU)
-
 execute_process (COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/config.sh --show-valid OUTPUT_VARIABLE config_vars_string OUTPUT_STRIP_TRAILING_WHITESPACE)
 string(REGEX MATCHALL "[A-Z0-9_]+" config_vars ${config_vars_string})
 
@@ -753,21 +737,6 @@ endif( HAVE_LIBRT OR HAVE_LIBRT_STATIC)
 
 #--------------------------------------------------------------------------------
 
-if (NOT OSCamOperatingSystem MATCHES "Mac OS X")
-if (NOT DEFINED ENV{ANDROID_NDK})
-if (NOT DEFINED ENV{ANDROID_STANDALONE_TOOLCHAIN})
-	if (WITH_SOFTCAM)
-		if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/SoftCam.Key)
-				execute_process (COMMAND cp ${CMAKE_CURRENT_SOURCE_DIR}/SoftCam.Key ${CMAKE_CURRENT_BINARY_DIR}/SoftCam.Key)
-		else (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/SoftCam.Key)
-				execute_process (COMMAND touch ${CMAKE_CURRENT_BINARY_DIR}/SoftCam.Key)
-		endif (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/SoftCam.Key)
-		set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--format=binary -Wl,SoftCam.Key -Wl,--format=default")
-	endif (WITH_SOFTCAM)
-endif (NOT DEFINED ENV{ANDROID_STANDALONE_TOOLCHAIN})
-endif (NOT DEFINED ENV{ANDROID_NDK})
-endif (NOT OSCamOperatingSystem MATCHES "Mac OS X")
-
 #----------------------- installation -----------------------------
 
 file (GLOB config_files "${CMAKE_CURRENT_SOURCE_DIR}/Distribution/oscam.*")
@@ -855,12 +824,5 @@ endif(STATIC_LIBUSB EQUAL 1)
 		endif(LIBUSBDIR AND STATIC_LIBUSB EQUAL 0)
 	endif(STATICLIBUSB AND NOT LIBUSBDIR)
 endif (HAVE_LIBUSB)
-
-if (WITH_EMU)
-	message (STATUS "  Compile with EMU support")
-	if (WITH_SOFTCAM)
-		message (STATUS "  SoftCam.Key will be linked as well")
-	endif (WITH_SOFTCAM)
-endif (WITH_EMU)
 
 message (STATUS "")
