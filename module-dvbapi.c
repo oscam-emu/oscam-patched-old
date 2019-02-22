@@ -5198,7 +5198,8 @@ void dvbapi_process_input(int32_t demux_id, int32_t filter_num, uint8_t *buffer,
 				return;
 			}
 
-			if(caid_is_powervu(curpid->CAID))
+#ifdef WITH_EMU
+			if(caid_is_powervu(curpid->CAID)) // ecm counter for powervu
 			{
 				pvu_skip = 1;
 
@@ -5213,7 +5214,7 @@ void dvbapi_process_input(int32_t demux_id, int32_t filter_num, uint8_t *buffer,
 					}
 				}
 			}
-
+#endif
 			if((curpid->table == buffer[0] && !caid_is_irdeto(curpid->CAID)) || pvu_skip) // wait for odd / even ecm change (only not for irdeto!)
 			{
 				if(!(er = get_ecmtask()))

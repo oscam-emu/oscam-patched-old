@@ -398,7 +398,11 @@
 #define MAX_EMM_SIZE			512
 #endif
 
-#define CS_EMMCACHESIZE			1024	// nr of EMMs that each reader will cache
+#ifdef WITH_EMU
+#define CS_EMMCACHESIZE			1024	// nr of EMMs that EMU reader will cache
+#else
+#define CS_EMMCACHESIZE			512		// nr of EMMs that each reader will cache
+#endif
 #define MSGLOGSIZE				64		// size of string buffer for a ecm to return messages
 
 #define D_TRACE					0x0001	// Generate very detailed error/trace messages per routine
@@ -2470,7 +2474,7 @@ static inline bool caid_is_dre(uint16_t caid) { return caid == 0x4AE0 || caid ==
 const char *get_cardsystem_desc_by_caid(uint16_t caid);
 
 #ifdef WITH_EMU
-FILTER* get_emu_prids_for_caid(struct s_reader *rdr, uint16_t caid);
+FILTER *get_emu_prids_for_caid(struct s_reader *rdr, uint16_t caid);
 #endif
 
 #endif

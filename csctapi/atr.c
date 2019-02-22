@@ -33,7 +33,7 @@ const double atr_d_table[16] = {0, 1, 2, 4, 8, 16, 32, 64, 12, 20, 0, 0, 0, 0, 0
 int32_t ATR_InitFromArray(ATR *atr, const unsigned char atr_buffer[ATR_MAX_SIZE], uint32_t length)
 {
 	unsigned char TDi;
-	unsigned char buffer[ATR_MAX_SIZE];
+	unsigned char buffer[ATR_MAX_SIZE] = "\x00";
 	uint32_t pointer = 0, pn = 0;
 	static const uint32_t atr_num_ib_table[16] = {0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4};
 

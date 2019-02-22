@@ -7,15 +7,12 @@
 #include "io_serial.h"
 #include "ifd_phoenix.h"
 #include "../oscam-time.h"
-#include "../oscam-work.h"
 #ifdef READER_NAGRA_MERLIN
 #include "../cscrypt/fast_aes.h"
 #include "../cscrypt/sha256.h"
 #include "../cscrypt/mdc2.h"
 #include "../cscrypt/idea.h"
 #endif
-
-int ishd04 = 0, ishd03 = 0;
 
 #define OK 0
 #define ERROR 1
@@ -214,7 +211,7 @@ int32_t ICC_Async_Activate(struct s_reader *reader, ATR *atr, uint16_t deprecate
 		}
 	}
 
-	unsigned char atrarr[ATR_MAX_SIZE];
+	uint8_t atrarr[ATR_MAX_SIZE];
 	uint32_t atr_size;
 	ATR_GetRaw(atr, atrarr, &atr_size);
 	char tmp[atr_size * 3 + 1];
@@ -222,41 +219,53 @@ int32_t ICC_Async_Activate(struct s_reader *reader, ATR *atr, uint16_t deprecate
 	memcpy(reader->card_atr, atrarr, atr_size);
 	reader->card_atr_length = atr_size;
 
-		// Get ICC reader->convention
-		if(ATR_GetConvention(atr, &(reader->convention)) != ATR_OK)
-		{
-			rdr_log(reader, "ERROR: Could not read reader->convention");
-			reader->convention = 0;
-			reader->protocol_type = 0;
-			return ERROR;
-		}
-		reader->protocol_type = ATR_PROTOCOL_TYPE_T0;
-		if(crdr_ops->lock)
-		{
-			crdr_ops->lock(reader);
-		}
-		int32_t ret = Parse_ATR(reader, atr, deprecated);
-		if(crdr_ops->unlock)
-		{
-			crdr_ops->unlock(reader);
-		}
-		if(ret)
-		{
-			rdr_log(reader, "ERROR: Parse_ATR returned error");
-		}
-		if(ret)
-		{
-			return ERROR;
-		}
+	// Get ICC reader->convention
+	if(ATR_GetConvention(atr, &(reader->convention)) != ATR_OK)
+	{
+		rdr_log(reader, "ERROR: Could not read reader->convention");
+		reader->convention = 0;
+		reader->protocol_type = 0;
+		return ERROR;
+	}
+	reader->protocol_type = ATR_PROTOCOL_TYPE_T0;
+
+	// Parse_ATR and InitCard need to be included in lock because they change parity of serial port
+	if(crdr_ops->lock)
+	{
+		crdr_ops->lock(reader);
+	}
+	int32_t ret = Parse_ATR(reader, atr, deprecated);
+	if(crdr_ops->unlock)
+	{
+		crdr_ops->unlock(reader);
+	}
+	if(ret)
+	{
+		rdr_log(reader, "ERROR: Parse_ATR returned error");
+		return ERROR;
+	}
 
 #ifdef READER_NAGRA_MERLIN
-	if(ishd04 == 1)
+	bool need_nagra_layer_switch = false;
+	bool is_cak7 = false;
+
+	static const uint8_t hd03atr [] = {0x3F,0xFF,0x95,0x00,0xFF,0x91,0x81,0x71,0xA0,0x47,0x00,0x44,0x4E,0x41,0x53,0x50,0x31,0x39,0x30,0x20,0x4D,0x65,0x72,0x51,0x32,0x35,0x4F}; //HD03, HD03A (CAK6.3 Mode)
+	static const uint8_t hd03atr2[] = {0x3F,0xFF,0x95,0x00,0xFF,0x91,0x81,0x71,0xFE,0x57,0x00,0x44,0x4E,0x41,0x53,0x50,0x34,0x31,0x30,0x20,0x52,0x65,0x76,0x51,0x32,0x35,0x17}; //HD03, HD03A (CAK7 Mode)
+	static const uint8_t hd04atr [] = {0x3F,0xFF,0x95,0x00,0xFF,0x91,0x81,0x71,0xFE,0x57,0x00,0x44,0x4E,0x41,0x53,0x50,0x34,0x32,0x30,0x20,0x52,0x65,0x76,0x53,0x36,0x30,0x17}; //HD04, HD04A (CAK7 only)
+	static const uint8_t hd04hatr[] = {0x3F,0xFF,0x95,0x00,0xFF,0x91,0x81,0x71,0xFE,0x57,0x00,0x44,0x4E,0x41,0x53,0x50,0x34,0x32,0x30,0x20,0x52,0x65,0x76,0x53,0x36,0x34,0x13}; //HD04H (CAK7 only)
+
+	ATR_GetRaw(atr, atrarr, &atr_size);
+	if(!memcmp(hd03atr, atrarr, atr_size)) need_nagra_layer_switch = true;
+	if(!memcmp(hd03atr2, atrarr, atr_size) || !memcmp(hd04atr, atrarr, atr_size) || !memcmp(hd04hatr, atrarr, atr_size)) is_cak7 = true;
+
+	if(is_cak7)
 	{
-		rdr_log_dbg(reader, D_READER, "HD04 merlin handling");
+		rdr_log(reader, "detected nagra merlin card in CAK7 mode");
 		calculate_cak7_vars(reader, atr);
 	}
-	else if(ishd03 == 1) // Switch ROM
+	else if(need_nagra_layer_switch)
 	{
+		rdr_log(reader, "detected nagra merlin card in legacy mode -> try switch nagra layer to CAK7");
 		uint8_t changerom_handshake[] = { 0x80, 0xCA, 0x00, 0x00, 0x11, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10 };
 
 		calculate_changerom_cmd(reader, atr, &changerom_handshake[5]);
@@ -277,18 +286,14 @@ int32_t ICC_Async_Activate(struct s_reader *reader, ATR *atr, uint16_t deprecate
 			cta_res2_ok = 0x00;
 		}
 
-		rdr_log(reader,"try to init nagra layer");
-
 		if(!ICC_Async_CardWrite(reader, changerom_handshake, sizeof(changerom_handshake), cta_res, &cta_lr))
 		{
 			if(cta_res[cta_lr-2] == cta_res1_ok && cta_res[cta_lr-1] == cta_res2_ok)
 			{
-				//rdr_log_dbg(reader, D_READER, "switch to nagra layer OK");
-				rdr_log(reader, "switch to nagra layer OK");
+				rdr_log(reader, "switch nagra layer OK");
 				memset(atr, 0, 1);
 				call(crdr_ops->activate(reader, atr)); //try to read the atr of this layer
 				ATR_GetRaw(atr, atrarr, &atr_size);
-				//rdr_log_dbg(reader, D_READER, "Nagra layer ATR: %s", cs_hexdump(1, atrarr, atr_size, tmp, sizeof(tmp)));
 				rdr_log(reader,"Nagra layer ATR: %s", cs_hexdump(1, atrarr, atr_size, tmp, sizeof(tmp)));
 				calculate_cak7_vars(reader, atr);
 				if(crdr_ops->lock)
@@ -303,7 +308,6 @@ int32_t ICC_Async_Activate(struct s_reader *reader, ATR *atr, uint16_t deprecate
 			}
 			else
 			{
-				//rdr_log_dbg(reader, D_READER, "Switch to nagra layer failed!");
 				rdr_log(reader,"Switch to nagra layer failed!");
 				return ERROR;
 			}

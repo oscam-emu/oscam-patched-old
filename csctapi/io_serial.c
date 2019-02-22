@@ -376,13 +376,13 @@ void IO_Serial_Flush(struct s_reader *reader)
 		n++;
 		cs_ftimeus(&end);
 		gone = comp_timebus(&end, &start);
-		rdr_log(reader,"Flush readed byte Nr %d value %.2x time_us %"PRId64, n, b, gone);
+		rdr_log_dbg(reader, D_DEVICE, "Flush readed byte Nr %d value %.2x time_us %"PRId64, n, b, gone);
 		cs_ftimeus(&start); // Reset timer
 		end = start;
 	}
 	cs_ftimeus(&endtotal);
 	gone = comp_timebus(&endtotal, &starttotal);
-	rdr_log(reader,"Buffers readed  %d bytes total time_us %"PRId64, n, gone);
+	rdr_log_dbg(reader, D_DEVICE, "Buffers readed  %d bytes total time_us %"PRId64, n, gone);
 }
 
 void IO_Serial_Sendbreak(struct s_reader *reader, int32_t duration)

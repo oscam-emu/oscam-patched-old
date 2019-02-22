@@ -48,7 +48,7 @@ char *cs_strdup(const char *str)
 
 	if(cs_malloc(&newstr, strlen(str) + 1))
 	{
-		strncpy(newstr, str, strlen(str));
+		cs_strncpy(newstr, str, strlen(str) + 1);
 		return newstr;
 	}
 	return NULL;

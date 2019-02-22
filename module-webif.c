@@ -7151,7 +7151,11 @@ static char *send_oscam_EMM_running(struct templatevars * vars, struct uriparams
 		else if(!proxy && rdr->csystem_active)     // local active reader
 		{
 			csystem = rdr->csystem;
-			if(rdr->typ != R_EMU) caid = rdr->caid;
+
+			if(rdr->typ != R_EMU)
+			{
+				caid = rdr->caid;
+			}
 		}
 
 		if(csystem)
@@ -8184,8 +8188,11 @@ static int32_t readRequest(FILE * f, IN_ADDR_T in, char **result, int8_t forcePl
 		memcpy(*result + bufsize, buf2, n);
 		bufsize += n;
 
-		//max request size 200kb
-		if(bufsize > 204800)
+#ifdef WITH_EMU
+		if(bufsize > 204800) // max request size 200kb
+#else
+		if(bufsize > 102400) // max request size 100kb
+#endif
 		{
 			cs_log("error: too much data received from %s", cs_inet_ntoa(in));
 			NULLFREE(*result);
