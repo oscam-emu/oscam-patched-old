@@ -3963,7 +3963,10 @@ int32_t dvbapi_parse_capmt(uint8_t *buffer, uint32_t length, int32_t connfd, cha
 					demux[demux_id].adapter_index = adapter_index;
 					demux[demux_id].client_proto_version = client_proto_version;
 					demux[demux_id].sdt_filter = -1;
-					demux[demux_id].demux_index = demux_id; // set demuxer stop point if PMT demux_index == 0
+
+					if(demux_id < 1){
+						demux[demux_id].demux_index = demux_id; // set demuxer stop point if PMT demux_index == 0
+					}
 
 					if(pmtfile)
 					{
