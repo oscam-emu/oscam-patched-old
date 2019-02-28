@@ -598,6 +598,7 @@ static int32_t emu_get_pvu_emm_filter(struct s_reader *UNUSED(rdr), struct s_csy
 	SAFE_MUTEX_LOCK(&emu_key_data_mutex);
 	if (!powervu_get_hexserials(srvid, hexserials, 32, &count))
 	{
+		SAFE_MUTEX_UNLOCK(&emu_key_data_mutex);
 		return CS_ERROR;
 	}
 	SAFE_MUTEX_UNLOCK(&emu_key_data_mutex);
