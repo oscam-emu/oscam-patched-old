@@ -504,6 +504,13 @@ static void hash_modes_19_to_27_tables_3(uint8_t *data, uint8_t *hash, const uin
 
 static void create_hash(uint8_t *data, int len, uint8_t *hash, int mode)
 {
+	if ((mode > 0x27) || (mode == 0x0B) || (mode == 0x0C) ||
+		(mode == 0x0D) || (mode == 0x0E) || (mode == 0))
+	{
+		memset(hash, 0, 16);
+		return;
+	}
+
 	uint8_t dataPadded[64];
 
 	pad_data(data, len, dataPadded);
