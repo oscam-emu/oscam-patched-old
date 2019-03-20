@@ -7288,7 +7288,7 @@ void dvbapi_send_dcw(struct s_client *client, ECM_REQUEST *er)
 				else
 				{
 					demux[i].ECMpids[j].useMultipleIndices = 0;
-					dvbapi_write_cw(i, er->cw, j, 0, CA_ALGO_DVBCSA, CA_MODE_CBC, er->msgid); // quick fix - we need to properly initialize the er->cw_ex members
+					dvbapi_write_cw(i, er->cw, j, 0, er->cw_ex.algo, er->cw_ex.algo_mode, er->msgid);
 				}
 #else
 				cfg.dvbapi_extended_cw_api = 0; // in CSA mode extended_cw_api should be always 0 regardless what user selected!
