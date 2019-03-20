@@ -5,7 +5,12 @@
 #ifdef WITH_EMU
 
 #include "module-emulator-osemu.h"
+#include "module-emulator-biss.h"
 #include "oscam-string.h"
+#include <openssl/evp.h>
+#include <openssl/pem.h>
+//#include <openssl/rsa.h>
+#include <openssl/x509.h>
 
 // DVB-CISSA v1 IV as defined in ETSI TS 103 127
 static const uint8_t dvb_cissa_iv[16] =
@@ -566,6 +571,115 @@ int8_t biss_ecm(struct s_reader *rdr, uint16_t caid, const uint8_t *ecm, uint8_t
 			cs_log("Unknown Biss caid %04X - Please report!", caid);
 			return EMU_NOT_SUPPORTED;
 	}
+}
+
+static int8_t rsa_key_exists(struct s_reader *rdr, const biss2_rsa_key_t *item)
+{
+	LL_ITER itr;
+	biss2_rsa_key_t *data;
+
+	itr = ll_iter_create(rdr->ll_biss2_rsa_keys);
+	while ((data = ll_iter_next(&itr)))
+	{
+		if (data->ekid == item->ekid)
+		{
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+uint16_t biss_read_pem(struct s_reader *rdr, uint8_t max_keys)
+{
+	FILE *fp_pri = NULL;
+	//FILE *fp_pub = NULL;
+
+	char tmp[256];
+	uint8_t hash[32], *der = NULL;
+	uint16_t i, length, count = 0;;
+	biss2_rsa_key_t *new_item;
+
+	if (!rdr->ll_biss2_rsa_keys)
+	{
+		rdr->ll_biss2_rsa_keys = ll_create("ll_biss2_rsa_keys");
+	}
+
+	for (i = 0; i < max_keys; i++)
+	{
+		if (!cs_malloc(&new_item, sizeof(biss2_rsa_key_t)))
+		{
+			break; // No memory available (?) - Exit
+		}
+
+		snprintf(tmp, sizeof(tmp), "%sbiss2_private_%02d.pem", emu_keyfile_path, i);
+		if ((fp_pri = fopen(tmp, "r")) == NULL)
+		{
+			// File does not exist
+			continue;
+		}
+
+		cs_log("Reading RSA key from: biss2_private_%02d.pem", i);
+
+		// Read RSA private key
+		if ((new_item->key = PEM_read_RSAPrivateKey(fp_pri, NULL, NULL, NULL)) == NULL)
+		{
+			cs_log("Error reading RSA private key");
+			continue;
+		}
+
+		fclose(fp_pri);
+
+		// Write public key in PEM formatted file
+		/*snprintf(tmp, sizeof(tmp), "%sbiss2_public_%02d.pem", emu_keyfile_path, i);
+		if ((fp_pub = fopen(tmp, "w")) != NULL)
+		{
+			PEM_write_RSA_PUBKEY(fp_pub, item->key);
+			fclose(fp_pub);
+		}*/
+
+		// Write public key in DER formatted file
+		/*snprintf(tmp, sizeof(tmp), "%sbiss2_public_%02d.der", emu_keyfile_path, i);
+		if ((fp_pub = fopen(tmp, "wb")) != NULL)
+		{
+			i2d_RSA_PUBKEY_fp(fp_pub, item->key);
+			fclose(fp_pub);
+		}*/
+
+		// Encode RSA public key into DER format
+		if ((length = i2d_RSA_PUBKEY(new_item->key, &der)) <= 0)
+		{
+			cs_log("Error encoding to DER format");
+			NULLFREE(der);
+			continue;
+		}
+
+		// Create SHA256 digest
+		EVP_MD_CTX *mdctx;
+		if ((mdctx = EVP_MD_CTX_create()) == NULL)
+		{
+			NULLFREE(der);
+			continue;
+		}
+
+		EVP_DigestInit_ex(mdctx, EVP_sha256(), NULL);
+		EVP_DigestUpdate(mdctx, der, length);
+		EVP_DigestFinal_ex(mdctx, hash, NULL);
+		EVP_MD_CTX_destroy(mdctx);
+
+		NULLFREE(der);
+		new_item->ekid = b2ll(8, hash);
+
+		// Add new RSA key, if not already present
+		if (!rsa_key_exists(rdr, new_item))
+		{
+			ll_append(rdr->ll_biss2_rsa_keys, new_item);
+			cs_log("RSA key stored in memory (EKID: %"PRIX64")", new_item->ekid);
+			count++;
+		}
+	}
+
+	return count;
 }
 
 #endif // WITH_EMU

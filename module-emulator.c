@@ -6,6 +6,7 @@
 
 #include "module-emulator-osemu.h"
 #include "module-emulator-streamserver.h"
+#include "module-emulator-biss.h"
 #include "module-emulator-drecrypt.h"
 #include "module-emulator-irdeto.h"
 #include "module-emulator-powervu.h"
@@ -111,6 +112,8 @@ static void refresh_entitlements(struct s_reader *rdr)
 	uint32_t i;
 	uint16_t caid;
 	KeyData *tmpKeyData;
+	LL_ITER itr;
+	biss2_rsa_key_t *item;
 
 	cs_clear_entitlement(rdr);
 
@@ -187,6 +190,14 @@ static void refresh_entitlements(struct s_reader *rdr)
 							Biss2Keys.EmuKeys[i].keyName, Biss2Keys.EmuKeys[i].keyLength, 0);
 	}
 
+	// RSA keys (EMM keys) for BISS2 mode CA
+	itr = ll_iter_create(rdr->ll_biss2_rsa_keys);
+	while ((item = ll_iter_next(&itr)))
+	{
+		uint8_t tmp[8];
+		emu_add_entitlement(rdr, 0x2610, 0, ull2b_buf(item->ekid, tmp), "RSAPRI", 8, 0);
+	}
+
 	for (i = 0; i < DreKeys.keyCount; i++)
 	{
 		emu_add_entitlement(rdr, 0x4AE1, DreKeys.EmuKeys[i].provider, DreKeys.EmuKeys[i].key,
@@ -239,6 +250,9 @@ static int32_t emu_card_info(struct s_reader *rdr)
 	// Delete keys from Emu's memory
 	emu_clear_keydata();
 
+	// Delete BISS2 mode CA RSA keys
+	ll_destroy_data(&rdr->ll_biss2_rsa_keys);
+
 	// Read keys built in the OSCam-Emu binary
 	emu_read_keymemory(rdr);
 
@@ -252,6 +266,9 @@ static int32_t emu_card_info(struct s_reader *rdr)
 			emu_set_keyfile_path("/var/keys/");
 		}
 	}
+
+	// Read BISS2 mode CA RSA keys from PEM files
+	biss_read_pem(rdr, BISS2_MAX_RSA_KEYS);
 
 	// Load keys from external files (set via the webif or the reader config directly)
 	emu_read_eebin(rdr->extee36, "ee36.bin");           // Read "ee36.bin"
