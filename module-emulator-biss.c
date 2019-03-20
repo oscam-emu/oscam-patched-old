@@ -653,6 +653,142 @@ int8_t biss_ecm(struct s_reader *rdr, uint16_t caid, const uint8_t *ecm, uint8_t
 	}
 }
 
+static uint8_t parse_session_data_descriptor(const uint8_t *data, uint16_t esid, uint16_t onid, uint32_t *keysAdded)
+{
+	uint8_t descriptor_tag = data[0];
+	uint8_t descriptor_length = data[1];
+
+	switch (descriptor_tag)
+	{
+		case 0x81: // session_key_descriptor
+		{
+			uint8_t session_key_type = data[2] >> 1;
+			if (session_key_type == 0) // AES-128
+			{
+				uint8_t session_key_parity = data[2] & 0x01;
+				uint8_t session_key_data[16];
+				memcpy(session_key_data, data + 3, 16); // This is the ECM key
+
+				SAFE_MUTEX_LOCK(&emu_key_data_mutex);
+				if (emu_update_key('G', onid << 16 | esid, session_key_parity ? "01" : "00", session_key_data, 16, 1, NULL))
+				{
+					(*keysAdded)++;
+					char tmp[33];
+					cs_hexdump(0, session_key_data, 16, tmp, sizeof(tmp));
+					cs_log("Key found in EMM: G %08X %02d %s", onid << 16 | esid, session_key_parity, tmp);
+				}
+				SAFE_MUTEX_UNLOCK(&emu_key_data_mutex);
+			}
+			break;
+		}
+
+		case 0x82: // entitlement_flags_descriptor
+			break;
+
+		default:
+			break;
+	}
+
+	return 2 + descriptor_length;
+}
+
+static void parse_session_data(const uint8_t *data, RSA *key, uint16_t esid, uint16_t onid, uint32_t *keysAdded)
+{
+	// session_data is encrypted with RSA 2048 bit OAEP
+	// Maximum size of decrypted session_data is less than (256-41) bytes
+	uint8_t session_data[214];
+
+	if (RSA_private_decrypt(256, data, session_data, key, RSA_PKCS1_OAEP_PADDING) > 0)
+	{
+		uint16_t descriptor_length = b2i(2, session_data) & 0x0FFF;
+		uint8_t pos = 0;
+
+		while (pos < descriptor_length)
+		{
+			pos += parse_session_data_descriptor(session_data + 2 + pos, esid, onid, keysAdded);
+		}
+	}
+}
+
+static int8_t get_rsa_key(struct s_reader *rdr, const uint64_t ekid, RSA **key)
+{
+	LL_ITER itr;
+	biss2_rsa_key_t *data;
+
+	itr = ll_iter_create(rdr->ll_biss2_rsa_keys);
+	while ((data = ll_iter_next(&itr)))
+	{
+		if (data->ekid == ekid)
+		{
+			*key = data->key;
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+int8_t biss_emm(struct s_reader *rdr, const uint8_t *emm, uint32_t *keysAdded)
+{
+	uint8_t emm_cipher_type, entitlement_priv_data_loop;
+	uint16_t entitlement_session_id, original_network_id, descriptor_length;
+	uint16_t pos, emm_length = SCT_LEN(emm);
+	uint32_t payload_checksum, calculated_checksum;
+	uint64_t entitlement_key_id;
+	RSA *key;
+
+	// Calculate crc32 checksum and compare against the checksum bytes of the EMM
+	payload_checksum = b2i(4, emm + emm_length - 4);
+	calculated_checksum = ccitt32_crc((uint8_t *)emm, emm_length - 4);
+
+	if (payload_checksum != calculated_checksum)
+	{
+		cs_log_dbg(D_TRACE, "Checksum mismatch (payload: %08X vs calculated: %08X",
+					payload_checksum, calculated_checksum);
+		return EMU_CHECKSUM_ERROR;
+	}
+
+	// Identifiers of the session key carried in the EMM
+	// We just pass them to the "parse_session_data()" function
+	entitlement_session_id = b2i(2, emm + 3);
+	original_network_id = b2i(2, emm + 8);
+	cs_log_dbg(D_TRACE, "onid: %04X, esid: %04X", original_network_id, entitlement_session_id);
+
+	emm_cipher_type = emm[11] >> 5; // top 3 bits;
+	entitlement_priv_data_loop = (emm[11] >> 4) & 0x01; // 4th bit
+
+	if (emm_cipher_type != 0) // EMM payload is not encrypted with RSA_2048_OAEP
+	{
+		cs_log_dbg(D_TRACE, "Cipher type %d not supported", emm_cipher_type);
+		return EMU_NOT_SUPPORTED;
+	}
+
+	descriptor_length = b2i(2, emm + 12) & 0x0FFF;
+	pos = 14 + descriptor_length;
+
+	while (pos < emm_length - 4)
+	{
+		// Unique identifier of the public rsa key used for "session_data" encryption
+		entitlement_key_id = b2ll(8, emm + pos);
+		pos += 8;
+
+		if (get_rsa_key(rdr, entitlement_key_id, &key)) // Key found
+		{
+			// Parse "encrypted_session_data"
+			parse_session_data(emm + pos, key, entitlement_session_id, original_network_id, keysAdded);
+		}
+
+		pos += 256; // 2048 bits
+
+		if (entitlement_priv_data_loop) // Skip any remaining bytes
+		{
+			pos += 2 + (b2i(2, emm + pos) & 0x0FFF);
+		}
+	}
+
+	return EMU_KEY_NOT_FOUND;
+}
+
 static int8_t rsa_key_exists(struct s_reader *rdr, const biss2_rsa_key_t *item)
 {
 	LL_ITER itr;

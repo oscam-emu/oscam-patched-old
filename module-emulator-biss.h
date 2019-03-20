@@ -14,6 +14,7 @@ typedef struct biss2_rsa_key
 } biss2_rsa_key_t;
 
 int8_t biss_ecm(struct s_reader *rdr, uint16_t caid, const uint8_t *ecm, uint8_t *dw, uint16_t srvid, uint16_t ecmpid, EXTENDED_CW *cw_ex);
+int8_t biss_emm(struct s_reader *rdr, const uint8_t *emm, uint32_t *keysAdded);
 uint16_t biss_read_pem(struct s_reader *rdr, uint8_t max_keys);
 
 #endif // WITH_EMU

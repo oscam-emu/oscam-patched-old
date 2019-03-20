@@ -1077,11 +1077,12 @@ int8_t emu_process_emm(struct s_reader *rdr, uint16_t caid, uint32_t provider, c
 	memcpy(emmCopy, emm, emmLen);
 	*keysAdded = 0;
 
-	     if (caid_is_viaccess(caid)) result = viaccess_emm(emmCopy, keysAdded);
-	else if (caid_is_irdeto(caid))   result = irdeto2_emm(caid, emmCopy, keysAdded);
-	else if (caid_is_powervu(caid))  result = powervu_emm(emmCopy, keysAdded);
-	else if (caid_is_director(caid)) result = director_emm(emmCopy, keysAdded);
-	else if (caid_is_dre(caid))      result = drecrypt2_emm(rdr, provider, emmCopy, keysAdded);
+	     if (caid_is_viaccess(caid))     result = viaccess_emm(emmCopy, keysAdded);
+	else if (caid_is_irdeto(caid))       result = irdeto2_emm(caid, emmCopy, keysAdded);
+	else if (caid_is_powervu(caid))      result = powervu_emm(emmCopy, keysAdded);
+	else if (caid_is_director(caid))     result = director_emm(emmCopy, keysAdded);
+	else if (caid_is_biss_dynamic(caid)) result = biss_emm(rdr, emmCopy, keysAdded);
+	else if (caid_is_dre(caid))          result = drecrypt2_emm(rdr, provider, emmCopy, keysAdded);
 
 	if (result != 0)
 	{
