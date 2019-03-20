@@ -5,7 +5,6 @@
 #ifdef WITH_EMU
 
 #include "oscam-string.h"
-#include "cscrypt/bn.h"
 #include "module-emulator-osemu.h"
 #include "module-emulator-streamserver.h"
 #include "module-emulator-biss.h"
