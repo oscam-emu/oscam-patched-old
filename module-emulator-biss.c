@@ -6,6 +6,7 @@
 
 #include "module-emulator-osemu.h"
 #include "module-emulator-biss.h"
+#include "oscam-aes.h"
 #include "oscam-string.h"
 #include <openssl/evp.h>
 #include <openssl/pem.h>
@@ -552,6 +553,86 @@ static int8_t biss_mode1_ecm(struct s_reader *rdr, uint16_t caid, const uint8_t 
 	return 2;
 }
 
+static inline int8_t get_ecm_key(uint16_t onid, uint16_t esid, uint8_t parity, uint8_t *key)
+{
+	return emu_find_key('G', onid << 16 | esid, 0, parity == 0 ? "00" : "01", key, 16, 1, 0, 0, NULL);
+}
+
+static int8_t biss2_mode_ca_ecm(const uint8_t *ecm, EXTENDED_CW *cw_ex)
+{
+	uint8_t ecm_cipher_type, session_key_parity;
+	uint8_t session_key[16], iv[16];
+	uint16_t entitlement_session_id, original_network_id, descriptor_length;
+	uint16_t position, ecm_length = SCT_LEN(ecm);
+	uint32_t payload_checksum, calculated_checksum;
+	//char tmp_buffer[64];
+	struct aes_keys aes;
+
+	// Calculate crc32 checksum and compare against the checksum bytes of the ECM
+	payload_checksum = b2i(4, ecm + ecm_length - 4);
+	calculated_checksum = ccitt32_crc((uint8_t *)ecm, ecm_length - 4);
+
+	if (payload_checksum != calculated_checksum)
+	{
+		cs_log_dbg(D_TRACE, "Checksum mismatch (payload: %08X vs calculated: %08X",
+					payload_checksum, calculated_checksum);
+		return EMU_CHECKSUM_ERROR;
+	}
+
+	// Unique identifiers of the session key
+	entitlement_session_id = b2i(2, ecm + 3);
+	original_network_id = b2i(2, ecm + 8);
+
+	ecm_cipher_type = ecm[10] >> 5;
+	if (ecm_cipher_type != 0) // Session words shall be encrypted with AES_128_CBC
+	{
+		cs_log("ECM cipher type %d not supported", ecm_cipher_type);
+		return EMU_NOT_SUPPORTED;
+	}
+
+	descriptor_length = b2i(2, ecm + 10) & 0x0FFF;
+	position = 12 + descriptor_length;
+
+	session_key_parity = ecm[position] >> 7; // Parity can be "00" or "01"
+	position++;
+
+	if (!get_ecm_key(original_network_id, entitlement_session_id, session_key_parity, session_key))
+	{
+		return EMU_KEY_NOT_FOUND;
+	}
+
+	memcpy(iv, ecm + position, 16);                            // "AES_128_CBC_enc_session_word_iv"
+	memcpy(cw_ex->session_word, ecm + position + 16, 16);      // "AES_128_CBC_enc_session_word_0"
+	memcpy(cw_ex->session_word + 16, ecm + position + 32, 16); // "AES_128_CBC_enc_session_word_1"
+
+	//cs_hexdump(3, iv, 16, tmp_buffer, sizeof(tmp_buffer));
+	//cs_log("session_word_iv: %s", tmp_buffer);
+
+	//cs_hexdump(3, cw_ex->session_word, 16, tmp_buffer, sizeof(tmp_buffer));
+	//cs_log("encrypted session_word_0: %s", tmp_buffer);
+
+	//cs_hexdump(3, cw_ex->session_word + 16, 16, tmp_buffer, sizeof(tmp_buffer));
+	//cs_log("encrypted session_word_1: %s", tmp_buffer);
+
+	// Decrypt session words
+	aes_set_key(&aes, (char *)session_key);
+	aes_cbc_decrypt(&aes, cw_ex->session_word, 16, iv);
+	aes_cbc_decrypt(&aes, cw_ex->session_word + 16, 16, iv);
+
+	//cs_hexdump(3, cw_ex->session_word, 16, tmp_buffer, sizeof(tmp_buffer));
+	//cs_log("decrypted session_word_0: %s", tmp_buffer);
+
+	//cs_hexdump(3, cw_ex->session_word + 16, 16, tmp_buffer, sizeof(tmp_buffer));
+	//cs_log("decrypted session_word_1: %s", tmp_buffer);
+
+	cw_ex->mode = CW_MODE_ONE_CW;
+	cw_ex->algo = CW_ALGO_AES128;
+	cw_ex->algo_mode = CW_ALGO_MODE_CBC;
+	memcpy(cw_ex->data, dvb_cissa_iv, 16);
+
+	return EMU_OK;
+}
+
 int8_t biss_ecm(struct s_reader *rdr, uint16_t caid, const uint8_t *ecm, uint8_t *dw, uint16_t srvid,
 				uint16_t ecmpid, EXTENDED_CW *cw_ex)
 {
@@ -564,8 +645,7 @@ int8_t biss_ecm(struct s_reader *rdr, uint16_t caid, const uint8_t *ecm, uint8_t
 			return biss_mode1_ecm(rdr, caid, ecm, NULL, srvid, ecmpid, cw_ex);
 
 		case 0x2610:
-			cs_log("Unsupported Biss 2 Mode CA ecm (caid %04X) - Please report!", caid);
-			return EMU_NOT_SUPPORTED;
+			return biss2_mode_ca_ecm(ecm, cw_ex);
 
 		default:
 			cs_log("Unknown Biss caid %04X - Please report!", caid);
