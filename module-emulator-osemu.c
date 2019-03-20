@@ -134,6 +134,7 @@ KeyDataContainer NagraKeys = { NULL, 0, 0 };
 KeyDataContainer IrdetoKeys = { NULL, 0, 0 };
 KeyDataContainer NDSKeys = { NULL, 0, 0 };
 KeyDataContainer BissSWs = { NULL, 0, 0 };
+KeyDataContainer Biss2Keys = { NULL, 0, 0 };
 KeyDataContainer PowervuKeys = { NULL, 0, 0 };
 KeyDataContainer DreKeys = { NULL, 0, 0 };
 KeyDataContainer TandbergKeys = { NULL, 0, 0 };
@@ -155,6 +156,8 @@ KeyDataContainer *emu_get_key_container(char identifier)
 			return &NDSKeys;
 		case 'F':
 			return &BissSWs;
+		case 'G':
+			return &Biss2Keys;
 		case 'P':
 			return &PowervuKeys;
 		case 'D':
@@ -674,6 +677,7 @@ void emu_clear_keydata(void)
 	total += IrdetoKeys.keyCount;
 	total += NDSKeys.keyCount;
 	total += BissSWs.keyCount;
+	total += Biss2Keys.keyCount;
 	total += PowervuKeys.keyCount;
 	total += DreKeys.keyCount;
 	total += TandbergKeys.keyCount;
@@ -681,10 +685,10 @@ void emu_clear_keydata(void)
 
 	if (total != 0)
 	{
-		cs_log("Freeing keys in memory: W:%d V:%d N:%d I:%d S:%d F:%d P:%d D:%d T:%d A:%d",
+		cs_log("Freeing keys in memory: W:%d V:%d N:%d I:%d S:%d F:%d G:%d P:%d D:%d T:%d A:%d",
 				CwKeys.keyCount, ViKeys.keyCount, NagraKeys.keyCount, IrdetoKeys.keyCount,
-				NDSKeys.keyCount, BissSWs.keyCount, PowervuKeys.keyCount, DreKeys.keyCount,
-				TandbergKeys.keyCount, StreamKeys.keyCount);
+				NDSKeys.keyCount, BissSWs.keyCount, Biss2Keys.keyCount, PowervuKeys.keyCount,
+				DreKeys.keyCount, TandbergKeys.keyCount, StreamKeys.keyCount);
 
 		delete_keys_in_container('W');
 		delete_keys_in_container('V');
@@ -692,6 +696,7 @@ void emu_clear_keydata(void)
 		delete_keys_in_container('I');
 		delete_keys_in_container('S');
 		delete_keys_in_container('F');
+		delete_keys_in_container('G');
 		delete_keys_in_container('P');
 		delete_keys_in_container('D');
 		delete_keys_in_container('T');
