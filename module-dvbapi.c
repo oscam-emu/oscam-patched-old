@@ -2460,7 +2460,7 @@ int32_t dvbapi_start_descrambling(int32_t demux_id, int32_t pid, int8_t checked,
 		// ecm stream pid is fake, so send out one fake ecm request
 		// special treatment: if we asked the cw first without starting a filter,
 		// the cw request will be killed due to no ecmfilter started
-		if(caid_is_fake(demux[demux_id].ECMpids[pid].CAID) || caid_is_biss_static(demux[demux_id].ECMpids[pid].CAID))
+		if(caid_is_fake(demux[demux_id].ECMpids[pid].CAID) || caid_is_biss_fixed(demux[demux_id].ECMpids[pid].CAID))
 		{
 			int32_t j, n;
 			er->ecmlen = 7;
