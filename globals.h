@@ -994,6 +994,7 @@ typedef struct cw_extendted_t
 	uint8_t			mode;
 	uint8_t			audio[4][16];					// 4 x odd/even pairs of 8 byte CWs
 	uint8_t			data[16];						// odd/even pair of 8 byte CW or 16 byte IV
+	uint8_t			session_word[32];				// odd/even pair of 16 byte CW
 	uint8_t			algo;							// CSA, DES or AES128
 	uint8_t			algo_mode;						// ECB or CBC
 #else

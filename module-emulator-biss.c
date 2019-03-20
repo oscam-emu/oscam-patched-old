@@ -7,6 +7,13 @@
 #include "module-emulator-osemu.h"
 #include "oscam-string.h"
 
+// DVB-CISSA v1 IV as defined in ETSI TS 103 127
+static const uint8_t dvb_cissa_iv[16] =
+{
+	0x44, 0x56, 0x42, 0x54, 0x4D, 0x43, 0x50, 0x54,
+	0x41, 0x45, 0x53, 0x43, 0x49, 0x53, 0x53, 0x41
+};
+
 static void unify_orbitals(uint32_t *namespace)
 {
 	// Unify orbitals to produce same namespace among users
@@ -293,12 +300,12 @@ static int8_t is_valid_namespace(uint32_t namespace)
 	return 0;
 }
 
-static int8_t get_key(uint32_t provider, uint8_t *key, int8_t dateCoded, int8_t printMsg)
+static int8_t get_sw(uint32_t provider, uint8_t *sw, uint8_t sw_length, int8_t dateCoded, int8_t printMsg)
 {
 	// If date-coded keys are enabled in the webif, this function evaluates the expiration date
 	// of the found keys. Expired keys are not sent to the calling function. If date-coded keys
-	// are disabled, then all found keys are sent without any evaluation. It takes the "provider"
-	// as input and outputs the "key". Returns 0 (Key not found, or expired) or 1 (Key found).
+	// are disabled, then every key is sent without any evaluation. It takes the "provider" as
+	// input and outputs the "sw". Returns 0 (key not found, or expired) or 1 (key found).
 
 	// printMsg: 0 => No message
 	// printMsg: 1 => Print message only if key is found
@@ -306,7 +313,7 @@ static int8_t get_key(uint32_t provider, uint8_t *key, int8_t dateCoded, int8_t 
 
 	char keyExpDate[9] = "00000000";
 
-	if (emu_find_key('F', provider, 0, keyExpDate, key, 8, 0, 0, 0, NULL)) // Key found
+	if (emu_find_key('F', provider, 0, keyExpDate, sw, sw_length, 0, 0, 0, NULL)) // Key found
 	{
 		if (dateCoded) // Date-coded keys are enabled, evaluate expiration date
 		{
@@ -320,7 +327,7 @@ static int8_t get_key(uint32_t provider, uint8_t *key, int8_t dateCoded, int8_t 
 			}
 			else // Key expired
 			{
-				key = NULL; // Make sure we don't send any expired key
+				sw = NULL; // Make sure we don't send any expired key
 				if (printMsg == 2) cs_log("Key expired: F %08X %s", provider, keyExpDate);
 				return 0;
 			}
@@ -338,8 +345,8 @@ static int8_t get_key(uint32_t provider, uint8_t *key, int8_t dateCoded, int8_t 
 	}
 }
 
-static int8_t biss1_mode1_ecm(struct s_reader *rdr, uint16_t caid, const uint8_t *ecm,
-								uint8_t *dw, uint16_t srvid, uint16_t ecmpid)
+static int8_t biss_mode1_ecm(struct s_reader *rdr, uint16_t caid, const uint8_t *ecm, uint8_t *dw,
+								uint16_t srvid, uint16_t ecmpid, EXTENDED_CW *cw_ex)
 {
 	// Oscam's fake ecm consists of [sid] [pmtpid] [pid1] [pid2] ... [pidx] [tsid] [onid] [namespace]
 	//
@@ -368,14 +375,30 @@ static int8_t biss1_mode1_ecm(struct s_reader *rdr, uint16_t caid, const uint8_t
 	// 6th: standard BISS ecmpid (0x1FFF)
 	// 7th: default "All Feeds" key
 
-	// If enabled in the webif, a date based key search can be performed. If the expiration
-	// date has passed, the key is not sent from BissGetKey(). This search method is only
-	// used in the namespace hash, universal hash and the default "All Feeds" key.
+	// If enabled in the webif, a date based key search is performed. If the expiration
+	// date has passed, the key is not sent back from get_sw(). This option is used only
+	// in the namespace hash, universal hash and the "All Feeds" search methods.
 
 	uint32_t i, ens = 0, hash = 0;
 	uint16_t pid = 0, ecmLen = get_ecm_len(ecm);
-	uint8_t ecmCopy[ecmLen];
-	char tmpBuffer1[17], tmpBuffer2[90] = "0", tmpBuffer3[90] = "0";
+	uint8_t *sw, sw_length, ecmCopy[ecmLen];
+	char tmpBuffer1[33], tmpBuffer2[90] = "0", tmpBuffer3[90] = "0";
+
+	if (caid == 0x2600) // BISS1
+	{
+		sw = dw;
+		sw_length = 8;
+	}
+	else // BISS2
+	{
+		cw_ex->mode = CW_MODE_ONE_CW;
+		cw_ex->algo = CW_ALGO_AES128;
+		cw_ex->algo_mode = CW_ALGO_MODE_CBC;
+		memcpy(cw_ex->data, dvb_cissa_iv, 16);
+
+		sw = cw_ex->session_word;
+		sw_length = 16;
+	}
 
 	// First try using the unique namespace hash (enigma only)
 	if (ecmLen >= 13) // ecmLen >= 13, allow patching the ecmLen for r749 ecms
@@ -403,9 +426,9 @@ static int8_t biss1_mode1_ecm(struct s_reader *rdr, uint16_t caid, const uint8_t
 					hash = crc32(caid, ecmCopy + ecmLen - 10, 10);
 				}
 
-				if (get_key(hash, dw, rdr->emu_datecodedenabled, i == 0 ? 2 : 1)) // Do not print "key not found" for frequency off by 1, 2
+				if (get_sw(hash, sw, sw_length, rdr->emu_datecodedenabled, i == 0 ? 2 : 1)) // Do not print "key not found" for frequency off by 1, 2
 				{
-					memcpy(dw + 8, dw, 8);
+					memcpy(sw + sw_length, sw, sw_length);
 					return 0;
 				}
 
@@ -439,9 +462,9 @@ static int8_t biss1_mode1_ecm(struct s_reader *rdr, uint16_t caid, const uint8_t
 			memcpy(ecmCopy, ecm, ecmLen - 8); // Make a new ecmCopy from the original ecm as the old ecmCopy may be altered in namespace hash (skip [tsid] [onid] [namespace])
 			hash = crc32(caid, ecmCopy + 3, ecmLen - 3 - 8); // ecmCopy doesn't have [tsid] [onid] [namespace] part
 
-			if (get_key(hash, dw, rdr->emu_datecodedenabled, 2)) // Key found
+			if (get_sw(hash, sw, sw_length, rdr->emu_datecodedenabled, 2)) // Key found
 			{
-				memcpy(dw + 8, dw, 8);
+				memcpy(sw + sw_length, sw, sw_length);
 				return 0;
 			}
 
@@ -450,15 +473,15 @@ static int8_t biss1_mode1_ecm(struct s_reader *rdr, uint16_t caid, const uint8_t
 		}
 	}
 
-	// Try using only [tsid][onid] (useful when many channels on a transpoder use the same key)
+	// Try using only [tsid][onid] (useful when many channels on a transpoder use the same session word)
 	if (ecmLen >= 17) // ecmLen >= 17, length of r749 ecms has been patched to match r752+ ecms
 	{
 		ens = b2i(4, ecmCopy + ecmLen - 4); // Namespace will be last 4 bytes
 
 		// We have an r752+ style ecm with stripped namespace, thus a valid [tsid][onid] combo to use as provider
-		if ((ens & 0xE000FFFF) == 0xA0000000 && get_key(b2i(4, ecm + ecmLen - 8), dw, 0, 2))
+		if ((ens & 0xE000FFFF) == 0xA0000000 && get_sw(b2i(4, ecm + ecmLen - 8), sw, sw_length, 0, 2))
 		{
-			memcpy(dw + 8, dw, 8);
+			memcpy(sw + sw_length, sw, sw_length);
 			return 0;
 		}
 
@@ -471,9 +494,9 @@ static int8_t biss1_mode1_ecm(struct s_reader *rdr, uint16_t caid, const uint8_t
 	// Try using ecmpid if it seems to be faulty (should be 0x1FFF always for BISS)
 	if (ecmpid != 0x1FFF && ecmpid != 0)
 	{
-		if (get_key((srvid << 16) | ecmpid, dw, 0, 2))
+		if (get_sw((srvid << 16) | ecmpid, sw, sw_length, 0, 2))
 		{
-			memcpy(dw + 8, dw, 8);
+			memcpy(sw + sw_length, sw, sw_length);
 			return 0;
 		}
 	}
@@ -487,9 +510,9 @@ static int8_t biss1_mode1_ecm(struct s_reader *rdr, uint16_t caid, const uint8_t
 		{
 			pid = b2i(2, ecm + i);
 
-			if (get_key((srvid << 16) | pid, dw, 0, 2))
+			if (get_sw((srvid << 16) | pid, sw, sw_length, 0, 2))
 			{
-				memcpy(dw + 8, dw, 8);
+				memcpy(sw + sw_length, sw, sw_length);
 				return 0;
 			}
 		}
@@ -498,18 +521,18 @@ static int8_t biss1_mode1_ecm(struct s_reader *rdr, uint16_t caid, const uint8_t
 	// Try using the standard BISS ecm pid
 	if (ecmpid == 0x1FFF || ecmpid == 0)
 	{
-		if (get_key((srvid << 16) | 0x1FFF, dw, 0, 2))
+		if (get_sw((srvid << 16) | 0x1FFF, sw, sw_length, 0, 2))
 		{
-			memcpy(dw + 8, dw, 8);
+			memcpy(sw + sw_length, sw, sw_length);
 			return 0;
 		}
 	}
 
-	// Default BISS key for events with many feeds sharing same key
-	if (ecmpid != 0 && get_key(0xA11FEED5, dw, rdr->emu_datecodedenabled, 2)) // Limit to local ecms, block netwotk ecms
+	// Default BISS key for events with many feeds sharing the same session word
+	if (ecmpid != 0 && get_sw(0xA11FEED5, sw, sw_length, rdr->emu_datecodedenabled, 2)) // Limit to local ecms, block netwotk ecms
 	{
-		memcpy(dw + 8, dw, 8);
-		cs_hexdump(0, dw, 8, tmpBuffer1, sizeof(tmpBuffer1));
+		memcpy(sw + sw_length, sw, sw_length);
+		cs_hexdump(0, sw, sw_length, tmpBuffer1, sizeof(tmpBuffer1));
 		cs_log("No specific match found. Using 'All Feeds' key: %s", tmpBuffer1);
 		return 0;
 	}
@@ -524,16 +547,16 @@ static int8_t biss1_mode1_ecm(struct s_reader *rdr, uint16_t caid, const uint8_t
 	return 2;
 }
 
-int8_t biss_ecm(struct s_reader *rdr, uint16_t caid, const uint8_t *ecm, uint8_t *dw, uint16_t srvid, uint16_t ecmpid)
+int8_t biss_ecm(struct s_reader *rdr, uint16_t caid, const uint8_t *ecm, uint8_t *dw, uint16_t srvid,
+				uint16_t ecmpid, EXTENDED_CW *cw_ex)
 {
 	switch (caid)
 	{
 		case 0x2600:
-			return biss1_mode1_ecm(rdr, caid, ecm, dw, srvid, ecmpid);
+			return biss_mode1_ecm(rdr, caid, ecm, dw, srvid, ecmpid, NULL);
 
 		case 0x2602:
-			cs_log("Unsupported Biss 2 Mode 1/E ecm (caid %04X) - Please report!", caid);
-			return EMU_NOT_SUPPORTED;
+			return biss_mode1_ecm(rdr, caid, ecm, NULL, srvid, ecmpid, cw_ex);
 
 		case 0x2610:
 			cs_log("Unsupported Biss 2 Mode CA ecm (caid %04X) - Please report!", caid);

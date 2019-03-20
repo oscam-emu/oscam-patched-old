@@ -109,6 +109,7 @@ static void emu_add_entitlement(struct s_reader *rdr, uint16_t caid, uint32_t pr
 static void refresh_entitlements(struct s_reader *rdr)
 {
 	uint32_t i;
+	uint16_t caid;
 	KeyData *tmpKeyData;
 
 	cs_clear_entitlement(rdr);
@@ -171,10 +172,12 @@ static void refresh_entitlements(struct s_reader *rdr)
 							NagraKeys.EmuKeys[i].keyName, NagraKeys.EmuKeys[i].keyLength, 0);
 	}
 
-	for (i = 0; i < BissKeys.keyCount; i++)
+	// Session words for BISS1 mode 1/E (caid 2600) and BISS2 mode 1/E (caid 2602)
+	for (i = 0; i < BissSWs.keyCount; i++)
 	{
-		emu_add_entitlement(rdr, 0x2600, BissKeys.EmuKeys[i].provider, BissKeys.EmuKeys[i].key,
-							BissKeys.EmuKeys[i].keyName, BissKeys.EmuKeys[i].keyLength, 0);
+		caid = (BissSWs.EmuKeys[i].keyLength == 8) ? 0x2600 : 0x2602;
+		emu_add_entitlement(rdr, caid, BissSWs.EmuKeys[i].provider, BissSWs.EmuKeys[i].key,
+							BissSWs.EmuKeys[i].keyName, BissSWs.EmuKeys[i].keyLength, 0);
 	}
 
 	for (i = 0; i < DreKeys.keyCount; i++)
@@ -250,7 +253,7 @@ static int32_t emu_card_info(struct s_reader *rdr)
 
 	cs_log("Total keys in memory: W:%d V:%d N:%d I:%d S:%d F:%d P:%d D:%d T:%d A:%d",
 			CwKeys.keyCount, ViKeys.keyCount, NagraKeys.keyCount, IrdetoKeys.keyCount,
-			NDSKeys.keyCount, BissKeys.keyCount, PowervuKeys.keyCount, DreKeys.keyCount,
+			NDSKeys.keyCount, BissSWs.keyCount, PowervuKeys.keyCount, DreKeys.keyCount,
 			TandbergKeys.keyCount, StreamKeys.keyCount);
 
 	// Inform OSCam about all available keys.
