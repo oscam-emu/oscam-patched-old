@@ -9,7 +9,7 @@
 
 typedef struct biss2_rsa_key
 {
-	uint64_t ekid;
+	uint8_t ekid[8];
 	RSA *key;
 } biss2_rsa_key_t;
 

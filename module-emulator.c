@@ -194,8 +194,7 @@ static void refresh_entitlements(struct s_reader *rdr)
 	itr = ll_iter_create(rdr->ll_biss2_rsa_keys);
 	while ((item = ll_iter_next(&itr)))
 	{
-		uint8_t tmp[8];
-		emu_add_entitlement(rdr, 0x2610, 0, ull2b_buf(item->ekid, tmp), "RSAPRI", 8, 0);
+		emu_add_entitlement(rdr, 0x2610, 0, item->ekid, "RSAPRI", 8, 0);
 	}
 
 	for (i = 0; i < DreKeys.keyCount; i++)

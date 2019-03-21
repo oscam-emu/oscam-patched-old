@@ -710,7 +710,7 @@ static void parse_session_data(const uint8_t *data, RSA *key, uint16_t esid, uin
 	}
 }
 
-static int8_t get_rsa_key(struct s_reader *rdr, const uint64_t ekid, RSA **key)
+static int8_t get_rsa_key(struct s_reader *rdr, const uint8_t *ekid, RSA **key)
 {
 	LL_ITER itr;
 	biss2_rsa_key_t *data;
@@ -730,11 +730,10 @@ static int8_t get_rsa_key(struct s_reader *rdr, const uint64_t ekid, RSA **key)
 
 int8_t biss_emm(struct s_reader *rdr, const uint8_t *emm, uint32_t *keysAdded)
 {
-	uint8_t emm_cipher_type, entitlement_priv_data_loop;
+	uint8_t emm_cipher_type, entitlement_priv_data_loop, entitlement_key_id[8];
 	uint16_t entitlement_session_id, original_network_id, descriptor_length;
 	uint16_t pos, emm_length = SCT_LEN(emm);
 	uint32_t payload_checksum, calculated_checksum;
-	uint64_t entitlement_key_id;
 	RSA *key;
 
 	// Calculate crc32 checksum and compare against the checksum bytes of the EMM
@@ -769,7 +768,7 @@ int8_t biss_emm(struct s_reader *rdr, const uint8_t *emm, uint32_t *keysAdded)
 	while (pos < emm_length - 4)
 	{
 		// Unique identifier of the public rsa key used for "session_data" encryption
-		entitlement_key_id = b2ll(8, emm + pos);
+		memcpy(entitlement_key_id, emm + pos, 8);
 		pos += 8;
 
 		if (get_rsa_key(rdr, entitlement_key_id, &key)) // Key found
@@ -884,14 +883,17 @@ uint16_t biss_read_pem(struct s_reader *rdr, uint8_t max_keys)
 		EVP_MD_CTX_destroy(mdctx);
 
 		NULLFREE(der);
-		new_item->ekid = b2ll(8, hash);
+		memcpy(new_item->ekid, hash, 8);
 
 		// Add new RSA key, if not already present
 		if (!rsa_key_exists(rdr, new_item))
 		{
 			ll_append(rdr->ll_biss2_rsa_keys, new_item);
-			cs_log("RSA key stored in memory (EKID: %"PRIX64")", new_item->ekid);
 			count++;
+
+			// Each ekid is listed under the reader's entitlements
+			//cs_hexdump(0, new_item->ekid, 8, tmp, sizeof(tmp));
+			//cs_log("RSA key stored in memory (EKID: %s)", tmp);
 		}
 	}
 
