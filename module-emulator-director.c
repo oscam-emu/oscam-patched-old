@@ -267,6 +267,11 @@ int8_t director_ecm(uint8_t *ecm, uint8_t *dw)
 				des(dw, ks, 0);
 				des(dw + 8, ks, 0);
 
+				dw[3] = (dw[0] + dw[1] + dw[2]) & 0xFF;
+				dw[7] = (dw[4] + dw[5] + dw[6]) & 0xFF;
+				dw[11] = (dw[8] + dw[9] + dw[10]) & 0xFF;
+				dw[15] = (dw[12] + dw[13] + dw[14]) & 0xFF;
+
 				return EMU_OK;
 			}
 
