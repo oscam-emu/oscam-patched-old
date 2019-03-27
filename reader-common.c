@@ -513,6 +513,11 @@ void cardreader_process_ecm(struct s_reader *reader, struct s_client *cl, ECM_RE
 	struct s_ecm_answer ea;
 	memset(&ea, 0, sizeof(struct s_ecm_answer));
 
+#ifdef WITH_EXTENDED_CW
+	// Correct CSA mode is CBC - default to that instead
+	ea.cw_ex.algo_mode = CW_ALGO_MODE_CBC;
+#endif
+
 	cs_ftime(&tps);
 	int32_t rc = cardreader_do_ecm(reader, er, &ea);
 	cs_ftime(&tpe);
