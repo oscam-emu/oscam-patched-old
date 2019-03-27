@@ -2422,6 +2422,11 @@ void get_cw(struct s_client *client, ECM_REQUEST *er)
 			if(!cs_malloc(&ea, sizeof(struct s_ecm_answer)))
 				{ goto OUT; }
 
+#ifdef WITH_EXTENDED_CW
+			// Correct CSA mode is CBC - default to that instead
+			ea->cw_ex.algo_mode = CW_ALGO_MODE_CBC;
+#endif
+
 			er->readers++;
 
 			ea->reader = rdr;

@@ -312,7 +312,7 @@ uint32_t b2i(int32_t n, const uint8_t *b)
 	return 0;
 }
 
-uint64_t b2ll(int32_t n, uint8_t *b)
+uint64_t b2ll(int32_t n, const uint8_t *b)
 {
 	int32_t i;
 	uint64_t k = 0;
@@ -346,7 +346,7 @@ uint8_t *i2b_buf(int32_t n, uint32_t i, uint8_t *b)
 	return b;
 }
 
-void ull2b_buf(uint64_t i, uint8_t *b)
+uint8_t *ull2b_buf(uint64_t i, uint8_t *b)
 {
 	b[0] = (i >> 56) & 0xff;
 	b[1] = (i >> 48) & 0xff;
@@ -356,6 +356,7 @@ void ull2b_buf(uint64_t i, uint8_t *b)
 	b[5] = (i >> 16) & 0xff;
 	b[6] = (i >> 8) & 0xff;
 	b[7] = (i) & 0xff;
+	return b;
 }
 
 uint32_t a2i(char *asc, int32_t bytes)
