@@ -3,6 +3,9 @@
 
 #ifdef WITH_EMU
 
+// Version info
+#define EMU_VERSION 793
+
 #define EMU_MAX_CHAR_KEYNAME 12
 #define EMU_KEY_FILENAME "SoftCam.Key"
 #define EMU_KEY_FILENAME_MAX_LEN 31
