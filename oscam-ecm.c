@@ -1622,8 +1622,10 @@ int32_t write_ecm_answer(struct s_reader *reader, ECM_REQUEST *er, int8_t rc, ui
 		return 0;
 	}
 
-	//SPECIAL CHECKs for rc
-	if(rc < E_NOTFOUND && cw && chk_is_null_CW(cw) && er->caid != 0x2600) // 0x2600 used by biss and constant cw could be zero but still catch cw=0 by anticascading
+	// Special checks for rc
+	// Skip check for BISS1 - cw could be zero but still catch cw=0 by anticascading
+	// Skip check for BISS2 - we use the extended cw, so the "simple" cw is always zero
+	if(rc < E_NOTFOUND && cw && chk_is_null_CW(cw) && !caid_is_biss(er->caid))
 	{
 		rc = E_NOTFOUND;
 		cs_log_dbg(D_TRACE | D_LB, "WARNING: reader %s send fake cw, set rc=E_NOTFOUND!", reader ? reader->label : "-");
@@ -1747,8 +1749,12 @@ int32_t write_ecm_answer(struct s_reader *reader, ECM_REQUEST *er, int8_t rc, ui
 	if(!ea->is_pending) // not for pending ea - only once for ea
 	{
 		// cache update
-		if(ea && (ea->rc < E_NOTFOUND) && (!chk_is_null_CW(ea->cw) && er->caid !=0x2600)) // 0x2600 used by biss and constant cw could be indeed zero
-			add_cache_from_reader(er, reader, er->csp_hash, er->ecmd5, ea->cw, er->caid, er->prid, er->srvid );
+		// Skip check for BISS1 - cw could be indeed zero
+		// Skip check for BISS2 - we use the extended cw, so the "simple" cw is always zero
+		if(ea && (ea->rc < E_NOTFOUND) && (!chk_is_null_CW(ea->cw) && !caid_is_biss(er->caid)))
+		{
+			add_cache_from_reader(er, reader, er->csp_hash, er->ecmd5, ea->cw, er->caid, er->prid, er->srvid);
+		}
 
 		// readers stats for LB
 		send_reader_stat(reader, er, ea, ea->rc);
@@ -2304,9 +2310,12 @@ void get_cw(struct s_client *client, ECM_REQUEST *er)
 		}
 	}
 
-	// checks for odd/even byte
-	if(!caid_is_biss(er->caid) && !caid_is_fake(er->caid) && get_odd_even(er)==0){
-		cs_log_dbg(D_TRACE, "warning: ecm with null odd/even byte from %s", (check_client(er->client)?er->client->account->usr:"-"));
+	// Check for odd/even byte
+	// Don't check for BISS1 and BISS2 mode 1/E or fake caid (ECM is fake for them)
+	// Don't check for BISS2 mode CA (ECM table is always 0x80)
+	if(!caid_is_biss(er->caid) && !caid_is_fake(er->caid) && get_odd_even(er) == 0)
+	{
+		cs_log_dbg(D_TRACE, "warning: ecm with null odd/even byte from %s", (check_client(er->client) ? er->client->account->usr : "-"));
 		er->rc = E_INVALID;
 	}
 

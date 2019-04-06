@@ -829,7 +829,7 @@ static int32_t ghttp_capmt_notify(struct s_client *client, struct demux_s *demux
 	{
 		ret = snprintf((char *)req, sizeof(req), "%s /api/p/%x/%x/%x/%x/%x HTTP/1.1\r\nHost: %s\r\nAuthorization: Basic %s%s\r\n\r\n",
 					((pids_len > 0) ? "POST" : "GET"), demux->onid, demux->tsid, demux->program_number,
-					demux->ECMpidcount, demux->enigma_namespace, context->host_id, encauth, lenhdr);
+					demux->ECMpidcount, demux->ens, context->host_id, encauth, lenhdr);
 
 		NULLFREE(encauth);
 	}
@@ -839,13 +839,13 @@ static int32_t ghttp_capmt_notify(struct s_client *client, struct demux_s *demux
 		{
 			ret = snprintf((char *)req, sizeof(req), "%s /api/p/%s/%x/%x/%x/%x/%x HTTP/1.1\r\nHost: %s%s\r\n\r\n",
 						((pids_len > 0) ? "POST" : "GET"), context->session_id, demux->onid, demux->tsid,
-						demux->program_number, demux->ECMpidcount, demux->enigma_namespace, context->host_id, lenhdr);
+						demux->program_number, demux->ECMpidcount, demux->ens, context->host_id, lenhdr);
 		}
 		else // no credentials configured, assume no session required
 		{
 			ret = snprintf((char *)req, sizeof(req), "%s /api/p/%x/%x/%x/%x/%x HTTP/1.1\r\nHost: %s%s\r\n\r\n",
 						((pids_len > 0) ? "POST" : "GET"), demux->onid, demux->tsid, demux->program_number,
-						demux->ECMpidcount, demux->enigma_namespace, context->host_id, lenhdr);
+						demux->ECMpidcount, demux->ens, context->host_id, lenhdr);
 		}
 	}
 	end = req + ret;
@@ -857,7 +857,7 @@ static int32_t ghttp_capmt_notify(struct s_client *client, struct demux_s *demux
 	}
 	cs_log_dump_dbg(D_CLIENT, pids, pids_len, "%s: sending capmt ecm pids - %s /api/p/%x/%x/%x/%x/%x",
 			client->reader->label, (pids_len > 0) ? "POST" : "GET", demux->onid, demux->tsid,
-			demux->program_number, demux->ECMpidcount, demux->enigma_namespace);
+			demux->program_number, demux->ECMpidcount, demux->ens);
 
 	ret = ghttp_send(client, req, ret + pids_len);
 

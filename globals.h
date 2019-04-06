@@ -2457,6 +2457,8 @@ const char *boxtype_get(void);
 const char *boxname_get(void);
 static inline bool caid_is_fake(uint16_t caid) { return caid == 0xffff; }
 static inline bool caid_is_biss(uint16_t caid) { return caid >> 8 == 0x26; }
+static inline bool caid_is_biss_fixed(uint16_t caid) { return caid == 0x2600 || caid == 0x2602; } // fixed cw, fake ecm
+static inline bool caid_is_biss_dynamic(uint16_t caid) { return caid == 0x2610; } // dynamic cw, real ecm and emm
 static inline bool caid_is_seca(uint16_t caid) { return caid >> 8 == 0x01; }
 static inline bool caid_is_viaccess(uint16_t caid) { return caid >> 8 == 0x05; }
 static inline bool caid_is_irdeto(uint16_t caid) { return caid >> 8 == 0x06; }
