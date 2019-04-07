@@ -309,7 +309,9 @@ void azbox_send_dcw(struct s_client *client, ECM_REQUEST *er)
 	int32_t n;
 	for(n = 0; n < 2; n++)
 	{
-		if(memcmp(er->cw + (n * 8), demux[0].lastcw[n], 8) && (memcmp(er->cw + (n * 8), nullcw, 8) != 0 || er->caid == 0x2600))
+		// Skip check for BISS1 - cw could be indeed zero
+		// Skip check for BISS2 - we use the extended cw, so the "simple" cw is always zero
+		if(memcmp(er->cw + (n * 8), demux[0].lastcw[n], 8) && (memcmp(er->cw + (n * 8), nullcw, 8) != 0 || caid_is_biss(er->caid)))
 		{
 			memcpy(demux[0].lastcw[n], er->cw + (n * 8), 8);
 			memcpy(openxcas_cw + (n * 8), er->cw + (n * 8), 8);
