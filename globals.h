@@ -988,21 +988,19 @@ struct s_cardsystem
 	int32_t			(*get_tunemm_filter)(struct s_reader *, struct s_csystem_emm_filter **, uint32_t *);
 };
 
+typedef struct cw_extendted_t
+{
 #ifdef WITH_EXTENDED_CW
-typedef struct cw_extendted_t
-{
 	uint8_t			mode;
-	uint8_t			audio[4][16];
-	uint8_t			data[16];
-	uint8_t			algo;
-	uint8_t			algo_mode;
-} EXTENDED_CW;
+	uint8_t			audio[4][16];					// 4 x odd/even pairs of 8 byte CWs
+	uint8_t			data[16];						// odd/even pair of 8 byte CW or 16 byte IV
+	uint8_t			session_word[32];				// odd/even pair of 16 byte CW
+	uint8_t			algo;							// CSA, DES or AES128
+	uint8_t			algo_mode;						// ECB or CBC
 #else
-typedef struct cw_extendted_t
-{
 	uint8_t			disabled;
-} EXTENDED_CW;
 #endif
+} EXTENDED_CW;
 
 typedef struct ecm_request_t
 {

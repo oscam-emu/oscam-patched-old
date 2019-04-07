@@ -304,6 +304,13 @@ static int dvbapi_ioctl(int fd, uint32_t request, ...)
 				ret = -1;
 				break;
 			}
+
+			case CA_SET_DESCR_DATA:
+			{
+				cs_log("error: samygo does not support CA_SET_DESCR_DATA");
+				ret = -1;
+				break;
+			}
 		}
 
 		if(ret > 0) // send() may return larger than 1
@@ -800,6 +807,22 @@ int32_t dvbapi_net_send(uint32_t request, int32_t socket_fd, uint32_t msgid, int
 			}
 			memcpy(&packet[size], data, sct_cadescr_mode_size);
 			size += sct_cadescr_mode_size;
+			break;
+		}
+
+		case DVBAPI_CA_SET_DESCR_DATA:
+		{
+			int sct_cadescr_data_size = sizeof(ca_descr_data_t);
+			if(client_proto_version >= 1)
+			{
+				ca_descr_data_t *cadesc_data = (ca_descr_data_t *) data;
+				cadesc_data->index = htonl(cadesc_data->index);
+				cadesc_data->parity = htonl(cadesc_data->parity);
+				cadesc_data->data_type = htonl(cadesc_data->data_type);
+				cadesc_data->length = htonl(cadesc_data->length);
+			}
+			memcpy(&packet[size], data, sct_cadescr_data_size);
+			size += sct_cadescr_data_size;
 			break;
 		}
 
@@ -6888,33 +6911,34 @@ static void *dvbapi_main_local(void *cli)
 	return NULL;
 }
 
-void dvbapi_write_cw(int32_t demux_id, uint8_t *cw, int32_t pid, int32_t stream_id, enum ca_descr_algo algo, enum ca_descr_cipher_mode cipher_mode, uint32_t msgid)
+void dvbapi_write_cw(int32_t demux_id, int32_t pid, int32_t stream_id, uint8_t *cw, uint8_t cw_length, uint8_t *iv, uint8_t iv_length,
+						enum ca_descr_algo algo, enum ca_descr_cipher_mode cipher_mode, uint32_t msgid)
 {
 	int32_t n;
-	int8_t cwEmpty = 0;
-	uint8_t nullcw[8];
-	memset(nullcw, 0, 8);
+	int8_t cw_empty = 0;
+	uint8_t null_cw[cw_length];
+	memset(null_cw, 0, cw_length);
 	ca_descr_t ca_descr;
 	ca_descr_mode_t ca_descr_mode;
+	ca_descr_data_t ca_descr_data;
 
 	memset(&ca_descr, 0, sizeof(ca_descr));
 	memset(&ca_descr_mode, 0, sizeof(ca_descr_mode_t));
+	memset(&ca_descr_data, 0, sizeof(ca_descr_data_t));
 
-	if(memcmp(demux[demux_id].lastcw[0], nullcw, 8) == 0 && memcmp(demux[demux_id].lastcw[1], nullcw, 8) == 0)
+	if(memcmp(demux[demux_id].last_cw[stream_id][0], null_cw, cw_length) == 0 &&
+		memcmp(demux[demux_id].last_cw[stream_id][1], null_cw, cw_length) == 0)
 	{
-		cwEmpty = 1; // to make sure that both cws get written on constantcw
+		cw_empty = 1; // to make sure that both cws get written on constantcw
 	}
 
 	for(n = 0; n < 2; n++)
 	{
-		// Check if already delivered and new cw part is valid.
-		// Don't check if cw has changed when multiple indices are used, since
-		// we have multiple cw's per demux. The check is not designed for that!
+		// Check if cw has changed and if new cw is empty (all zeros)
 		// Skip check for BISS1 - cw could be indeed zero
 		// Skip check for BISS2 - we use the extended cw, so the "simple" cw is always zero
-		if((memcmp(cw + (n * 8), demux[demux_id].lastcw[n], 8) != 0 || cwEmpty ||
-			demux[demux_id].ECMpids[pid].useMultipleIndices == 1) &&
-			(memcmp(cw + (n * 8), nullcw, 8) != 0 || caid_is_biss(demux[demux_id].ECMpids[pid].CAID)))
+		if((memcmp(cw + (n * cw_length), demux[demux_id].last_cw[stream_id][n], cw_length) != 0 || cw_empty)
+			&& (memcmp(cw + (n * cw_length), null_cw, cw_length) != 0 || caid_is_biss(demux[demux_id].ECMpids[pid].CAID)))
 		{
 			// prepare ca device
 			ca_index_t idx = dvbapi_ca_set_pid(demux_id, pid, stream_id, (algo == CA_ALGO_DES), msgid);
@@ -6924,11 +6948,11 @@ void dvbapi_write_cw(int32_t demux_id, uint8_t *cw, int32_t pid, int32_t stream_
 			}
 
 #if defined WITH_COOLAPI || defined WITH_COOLAPI2
-			ca_descr_mode.cipher_mode = cipher_mode;
+			ca_descr_mode.cipher_mode = cipher_mode; // it's here just to make the compiler happy (-Wunused-parameter)
 			ca_descr.index = idx;
 			ca_descr.parity = n;
 
-			memcpy(demux[demux_id].lastcw[n], cw + (n * 8), 8);
+			memcpy(demux[demux_id].last_cw[stream_id][n], cw + (n * 8), 8);
 			memcpy(ca_descr.cw, cw + (n * 8), 8);
 
 			cs_log_dbg(D_DVBAPI, "Demuxer %d write cw%d index: %d (ca_mask %d)",
@@ -6939,10 +6963,10 @@ void dvbapi_write_cw(int32_t demux_id, uint8_t *cw, int32_t pid, int32_t stream_
 			int32_t i, j, write_cw = 0;
 			ca_index_t usedidx, lastidx;
 
-			char lastcw[9 * 3];
-			char newcw[9 * 3];
-			cs_hexdump(0, demux[demux_id].lastcw[n], 8, lastcw, sizeof(lastcw));
-			cs_hexdump(0, cw + (n * 8), 8, newcw, sizeof(newcw));
+			char lastcw[2 * cw_length + 1];
+			char newcw[2 * cw_length + 1];
+			cs_hexdump(0, demux[demux_id].last_cw[stream_id][n], cw_length, lastcw, sizeof(lastcw));
+			cs_hexdump(0, cw + (n * cw_length), cw_length, newcw, sizeof(newcw));
 
 			for(i = 0; i < CA_MAX; i++)
 			{
@@ -6990,8 +7014,8 @@ void dvbapi_write_cw(int32_t demux_id, uint8_t *cw, int32_t pid, int32_t stream_
 					ca_descr.index = usedidx;
 					ca_descr.parity = n;
 
-					memcpy(demux[demux_id].lastcw[n], cw + (n * 8), 8);
-					memcpy(ca_descr.cw, cw + (n * 8), 8);
+					memcpy(demux[demux_id].last_cw[stream_id][n], cw + (n * cw_length), cw_length);
+					memcpy(ca_descr.cw, cw + (n * 8), 8); // ca_descr is only used for 8 byte CWs
 
 					cs_log_dbg(D_DVBAPI, "Demuxer %d writing %s part (%s) of controlword, replacing expired (%s)",
 						demux_id, (n == 1 ? "even" : "odd"), newcw, lastcw);
@@ -7031,32 +7055,90 @@ void dvbapi_write_cw(int32_t demux_id, uint8_t *cw, int32_t pid, int32_t stream_
 						}
 					}
 
-					if(cfg.dvbapi_boxtype == BOXTYPE_PC || cfg.dvbapi_boxtype == BOXTYPE_PC_NODMX)
+					if(cfg.dvbapi_extended_cw_api == 1 && algo == CA_ALGO_AES128) // Send 16 byte CW and IV for AES128, DVB-CISSA
 					{
-						dvbapi_net_send(DVBAPI_CA_SET_DESCR,
-								demux[demux_id].socket_fd,
-								msgid,
-								demux_id,
-								-1 /*unused*/,
-								(uint8_t *) &ca_descr,
-								NULL,
-								NULL,
-								demux[demux_id].client_proto_version);
-					}
-					else
-					{
-						if(ca_fd[i] <= 0)
+						// First send IV
+						ca_descr_data.index = usedidx;
+						ca_descr_data.data_type = CA_DATA_IV;
+						ca_descr_data.data = iv;
+						ca_descr_data.length = iv_length;
+
+						if(cfg.dvbapi_boxtype == BOXTYPE_PC || cfg.dvbapi_boxtype == BOXTYPE_PC_NODMX)
 						{
-							ca_fd[i] = dvbapi_open_device(1, i, demux[demux_id].adapter_index);
-							if(ca_fd[i] <= 0)
+							dvbapi_net_send(DVBAPI_CA_SET_DESCR_DATA,
+									demux[demux_id].socket_fd,
+									msgid,
+									demux_id,
+									-1 /*unused*/,
+									(uint8_t *) &ca_descr_data,
+									NULL,
+									NULL,
+									demux[demux_id].client_proto_version);
+						}
+						else
+						{
+							if(dvbapi_ioctl(ca_fd[i], CA_SET_DESCR_DATA, &ca_descr_data) < 0)
 							{
-								continue;
+								cs_log("ERROR: ioctl(CA_SET_DESCR_DATA): %s", strerror(errno));
 							}
 						}
 
-						if(dvbapi_ioctl(ca_fd[i], CA_SET_DESCR, &ca_descr) < 0)
+						// Then send CW
+						ca_descr_data.index = usedidx;
+						ca_descr_data.data_type = CA_DATA_KEY;
+						ca_descr_data.data = cw + (n * cw_length);
+						ca_descr_data.length = cw_length;
+						ca_descr_data.parity = n;
+
+						if(cfg.dvbapi_boxtype == BOXTYPE_PC || cfg.dvbapi_boxtype == BOXTYPE_PC_NODMX)
 						{
-							cs_log("ERROR: ioctl(CA_SET_DESCR): %s", strerror(errno));
+							dvbapi_net_send(DVBAPI_CA_SET_DESCR_DATA,
+									demux[demux_id].socket_fd,
+									msgid,
+									demux_id,
+									-1 /*unused*/,
+									(uint8_t *) &ca_descr_data,
+									NULL,
+									NULL,
+									demux[demux_id].client_proto_version);
+						}
+						else
+						{
+							if(dvbapi_ioctl(ca_fd[i], CA_SET_DESCR_DATA, &ca_descr_data) < 0)
+							{
+								cs_log("ERROR: ioctl(CA_SET_DESCR_DATA): %s", strerror(errno));
+							}
+						}
+					}
+					else // Send 8 byte CW for DVB-CSA or DES
+					{
+						if(cfg.dvbapi_boxtype == BOXTYPE_PC || cfg.dvbapi_boxtype == BOXTYPE_PC_NODMX)
+						{
+							dvbapi_net_send(DVBAPI_CA_SET_DESCR,
+									demux[demux_id].socket_fd,
+									msgid,
+									demux_id,
+									-1 /*unused*/,
+									(uint8_t *) &ca_descr,
+									NULL,
+									NULL,
+									demux[demux_id].client_proto_version);
+						}
+						else
+						{
+							if(ca_fd[i] <= 0)
+							{
+								ca_fd[i] = dvbapi_open_device(1, i, demux[demux_id].adapter_index);
+								if(ca_fd[i] <= 0)
+								{
+									continue;
+								}
+							}
+
+							if(dvbapi_ioctl(ca_fd[i], CA_SET_DESCR, &ca_descr) < 0)
+							{
+								cs_log("ERROR: ioctl(CA_SET_DESCR): %s", strerror(errno));
+							}
 						}
 					}
 				}
@@ -7147,15 +7229,19 @@ void dvbapi_send_dcw(struct s_client *client, ECM_REQUEST *er)
 		}
 
 		// 0=matching ecm hash, 2=no filter, 3=table reset, 4=cache-ex response
+		// Check only against last_cw[0] (index 0) - No need to check the rest
 		// Skip check for BISS1 - cw could be indeed zero
 		// Skip check for BISS2 - we use the extended cw, so the "simple" cw is always zero
 		if((status == 0 || status == 3 || status == 4) && er->rc < E_NOTFOUND && !caid_is_biss(er->caid))
 		{
-			if(memcmp(er->cw, demux[i].lastcw[0], 8) == 0 && memcmp(er->cw + 8, demux[i].lastcw[1], 8) == 0) // check for matching controlword
+			// check for matching control word
+			if(memcmp(er->cw, demux[i].last_cw[0][0], 8) == 0 &&
+				memcmp(er->cw + 8, demux[i].last_cw[0][1], 8) == 0)
 			{
 				comparecw0 = 1;
 			}
-			else if(memcmp(er->cw, demux[i].lastcw[1], 8) == 0 && memcmp(er->cw + 8, demux[i].lastcw[0], 8) == 0) // check for matching controlword
+			else if(memcmp(er->cw, demux[i].last_cw[0][1], 8) == 0 &&
+					memcmp(er->cw + 8, demux[i].last_cw[0][0], 8) == 0)
 			{
 				comparecw1 = 1;
 			}
@@ -7433,13 +7519,13 @@ void dvbapi_send_dcw(struct s_client *client, ECM_REQUEST *er)
 					{
 						if(demux[i].STREAMpidsType[k] == STREAM_VIDEO)
 						{
-							dvbapi_write_cw(i, er->cw, j, k, er->cw_ex.algo, er->cw_ex.algo_mode, er->msgid);
+							dvbapi_write_cw(i, j, k, er->cw, 8, NULL, 0, er->cw_ex.algo, er->cw_ex.algo_mode, er->msgid);
 						}
 						else if(demux[i].STREAMpidsType[k] == STREAM_AUDIO)
 						{
 							if(key_pos_a < 4)
 							{
-								dvbapi_write_cw(i, er->cw_ex.audio[key_pos_a], j, k, er->cw_ex.algo, er->cw_ex.algo_mode, er->msgid);
+								dvbapi_write_cw(i, j, k, er->cw_ex.audio[key_pos_a], 8, NULL, 0, er->cw_ex.algo, er->cw_ex.algo_mode, er->msgid);
 								key_pos_a++;
 							}
 						}
@@ -7447,18 +7533,26 @@ void dvbapi_send_dcw(struct s_client *client, ECM_REQUEST *er)
 						// so disable CW writing to save indices for audio streams and recordings.
 						//else // Data
 						//{
-						//	dvbapi_write_cw(i, er->cw_ex.data, j, k, er->cw_ex.algo, er->cw_ex.algo_mode, er->msgid);
+						//	dvbapi_write_cw(i, j, k, er->cw_ex.data, 8, NULL, 0, er->cw_ex.algo, er->cw_ex.algo_mode, er->msgid);
 						//}
 					}
 				}
 				else
 				{
 					demux[i].ECMpids[j].useMultipleIndices = 0;
-					dvbapi_write_cw(i, er->cw, j, 0, er->cw_ex.algo, er->cw_ex.algo_mode, er->msgid);
+
+					if(er->cw_ex.algo == CW_ALGO_AES128)
+					{
+						dvbapi_write_cw(i, j, 0, er->cw_ex.session_word, 16, er->cw_ex.data, 16, er->cw_ex.algo, er->cw_ex.algo_mode, er->msgid);
+					}
+					else
+					{
+						dvbapi_write_cw(i, j, 0, er->cw, 8, NULL, 0, er->cw_ex.algo, er->cw_ex.algo_mode, er->msgid);
+					}
 				}
 #else
 				cfg.dvbapi_extended_cw_api = 0; // in CSA mode extended_cw_api should be always 0 regardless what user selected!
-				dvbapi_write_cw(i, er->cw, j, 0, CA_ALGO_DVBCSA, CA_MODE_CBC, er->msgid);
+				dvbapi_write_cw(i, j, 0, er->cw, 8, NULL, 0, CA_ALGO_DVBCSA, CA_MODE_CBC, er->msgid);
 #endif
 				break;
 			}
@@ -7476,7 +7570,19 @@ void dvbapi_send_dcw(struct s_client *client, ECM_REQUEST *er)
 #endif
 		if(cfg.dvbapi_boxtype != BOXTYPE_SAMYGO)
 		{
-			dvbapi_write_ecminfo_file(client, er, demux[i].lastcw[0], demux[i].lastcw[1]);
+#ifdef WITH_EXTENDED_CW
+			// Only print CWs for index 0 in ecm.info file
+			if(er->cw_ex.algo == CA_ALGO_AES128)
+			{
+				dvbapi_write_ecminfo_file(client, er, demux[i].last_cw[0][0], demux[i].last_cw[0][1], 16);
+			}
+			else
+			{
+				dvbapi_write_ecminfo_file(client, er, demux[i].last_cw[0][0], demux[i].last_cw[0][1], 8);
+			}
+#else
+			dvbapi_write_ecminfo_file(client, er, demux[i].last_cw[0][0], demux[i].last_cw[0][1], 8);
+#endif
 		}
 	}
 
@@ -7500,7 +7606,7 @@ static int8_t isValidCW(uint8_t *cw)
 	return 1;
 }
 
-void dvbapi_write_ecminfo_file(struct s_client *client, ECM_REQUEST *er, uint8_t *lastcw0, uint8_t *lastcw1)
+void dvbapi_write_ecminfo_file(struct s_client *client, ECM_REQUEST *er, uint8_t *lastcw0, uint8_t *lastcw1, uint8_t cw_length)
 {
 #define ECMINFO_TYPE_OSCAM    0
 #define ECMINFO_TYPE_OSCAM_MS 1
@@ -7512,7 +7618,7 @@ void dvbapi_write_ecminfo_file(struct s_client *client, ECM_REQUEST *er, uint8_t
 	FILE *ecmtxt = fopen(ECMINFO_FILE, "w");
 	if(ecmtxt != NULL && er->rc < E_NOTFOUND)
 	{
-		char tmp[25];
+		char tmp[49]; // holds 16 byte cw - (2 hex digits + 1 space) * 16 byte + string termination)
 		const char *reader_name = NULL, *from_name = NULL, *proto_name = NULL;
 		int8_t hops = 0;
 		int32_t from_port = 0;
@@ -7647,13 +7753,13 @@ void dvbapi_write_ecminfo_file(struct s_client *client, ECM_REQUEST *er, uint8_t
 		if(cfg.dvbapi_ecminfo_type == ECMINFO_TYPE_CAMD3)
 		{
 			fprintf(ecmtxt, "FROM: %s\n", reader_name);
-			fprintf(ecmtxt, "CW0: %s\n", cs_hexdump(1, lastcw0, 8, tmp, sizeof(tmp)));
-			fprintf(ecmtxt, "CW1: %s\n", cs_hexdump(1, lastcw1, 8, tmp, sizeof(tmp)));
+			fprintf(ecmtxt, "CW0: %s\n", cs_hexdump(1, lastcw0, cw_length, tmp, sizeof(tmp)));
+			fprintf(ecmtxt, "CW1: %s\n", cs_hexdump(1, lastcw1, cw_length, tmp, sizeof(tmp)));
 		}
 		else
 		{
-			fprintf(ecmtxt, "cw0: %s\n", cs_hexdump(1, lastcw0, 8, tmp, sizeof(tmp)));
-			fprintf(ecmtxt, "cw1: %s\n", cs_hexdump(1, lastcw1, 8, tmp, sizeof(tmp)));
+			fprintf(ecmtxt, "cw0: %s\n", cs_hexdump(1, lastcw0, cw_length, tmp, sizeof(tmp)));
+			fprintf(ecmtxt, "cw1: %s\n", cs_hexdump(1, lastcw1, cw_length, tmp, sizeof(tmp)));
 		}
 
 		if(cfg.dvbapi_ecminfo_type == ECMINFO_TYPE_WICARDD || cfg.dvbapi_ecminfo_type == ECMINFO_TYPE_MGCAMD)
@@ -7661,7 +7767,15 @@ void dvbapi_write_ecminfo_file(struct s_client *client, ECM_REQUEST *er, uint8_t
 			time_t walltime;
 			struct tm lt;
 			char timebuf[32];
-			fprintf(ecmtxt, "Signature %s\n", (isValidCW(lastcw0) || isValidCW(lastcw1)) ? "OK" : "NOK");
+
+			if(cw_length == 8) // only check checksum for 8 byte CWs
+			{
+				fprintf(ecmtxt, "Signature %s\n", (isValidCW(lastcw0) || isValidCW(lastcw1)) ? "OK" : "NOK");
+			}
+			else
+			{
+				fprintf(ecmtxt, "Signature %s\n", "OK");
+			}
 
 			if(reader_name != NULL)
 			{

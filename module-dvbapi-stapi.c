@@ -727,7 +727,7 @@ int32_t stapi_write_cw(int32_t demux_id, uint8_t *cw, uint16_t *STREAMpids, int3
 	{
 		// Skip check for BISS1 - cw could be indeed zero
 		// Skip check for BISS2 - we use the extended cw, so the "simple" cw is always zero
-		if(memcmp(cw + (l * 8), demux[demux_id].lastcw[l], 8) != 0
+		if(memcmp(cw + (l * 8), demux[demux_id].last_cw[0][l], 8) != 0
 			&& (memcmp(cw + (l * 8), nullcw, 8) != 0 || caid_is_biss(demux[demux_id].ECMpids[pidnum].CAID)))
 		{
 			for(n = 0; n < PTINUM; n++)
@@ -738,7 +738,7 @@ int32_t stapi_write_cw(int32_t demux_id, uint8_t *cw, uint16_t *STREAMpids, int3
 				if(ErrorCode != 0)
 					{ cs_log("DescramblerSet: ErrorCode: %d", ErrorCode); }
 
-				memcpy(demux[demux_id].lastcw[l], cw + (l * 8), 8);
+				memcpy(demux[demux_id].last_cw[0][l], cw + (l * 8), 8);
 				cs_log_dbg(D_DVBAPI, "write cw %s index: %d %s", text[l], demux_id, dev_list[n].name);
 			}
 		}
