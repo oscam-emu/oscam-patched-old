@@ -729,12 +729,12 @@ int32_t stapi_write_cw(int32_t demux_id, uint8_t *cw, uint16_t *STREAMpids, int3
 	{
 		// Skip check for BISS1 - cw could be indeed zero
 		// Skip check for BISS2 - we use the extended cw, so the "simple" cw is always zero
-		if(memcmp(cw + (l * 8), demux[demux_id].lastcw[l], 8) != 0
+		if(memcmp(cw + (l * 8), demux[demux_id].last_cw[0][l], 8) != 0
 			&& (memcmp(cw + (l * 8), nullcw, 8) != 0 || caid_is_biss(demux[demux_id].ECMpids[pidnum].CAID)))
 		{
 			ErrorCode = oscam_sttkd_KeyWrite(tkd_desc_info[demux[demux_id].dev_index].key_hndl, l, cw + (l * 8));
 
-			memcpy(demux[demux_id].lastcw[l], cw + (l * 8), 8);
+			memcpy(demux[demux_id].last_cw[0][l], cw + (l * 8), 8);
 			cs_log_dbg(D_DVBAPI, "write cw %s index: %d on %s", text[l], demux_id, dev_list[demux[demux_id].dev_index].name);
 		}
 	}
