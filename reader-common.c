@@ -225,12 +225,12 @@ void cardreader_do_reset(struct s_reader *reader)
 
 		if (ret)
 		{
-			rdr_log(reader,"THIS WAS A SUCCESSFUL START ATTEMPT No  %u out of max alloted of %u", (i + 1), j);
+			rdr_log(reader,"THIS WAS A SUCCESSFUL START ATTEMPT No  %u out of max allotted of %u", (i + 1), j);
 			break;
 		}
 		else
 		{
-			rdr_log(reader, "THIS WAS A FAILED START ATTEMPT No %u out of max alloted of %u", (i + 1), j);
+			rdr_log(reader, "THIS WAS A FAILED START ATTEMPT No %u out of max allotted of %u", (i + 1), j);
 		}
 	}
 
