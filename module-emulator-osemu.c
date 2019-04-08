@@ -133,7 +133,8 @@ KeyDataContainer ViKeys = { NULL, 0, 0 };
 KeyDataContainer NagraKeys = { NULL, 0, 0 };
 KeyDataContainer IrdetoKeys = { NULL, 0, 0 };
 KeyDataContainer NDSKeys = { NULL, 0, 0 };
-KeyDataContainer BissKeys = { NULL, 0, 0 };
+KeyDataContainer BissSWs = { NULL, 0, 0 };
+KeyDataContainer Biss2Keys = { NULL, 0, 0 };
 KeyDataContainer PowervuKeys = { NULL, 0, 0 };
 KeyDataContainer DreKeys = { NULL, 0, 0 };
 KeyDataContainer TandbergKeys = { NULL, 0, 0 };
@@ -154,7 +155,9 @@ KeyDataContainer *emu_get_key_container(char identifier)
 		case 'S':
 			return &NDSKeys;
 		case 'F':
-			return &BissKeys;
+			return &BissSWs;
+		case 'G':
+			return &Biss2Keys;
 		case 'P':
 			return &PowervuKeys;
 		case 'D':
@@ -364,7 +367,7 @@ int8_t emu_set_key(char identifier, uint32_t provider, char *keyName, uint8_t *o
 			continue;
 		}
 
-		// Don't match keyName (i.e. expiration date) for BISS
+		// Don't match keyName (i.e. expiration date) for BISS1 and BISS2 mode 1/E sesssion words
 		if (identifier != 'F' && strcmp(KeyDB->EmuKeys[i].keyName, keyName))
 		{
 			continue;
@@ -573,7 +576,7 @@ int8_t emu_find_key(char identifier, uint32_t provider, uint32_t providerIgnoreM
 				memset(key + tmpKeyData->keyLength, 0, maxKeyLength - tmpKeyData->keyLength);
 			}
 
-			// Report the keyName (i.e. expiration date) of found key back to BissGetKey()
+			// Report the keyName (i.e. expiration date) of the session word found
 			if (identifier == 'F')
 			{
 				cs_strncpy(keyName, tmpKeyData->keyName, EMU_MAX_CHAR_KEYNAME);
@@ -673,7 +676,8 @@ void emu_clear_keydata(void)
 	total += NagraKeys.keyCount;
 	total += IrdetoKeys.keyCount;
 	total += NDSKeys.keyCount;
-	total += BissKeys.keyCount;
+	total += BissSWs.keyCount;
+	total += Biss2Keys.keyCount;
 	total += PowervuKeys.keyCount;
 	total += DreKeys.keyCount;
 	total += TandbergKeys.keyCount;
@@ -681,10 +685,10 @@ void emu_clear_keydata(void)
 
 	if (total != 0)
 	{
-		cs_log("Freeing keys in memory: W:%d V:%d N:%d I:%d S:%d F:%d P:%d D:%d T:%d A:%d",
+		cs_log("Freeing keys in memory: W:%d V:%d N:%d I:%d S:%d F:%d G:%d P:%d D:%d T:%d A:%d",
 				CwKeys.keyCount, ViKeys.keyCount, NagraKeys.keyCount, IrdetoKeys.keyCount,
-				NDSKeys.keyCount, BissKeys.keyCount, PowervuKeys.keyCount, DreKeys.keyCount,
-				TandbergKeys.keyCount, StreamKeys.keyCount);
+				NDSKeys.keyCount, BissSWs.keyCount, Biss2Keys.keyCount, PowervuKeys.keyCount,
+				DreKeys.keyCount, TandbergKeys.keyCount, StreamKeys.keyCount);
 
 		delete_keys_in_container('W');
 		delete_keys_in_container('V');
@@ -692,6 +696,7 @@ void emu_clear_keydata(void)
 		delete_keys_in_container('I');
 		delete_keys_in_container('S');
 		delete_keys_in_container('F');
+		delete_keys_in_container('G');
 		delete_keys_in_container('P');
 		delete_keys_in_container('D');
 		delete_keys_in_container('T');
@@ -1030,7 +1035,7 @@ int8_t emu_process_ecm(struct s_reader *rdr, int16_t ecmDataLen, uint16_t caid, 
 	else if (caid_is_powervu(caid))     result = powervu_ecm(ecmCopy, dw, srvid, NULL, cw_ex);
 	else if (caid_is_director(caid))    result = director_ecm(ecmCopy, dw);
 	else if (caid_is_nagra(caid))       result = nagra2_ecm(ecmCopy, dw);
-	else if (caid_is_biss(caid))        result = biss_ecm(rdr, caid, ecm, dw, srvid, ecmpid);
+	else if (caid_is_biss(caid))        result = biss_ecm(rdr, caid, ecm, dw, srvid, ecmpid, cw_ex);
 	else if (caid_is_dre(caid))         result = drecrypt2_ecm(provider, ecmCopy, dw);
 
 	if (result != 0)
@@ -1072,11 +1077,12 @@ int8_t emu_process_emm(struct s_reader *rdr, uint16_t caid, uint32_t provider, c
 	memcpy(emmCopy, emm, emmLen);
 	*keysAdded = 0;
 
-	     if (caid_is_viaccess(caid)) result = viaccess_emm(emmCopy, keysAdded);
-	else if (caid_is_irdeto(caid))   result = irdeto2_emm(caid, emmCopy, keysAdded);
-	else if (caid_is_powervu(caid))  result = powervu_emm(emmCopy, keysAdded);
-	else if (caid_is_director(caid)) result = director_emm(emmCopy, keysAdded);
-	else if (caid_is_dre(caid))      result = drecrypt2_emm(rdr, provider, emmCopy, keysAdded);
+	     if (caid_is_viaccess(caid))     result = viaccess_emm(emmCopy, keysAdded);
+	else if (caid_is_irdeto(caid))       result = irdeto2_emm(caid, emmCopy, keysAdded);
+	else if (caid_is_powervu(caid))      result = powervu_emm(emmCopy, keysAdded);
+	else if (caid_is_director(caid))     result = director_emm(emmCopy, keysAdded);
+	else if (caid_is_biss_dynamic(caid)) result = biss_emm(rdr, emmCopy, keysAdded);
+	else if (caid_is_dre(caid))          result = drecrypt2_emm(rdr, provider, emmCopy, keysAdded);
 
 	if (result != 0)
 	{

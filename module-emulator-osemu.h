@@ -63,7 +63,8 @@ extern KeyDataContainer ViKeys;
 extern KeyDataContainer NagraKeys;
 extern KeyDataContainer IrdetoKeys;
 extern KeyDataContainer NDSKeys;
-extern KeyDataContainer BissKeys;
+extern KeyDataContainer BissSWs;      // 'F' identifier - BISS1 and BISS2 mode 1/E session words
+extern KeyDataContainer Biss2Keys;    // 'G' identifier - BISS2 mode CA session keys (ECM keys)
 extern KeyDataContainer PowervuKeys;
 extern KeyDataContainer DreKeys;
 extern KeyDataContainer TandbergKeys;

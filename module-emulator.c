@@ -6,6 +6,7 @@
 
 #include "module-emulator-osemu.h"
 #include "module-emulator-streamserver.h"
+#include "module-emulator-biss.h"
 #include "module-emulator-drecrypt.h"
 #include "module-emulator-irdeto.h"
 #include "module-emulator-powervu.h"
@@ -102,7 +103,10 @@ static void emu_add_entitlement(struct s_reader *rdr, uint16_t caid, uint32_t pr
 static void refresh_entitlements(struct s_reader *rdr)
 {
 	uint32_t i;
+	uint16_t caid;
 	KeyData *tmpKeyData;
+	LL_ITER itr;
+	biss2_rsa_key_t *item;
 
 	cs_clear_entitlement(rdr);
 
@@ -164,10 +168,26 @@ static void refresh_entitlements(struct s_reader *rdr)
 							NagraKeys.EmuKeys[i].keyName, NagraKeys.EmuKeys[i].keyLength, 0);
 	}
 
-	for (i = 0; i < BissKeys.keyCount; i++)
+	// Session words for BISS1 mode 1/E (caid 2600) and BISS2 mode 1/E (caid 2602)
+	for (i = 0; i < BissSWs.keyCount; i++)
 	{
-		emu_add_entitlement(rdr, 0x2600, BissKeys.EmuKeys[i].provider, BissKeys.EmuKeys[i].key,
-							BissKeys.EmuKeys[i].keyName, BissKeys.EmuKeys[i].keyLength, 0);
+		caid = (BissSWs.EmuKeys[i].keyLength == 8) ? 0x2600 : 0x2602;
+		emu_add_entitlement(rdr, caid, BissSWs.EmuKeys[i].provider, BissSWs.EmuKeys[i].key,
+							BissSWs.EmuKeys[i].keyName, BissSWs.EmuKeys[i].keyLength, 0);
+	}
+
+	// Session keys (ECM keys) for BISS2 mode CA
+	for (i = 0; i < Biss2Keys.keyCount; i++)
+	{
+		emu_add_entitlement(rdr, 0x2610, Biss2Keys.EmuKeys[i].provider, Biss2Keys.EmuKeys[i].key,
+							Biss2Keys.EmuKeys[i].keyName, Biss2Keys.EmuKeys[i].keyLength, 0);
+	}
+
+	// RSA keys (EMM keys) for BISS2 mode CA
+	itr = ll_iter_create(rdr->ll_biss2_rsa_keys);
+	while ((item = ll_iter_next(&itr)))
+	{
+		emu_add_entitlement(rdr, 0x2610, 0, item->ekid, "RSAPRI", 8, 0);
 	}
 
 	for (i = 0; i < DreKeys.keyCount; i++)
@@ -222,6 +242,9 @@ static int32_t emu_card_info(struct s_reader *rdr)
 	// Delete keys from Emu's memory
 	emu_clear_keydata();
 
+	// Delete BISS2 mode CA RSA keys
+	ll_destroy_data(&rdr->ll_biss2_rsa_keys);
+
 	// Read keys built in the OSCam-Emu binary
 	emu_read_keymemory(rdr);
 
@@ -236,15 +259,18 @@ static int32_t emu_card_info(struct s_reader *rdr)
 		}
 	}
 
+	// Read BISS2 mode CA RSA keys from PEM files
+	biss_read_pem(rdr, BISS2_MAX_RSA_KEYS);
+
 	// Load keys from external files (set via the webif or the reader config directly)
 	emu_read_eebin(rdr->extee36, "ee36.bin");           // Read "ee36.bin"
 	emu_read_eebin(rdr->extee56, "ee56.bin");           // Read "ee56.bin"
 	emu_read_deskey(rdr->des_key, rdr->des_key_length); // Read overcrypt keys for DreCrypt ADEC
 
-	cs_log("Total keys in memory: W:%d V:%d N:%d I:%d S:%d F:%d P:%d D:%d T:%d A:%d",
+	cs_log("Total keys in memory: W:%d V:%d N:%d I:%d S:%d F:%d G:%d P:%d D:%d T:%d A:%d",
 			CwKeys.keyCount, ViKeys.keyCount, NagraKeys.keyCount, IrdetoKeys.keyCount,
-			NDSKeys.keyCount, BissKeys.keyCount, PowervuKeys.keyCount, DreKeys.keyCount,
-			TandbergKeys.keyCount, StreamKeys.keyCount);
+			NDSKeys.keyCount, BissSWs.keyCount, Biss2Keys.keyCount, PowervuKeys.keyCount,
+			DreKeys.keyCount, TandbergKeys.keyCount, StreamKeys.keyCount);
 
 	// Inform OSCam about all available keys.
 	// This is used for listing the "entitlements" in the webif's reader page.

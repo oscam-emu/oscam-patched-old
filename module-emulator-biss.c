@@ -5,7 +5,20 @@
 #ifdef WITH_EMU
 
 #include "module-emulator-osemu.h"
+#include "module-emulator-biss.h"
+#include "oscam-aes.h"
 #include "oscam-string.h"
+#include <openssl/evp.h>
+#include <openssl/pem.h>
+//#include <openssl/rsa.h>
+#include <openssl/x509.h>
+
+// DVB-CISSA v1 IV as defined in ETSI TS 103 127
+static const uint8_t dvb_cissa_iv[16] =
+{
+	0x44, 0x56, 0x42, 0x54, 0x4D, 0x43, 0x50, 0x54,
+	0x41, 0x45, 0x53, 0x43, 0x49, 0x53, 0x53, 0x41
+};
 
 static void unify_orbitals(uint32_t *namespace)
 {
@@ -293,12 +306,12 @@ static int8_t is_valid_namespace(uint32_t namespace)
 	return 0;
 }
 
-static int8_t get_key(uint32_t provider, uint8_t *key, int8_t dateCoded, int8_t printMsg)
+static int8_t get_sw(uint32_t provider, uint8_t *sw, uint8_t sw_length, int8_t dateCoded, int8_t printMsg)
 {
 	// If date-coded keys are enabled in the webif, this function evaluates the expiration date
 	// of the found keys. Expired keys are not sent to the calling function. If date-coded keys
-	// are disabled, then all found keys are sent without any evaluation. It takes the "provider"
-	// as input and outputs the "key". Returns 0 (Key not found, or expired) or 1 (Key found).
+	// are disabled, then every key is sent without any evaluation. It takes the "provider" as
+	// input and outputs the "sw". Returns 0 (key not found, or expired) or 1 (key found).
 
 	// printMsg: 0 => No message
 	// printMsg: 1 => Print message only if key is found
@@ -306,7 +319,7 @@ static int8_t get_key(uint32_t provider, uint8_t *key, int8_t dateCoded, int8_t 
 
 	char keyExpDate[9] = "00000000";
 
-	if (emu_find_key('F', provider, 0, keyExpDate, key, 8, 0, 0, 0, NULL)) // Key found
+	if (emu_find_key('F', provider, 0, keyExpDate, sw, sw_length, 0, 0, 0, NULL)) // Key found
 	{
 		if (dateCoded) // Date-coded keys are enabled, evaluate expiration date
 		{
@@ -320,7 +333,7 @@ static int8_t get_key(uint32_t provider, uint8_t *key, int8_t dateCoded, int8_t 
 			}
 			else // Key expired
 			{
-				key = NULL; // Make sure we don't send any expired key
+				sw = NULL; // Make sure we don't send any expired key
 				if (printMsg == 2) cs_log("Key expired: F %08X %s", provider, keyExpDate);
 				return 0;
 			}
@@ -338,8 +351,8 @@ static int8_t get_key(uint32_t provider, uint8_t *key, int8_t dateCoded, int8_t 
 	}
 }
 
-static int8_t biss1_mode1_ecm(struct s_reader *rdr, uint16_t caid, const uint8_t *ecm,
-								uint8_t *dw, uint16_t srvid, uint16_t ecmpid)
+static int8_t biss_mode1_ecm(struct s_reader *rdr, uint16_t caid, const uint8_t *ecm, uint8_t *dw,
+								uint16_t srvid, uint16_t ecmpid, EXTENDED_CW *cw_ex)
 {
 	// Oscam's fake ecm consists of [sid] [pmtpid] [pid1] [pid2] ... [pidx] [tsid] [onid] [namespace]
 	//
@@ -368,14 +381,30 @@ static int8_t biss1_mode1_ecm(struct s_reader *rdr, uint16_t caid, const uint8_t
 	// 6th: standard BISS ecmpid (0x1FFF)
 	// 7th: default "All Feeds" key
 
-	// If enabled in the webif, a date based key search can be performed. If the expiration
-	// date has passed, the key is not sent from BissGetKey(). This search method is only
-	// used in the namespace hash, universal hash and the default "All Feeds" key.
+	// If enabled in the webif, a date based key search is performed. If the expiration
+	// date has passed, the key is not sent back from get_sw(). This option is used only
+	// in the namespace hash, universal hash and the "All Feeds" search methods.
 
 	uint32_t i, ens = 0, hash = 0;
 	uint16_t pid = 0, ecmLen = get_ecm_len(ecm);
-	uint8_t ecmCopy[ecmLen];
-	char tmpBuffer1[17], tmpBuffer2[90] = "0", tmpBuffer3[90] = "0";
+	uint8_t *sw, sw_length, ecmCopy[ecmLen];
+	char tmpBuffer1[33], tmpBuffer2[90] = "0", tmpBuffer3[90] = "0";
+
+	if (caid == 0x2600) // BISS1
+	{
+		sw = dw;
+		sw_length = 8;
+	}
+	else // BISS2
+	{
+		cw_ex->mode = CW_MODE_ONE_CW;
+		cw_ex->algo = CW_ALGO_AES128;
+		cw_ex->algo_mode = CW_ALGO_MODE_CBC;
+		memcpy(cw_ex->data, dvb_cissa_iv, 16);
+
+		sw = cw_ex->session_word;
+		sw_length = 16;
+	}
 
 	// First try using the unique namespace hash (enigma only)
 	if (ecmLen >= 13) // ecmLen >= 13, allow patching the ecmLen for r749 ecms
@@ -403,9 +432,9 @@ static int8_t biss1_mode1_ecm(struct s_reader *rdr, uint16_t caid, const uint8_t
 					hash = crc32(caid, ecmCopy + ecmLen - 10, 10);
 				}
 
-				if (get_key(hash, dw, rdr->emu_datecodedenabled, i == 0 ? 2 : 1)) // Do not print "key not found" for frequency off by 1, 2
+				if (get_sw(hash, sw, sw_length, rdr->emu_datecodedenabled, i == 0 ? 2 : 1)) // Do not print "key not found" for frequency off by 1, 2
 				{
-					memcpy(dw + 8, dw, 8);
+					memcpy(sw + sw_length, sw, sw_length);
 					return 0;
 				}
 
@@ -439,9 +468,9 @@ static int8_t biss1_mode1_ecm(struct s_reader *rdr, uint16_t caid, const uint8_t
 			memcpy(ecmCopy, ecm, ecmLen - 8); // Make a new ecmCopy from the original ecm as the old ecmCopy may be altered in namespace hash (skip [tsid] [onid] [namespace])
 			hash = crc32(caid, ecmCopy + 3, ecmLen - 3 - 8); // ecmCopy doesn't have [tsid] [onid] [namespace] part
 
-			if (get_key(hash, dw, rdr->emu_datecodedenabled, 2)) // Key found
+			if (get_sw(hash, sw, sw_length, rdr->emu_datecodedenabled, 2)) // Key found
 			{
-				memcpy(dw + 8, dw, 8);
+				memcpy(sw + sw_length, sw, sw_length);
 				return 0;
 			}
 
@@ -450,15 +479,15 @@ static int8_t biss1_mode1_ecm(struct s_reader *rdr, uint16_t caid, const uint8_t
 		}
 	}
 
-	// Try using only [tsid][onid] (useful when many channels on a transpoder use the same key)
+	// Try using only [tsid][onid] (useful when many channels on a transpoder use the same session word)
 	if (ecmLen >= 17) // ecmLen >= 17, length of r749 ecms has been patched to match r752+ ecms
 	{
 		ens = b2i(4, ecmCopy + ecmLen - 4); // Namespace will be last 4 bytes
 
 		// We have an r752+ style ecm with stripped namespace, thus a valid [tsid][onid] combo to use as provider
-		if ((ens & 0xE000FFFF) == 0xA0000000 && get_key(b2i(4, ecm + ecmLen - 8), dw, 0, 2))
+		if ((ens & 0xE000FFFF) == 0xA0000000 && get_sw(b2i(4, ecm + ecmLen - 8), sw, sw_length, 0, 2))
 		{
-			memcpy(dw + 8, dw, 8);
+			memcpy(sw + sw_length, sw, sw_length);
 			return 0;
 		}
 
@@ -471,9 +500,9 @@ static int8_t biss1_mode1_ecm(struct s_reader *rdr, uint16_t caid, const uint8_t
 	// Try using ecmpid if it seems to be faulty (should be 0x1FFF always for BISS)
 	if (ecmpid != 0x1FFF && ecmpid != 0)
 	{
-		if (get_key((srvid << 16) | ecmpid, dw, 0, 2))
+		if (get_sw((srvid << 16) | ecmpid, sw, sw_length, 0, 2))
 		{
-			memcpy(dw + 8, dw, 8);
+			memcpy(sw + sw_length, sw, sw_length);
 			return 0;
 		}
 	}
@@ -487,9 +516,9 @@ static int8_t biss1_mode1_ecm(struct s_reader *rdr, uint16_t caid, const uint8_t
 		{
 			pid = b2i(2, ecm + i);
 
-			if (get_key((srvid << 16) | pid, dw, 0, 2))
+			if (get_sw((srvid << 16) | pid, sw, sw_length, 0, 2))
 			{
-				memcpy(dw + 8, dw, 8);
+				memcpy(sw + sw_length, sw, sw_length);
 				return 0;
 			}
 		}
@@ -498,18 +527,18 @@ static int8_t biss1_mode1_ecm(struct s_reader *rdr, uint16_t caid, const uint8_t
 	// Try using the standard BISS ecm pid
 	if (ecmpid == 0x1FFF || ecmpid == 0)
 	{
-		if (get_key((srvid << 16) | 0x1FFF, dw, 0, 2))
+		if (get_sw((srvid << 16) | 0x1FFF, sw, sw_length, 0, 2))
 		{
-			memcpy(dw + 8, dw, 8);
+			memcpy(sw + sw_length, sw, sw_length);
 			return 0;
 		}
 	}
 
-	// Default BISS key for events with many feeds sharing same key
-	if (ecmpid != 0 && get_key(0xA11FEED5, dw, rdr->emu_datecodedenabled, 2)) // Limit to local ecms, block netwotk ecms
+	// Default BISS key for events with many feeds sharing the same session word
+	if (ecmpid != 0 && get_sw(0xA11FEED5, sw, sw_length, rdr->emu_datecodedenabled, 2)) // Limit to local ecms, block netwotk ecms
 	{
-		memcpy(dw + 8, dw, 8);
-		cs_hexdump(0, dw, 8, tmpBuffer1, sizeof(tmpBuffer1));
+		memcpy(sw + sw_length, sw, sw_length);
+		cs_hexdump(0, sw, sw_length, tmpBuffer1, sizeof(tmpBuffer1));
 		cs_log("No specific match found. Using 'All Feeds' key: %s", tmpBuffer1);
 		return 0;
 	}
@@ -524,25 +553,351 @@ static int8_t biss1_mode1_ecm(struct s_reader *rdr, uint16_t caid, const uint8_t
 	return 2;
 }
 
-int8_t biss_ecm(struct s_reader *rdr, uint16_t caid, const uint8_t *ecm, uint8_t *dw, uint16_t srvid, uint16_t ecmpid)
+static inline int8_t get_ecm_key(uint16_t onid, uint16_t esid, uint8_t parity, uint8_t *key)
+{
+	return emu_find_key('G', onid << 16 | esid, 0, parity == 0 ? "00" : "01", key, 16, 1, 0, 0, NULL);
+}
+
+static int8_t biss2_mode_ca_ecm(const uint8_t *ecm, EXTENDED_CW *cw_ex)
+{
+	uint8_t ecm_cipher_type, session_key_parity;
+	uint8_t session_key[16], iv[16];
+	uint16_t entitlement_session_id, original_network_id, descriptor_length;
+	uint16_t position, ecm_length = SCT_LEN(ecm);
+	uint32_t payload_checksum, calculated_checksum;
+	//char tmp_buffer[64];
+	struct aes_keys aes;
+
+	// Calculate crc32 checksum and compare against the checksum bytes of the ECM
+	payload_checksum = b2i(4, ecm + ecm_length - 4);
+	calculated_checksum = ccitt32_crc((uint8_t *)ecm, ecm_length - 4);
+
+	if (payload_checksum != calculated_checksum)
+	{
+		cs_log_dbg(D_TRACE, "Checksum mismatch (payload: %08X vs calculated: %08X",
+					payload_checksum, calculated_checksum);
+		return EMU_CHECKSUM_ERROR;
+	}
+
+	// Unique identifiers of the session key
+	entitlement_session_id = b2i(2, ecm + 3);
+	original_network_id = b2i(2, ecm + 8);
+
+	ecm_cipher_type = ecm[10] >> 5;
+	if (ecm_cipher_type != 0) // Session words shall be encrypted with AES_128_CBC
+	{
+		cs_log("ECM cipher type %d not supported", ecm_cipher_type);
+		return EMU_NOT_SUPPORTED;
+	}
+
+	descriptor_length = b2i(2, ecm + 10) & 0x0FFF;
+	position = 12 + descriptor_length;
+
+	session_key_parity = ecm[position] >> 7; // Parity can be "00" or "01"
+	position++;
+
+	if (!get_ecm_key(original_network_id, entitlement_session_id, session_key_parity, session_key))
+	{
+		return EMU_KEY_NOT_FOUND;
+	}
+
+	memcpy(iv, ecm + position, 16);                            // "AES_128_CBC_enc_session_word_iv"
+	memcpy(cw_ex->session_word, ecm + position + 16, 16);      // "AES_128_CBC_enc_session_word_0"
+	memcpy(cw_ex->session_word + 16, ecm + position + 32, 16); // "AES_128_CBC_enc_session_word_1"
+
+	//cs_hexdump(3, iv, 16, tmp_buffer, sizeof(tmp_buffer));
+	//cs_log("session_word_iv: %s", tmp_buffer);
+
+	//cs_hexdump(3, cw_ex->session_word, 16, tmp_buffer, sizeof(tmp_buffer));
+	//cs_log("encrypted session_word_0: %s", tmp_buffer);
+
+	//cs_hexdump(3, cw_ex->session_word + 16, 16, tmp_buffer, sizeof(tmp_buffer));
+	//cs_log("encrypted session_word_1: %s", tmp_buffer);
+
+	// Decrypt session words
+	aes_set_key(&aes, (char *)session_key);
+	aes_cbc_decrypt(&aes, cw_ex->session_word, 16, iv);
+	aes_cbc_decrypt(&aes, cw_ex->session_word + 16, 16, iv);
+
+	//cs_hexdump(3, cw_ex->session_word, 16, tmp_buffer, sizeof(tmp_buffer));
+	//cs_log("decrypted session_word_0: %s", tmp_buffer);
+
+	//cs_hexdump(3, cw_ex->session_word + 16, 16, tmp_buffer, sizeof(tmp_buffer));
+	//cs_log("decrypted session_word_1: %s", tmp_buffer);
+
+	cw_ex->mode = CW_MODE_ONE_CW;
+	cw_ex->algo = CW_ALGO_AES128;
+	cw_ex->algo_mode = CW_ALGO_MODE_CBC;
+	memcpy(cw_ex->data, dvb_cissa_iv, 16);
+
+	return EMU_OK;
+}
+
+int8_t biss_ecm(struct s_reader *rdr, uint16_t caid, const uint8_t *ecm, uint8_t *dw, uint16_t srvid,
+				uint16_t ecmpid, EXTENDED_CW *cw_ex)
 {
 	switch (caid)
 	{
 		case 0x2600:
-			return biss1_mode1_ecm(rdr, caid, ecm, dw, srvid, ecmpid);
+			return biss_mode1_ecm(rdr, caid, ecm, dw, srvid, ecmpid, NULL);
 
 		case 0x2602:
-			cs_log("Unsupported Biss 2 Mode 1/E ecm (caid %04X) - Please report!", caid);
-			return EMU_NOT_SUPPORTED;
+			return biss_mode1_ecm(rdr, caid, ecm, NULL, srvid, ecmpid, cw_ex);
 
 		case 0x2610:
-			cs_log("Unsupported Biss 2 Mode CA ecm (caid %04X) - Please report!", caid);
-			return EMU_NOT_SUPPORTED;
+			return biss2_mode_ca_ecm(ecm, cw_ex);
 
 		default:
 			cs_log("Unknown Biss caid %04X - Please report!", caid);
 			return EMU_NOT_SUPPORTED;
 	}
+}
+
+static uint8_t parse_session_data_descriptor(const uint8_t *data, uint16_t esid, uint16_t onid, uint32_t *keysAdded)
+{
+	uint8_t descriptor_tag = data[0];
+	uint8_t descriptor_length = data[1];
+
+	switch (descriptor_tag)
+	{
+		case 0x81: // session_key_descriptor
+		{
+			uint8_t session_key_type = data[2] >> 1;
+			if (session_key_type == 0) // AES-128
+			{
+				uint8_t session_key_parity = data[2] & 0x01;
+				uint8_t session_key_data[16];
+				memcpy(session_key_data, data + 3, 16); // This is the ECM key
+
+				SAFE_MUTEX_LOCK(&emu_key_data_mutex);
+				if (emu_update_key('G', onid << 16 | esid, session_key_parity ? "01" : "00", session_key_data, 16, 1, NULL))
+				{
+					(*keysAdded)++;
+					char tmp[33];
+					cs_hexdump(0, session_key_data, 16, tmp, sizeof(tmp));
+					cs_log("Key found in EMM: G %08X %02d %s", onid << 16 | esid, session_key_parity, tmp);
+				}
+				SAFE_MUTEX_UNLOCK(&emu_key_data_mutex);
+			}
+			break;
+		}
+
+		case 0x82: // entitlement_flags_descriptor
+			break;
+
+		default:
+			break;
+	}
+
+	return 2 + descriptor_length;
+}
+
+static void parse_session_data(const uint8_t *data, RSA *key, uint16_t esid, uint16_t onid, uint32_t *keysAdded)
+{
+	// session_data is encrypted with RSA 2048 bit OAEP
+	// Maximum size of decrypted session_data is less than (256-41) bytes
+	uint8_t session_data[214];
+
+	if (RSA_private_decrypt(256, data, session_data, key, RSA_PKCS1_OAEP_PADDING) > 0)
+	{
+		uint16_t descriptor_length = b2i(2, session_data) & 0x0FFF;
+		uint8_t pos = 0;
+
+		while (pos < descriptor_length)
+		{
+			pos += parse_session_data_descriptor(session_data + 2 + pos, esid, onid, keysAdded);
+		}
+	}
+}
+
+static int8_t get_rsa_key(struct s_reader *rdr, const uint8_t *ekid, RSA **key)
+{
+	LL_ITER itr;
+	biss2_rsa_key_t *data;
+
+	itr = ll_iter_create(rdr->ll_biss2_rsa_keys);
+	while ((data = ll_iter_next(&itr)))
+	{
+		if (data->ekid == ekid)
+		{
+			*key = data->key;
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+int8_t biss_emm(struct s_reader *rdr, const uint8_t *emm, uint32_t *keysAdded)
+{
+	uint8_t emm_cipher_type, entitlement_priv_data_loop, entitlement_key_id[8];
+	uint16_t entitlement_session_id, original_network_id, descriptor_length;
+	uint16_t pos, emm_length = SCT_LEN(emm);
+	uint32_t payload_checksum, calculated_checksum;
+	RSA *key;
+
+	// Calculate crc32 checksum and compare against the checksum bytes of the EMM
+	payload_checksum = b2i(4, emm + emm_length - 4);
+	calculated_checksum = ccitt32_crc((uint8_t *)emm, emm_length - 4);
+
+	if (payload_checksum != calculated_checksum)
+	{
+		cs_log_dbg(D_TRACE, "Checksum mismatch (payload: %08X vs calculated: %08X",
+					payload_checksum, calculated_checksum);
+		return EMU_CHECKSUM_ERROR;
+	}
+
+	// Identifiers of the session key carried in the EMM
+	// We just pass them to the "parse_session_data()" function
+	entitlement_session_id = b2i(2, emm + 3);
+	original_network_id = b2i(2, emm + 8);
+	cs_log_dbg(D_TRACE, "onid: %04X, esid: %04X", original_network_id, entitlement_session_id);
+
+	emm_cipher_type = emm[11] >> 5; // top 3 bits;
+	entitlement_priv_data_loop = (emm[11] >> 4) & 0x01; // 4th bit
+
+	if (emm_cipher_type != 0) // EMM payload is not encrypted with RSA_2048_OAEP
+	{
+		cs_log_dbg(D_TRACE, "Cipher type %d not supported", emm_cipher_type);
+		return EMU_NOT_SUPPORTED;
+	}
+
+	descriptor_length = b2i(2, emm + 12) & 0x0FFF;
+	pos = 14 + descriptor_length;
+
+	while (pos < emm_length - 4)
+	{
+		// Unique identifier of the public rsa key used for "session_data" encryption
+		memcpy(entitlement_key_id, emm + pos, 8);
+		pos += 8;
+
+		if (get_rsa_key(rdr, entitlement_key_id, &key)) // Key found
+		{
+			// Parse "encrypted_session_data"
+			parse_session_data(emm + pos, key, entitlement_session_id, original_network_id, keysAdded);
+		}
+
+		pos += 256; // 2048 bits
+
+		if (entitlement_priv_data_loop) // Skip any remaining bytes
+		{
+			pos += 2 + (b2i(2, emm + pos) & 0x0FFF);
+		}
+	}
+
+	return EMU_KEY_NOT_FOUND;
+}
+
+static int8_t rsa_key_exists(struct s_reader *rdr, const biss2_rsa_key_t *item)
+{
+	LL_ITER itr;
+	biss2_rsa_key_t *data;
+
+	itr = ll_iter_create(rdr->ll_biss2_rsa_keys);
+	while ((data = ll_iter_next(&itr)))
+	{
+		if (data->ekid == item->ekid)
+		{
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+uint16_t biss_read_pem(struct s_reader *rdr, uint8_t max_keys)
+{
+	FILE *fp_pri = NULL;
+	//FILE *fp_pub = NULL;
+
+	char tmp[256];
+	uint8_t hash[32], *der = NULL;
+	uint16_t i, length, count = 0;;
+	biss2_rsa_key_t *new_item;
+
+	if (!rdr->ll_biss2_rsa_keys)
+	{
+		rdr->ll_biss2_rsa_keys = ll_create("ll_biss2_rsa_keys");
+	}
+
+	for (i = 0; i < max_keys; i++)
+	{
+		if (!cs_malloc(&new_item, sizeof(biss2_rsa_key_t)))
+		{
+			break; // No memory available (?) - Exit
+		}
+
+		snprintf(tmp, sizeof(tmp), "%sbiss2_private_%02d.pem", emu_keyfile_path, i);
+		if ((fp_pri = fopen(tmp, "r")) == NULL)
+		{
+			// File does not exist
+			continue;
+		}
+
+		cs_log("Reading RSA key from: biss2_private_%02d.pem", i);
+
+		// Read RSA private key
+		if ((new_item->key = PEM_read_RSAPrivateKey(fp_pri, NULL, NULL, NULL)) == NULL)
+		{
+			cs_log("Error reading RSA private key");
+			continue;
+		}
+
+		fclose(fp_pri);
+
+		// Write public key in PEM formatted file
+		/*snprintf(tmp, sizeof(tmp), "%sbiss2_public_%02d.pem", emu_keyfile_path, i);
+		if ((fp_pub = fopen(tmp, "w")) != NULL)
+		{
+			PEM_write_RSA_PUBKEY(fp_pub, item->key);
+			fclose(fp_pub);
+		}*/
+
+		// Write public key in DER formatted file
+		/*snprintf(tmp, sizeof(tmp), "%sbiss2_public_%02d.der", emu_keyfile_path, i);
+		if ((fp_pub = fopen(tmp, "wb")) != NULL)
+		{
+			i2d_RSA_PUBKEY_fp(fp_pub, item->key);
+			fclose(fp_pub);
+		}*/
+
+		// Encode RSA public key into DER format
+		if ((length = i2d_RSA_PUBKEY(new_item->key, &der)) <= 0)
+		{
+			cs_log("Error encoding to DER format");
+			NULLFREE(der);
+			continue;
+		}
+
+		// Create SHA256 digest
+		EVP_MD_CTX *mdctx;
+		if ((mdctx = EVP_MD_CTX_create()) == NULL)
+		{
+			NULLFREE(der);
+			continue;
+		}
+
+		EVP_DigestInit_ex(mdctx, EVP_sha256(), NULL);
+		EVP_DigestUpdate(mdctx, der, length);
+		EVP_DigestFinal_ex(mdctx, hash, NULL);
+		EVP_MD_CTX_destroy(mdctx);
+
+		NULLFREE(der);
+		memcpy(new_item->ekid, hash, 8);
+
+		// Add new RSA key, if not already present
+		if (!rsa_key_exists(rdr, new_item))
+		{
+			ll_append(rdr->ll_biss2_rsa_keys, new_item);
+			count++;
+
+			// Each ekid is listed under the reader's entitlements
+			//cs_hexdump(0, new_item->ekid, 8, tmp, sizeof(tmp));
+			//cs_log("RSA key stored in memory (EKID: %s)", tmp);
+		}
+	}
+
+	return count;
 }
 
 #endif // WITH_EMU
