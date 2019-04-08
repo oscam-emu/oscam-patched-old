@@ -293,7 +293,8 @@ static void mca_demux_convert(DEMUXTYPE *demux_orig, DEMUXMATRIX *demux_matrix)
 	demux_matrix->curindex = (int32_t)demux_orig->curindex;
 	demux_matrix->max_status = (int32_t)demux_orig->max_status;
 	demux_matrix->program_number = (uint16_t)demux_orig->program_number;
-	memcpy(&demux_matrix->lastcw, &demux_orig->lastcw, 2 * 8 * sizeof(uint8_t));
+	memcpy(&demux_matrix->lastcw[0], &demux_orig->last_cw[0][0], 8 * sizeof(uint8_t));
+	memcpy(&demux_matrix->lastcw[1], &demux_orig->last_cw[0][1], 8 * sizeof(uint8_t));
 	demux_matrix->emm_filter = (int32_t)demux_orig->emm_filter;
 	memcpy(&demux_matrix->hexserial, &demux_orig->hexserial, 8 * sizeof(uint8_t));
 	demux_matrix->rdr = (struct s_reader *)demux_orig->rdr;
@@ -547,7 +548,7 @@ void mca_send_dcw(struct s_client *client, ECM_REQUEST *er)
 
 	delayer(er, delay);
 
-	dvbapi_write_ecminfo_file(client, er, demux[0].lastcw[0], demux[0].lastcw[1]);
+	dvbapi_write_ecminfo_file(client, er, demux[0].last_cw[0][0], demux[0].last_cw[0][1], 8);
 
 	openxcas_busy = 0;
 
@@ -599,10 +600,10 @@ void mca_send_dcw(struct s_client *client, ECM_REQUEST *er)
 	{
 		// Skip check for BISS1 - cw could be indeed zero
 		// Skip check for BISS2 - we use the extended cw, so the "simple" cw is always zero
-		if((memcmp(er->cw + (n * 8), demux[0].lastcw[0], 8) && memcmp(er->cw + (n * 8), demux[0].lastcw[1], 8))
-			&& (memcmp(er->cw + (n * 8), nullcw, 8) !=0 || caid_is_biss(er->caid)))
+		if((memcmp(er->cw + (n * 8), demux[0].last_cw[0][0], 8) && memcmp(er->cw + (n * 8), demux[0].last_cw[0][1], 8))
+			&& (memcmp(er->cw + (n * 8), nullcw, 8) != 0 || caid_is_biss(er->caid)))
 		{
-			memcpy(demux[0].lastcw[n], er->cw + (n * 8), 8);
+			memcpy(demux[0].last_cw[0][n], er->cw + (n * 8), 8);
 			memcpy(openxcas_cw + (n * 8), er->cw + (n * 8), 8);
 			if(mca_set_key(openxcas_cw) < 0)
 				{ cs_log("set cw failed"); }
