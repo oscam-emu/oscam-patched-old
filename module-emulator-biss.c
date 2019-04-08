@@ -565,7 +565,7 @@ static int8_t biss2_mode_ca_ecm(const uint8_t *ecm, EXTENDED_CW *cw_ex)
 	uint16_t entitlement_session_id, original_network_id, descriptor_length;
 	uint16_t position, ecm_length = SCT_LEN(ecm);
 	uint32_t payload_checksum, calculated_checksum;
-	//char tmp_buffer[64];
+	char tmp_buffer[64];
 	struct aes_keys aes;
 
 	// Calculate crc32 checksum and compare against the checksum bytes of the ECM
@@ -605,25 +605,27 @@ static int8_t biss2_mode_ca_ecm(const uint8_t *ecm, EXTENDED_CW *cw_ex)
 	memcpy(cw_ex->session_word, ecm + position + 16, 16);      // "AES_128_CBC_enc_session_word_0"
 	memcpy(cw_ex->session_word + 16, ecm + position + 32, 16); // "AES_128_CBC_enc_session_word_1"
 
-	//cs_hexdump(3, iv, 16, tmp_buffer, sizeof(tmp_buffer));
-	//cs_log("session_word_iv: %s", tmp_buffer);
+	// Delete these cs_log calls when everything is confirmed to work correctly
+	cs_hexdump(3, iv, 16, tmp_buffer, sizeof(tmp_buffer));
+	cs_log_dbg(D_TRACE, "session_word_iv: %s", tmp_buffer);
 
-	//cs_hexdump(3, cw_ex->session_word, 16, tmp_buffer, sizeof(tmp_buffer));
-	//cs_log("encrypted session_word_0: %s", tmp_buffer);
+	cs_hexdump(3, cw_ex->session_word, 16, tmp_buffer, sizeof(tmp_buffer));
+	cs_log_dbg(D_TRACE, "encrypted session_word_0: %s", tmp_buffer);
 
-	//cs_hexdump(3, cw_ex->session_word + 16, 16, tmp_buffer, sizeof(tmp_buffer));
-	//cs_log("encrypted session_word_1: %s", tmp_buffer);
+	cs_hexdump(3, cw_ex->session_word + 16, 16, tmp_buffer, sizeof(tmp_buffer));
+	cs_log_dbg(D_TRACE, "encrypted session_word_1: %s", tmp_buffer);
 
 	// Decrypt session words
 	aes_set_key(&aes, (char *)session_key);
 	aes_cbc_decrypt(&aes, cw_ex->session_word, 16, iv);
 	aes_cbc_decrypt(&aes, cw_ex->session_word + 16, 16, iv);
 
-	//cs_hexdump(3, cw_ex->session_word, 16, tmp_buffer, sizeof(tmp_buffer));
-	//cs_log("decrypted session_word_0: %s", tmp_buffer);
+	// Delete these cs_log calls when everything is confirmed to work correctly
+	cs_hexdump(3, cw_ex->session_word, 16, tmp_buffer, sizeof(tmp_buffer));
+	cs_log_dbg(D_TRACE, "decrypted session_word_0: %s", tmp_buffer);
 
-	//cs_hexdump(3, cw_ex->session_word + 16, 16, tmp_buffer, sizeof(tmp_buffer));
-	//cs_log("decrypted session_word_1: %s", tmp_buffer);
+	cs_hexdump(3, cw_ex->session_word + 16, 16, tmp_buffer, sizeof(tmp_buffer));
+	cs_log_dbg(D_TRACE, "decrypted session_word_1: %s", tmp_buffer);
 
 	cw_ex->mode = CW_MODE_ONE_CW;
 	cw_ex->algo = CW_ALGO_AES128;
