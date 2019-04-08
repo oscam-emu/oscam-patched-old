@@ -6599,7 +6599,7 @@ static void *dvbapi_main_local(void *cli)
 						demux[i].decodingtries = -1; // reset to first run again!
 						gone = comp_timeb(&demux[i].decend, &demux[i].decstart);
 
-						cs_log("Demuxer %d restarting decodingrequests after %"PRId64" ms with %d enabled and %d disabled ecmpids!",
+						cs_log("Demuxer %d restarting decoding requests after %"PRId64" ms with %d enabled and %d disabled ecmpids!",
 							i, gone, number_of_enabled_pids, (demux[i].ECMpidcount-number_of_enabled_pids));
 
 						dvbapi_try_next_caid(i, 0, 0);
