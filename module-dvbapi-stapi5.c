@@ -96,15 +96,15 @@ static void stapi_off(void)
 
 	disable_pmt_files = 1;
 	stapi_on = 0;
-	for(i = 0; i < MAX_DEMUX; i++)
+	for(i = 0; i < MAX_DESCRAMBLER; i++)
 	{
 		dvbapi_stop_descrambling(i, 0);
 
 		if (tkd_desc_info[i].path_hndl != 0)
 		{
-	        ErrorCode = oscam_sttkd_Deallocate(tkd_desc_info[i].path_hndl, tkd_desc_info[i].key_hndl);
-		    if (ErrorCode != 0)
-			    { cs_log("oscam_sttkd_Deallocate faild! ErrorCode: %d", ErrorCode);	}
+			ErrorCode = oscam_sttkd_Deallocate(tkd_desc_info[i].path_hndl, tkd_desc_info[i].key_hndl);
+			if (ErrorCode != 0)
+				{ cs_log("oscam_sttkd_Deallocate faild! ErrorCode: %d", ErrorCode);	}
 		}
 	}
 
@@ -302,22 +302,22 @@ int32_t stapi_set_filter(int32_t demux_id, uint16_t pid, uint8_t *filter, uint8_
 
 	for(p = dvbapi_priority; p != NULL; p = p->next)
 	{
-		if(p->type != 's') { continue; }  // stapi rule?
-		if(strcmp(pmtfile, p->pmtfile) != 0) { continue; }  // same file?
+		if(p->type != 's') { continue; } // stapi rule?
+		if(strcmp(pmtfile, p->pmtfile) != 0) { continue; } // same file?
 
 		for(i = 0; i < PTINUM; i++)
 		{
-			if(strcmp(dev_list[i].name, p->devname) == 0 && p->disablefilter == 0)  // check device name and if filtering is enabled!
+			if(strcmp(dev_list[i].name, p->devname) == 0 && p->disablefilter == 0) // check device name and if filtering is enabled!
 			{
 				cs_log_dbg(D_DVBAPI, "set stapi filter on %s for pid %04X", dev_list[i].name, pids[0]);
 				ret = stapi_do_set_filter(demux_id, &dev_list[i].demux_fd[demux_id][num], pids, 1, filter, mask, i);
-				if(ret > 0)    // success
+				if(ret > 0) // success
 				{
 					demux[demux_id].dev_index = i;
 					cs_log_dbg(D_DVBAPI, "%s filter %d set (pid %04X)", dev_list[i].name, num, pid);
 					return ret; // return filternumber
 				}
-				else   // failure
+				else // failure
 				{
 					cs_log_dbg(D_DVBAPI, "Error setting new filter for pid %04X on %s!", pid, dev_list[i].name);
 					return -1; // set return to error
@@ -395,9 +395,9 @@ static int32_t stapi_do_set_filter(int32_t demux_id, FILTERTYPE *filter, uint16_
 	uint32_t FilterAssociateError = 0;
 	int32_t k, ret = 0;
 
-	filter->fd          = 0;
-	filter->BufferHandle[0]     = 0;
-	filter->SlotHandle[0]   = 0;
+	filter->fd = 0;
+	filter->BufferHandle[0] = 0;
+	filter->SlotHandle[0] = 0;
 
 	if(dev_list[dev_id].SessionHandle == 0) { return 0; }
 
@@ -447,7 +447,7 @@ static int32_t stapi_do_set_filter(int32_t demux_id, FILTERTYPE *filter, uint16_
 	if(ret || FilterAllocateError || FilterAssociateError || FilterSetError)
 	{
 		cs_log("set_filter: dev: %d FAl: %d FAs: %d FS: %d",
-			   dev_id, FilterAllocateError, FilterAssociateError, FilterSetError);
+				dev_id, FilterAllocateError, FilterAssociateError, FilterSetError);
 		stapi_do_remove_filter(demux_id, filter, dev_id);
 		return 0;
 	}
@@ -472,14 +472,14 @@ static int32_t stapi_do_remove_filter(int32_t UNUSED(demux_id), FILTERTYPE *filt
 
 		if(checkslot == 0)
 		{
-			FilterDeallocateError   = oscam_stapi5_FilterDeallocate(filter->fd, filter->BufferHandle[k], filter->SlotHandle[k]);
+			FilterDeallocateError = oscam_stapi5_FilterDeallocate(filter->fd, filter->BufferHandle[k], filter->SlotHandle[k]);
 
 			oscam_stapi5_SlotClearPid(filter->SlotHandle[k]);
 			oscam_stapi5_SlotUnlink(filter->SlotHandle[k]);
 			oscam_stapi5_SignalDisassociateBuffer(dev_list[dev_id].SignalHandle, filter->BufferHandle[k]);
 
-			BufferDeallocateError   = oscam_stapi5_BufferDeallocate(filter->BufferHandle[k]);
-			SlotDeallocateError     = oscam_stapi5_SlotDeallocate(filter->SlotHandle[k]);
+			BufferDeallocateError = oscam_stapi5_BufferDeallocate(filter->BufferHandle[k]);
+			SlotDeallocateError = oscam_stapi5_SlotDeallocate(filter->SlotHandle[k]);
 
 		}
 	}
@@ -489,7 +489,7 @@ static int32_t stapi_do_remove_filter(int32_t UNUSED(demux_id), FILTERTYPE *filt
 	if(BufferDeallocateError || SlotDeallocateError || FilterDeallocateError)
 	{
 		cs_log("remove_filter: dev: %d BD: %d SD: %d FDe: %d",
-			   dev_id, BufferDeallocateError, SlotDeallocateError, FilterDeallocateError);
+				dev_id, BufferDeallocateError, SlotDeallocateError, FilterDeallocateError);
 		return 0;
 	}
 	else
@@ -623,16 +623,16 @@ int32_t stapi_init_descrambler(int32_t dev_index)
 	return 1;
 }
 
-int32_t stapi_set_pid(int32_t demux_id, int32_t UNUSED(num), ca_index_t idx, uint16_t pid, char *UNUSED(pmtfile))
+int32_t stapi_set_pid(int32_t demux_id, int32_t UNUSED(num), uint32_t idx, uint16_t pid, char *UNUSED(pmtfile))
 {
 	if(idx == INDEX_INVALID)
 	{
 		if (tkd_desc_info[demux[demux_id].dev_index].path_hndl != 0)
 		{
 			cs_log_dbg(D_DVBAPI, "stop descrambling of PID %d on %s", pid, dev_list[demux[demux_id].dev_index].name);
-	        uint32_t ErrorCode = oscam_sttkd_Disassociate(dev_list[demux[demux_id].dev_index].name, pid);
-		    if (ErrorCode != 0)
-			    cs_log("oscam_sttkd_Disassociate faild! ErrorCode: %d", ErrorCode);
+			uint32_t ErrorCode = oscam_sttkd_Disassociate(dev_list[demux[demux_id].dev_index].name, pid);
+			if (ErrorCode != 0)
+				cs_log("oscam_sttkd_Disassociate faild! ErrorCode: %d", ErrorCode);
 
 			int i;
 			for (i = 0; i < MAX_STREAMPIDS; i++)
@@ -665,11 +665,11 @@ int32_t stapi_write_cw(int32_t demux_id, uint8_t *cw, uint16_t *STREAMpids, int3
 		if(!stapi_init_descrambler(demux[demux_id].dev_index))
 		{
 			cs_log_dbg(D_DVBAPI, "stapi_write_cw , faild to added descrambler for %s", dev_list[demux[demux_id].dev_index].name);
-		    return 0;
+			return 0;
 		}
 	}
 
-    // descrambler started, check each pid
+	// descrambler started, check each pid
 	for (x = 0; x < STREAMpidcount; x++)
 	{
 		int pid_associated = -1;
@@ -707,7 +707,7 @@ int32_t stapi_write_cw(int32_t demux_id, uint8_t *cw, uint16_t *STREAMpids, int3
 
 			if (pid_associated < 0)
 			{
-			    cs_log("stapi_write_cw , faild to associate pid %04X, maximum number of %d pids reached", STREAMpids[x], MAX_STREAMPIDS);
+				cs_log("stapi_write_cw , faild to associate pid %04X, maximum number of %d pids reached", STREAMpids[x], MAX_STREAMPIDS);
 				return 0;
 			}
 		}
@@ -715,13 +715,13 @@ int32_t stapi_write_cw(int32_t demux_id, uint8_t *cw, uint16_t *STREAMpids, int3
 
 	//@theparasol: please verify this block is in the right place
 	int32_t pidnum = demux[demux_id].pidindex; // get current pidindex used for descrambling
-	ca_index_t idx = demux[demux_id].ECMpids[pidnum].index[0];
+	uint32_t idx = demux[demux_id].ECMpids[pidnum].index[0];
 
-	if(idx == INDEX_INVALID)   // if no indexer for this pid get one!
+	if(idx == INDEX_INVALID) // if no indexer for this pid get one!
 	{
 		idx = dvbapi_get_desc_index(demux_id, pidnum, 0);
 		cs_log_dbg(D_DVBAPI, "Demuxer %d PID: %d CAID: %04X ECMPID: %04X is using index %d", demux_id, pidnum,
-				  demux[demux_id].ECMpids[pidnum].CAID, demux[demux_id].ECMpids[pidnum].ECM_PID, idx);
+					demux[demux_id].ECMpids[pidnum].CAID, demux[demux_id].ECMpids[pidnum].ECM_PID, idx);
 	}
 	//
 
