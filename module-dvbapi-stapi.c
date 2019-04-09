@@ -266,21 +266,21 @@ int32_t stapi_set_filter(int32_t demux_id, uint16_t pid, uint8_t *filter, uint8_
 
 	for(p = dvbapi_priority; p != NULL; p = p->next)
 	{
-		if(p->type != 's') { continue; }  // stapi rule?
-		if(strcmp(pmtfile, p->pmtfile) != 0) { continue; }  // same file?
+		if(p->type != 's') { continue; } // stapi rule?
+		if(strcmp(pmtfile, p->pmtfile) != 0) { continue; } // same file?
 
 		for(i = 0; i < PTINUM; i++)
 		{
-			if(strcmp(dev_list[i].name, p->devname) == 0 && p->disablefilter == 0)  // check device name and if filtering is enabled!
+			if(strcmp(dev_list[i].name, p->devname) == 0 && p->disablefilter == 0) // check device name and if filtering is enabled!
 			{
 				cs_log_dbg(D_DVBAPI, "set stapi filter on %s for pid %04X", dev_list[i].name, pids[0]);
 				ret = stapi_do_set_filter(demux_id, &dev_list[i].demux_fd[demux_id][num], pids, 1, filter, mask, i);
-				if(ret > 0)    // success
+				if(ret > 0) // success
 				{
 					cs_log_dbg(D_DVBAPI, "%s filter %d set (pid %04X)", dev_list[i].name, num, pid);
 					return ret; // return filternumber
 				}
-				else   // failure
+				else // failure
 				{
 					cs_log_dbg(D_DVBAPI, "Error setting new filter for pid %04X on %s!", pid, dev_list[i].name);
 					return -1; // set return to error
@@ -358,9 +358,9 @@ static int32_t stapi_do_set_filter(int32_t demux_id, FILTERTYPE *filter, uint16_
 	uint32_t FilterAssociateError = 0;
 	int32_t k, ret = 0;
 
-	filter->fd          = 0;
-	filter->BufferHandle[0]     = 0;
-	filter->SlotHandle[0]   = 0;
+	filter->fd = 0;
+	filter->BufferHandle[0] = 0;
+	filter->SlotHandle[0] = 0;
 
 	if(dev_list[dev_id].SessionHandle == 0) { return 0; }
 
@@ -405,12 +405,12 @@ static int32_t stapi_do_set_filter(int32_t demux_id, FILTERTYPE *filter, uint16_
 		filter->NumSlots++;
 	}
 
-	uint32_t FilterSetError         = oscam_stapi_FilterSet(filter->fd, filt, mask);
+	uint32_t FilterSetError = oscam_stapi_FilterSet(filter->fd, filt, mask);
 
 	if(ret || FilterAllocateError || FilterAssociateError || FilterSetError)
 	{
 		cs_log("set_filter: dev: %d FAl: %d FAs: %d FS: %d",
-			   dev_id, FilterAllocateError, FilterAssociateError, FilterSetError);
+				dev_id, FilterAllocateError, FilterAssociateError, FilterSetError);
 		stapi_do_remove_filter(demux_id, filter, dev_id);
 		return 0;
 	}
@@ -435,18 +435,18 @@ static int32_t stapi_do_remove_filter(int32_t UNUSED(demux_id), FILTERTYPE *filt
 
 		if(checkslot == 0)
 		{
-			BufferDeallocateError   = oscam_stapi_BufferDeallocate(filter->BufferHandle[k]);
-			SlotDeallocateError     = oscam_stapi_SlotDeallocate(filter->SlotHandle[k]);
+			BufferDeallocateError = oscam_stapi_BufferDeallocate(filter->BufferHandle[k]);
+			SlotDeallocateError = oscam_stapi_SlotDeallocate(filter->SlotHandle[k]);
 		}
 	}
-	uint32_t FilterDeallocateError      = oscam_stapi_FilterDeallocate(filter->fd);
+	uint32_t FilterDeallocateError = oscam_stapi_FilterDeallocate(filter->fd);
 
 	memset(filter, 0, sizeof(FILTERTYPE));
 
 	if(BufferDeallocateError || SlotDeallocateError || FilterDeallocateError)
 	{
 		cs_log("remove_filter: dev: %d BD: %d SD: %d FDe: %d",
-			   dev_id, BufferDeallocateError, SlotDeallocateError, FilterDeallocateError);
+				dev_id, BufferDeallocateError, SlotDeallocateError, FilterDeallocateError);
 		return 0;
 	}
 	else
@@ -656,7 +656,7 @@ static void stapi_startdescrambler(int32_t demux_id, int32_t dev_index, int32_t 
 	return;
 }
 
-int32_t stapi_set_pid(int32_t demux_id, int32_t UNUSED(num), ca_index_t idx, uint16_t UNUSED(pid), char *UNUSED(pmtfile))
+int32_t stapi_set_pid(int32_t demux_id, int32_t UNUSED(num), uint32_t idx, uint16_t UNUSED(pid), char *UNUSED(pmtfile))
 {
 	int32_t n;
 
@@ -714,9 +714,9 @@ int32_t stapi_write_cw(int32_t demux_id, uint8_t *cw, uint16_t *STREAMpids, int3
 	}
 
 	int32_t pidnum = demux[demux_id].pidindex; // get current pidindex used for descrambling
-	ca_index_t idx = demux[demux_id].ECMpids[pidnum].index[0];
+	uint32_t idx = demux[demux_id].ECMpids[pidnum].index[0];
 
-	if(idx == INDEX_INVALID)   // if no indexer for this pid get one!
+	if(idx == INDEX_INVALID) // if no indexer for this pid get one!
 	{
 		idx = dvbapi_get_desc_index(demux_id, pidnum, 0);
 		cs_log_dbg(D_DVBAPI, "Demuxer %d PID: %d CAID: %04X ECMPID: %04X is using index %d", demux_id, pidnum,
