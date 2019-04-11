@@ -291,7 +291,7 @@ typedef struct filter_s
 #define MAX_STREAM_INDICES   1
 #endif
 
-#define CA_MAX              16 // Max ca devices supported by oscam - limited by sizeof(ca_mask) of struct demux_s (32 bits)
+#define CA_MAX              32 // Max ca devices supported by oscam - limited by sizeof(ca_mask) of struct demux_s (32 bits)
 #define INDEX_MAX           64 // Max descramblers per ca device - limited by sizeof(activeindexers) of struct s_streampid (64 bits)
 #define INDEX_MAX_LOCAL     16 // Max total descramblers to use for enigma2 and other STBs when dvbapi_get_descrambler_info() fails
 #define INDEX_MAX_NET       64 // Max total descramblers to use for PC (VDR, Tvheadend, etc)
@@ -338,8 +338,8 @@ enum stream_type
 };
 
 #define MAX_DEMUX       32 // Max number of demuxes supported by OSCam - each channel/service occupies one demux
-#define MAX_ECM_PIDS    16 // Max number of ECM pids per demux
-#define MAX_EMM_PIDS    16 // Max number of EMM pids per demux
+#define MAX_ECM_PIDS    24 // Max number of ECM pids per demux
+#define MAX_EMM_PIDS    24 // Max number of EMM pids per demux
 #define MAX_STREAM_PIDS 32 // Max number of pids other than ECM and EMM (e.g. audio, video, subtitle, etc) per demux (hardware descramblers might have a capacity of 30 pids)
 #define MAX_FILTER      64
 

@@ -1,6 +1,3 @@
-#if defined(WITH_SSL) || defined(WITH_LIBCRYPTO)
-#include <openssl/mdc2.h>
-#else
 /* crypto/mdc2/mdc2.h */
 /* Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)
  * All rights reserved.
@@ -93,4 +90,3 @@ unsigned char *MDC2(const unsigned char *d, size_t n, unsigned char *md);
 
 #endif
 
-#endif
