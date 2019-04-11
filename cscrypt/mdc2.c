@@ -1,9 +1,6 @@
-
 #include "../globals.h"
 #include "../oscam-string.h"
 #include "mdc2.h"
-
-#if !defined(WITH_SSL) && !defined(WITH_LIBCRYPTO)
 
 //#include <stdio.h>
 //#include <stdlib.h>
@@ -11,8 +8,6 @@
 //#include <openssl/crypto.h>
 //#include <openssl/des.h>
 //#include <openssl/mdc2.h>
-
-
 
 #undef c2l
 #define c2l(c,l)        (l =((DES_LONG)(*((c)++)))    , \
@@ -26,8 +21,6 @@
                         *((c)++)=(unsigned char)(((l)>>16L)&0xff), \
                         *((c)++)=(unsigned char)(((l)>>24L)&0xff))
 
-
-
 # define FP(l,r) \
         { \
         register DES_LONG tt; \
@@ -37,7 +30,6 @@
         PERM_OP(r,l,tt,16,0x0000ffffL); \
         PERM_OP(l,r,tt, 4,0x0f0f0f0fL); \
         }
-
 
 //OPENSSL_GLOBAL const DES_LONG DES_SPtrans[8][64] =
 const DES_LONG DES_SPtrans[8][64] =
@@ -687,5 +679,3 @@ int MDC2_Final(unsigned char *md, MDC2_CTX *c)
 	memcpy(&(md[MDC2_BLOCK]), (char *)c->hh, MDC2_BLOCK);
 	return 1;
 }
-
-#endif
