@@ -1783,10 +1783,6 @@ struct s_reader										// contains device info, reader info and card info
 	FTAB			emu_auproviders;				// AU providers for Emu reader
 	int8_t			emu_datecodedenabled;			// date-coded keys for BISS
 	LLIST			*ll_biss2_rsa_keys;				// BISS2 RSA keys - Read from external PEM files
-	char			*extee36;						// path to "ee36.bin" - Set by the user via the webif
-	char			*extee56;						// path to "ee56.bin" - Set by the user via the webif
-	uint8_t			dre36_force_group;
-	uint8_t			dre56_force_group;
 #endif
 	uint8_t			cnxlastecm;						// == 0 - last ecm has not been paired ecm, > 0 last ecm has been paired ecm
 	LLIST			*emmstat;						// emm stats

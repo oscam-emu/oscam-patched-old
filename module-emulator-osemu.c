@@ -10,7 +10,6 @@
 #include "module-emulator-biss.h"
 #include "module-emulator-cryptoworks.h"
 #include "module-emulator-director.h"
-#include "module-emulator-drecrypt.h"
 #include "module-emulator-irdeto.h"
 #include "module-emulator-nagravision.h"
 #include "module-emulator-powervu.h"
@@ -136,7 +135,6 @@ KeyDataContainer NDSKeys = { NULL, 0, 0 };
 KeyDataContainer BissSWs = { NULL, 0, 0 };
 KeyDataContainer Biss2Keys = { NULL, 0, 0 };
 KeyDataContainer PowervuKeys = { NULL, 0, 0 };
-KeyDataContainer DreKeys = { NULL, 0, 0 };
 KeyDataContainer TandbergKeys = { NULL, 0, 0 };
 KeyDataContainer StreamKeys = { NULL, 0, 0 };
 
@@ -160,8 +158,6 @@ KeyDataContainer *emu_get_key_container(char identifier)
 			return &Biss2Keys;
 		case 'P':
 			return &PowervuKeys;
-		case 'D':
-			return &DreKeys;
 		case 'T':
 			return &TandbergKeys;
 		case 'A':
@@ -679,16 +675,15 @@ void emu_clear_keydata(void)
 	total += BissSWs.keyCount;
 	total += Biss2Keys.keyCount;
 	total += PowervuKeys.keyCount;
-	total += DreKeys.keyCount;
 	total += TandbergKeys.keyCount;
 	total += StreamKeys.keyCount;
 
 	if (total != 0)
 	{
-		cs_log("Freeing keys in memory: W:%d V:%d N:%d I:%d S:%d F:%d G:%d P:%d D:%d T:%d A:%d",
+		cs_log("Freeing keys in memory: W:%d V:%d N:%d I:%d S:%d F:%d G:%d P:%d T:%d A:%d",
 				CwKeys.keyCount, ViKeys.keyCount, NagraKeys.keyCount, IrdetoKeys.keyCount,
 				NDSKeys.keyCount, BissSWs.keyCount, Biss2Keys.keyCount, PowervuKeys.keyCount,
-				DreKeys.keyCount, TandbergKeys.keyCount, StreamKeys.keyCount);
+				TandbergKeys.keyCount, StreamKeys.keyCount);
 
 		delete_keys_in_container('W');
 		delete_keys_in_container('V');
@@ -698,7 +693,6 @@ void emu_clear_keydata(void)
 		delete_keys_in_container('F');
 		delete_keys_in_container('G');
 		delete_keys_in_container('P');
-		delete_keys_in_container('D');
 		delete_keys_in_container('T');
 		delete_keys_in_container('A');
 	}
@@ -882,92 +876,6 @@ void emu_read_keymemory(struct s_reader *rdr)
 void emu_read_keymemory(struct s_reader *UNUSED(rdr)) { }
 #endif
 
-void emu_read_eebin(const char *path, const char *name)
-{
-	char tmp[256];
-	FILE *file = NULL;
-	uint8_t i, buffer[64][32], dummy[2][32];
-	uint32_t prvid;
-
-	// Path is set
-	if (path != NULL)
-	{
-		snprintf(tmp, 256, "%s%s", path, name);
-	}
-	else // No path is set, use SoftCam.Keys's path
-	{
-		snprintf(tmp, 256, "%s%s", emu_keyfile_path, name);
-	}
-
-	// Read file to buffer
-	if ((file = fopen(tmp, "rb")) != NULL)
-	{
-		cs_log("Reading key file: %s", tmp);
-
-		if (fread(buffer, 1, sizeof(buffer), file) != sizeof(buffer))
-		{
-			cs_log("Corrupt key file: %s", tmp);
-			fclose(file);
-			return;
-		}
-
-		fclose(file);
-	}
-	else
-	{
-		if (path != NULL)
-		{
-			cs_log("Cannot open key file: %s", tmp);
-		}
-
-		return;
-	}
-
-	// Save keys to db
-	memset(dummy[0], 0x00, 32);
-	memset(dummy[1], 0xFF, 32);
-	prvid = (strncmp(name, "ee36.bin", 9) == 0) ? 0x4AE111 : 0x4AE114;
-
-	for (i = 0; i < 32; i++) // Set "3B" type keys
-	{
-		// Write keys if they have "real" values
-		if ((memcmp(buffer[i], dummy[0], 32) !=0) && (memcmp(buffer[i], dummy[1], 32) != 0))
-		{
-			snprintf(tmp, 5, "3B%02X", i);
-			emu_set_key('D', prvid, tmp, buffer[i], 32, 0, NULL, NULL);
-		}
-	}
-
-	for (i = 0; i < 32; i++) // Set "56" type keys
-	{
-		// Write keys if they have "real" values
-		if ((memcmp(buffer[32 + i], dummy[0], 32) !=0) && (memcmp(buffer[32 + i], dummy[1], 32) != 0))
-		{
-			snprintf(tmp, 5, "56%02X", i);
-			emu_set_key('D', prvid, tmp, buffer[32 + i], 32, 0, NULL, NULL);
-		}
-	}
-}
-
-void emu_read_deskey(uint8_t *dreOverKey, uint8_t len)
-{
-	uint8_t i;
-
-	if (len == 128)
-	{
-		cs_log("Reading DreCrypt overcrypt (ADEC) key");
-
-		for (i = 0; i < 16; i++)
-		{
-			emu_set_key('D', i, "OVER", dreOverKey + (i * 8), 8, 0, NULL, NULL);
-		}
-	}
-	else if ((len != 0 && len < 128) || len > 128)
-	{
-		cs_log("DreCrypt overcrypt (ADEC) key has wrong length");
-	}
-}
-
 static const char *get_process_ecm_error_reason(int8_t result)
 {
 	switch (result)
@@ -999,8 +907,8 @@ static const char *get_process_ecm_error_reason(int8_t result)
 9  ICG error
 */
 
-int8_t emu_process_ecm(struct s_reader *rdr, int16_t ecmDataLen, uint16_t caid, uint32_t provider,
-						const uint8_t *ecm, uint8_t *dw, uint16_t srvid, uint16_t ecmpid, EXTENDED_CW *cw_ex)
+int8_t emu_process_ecm(struct s_reader *rdr, int16_t ecmDataLen, uint16_t caid, const uint8_t *ecm,
+						uint8_t *dw, uint16_t srvid, uint16_t ecmpid, EXTENDED_CW *cw_ex)
 {
 	if (ecmDataLen < 3)
 	{
@@ -1036,7 +944,6 @@ int8_t emu_process_ecm(struct s_reader *rdr, int16_t ecmDataLen, uint16_t caid, 
 	else if (caid_is_director(caid))    result = director_ecm(ecmCopy, dw);
 	else if (caid_is_nagra(caid))       result = nagra2_ecm(ecmCopy, dw);
 	else if (caid_is_biss(caid))        result = biss_ecm(rdr, caid, ecm, dw, srvid, ecmpid, cw_ex);
-	else if (caid_is_dre(caid))         result = drecrypt2_ecm(provider, ecmCopy, dw);
 
 	if (result != 0)
 	{
@@ -1064,7 +971,7 @@ static const char *get_process_emm_error_reason(int8_t result)
 	}
 }
 
-int8_t emu_process_emm(struct s_reader *rdr, uint16_t caid, uint32_t provider, const uint8_t *emm, uint32_t *keysAdded)
+int8_t emu_process_emm(struct s_reader *rdr, uint16_t caid, const uint8_t *emm, uint32_t *keysAdded)
 {
 	uint16_t emmLen = get_ecm_len(emm);
 	uint8_t emmCopy[emmLen];
@@ -1082,7 +989,6 @@ int8_t emu_process_emm(struct s_reader *rdr, uint16_t caid, uint32_t provider, c
 	else if (caid_is_powervu(caid))      result = powervu_emm(emmCopy, keysAdded);
 	else if (caid_is_director(caid))     result = director_emm(emmCopy, keysAdded);
 	else if (caid_is_biss_dynamic(caid)) result = biss_emm(rdr, emmCopy, keysAdded);
-	else if (caid_is_dre(caid))          result = drecrypt2_emm(rdr, provider, emmCopy, keysAdded);
 
 	if (result != 0)
 	{

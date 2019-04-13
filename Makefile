@@ -284,7 +284,6 @@ SRC-$(CONFIG_WITH_EMU) += module-emulator-streamserver.c
 SRC-$(CONFIG_WITH_EMU) += module-emulator-biss.c
 SRC-$(CONFIG_WITH_EMU) += module-emulator-cryptoworks.c
 SRC-$(CONFIG_WITH_EMU) += module-emulator-director.c
-SRC-$(CONFIG_WITH_EMU) += module-emulator-drecrypt.c
 SRC-$(CONFIG_WITH_EMU) += module-emulator-irdeto.c
 SRC-$(CONFIG_WITH_EMU) += module-emulator-nagravision.c
 SRC-$(CONFIG_WITH_EMU) += module-emulator-powervu.c

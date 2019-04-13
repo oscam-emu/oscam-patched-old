@@ -66,7 +66,6 @@ extern KeyDataContainer NDSKeys;
 extern KeyDataContainer BissSWs;      // 'F' identifier - BISS1 and BISS2 mode 1/E session words
 extern KeyDataContainer Biss2Keys;    // 'G' identifier - BISS2 mode CA session keys (ECM keys)
 extern KeyDataContainer PowervuKeys;
-extern KeyDataContainer DreKeys;
 extern KeyDataContainer TandbergKeys;
 extern KeyDataContainer StreamKeys;
 extern uint8_t viasat_const[];
@@ -77,8 +76,6 @@ void emu_set_keyfile_path(const char *path);
 void emu_clear_keydata(void);
 uint8_t emu_read_keyfile(struct s_reader *rdr, const char *path);
 void emu_read_keymemory(struct s_reader *rdr);
-void emu_read_eebin(const char *path, const char *name);
-void emu_read_deskey(uint8_t *dreOverKey, uint8_t len);
 
 extern uint16_t get_ecm_len(const uint8_t *ecm);
 int8_t is_valid_dcw(uint8_t *dw);
@@ -87,11 +84,10 @@ void date_to_str(char *dateStr, uint8_t len, int8_t offset, uint8_t format);
 
 KeyDataContainer *emu_get_key_container(char identifier);
 
-int8_t emu_process_ecm(struct s_reader *rdr, int16_t ecmDataLen, uint16_t caid, uint32_t provider,
-						const uint8_t *ecm, uint8_t *dw, uint16_t srvid, uint16_t ecmpid, EXTENDED_CW* cw_ex);
+int8_t emu_process_ecm(struct s_reader *rdr, int16_t ecmDataLen, uint16_t caid, const uint8_t *ecm,
+						uint8_t *dw, uint16_t srvid, uint16_t ecmpid, EXTENDED_CW* cw_ex);
 
-int8_t emu_process_emm(struct s_reader *rdr, uint16_t caid, uint32_t provider, const uint8_t *emm,
-						uint32_t *keysAdded);
+int8_t emu_process_emm(struct s_reader *rdr, uint16_t caid, const uint8_t *emm, uint32_t *keysAdded);
 
 int8_t emu_find_key(char identifier, uint32_t provider, uint32_t providerIgnoreMask, char *keyName,
 					uint8_t *key, uint32_t maxKeyLength, uint8_t isCriticalKey, uint32_t keyRef,

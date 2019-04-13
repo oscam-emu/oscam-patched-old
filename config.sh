@@ -301,7 +301,6 @@ update_deps() {
 	enabled MODULE_CCCSHARE && enable_opt MODULE_CCCAM >/dev/null
 	enabled_any CARDREADER_DB2COM CARDREADER_MP35 CARDREADER_SC8IN1 CARDREADER_STINGER && enable_opt CARDREADER_PHOENIX >/dev/null
 	enabled WITH_EMU && enable_opt READER_VIACCESS >/dev/null
-	enabled WITH_EMU && enable_opt READER_DRE >/dev/null
 	enabled WITH_EMU && enable_opt MODULE_NEWCAMD >/dev/null
 	disabled WITH_EMU && disable_opt WITH_SOFTCAM >/dev/null
 }
