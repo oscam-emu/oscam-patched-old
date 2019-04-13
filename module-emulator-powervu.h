@@ -21,7 +21,7 @@
 #define PVU_CONVCW_UTL_ECM	0x02	// UTiLity
 #define PVU_CONVCW_VBI_ECM	0x01	// Vertical Blanking Interval
 
-int8_t powervu_ecm(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_key_data *cdata, EXTENDED_CW *cw_ex);
+int8_t powervu_ecm(uint8_t *ecm, uint8_t *dw, EXTENDED_CW *cw_ex, uint16_t srvid, emu_stream_client_key_data *cdata);
 int8_t powervu_emm(uint8_t *emm, uint32_t *keysAdded);
 
 /*

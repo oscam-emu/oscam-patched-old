@@ -183,8 +183,7 @@ static void refresh_entitlements(struct s_reader *rdr)
 
 static int32_t emu_do_ecm(struct s_reader *rdr, const ECM_REQUEST *er, struct s_ecm_answer *ea)
 {
-
-	if (!emu_process_ecm(rdr, er->ecmlen, er->caid, er->ecm, ea->cw, er->srvid, er->pid, &ea->cw_ex))
+	if (!emu_process_ecm(rdr, er, ea->cw, &ea->cw_ex))
 	{
 		return CS_OK;
 	}

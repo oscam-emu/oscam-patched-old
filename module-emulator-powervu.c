@@ -1801,7 +1801,7 @@ static void calculate_cw(uint8_t seedType, uint8_t *seed, uint8_t csaUsed, uint8
 	}
 }
 
-int8_t powervu_ecm(uint8_t *ecm, uint8_t *dw, uint16_t srvid, emu_stream_client_key_data *cdata, EXTENDED_CW *cw_ex)
+int8_t powervu_ecm(uint8_t *ecm, uint8_t *dw, EXTENDED_CW *cw_ex, uint16_t srvid, emu_stream_client_key_data *cdata)
 {
 	uint32_t i, j, k;
 	uint32_t ecmCrc32, keyRef1, keyRef2;

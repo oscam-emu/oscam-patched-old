@@ -524,7 +524,7 @@ static void ParseEcmData(emu_stream_client_data *cdata)
 		if (data[11] > cdata->ecm_nb || (cdata->ecm_nb == 255 && data[11] == 0) || ((cdata->ecm_nb - data[11]) > 5))
 		{
 			cdata->ecm_nb = data[11];
-			powervu_ecm(data, dcw, cdata->srvid, &cdata->key, NULL);
+			powervu_ecm(data, dcw, NULL, cdata->srvid, &cdata->key);
 		}
 	}
 	//else if () // All other caids

@@ -901,42 +901,41 @@ static const char *get_process_ecm_error_reason(int8_t result)
 9  ICG error
 */
 
-int8_t emu_process_ecm(struct s_reader *rdr, int16_t ecmDataLen, uint16_t caid, const uint8_t *ecm,
-						uint8_t *dw, uint16_t srvid, uint16_t ecmpid, EXTENDED_CW *cw_ex)
+int8_t emu_process_ecm(struct s_reader *rdr, const ECM_REQUEST *er, uint8_t *cw, EXTENDED_CW *cw_ex)
 {
-	if (ecmDataLen < 3)
+	if (er->ecmlen < 3)
 	{
 		cs_log_dbg(D_TRACE, "Received ecm data of zero length!");
 		return 4;
 	}
 
-	uint16_t ecmLen = get_ecm_len(ecm);
+	uint16_t ecmLen = get_ecm_len(er->ecm);
 	uint8_t ecmCopy[ecmLen];
 	int8_t result = 1;
 
-	if (ecmLen != ecmDataLen)
+	if (ecmLen != er->ecmlen)
 	{
 		cs_log_dbg(D_TRACE, "Actual ecm data length 0x%03X but ecm section length is 0x%03X",
-							ecmDataLen, ecmLen);
+							er->ecmlen, ecmLen);
 		return 4;
 	}
 
 	if (ecmLen > EMU_MAX_ECM_LEN)
 	{
 		cs_log_dbg(D_TRACE, "Actual ecm data length 0x%03X but maximum supported ecm length is 0x%03X",
-							ecmDataLen, EMU_MAX_ECM_LEN);
+							er->ecmlen, EMU_MAX_ECM_LEN);
 		return 1;
 	}
 
-	memcpy(ecmCopy, ecm, ecmLen);
+	memcpy(ecmCopy, er->ecm, ecmLen);
 
-	     if (caid_is_viaccess(caid))    result = viaccess_ecm(ecmCopy, dw);
-	else if (caid_is_irdeto(caid))      result = irdeto2_ecm(caid, ecmCopy, dw);
-	else if (caid_is_cryptoworks(caid)) result = cryptoworks_ecm(caid, ecmCopy, dw);
-	else if (caid_is_powervu(caid))     result = powervu_ecm(ecmCopy, dw, srvid, NULL, cw_ex);
-	else if (caid_is_director(caid))    result = director_ecm(ecmCopy, dw);
-	else if (caid_is_nagra(caid))       result = nagra2_ecm(ecmCopy, dw);
-	else if (caid_is_biss(caid))        result = biss_ecm(rdr, caid, ecm, dw, srvid, ecmpid, cw_ex);
+	     if (caid_is_viaccess(er->caid))    result = viaccess_ecm(ecmCopy, cw);
+	else if (caid_is_irdeto(er->caid))      result = irdeto2_ecm(er->caid, ecmCopy, cw);
+	else if (caid_is_cryptoworks(er->caid)) result = cryptoworks_ecm(er->caid, ecmCopy, cw);
+	else if (caid_is_powervu(er->caid))     result = powervu_ecm(ecmCopy, cw, cw_ex, er->srvid, NULL);
+	else if (caid_is_director(er->caid))    result = director_ecm(ecmCopy, cw);
+	else if (caid_is_nagra(er->caid))       result = nagra2_ecm(ecmCopy, cw);
+	else if (caid_is_biss(er->caid))        result = biss_ecm(rdr, er->caid, er->ecm, cw, er->srvid, er->pid, cw_ex);
 
 	if (result != 0)
 	{

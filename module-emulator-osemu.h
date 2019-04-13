@@ -83,8 +83,7 @@ void date_to_str(char *dateStr, uint8_t len, int8_t offset, uint8_t format);
 
 KeyDataContainer *emu_get_key_container(char identifier);
 
-int8_t emu_process_ecm(struct s_reader *rdr, int16_t ecmDataLen, uint16_t caid, const uint8_t *ecm,
-						uint8_t *dw, uint16_t srvid, uint16_t ecmpid, EXTENDED_CW* cw_ex);
+int8_t emu_process_ecm(struct s_reader *rdr, const ECM_REQUEST *er, uint8_t *cw, EXTENDED_CW* cw_ex);
 
 int8_t emu_process_emm(struct s_reader *rdr, uint16_t caid, const uint8_t *emm, uint32_t *keysAdded);
 
