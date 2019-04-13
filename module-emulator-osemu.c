@@ -14,7 +14,6 @@
 #include "module-emulator-nagravision.h"
 #include "module-emulator-powervu.h"
 #include "module-emulator-viaccess.h"
-#include "module-emulator-videoguard.h"
 
 // Shared functions
 
@@ -131,7 +130,6 @@ KeyDataContainer CwKeys = { NULL, 0, 0 };
 KeyDataContainer ViKeys = { NULL, 0, 0 };
 KeyDataContainer NagraKeys = { NULL, 0, 0 };
 KeyDataContainer IrdetoKeys = { NULL, 0, 0 };
-KeyDataContainer NDSKeys = { NULL, 0, 0 };
 KeyDataContainer BissSWs = { NULL, 0, 0 };
 KeyDataContainer Biss2Keys = { NULL, 0, 0 };
 KeyDataContainer PowervuKeys = { NULL, 0, 0 };
@@ -150,8 +148,6 @@ KeyDataContainer *emu_get_key_container(char identifier)
 			return &NagraKeys;
 		case 'I':
 			return &IrdetoKeys;
-		case 'S':
-			return &NDSKeys;
 		case 'F':
 			return &BissSWs;
 		case 'G':
@@ -671,7 +667,6 @@ void emu_clear_keydata(void)
 	total += ViKeys.keyCount;
 	total += NagraKeys.keyCount;
 	total += IrdetoKeys.keyCount;
-	total += NDSKeys.keyCount;
 	total += BissSWs.keyCount;
 	total += Biss2Keys.keyCount;
 	total += PowervuKeys.keyCount;
@@ -680,16 +675,15 @@ void emu_clear_keydata(void)
 
 	if (total != 0)
 	{
-		cs_log("Freeing keys in memory: W:%d V:%d N:%d I:%d S:%d F:%d G:%d P:%d T:%d A:%d",
+		cs_log("Freeing keys in memory: W:%d V:%d N:%d I:%d F:%d G:%d P:%d T:%d A:%d",
 				CwKeys.keyCount, ViKeys.keyCount, NagraKeys.keyCount, IrdetoKeys.keyCount,
-				NDSKeys.keyCount, BissSWs.keyCount, Biss2Keys.keyCount, PowervuKeys.keyCount,
-				TandbergKeys.keyCount, StreamKeys.keyCount);
+				BissSWs.keyCount, Biss2Keys.keyCount, PowervuKeys.keyCount, TandbergKeys.keyCount,
+				StreamKeys.keyCount);
 
 		delete_keys_in_container('W');
 		delete_keys_in_container('V');
 		delete_keys_in_container('N');
 		delete_keys_in_container('I');
-		delete_keys_in_container('S');
 		delete_keys_in_container('F');
 		delete_keys_in_container('G');
 		delete_keys_in_container('P');
@@ -938,7 +932,6 @@ int8_t emu_process_ecm(struct s_reader *rdr, int16_t ecmDataLen, uint16_t caid, 
 
 	     if (caid_is_viaccess(caid))    result = viaccess_ecm(ecmCopy, dw);
 	else if (caid_is_irdeto(caid))      result = irdeto2_ecm(caid, ecmCopy, dw);
-	else if (caid_is_videoguard(caid))  result = videoguard_ecm(caid, ecmCopy, dw);
 	else if (caid_is_cryptoworks(caid)) result = cryptoworks_ecm(caid, ecmCopy, dw);
 	else if (caid_is_powervu(caid))     result = powervu_ecm(ecmCopy, dw, srvid, NULL, cw_ex);
 	else if (caid_is_director(caid))    result = director_ecm(ecmCopy, dw);

@@ -134,15 +134,6 @@ static void refresh_entitlements(struct s_reader *rdr)
 		while (tmpKeyData != NULL);
 	}
 
-	for (i = 0; i < NDSKeys.keyCount; i++)
-	{
-		emu_add_entitlement(rdr, NDSKeys.EmuKeys[i].provider, 0, NDSKeys.EmuKeys[i].key,
-							NDSKeys.EmuKeys[i].keyName, NDSKeys.EmuKeys[i].keyLength, 0);
-	}
-
-	emu_add_entitlement(rdr, 0x090F, 0, viasat_const, "00", 64, 1);
-	emu_add_entitlement(rdr, 0x093E, 0, viasat_const, "00", 64, 1);
-
 	for (i = 0; i < CwKeys.keyCount; i++)
 	{
 		emu_add_entitlement(rdr, CwKeys.EmuKeys[i].provider >> 8, CwKeys.EmuKeys[i].provider & 0xFF,
@@ -255,10 +246,10 @@ static int32_t emu_card_info(struct s_reader *rdr)
 	// Read BISS2 mode CA RSA keys from PEM files
 	biss_read_pem(rdr, BISS2_MAX_RSA_KEYS);
 
-	cs_log("Total keys in memory: W:%d V:%d N:%d I:%d S:%d F:%d G:%d P:%d T:%d A:%d",
+	cs_log("Total keys in memory: W:%d V:%d N:%d I:%d F:%d G:%d P:%d T:%d A:%d",
 			CwKeys.keyCount, ViKeys.keyCount, NagraKeys.keyCount, IrdetoKeys.keyCount,
-			NDSKeys.keyCount, BissSWs.keyCount, Biss2Keys.keyCount, PowervuKeys.keyCount,
-			TandbergKeys.keyCount, StreamKeys.keyCount);
+			BissSWs.keyCount, Biss2Keys.keyCount, PowervuKeys.keyCount, TandbergKeys.keyCount,
+			StreamKeys.keyCount);
 
 	// Inform OSCam about all available keys.
 	// This is used for listing the "entitlements" in the webif's reader page.
@@ -703,7 +694,7 @@ static int32_t emu_get_emm_filter_adv(struct s_reader *rdr, struct s_csystem_emm
 const struct s_cardsystem reader_emu =
 {
 	.desc = "emu",
-	.caids = (uint16_t[]){ 0x05, 0x06, 0x09, 0x0D, 0x0E, 0x10, 0x18, 0x26, 0 },
+	.caids = (uint16_t[]){ 0x05, 0x06, 0x0D, 0x0E, 0x10, 0x18, 0x26, 0 },
 	.do_ecm = emu_do_ecm,
 	.do_emm = emu_do_emm,
 	.card_info = emu_card_info,
@@ -850,14 +841,13 @@ void add_emu_reader(void)
 		cs_strncpy(rdr->device, emuName, sizeof(emuName));
 
 		// CAIDs
-		ctab = strdup("0500,0604,090F,0E00,1010,1801,2600,2602,2610");
+		ctab = strdup("0500,0604,0E00,1010,1801,2600,2602,2610");
 		chk_caidtab(ctab, &rdr->ctab);
 		NULLFREE(ctab);
 
 		// Idents
 		ftab = strdup("0500:000000,007400,007800,021110,023800;"
 					  "0604:000000;"
-					  "090F:000000;"
 					  "0E00:000000;"
 					  "1010:000000;"
 					  "1801:000000,001101,002111,007301;"
