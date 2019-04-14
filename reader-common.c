@@ -507,8 +507,6 @@ int32_t cardreader_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 
 void cardreader_process_ecm(struct s_reader *reader, struct s_client *cl, ECM_REQUEST *er)
 {
-	cs_log_dump_dbg(D_ATR, er->ecm, er->ecmlen, "ecm:");
-
 	struct timeb tps, tpe;
 	struct s_ecm_answer ea;
 	memset(&ea, 0, sizeof(struct s_ecm_answer));
