@@ -1648,7 +1648,7 @@ int32_t write_ecm_answer(struct s_reader *reader, ECM_REQUEST *er, int8_t rc, ui
 			{
 				c = ((cw[i] + cw[i + 1] + cw[i + 2]) & 0xff);
 
-				if((i!=12) && selectedForIgnChecksum && (cw[i + 3] != c))
+				if(selectedForIgnChecksum && (cw[i + 3] != c))
 				{
 					cs_log_dbg(D_TRACE, "notice: CW checksum check disabled for %04X:%06X", er->caid, er->prid);
 					break;
