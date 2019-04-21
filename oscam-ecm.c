@@ -1592,8 +1592,6 @@ int32_t write_ecm_answer(struct s_reader *reader, ECM_REQUEST *er, int8_t rc, ui
 	if(er->tps.time < timeout) // < and NOT <=
 		{ return 0; }
 
-	int32_t i;
-	uint8_t c;
 	struct timeb now;
 	cs_ftime(&now);
 
@@ -1639,57 +1637,56 @@ int32_t write_ecm_answer(struct s_reader *reader, ECM_REQUEST *er, int8_t rc, ui
 
 	if(reader && cw && rc < E_NOTFOUND)
 	{
-		if(cfg.disablecrccws == 0 && reader->disablecrccws == 0)
+		if(!cfg.disablecrccws && !reader->disablecrccws)
 		{
-			uint8_t selectedForIgnChecksum = chk_if_ignore_checksum(er, cfg.disablecrccws, &cfg.disablecrccws_only_for)
-					+ chk_if_ignore_checksum(er, reader->disablecrccws, &reader->disablecrccws_only_for);
-
-			for(i = 0; i < 16; i += 4)
+			if(!(chk_if_ignore_checksum(er, &cfg.disablecrccws_only_for) + chk_if_ignore_checksum(er, &reader->disablecrccws_only_for)))
 			{
-				c = ((cw[i] + cw[i + 1] + cw[i + 2]) & 0xff);
-
-				if(selectedForIgnChecksum && (cw[i + 3] != c))
+				uint8_t i, c;
+				for(i = 0; i < 16; i += 4)
 				{
-					cs_log_dbg(D_TRACE, "notice: CW checksum check disabled for %04X:%06X", er->caid, er->prid);
-					break;
-				}
+					c = ((cw[i] + cw[i + 1] + cw[i + 2]) & 0xff);
 
-				if(cw[i + 3] != c)
-				{
-					uint8_t nano = 0x00;
-					if(er->caid == 0x100 && er->ecm[5] > 0x00)
+					if(cw[i + 3] != c)
 					{
-						nano = er->ecm[5]; // seca nano protection
-					}
-
-					if(reader->dropbadcws && !nano) // only drop controlword if no cw encryption is applied
-					{
-						rc = E_NOTFOUND;
-						rcEx = E2_WRONG_CHKSUM;
-						break;
-					}
-					else
-					{
-						if(!nano) // only fix checksum if no cw encryption is applied (nano = 0)
+						uint8_t nano = 0x00;
+						if(er->caid == 0x100 && er->ecm[5] > 0x00)
 						{
-							cs_log_dbg(D_TRACE, "notice: changed dcw checksum byte cw[%i] from %02x to %02x", i + 3, cw[i + 3], c);
-							cw[i + 3] = c;
+							nano = er->ecm[5]; // seca nano protection
+						}
+
+						if(reader->dropbadcws && !nano) // only drop controlword if no cw encryption is applied
+						{
+							rc = E_NOTFOUND;
+							rcEx = E2_WRONG_CHKSUM;
+							break;
 						}
 						else
 						{
-							if(i == 12) // there are servers delivering correct controlwords but with failing last cw checksum (on purpose?!)
+							if(!nano) // only fix checksum if no cw encryption is applied (nano = 0)
 							{
-								cs_log_dbg(D_TRACE,"NANO%02d: BAD PEER DETECTED, oscam has fixed the last cw crc that wasn't matching!", nano);
-								cw[i + 3] = c; // fix the last controlword
+								cs_log_dbg(D_TRACE, "notice: changed dcw checksum byte cw[%i] from %02x to %02x", i + 3, cw[i + 3], c);
+								cw[i + 3] = c;
 							}
 							else
 							{
-								cs_log_dbg(D_TRACE,"NANO%02d: not fixing the crc of this cw since its still encrypted!", nano);
-								break; // crc failed so stop!
+								if(i == 12) // there are servers delivering correct controlwords but with failing last cw checksum (on purpose?!)
+								{
+									cs_log_dbg(D_TRACE,"NANO%02d: BAD PEER DETECTED, oscam has fixed the last cw crc that wasn't matching!", nano);
+									cw[i + 3] = c; // fix the last controlword
+								}
+								else
+								{
+									cs_log_dbg(D_TRACE,"NANO%02d: not fixing the crc of this cw since its still encrypted!", nano);
+									break; // crc failed so stop!
+								}
 							}
 						}
 					}
 				}
+			}
+			else
+			{
+				cs_log_dbg(D_TRACE, "notice: CW checksum check disabled for %04X:%06X", er->caid, er->prid);
 			}
 		}
 		else
