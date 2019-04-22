@@ -1079,7 +1079,7 @@ int32_t dvbapi_set_filter(int32_t demux_id, int32_t api, uint16_t pid, uint16_t 
  */
 static int32_t dvbapi_get_descrambler_info(void)
 {
-	// In enigma2 all ca devices are listed under adpter0. In adition we only
+	// In enigma2 all ca devices are listed under adapter0. In addition we only
 	// need to ask one ca device to get the total number of descramblers. In
 	// PC installations, there are no ca devices, so we use a predefined value.
 
@@ -1109,7 +1109,7 @@ static int32_t dvbapi_get_descrambler_info(void)
 	snprintf(device_path, sizeof(device_path), devices[selected_box].path, 0);
 	strncat(device_path, device_path2, sizeof(device_path) - strlen(device_path));
 
-	if((fd = open(device_path, O_RDONLY | O_NONBLOCK)) < 0)
+	if((fd = open(device_path, O_RDWR | O_NONBLOCK)) < 0)
 	{
 		cs_log("ERROR: Can't open device %s (errno=%d %s)", device_path, errno, strerror(errno));
 		return 0;
