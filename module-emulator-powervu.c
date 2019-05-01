@@ -1329,12 +1329,18 @@ static void create_cw(uint8_t *seed, uint8_t lenSeed, uint8_t *baseCw, uint8_t v
 static uint32_t create_channel_hash(uint16_t caid, uint16_t tsid, uint16_t onid, uint32_t ens)
 {
 	uint8_t buffer[8];
+	uint32_t channel_hash = 0;
 
-	i2b_buf(2, tsid, buffer);
-	i2b_buf(2, onid, buffer + 2);
-	i2b_buf(4, ens, buffer + 4);
+	if (ens)
+	{
+		i2b_buf(2, tsid, buffer);
+		i2b_buf(2, onid, buffer + 2);
+		i2b_buf(4, ens, buffer + 4);
 
-	return crc32(caid, buffer, sizeof(buffer));
+		channel_hash = crc32(caid, buffer, sizeof(buffer));
+	}
+
+	return channel_hash;
 }
 
 static uint16_t get_channel_group(uint32_t channel_hash)
@@ -1342,7 +1348,7 @@ static uint16_t get_channel_group(uint32_t channel_hash)
 	uint8_t tmp[2];
 	uint16_t group = 0;
 
-	if (emu_find_key('P', channel_hash, 0x00000000, "GROUP", tmp, 2, 0, 0, 0, NULL))
+	if (channel_hash && emu_find_key('P', channel_hash, 0x00000000, "GROUP", tmp, 2, 0, 0, 0, NULL))
 	{
 		group = b2i(2, tmp);
 	}
