@@ -554,16 +554,22 @@ static int32_t emu_get_ird2_emm_filter(struct s_reader *rdr, struct s_csystem_em
 	return CS_OK;
 }
 
-static int32_t emu_get_pvu_emm_filter(struct s_reader *UNUSED(rdr), struct s_csystem_emm_filter **emm_filters, unsigned int *filter_count, uint16_t UNUSED(caid), uint32_t UNUSED(provid), uint16_t srvid)
+static int32_t emu_get_pvu_emm_filter(struct s_csystem_emm_filter **emm_filters, unsigned int *filter_count,
+										uint16_t caid, uint16_t srvid, uint16_t tsid, uint16_t onid, uint32_t ens)
 {
 	uint8_t hexserials[32][4];
 	uint32_t i, count = 0;
 
 	SAFE_MUTEX_LOCK(&emu_key_data_mutex);
-	if (!powervu_get_hexserials(srvid, hexserials, 32, &count))
+	count = powervu_get_hexserials_new(hexserials, 32, caid, tsid, onid, ens);
+	if (count == 0)
 	{
-		SAFE_MUTEX_UNLOCK(&emu_key_data_mutex);
-		return CS_ERROR;
+		count = powervu_get_hexserials(hexserials, 32, srvid);
+		if (count == 0)
+		{
+			SAFE_MUTEX_UNLOCK(&emu_key_data_mutex);
+			return CS_ERROR;
+		}
 	}
 	SAFE_MUTEX_UNLOCK(&emu_key_data_mutex);
 
@@ -679,11 +685,12 @@ static int32_t emu_get_emm_filter(struct s_reader *UNUSED(rdr), struct s_csystem
 	return CS_ERROR;
 }
 
-static int32_t emu_get_emm_filter_adv(struct s_reader *rdr, struct s_csystem_emm_filter **emm_filters, unsigned int *filter_count, uint16_t caid, uint32_t provid, uint16_t srvid)
+static int32_t emu_get_emm_filter_adv(struct s_reader *rdr, struct s_csystem_emm_filter **emm_filters, unsigned int *filter_count,
+										uint16_t caid, uint32_t provid, uint16_t srvid, uint16_t tsid, uint16_t onid, uint32_t ens)
 {
 	if (caid_is_viaccess(caid))     return emu_get_via3_emm_filter(rdr, emm_filters, filter_count, caid, provid);
 	if (caid_is_irdeto(caid))       return emu_get_ird2_emm_filter(rdr, emm_filters, filter_count, caid, provid);
-	if (caid_is_powervu(caid))      return emu_get_pvu_emm_filter(rdr, emm_filters, filter_count, caid, provid, srvid);
+	if (caid_is_powervu(caid))      return emu_get_pvu_emm_filter(emm_filters, filter_count, caid, srvid, tsid, onid, ens);
 	if (caid_is_director(caid))     return emu_get_tan_emm_filter(rdr, emm_filters, filter_count, caid, provid);
 	if (caid_is_biss_dynamic(caid)) return emu_get_biss_emm_filter(rdr, emm_filters, filter_count, caid, provid);
 

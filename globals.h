@@ -984,7 +984,7 @@ struct s_cardsystem
 	void			(*post_process)(struct s_reader *);
 	int32_t			(*get_emm_type)(struct emm_packet_t *, struct s_reader *);
 	int32_t			(*get_emm_filter)(struct s_reader *, struct s_csystem_emm_filter **, uint32_t *);
-	int32_t			(*get_emm_filter_adv)(struct s_reader *, struct s_csystem_emm_filter **, uint32_t *, uint16_t, uint32_t, uint16_t);
+	int32_t			(*get_emm_filter_adv)(struct s_reader *, struct s_csystem_emm_filter **, uint32_t *, uint16_t, uint32_t, uint16_t, uint16_t, uint16_t, uint32_t);
 	int32_t			(*get_tunemm_filter)(struct s_reader *, struct s_csystem_emm_filter **, uint32_t *);
 };
 

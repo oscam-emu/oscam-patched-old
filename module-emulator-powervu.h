@@ -21,14 +21,14 @@
 #define PVU_CONVCW_UTL_ECM	0x02	// UTiLity
 #define PVU_CONVCW_VBI_ECM	0x01	// Vertical Blanking Interval
 
-int8_t powervu_ecm(uint8_t *ecm, uint8_t *dw, EXTENDED_CW *cw_ex, uint16_t srvid, emu_stream_client_key_data *cdata);
+int8_t powervu_ecm(uint8_t *ecm, uint8_t *dw, EXTENDED_CW *cw_ex, uint16_t srvid, const ECM_REQUEST *er, emu_stream_client_key_data *cdata);
 int8_t powervu_emm(uint8_t *emm, uint32_t *keysAdded);
 
 /*
- * This function searches for EMM keys and sends their Unique Address (UA) back to OSCam as
- * EMM filter. The EMM keys are picked from all group id's that have ECM keys for the srvid
- * specified as input. If there is a large ammount of EMM keys for a given group, only the
- * first "maxCount" UA's are sent as EMM filters. The rest are not used at all.
+ * This function searches for EMM keys and adds their Unique Addresses (UA) as EMM filters.
+ * The EMM keys are picked from all group id's that have ECM keys for the srvid specified
+ * as input. If there is a large ammount of EMM keys matching these criteria, only the first
+ * "maxCount" UA's are added as EMM filters. The rest are not used at all.
  *
  * In the rare case where two or more EMM keys with the same UA belong to different groups,
  * and these groups also have ECM keys for the srvid in request, there is a chance the ECM
@@ -37,10 +37,22 @@ int8_t powervu_emm(uint8_t *emm, uint32_t *keysAdded);
  * is to make sure there are no EMM keys with the same UA between different groups.
  *
  * Hexserials must be of type "uint8_t hexserials[maxCount][4]". If srvid is equal to 0xFFFF
- * all serials are returned (no service id filtering is done). Return value is 0 on error,
- * 1 on success.
+ * all serials are added (no service id filtering is done). Returns the count of hexserials
+ * added as filters.
 */
-int8_t powervu_get_hexserials(uint16_t srvid, uint8_t hexserials[][4], uint32_t maxCount, uint32_t *count);
+int8_t powervu_get_hexserials(uint8_t hexserials[][4], uint32_t maxCount, uint16_t srvid);
+
+/*
+ * Like the previous function, it adds UAs as EMM filters. It is used in conjunction with the
+ * new method of entering ECM keys, where one key can serve every channel in the group. Since
+ * there is no srvid to search for, we need to know the group id prior to searching for EMM
+ * keys. To do so, this function calulates a hash using the tsid, onid and enigma namespace of
+ * the transponder, which is only available in enigma2 and Tvheadend/VDR.
+ *
+ * Hexserials must be of type "uint8_t hexserials[maxCount][4]" like before. It returns the
+ * count of hexserials added as filters.
+*/
+int8_t powervu_get_hexserials_new(uint8_t hexserials[][4], uint32_t maxCount, uint16_t caid, uint16_t tsid, uint16_t onid, uint32_t ens);
 
 #endif // WITH_EMU
 

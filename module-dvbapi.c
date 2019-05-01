@@ -1883,7 +1883,8 @@ void dvbapi_start_emm_filter(int32_t demux_id)
 					{
 						if(rdr->typ == R_EMU)
 						{
-							csystem->get_emm_filter_adv(rdr, &dmx_filter, &filter_count, caid, provid, demux[demux_id].program_number);
+							csystem->get_emm_filter_adv(rdr, &dmx_filter, &filter_count, caid, provid, demux[demux_id].program_number,
+														demux[demux_id].tsid, demux[demux_id].onid, demux[demux_id].ens);
 						}
 						else
 						{

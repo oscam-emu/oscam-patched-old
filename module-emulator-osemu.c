@@ -250,16 +250,16 @@ static void write_key_to_file(char identifier, uint32_t provider, const char *ke
 
 	if (comment)
 	{
-		snprintf(line, sizeof(line), "\n%c %.4X %s %s ; added by Emu %s %s",
+		snprintf(line, sizeof(line), "\n%c %08X %s %s ; added by Emu %s %s",
 					identifier, provider, keyName, keyValue, dateText, comment);
 	}
 	else
 	{
-		snprintf(line, sizeof(line), "\n%c %.4X %s %s ; added by Emu %s",
+		snprintf(line, sizeof(line), "\n%c %08X %s %s ; added by Emu %s",
 					identifier, provider, keyName, keyValue, dateText);
 	}
 
-	cs_log("Key written: %c %.4X %s %s", identifier, provider, keyName, keyValue);
+	cs_log("Key written: %c %08X %s %s", identifier, provider, keyName, keyValue);
 
 	free(keyValue);
 
@@ -798,7 +798,7 @@ uint8_t emu_read_keyfile(struct s_reader *rdr, const char *opath)
 				!(identifier == 'F' && 0 == strncmp(keyString, "XXXXXXXXXXXX", 12))) // Skip warning for BISS 'Example key' lines
 			{
 				// Alert user regarding faulty line
-				cs_log("WARNING: non-hex value in %s at %c %04X %s %s",
+				cs_log("WARNING: non-hex value in %s at %c %08X %s %s",
 						EMU_KEY_FILENAME, identifier, provider, keyName, keyString);
 			}
 		}
@@ -857,7 +857,7 @@ void emu_read_keymemory(struct s_reader *rdr)
 				!(identifier == 'F' && 0 == strncmp(keyString, "XXXXXXXXXXXX", 12))) // Skip warning for BISS 'Example key' lines
 			{
 				// Alert user regarding faulty line
-				cs_log("WARNING: non-hex value in internal keyfile at %c %04X %s %s",
+				cs_log("WARNING: non-hex value in internal keyfile at %c %08X %s %s",
 						identifier, provider, keyName, keyString);
 			}
 		}
@@ -932,7 +932,7 @@ int8_t emu_process_ecm(struct s_reader *rdr, const ECM_REQUEST *er, uint8_t *cw,
 	     if (caid_is_viaccess(er->caid))    result = viaccess_ecm(ecmCopy, cw);
 	else if (caid_is_irdeto(er->caid))      result = irdeto2_ecm(er->caid, ecmCopy, cw);
 	else if (caid_is_cryptoworks(er->caid)) result = cryptoworks_ecm(er->caid, ecmCopy, cw);
-	else if (caid_is_powervu(er->caid))     result = powervu_ecm(ecmCopy, cw, cw_ex, er->srvid, NULL);
+	else if (caid_is_powervu(er->caid))     result = powervu_ecm(ecmCopy, cw, cw_ex, er->srvid, er, NULL);
 	else if (caid_is_director(er->caid))    result = director_ecm(ecmCopy, cw);
 	else if (caid_is_nagra(er->caid))       result = nagra2_ecm(ecmCopy, cw);
 	else if (caid_is_biss(er->caid))        result = biss_ecm(rdr, er->caid, er->ecm, cw, er->srvid, er->pid, cw_ex);

@@ -1326,9 +1326,33 @@ static void create_cw(uint8_t *seed, uint8_t lenSeed, uint8_t *baseCw, uint8_t v
 	}
 }
 
-static inline int8_t get_ecm_key(uint8_t *key, uint16_t srvid, uint8_t keyIndex, uint32_t keyRef)
+static uint32_t create_channel_hash(uint16_t caid, uint16_t tsid, uint16_t onid, uint32_t ens)
 {
-	return emu_find_key('P', srvid, 0xFFFF0000, keyIndex == 1 ? "01" : "00", key, 7, 0, keyRef, 0, NULL);
+	uint8_t buffer[8];
+
+	i2b_buf(2, tsid, buffer);
+	i2b_buf(2, onid, buffer + 2);
+	i2b_buf(4, ens, buffer + 4);
+
+	return crc32(caid, buffer, sizeof(buffer));
+}
+
+static uint16_t get_channel_group(uint32_t channel_hash)
+{
+	uint8_t tmp[2];
+	uint16_t group = 0;
+
+	if (emu_find_key('P', channel_hash, 0x00000000, "GROUP", tmp, 2, 0, 0, 0, NULL))
+	{
+		group = b2i(2, tmp);
+	}
+
+	return group;
+}
+
+static inline int8_t get_ecm_key(uint8_t *key, uint32_t provider, uint32_t ignore_mask, uint8_t keyIndex, uint32_t keyRef)
+{
+	return emu_find_key('P', provider, ignore_mask, keyIndex == 1 ? "01" : "00", key, 7, 0, keyRef, 0, NULL);
 }
 
 static inline int8_t get_emm_key(uint8_t *key, char *uniqueAddress, uint32_t keyRef, uint32_t *groupId)
@@ -1801,10 +1825,10 @@ static void calculate_cw(uint8_t seedType, uint8_t *seed, uint8_t csaUsed, uint8
 	}
 }
 
-int8_t powervu_ecm(uint8_t *ecm, uint8_t *dw, EXTENDED_CW *cw_ex, uint16_t srvid, emu_stream_client_key_data *cdata)
+int8_t powervu_ecm(uint8_t *ecm, uint8_t *dw, EXTENDED_CW *cw_ex, uint16_t srvid, const ECM_REQUEST *er, emu_stream_client_key_data *cdata)
 {
 	uint32_t i, j, k;
-	uint32_t ecmCrc32, keyRef1, keyRef2;
+	uint32_t ecmCrc32, keyRef0, keyRef1, keyRef2, channel_hash, group_id = 0;
 
 	uint16_t ecmLen = get_ecm_len(ecm);
 	uint16_t nanoLen, channelId, ecmSrvid;
@@ -1941,25 +1965,43 @@ int8_t powervu_ecm(uint8_t *ecm, uint8_t *dw, EXTENDED_CW *cw_ex, uint16_t srvid
 				channelId = b2i(2, ecm + i + 23);
 				ecmSrvid = (channelId >> 4) | ((channelId & 0xF) << 12);
 
+				cs_log_dbg(D_ATR, "csaUsed: %d, xorMode: %d, ecmSrvid: %04X, hashModeCw: %d, modeCW: %d",
+							csaUsed, xorMode, ecmSrvid, hashModeCw, modeCW);
+
+				if (er != NULL) // "er" does not exist in stream relay
+				{
+					channel_hash = create_channel_hash(er->caid, er->tsid, er->onid, er->ens);
+					group_id = get_channel_group(channel_hash);
+
+					cs_log_dbg(D_ATR, "channel hash: %08X, group id: %04X", channel_hash, group_id);
+				}
+
 				decrypt_ok = 0;
 
 				memcpy(ecmPart1, ecm + i + 8, 14);
 				memcpy(ecmPart2, ecm + i + 27, 27);
 
+				keyRef0 = 0;
 				keyRef1 = 0;
 				keyRef2 = 0;
 
-				cs_log_dbg(D_ATR, "csaUsed=%d, xorMode=%d, ecmSrvid=%04X, hashModeCw=%d, modeCW=%d",
-							csaUsed, xorMode, ecmSrvid, hashModeCw, modeCW);
-
 				do
 				{
-					if (!get_ecm_key(ecmKey, ecmSrvid, keyIndex, keyRef1++))
+					if (!group_id || !get_ecm_key(ecmKey, group_id << 16, 0x0000FFFF, keyIndex, keyRef0++))
 					{
-						if (!get_ecm_key(ecmKey, channelId, keyIndex, keyRef2++))
+						if (!get_ecm_key(ecmKey, ecmSrvid, 0xFFFF0000, keyIndex, keyRef1++))
 						{
-							cs_log("Key not found: P %04X %02X", ecmSrvid, keyIndex);
-							return EMU_KEY_NOT_FOUND;
+							if (!get_ecm_key(ecmKey, channelId, 0xFFFF0000, keyIndex, keyRef2++))
+							{
+								cs_log("Key not found or invalid: P ****%04X %02X", ecmSrvid, keyIndex);
+
+								if (group_id) // Print only if there is a matching "GROUP" entry
+								{
+									cs_log("Key not found or invalid: P %04XFFFF %02X", group_id, keyIndex);
+								}
+
+								return EMU_KEY_NOT_FOUND;
+							}
 						}
 					}
 
@@ -2298,7 +2340,7 @@ int8_t powervu_emm(uint8_t *emm, uint32_t *keysAdded)
 	{
 		if (!get_emm_key(emmKey, keyName, keyRef++, &groupId))
 		{
-			cs_log_dbg(D_TRACE, "EMM key for UA %s is missing", keyName);
+			//cs_log_dbg(D_ATR, "EMM key for UA %s is missing", keyName);
 			return EMU_KEY_NOT_FOUND;
 		}
 
@@ -2360,13 +2402,13 @@ int8_t powervu_emm(uint8_t *emm, uint32_t *keysAdded)
 	return EMU_OK;
 }
 
-int8_t powervu_get_hexserials(uint16_t srvid, uint8_t hexserials[][4], uint32_t maxCount, uint32_t *count)
+int8_t powervu_get_hexserials(uint8_t hexserials[][4], uint32_t maxCount, uint16_t srvid)
 {
 	//srvid == 0xFFFF -> get all
 
 	int8_t alreadyAdded;
 	uint8_t tmp[4];
-	uint32_t i, j, k, groupid, length;
+	uint32_t i, j, k, groupid, length, count = 0;
 	KeyDataContainer *KeyDB;
 
 	KeyDB = emu_get_key_container('P');
@@ -2375,11 +2417,9 @@ int8_t powervu_get_hexserials(uint16_t srvid, uint8_t hexserials[][4], uint32_t 
 		return 0;
 	}
 
-	(*count) = 0;
-
-	for (i = 0; i < KeyDB->keyCount && (*count) < maxCount; i++)
+	for (i = 0; i < KeyDB->keyCount && count < maxCount; i++)
 	{
-		if (KeyDB->EmuKeys[i].provider <= 0x0000FFFF) // skip au keys
+		if (KeyDB->EmuKeys[i].provider <= 0x0000FFFF) // skip EMM keys
 		{
 			continue;
 		}
@@ -2389,11 +2429,15 @@ int8_t powervu_get_hexserials(uint16_t srvid, uint8_t hexserials[][4], uint32_t 
 			continue;
 		}
 
+		// This "groupid" has an ECM key with our "srvid"
+		// (in ECM keys "groupid" is top 16 bits)
 		groupid = KeyDB->EmuKeys[i].provider >> 16;
 
-		for (j = 0; j < KeyDB->keyCount && (*count) < maxCount; j++)
+		for (j = 0; j < KeyDB->keyCount && count < maxCount; j++)
 		{
-			if (KeyDB->EmuKeys[j].provider != groupid) // search au key with groupip
+			// Skip EMM keys belonging to other groups
+			// (in EMM keys "groupid" is bottom 16 bits)
+			if (KeyDB->EmuKeys[j].provider != groupid)
 			{
 				continue;
 			}
@@ -2413,7 +2457,7 @@ int8_t powervu_get_hexserials(uint16_t srvid, uint8_t hexserials[][4], uint32_t 
 			memset(tmp, 0, 4);
 			char_to_bin(tmp + (4 - (length / 2)), KeyDB->EmuKeys[j].keyName, length);
 
-			for (k = 0, alreadyAdded = 0; k < *count; k++)
+			for (k = 0, alreadyAdded = 0; k < count; k++)
 			{
 				if (!memcmp(hexserials[k], tmp, 4))
 				{
@@ -2424,13 +2468,78 @@ int8_t powervu_get_hexserials(uint16_t srvid, uint8_t hexserials[][4], uint32_t 
 
 			if (!alreadyAdded)
 			{
-				memcpy(hexserials[*count], tmp, 4);
-				(*count)++;
+				memcpy(hexserials[count], tmp, 4);
+				count++;
 			}
 		}
 	}
 
-	return 1;
+	return count;
+}
+
+int8_t powervu_get_hexserials_new(uint8_t hexserials[][4], uint32_t maxCount, uint16_t caid,
+									uint16_t tsid, uint16_t onid, uint32_t ens)
+{
+	int8_t alreadyAdded;
+	uint8_t tmp[4];
+	uint32_t i, j, channel_hash, group_id, length, count = 0;
+	KeyDataContainer *KeyDB;
+
+	KeyDB = emu_get_key_container('P');
+	if (KeyDB == NULL)
+	{
+		return 0;
+	}
+
+	channel_hash = create_channel_hash(caid, tsid, onid, ens);
+	group_id = get_channel_group(channel_hash);
+
+	if (group_id == 0) // No group found for this hash
+	{
+		return 0;
+	}
+
+	for (i = 0; i < KeyDB->keyCount && count < maxCount; i++)
+	{
+		// Skip EMM keys belonging to other groups
+		// (in EMM keys "groupid" is bottom 16 bits)
+		if (KeyDB->EmuKeys[i].provider != group_id)
+		{
+			continue;
+		}
+
+		length = strlen(KeyDB->EmuKeys[i].keyName);
+
+		if (length < 3)
+		{
+			continue;
+		}
+
+		if (length > 8)
+		{
+			length = 8;
+		}
+
+		memset(tmp, 0, 4);
+		char_to_bin(tmp + (4 - (length / 2)), KeyDB->EmuKeys[i].keyName, length);
+
+		for (j = 0, alreadyAdded = 0; j < count; j++)
+		{
+			if (!memcmp(hexserials[j], tmp, 4))
+			{
+				alreadyAdded = 1;
+				break;
+			}
+		}
+
+		if (!alreadyAdded)
+		{
+			memcpy(hexserials[count], tmp, 4);
+			count++;
+		}
+	}
+
+	return count;
 }
 
 #endif // WITH_EMU
