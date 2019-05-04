@@ -220,7 +220,7 @@ static void ParsePatData(emu_stream_client_data *cdata)
 		if (cdata->srvid == srvid)
 		{
 			cdata->pmt_pid = b2i(2, data + i + 2) & 0x1FFF;
-			cs_log_dbg(D_READER, "Stream %i found pmt pid: 0x%04X (%i)",
+			cs_log_dbg(D_READER, "Stream client %i found pmt pid: 0x%04X (%i)",
 						cdata->connid, cdata->pmt_pid, cdata->pmt_pid);
 			break;
 		}
@@ -335,7 +335,7 @@ static void ParsePmtData(emu_stream_client_data *cdata)
 	cdata->pcr_pid = b2i(2, data + 8) & 0x1FFF;
 	if (cdata->pcr_pid != 0x1FFF)
 	{
-		cs_log_dbg(D_READER, "Stream %i found pcr pid: 0x%04X (%i)",
+		cs_log_dbg(D_READER, "Stream client %i found pcr pid: 0x%04X (%i)",
 					cdata->connid, cdata->pcr_pid, cdata->pcr_pid);
 	}
 
@@ -373,7 +373,7 @@ static void ParsePmtData(emu_stream_client_data *cdata)
 					cdata->caid = caid;
 				}
 				cdata->ecm_pid = b2i(2, data + i + 4) & 0x1FFF;
-				cs_log_dbg(D_READER, "Stream %i found ecm pid: 0x%04X (%i)",
+				cs_log_dbg(D_READER, "Stream client %i found ecm pid: 0x%04X (%i)",
 							cdata->connid, cdata->ecm_pid, cdata->ecm_pid);
 				break;
 			}
@@ -400,7 +400,7 @@ static void ParsePmtData(emu_stream_client_data *cdata)
 			case 0xEA: // VC-1 video
 			{
 				cdata->video_pid = elementary_pid;
-				cs_log_dbg(D_READER, "Stream %i found video pid: 0x%04X (%i)",
+				cs_log_dbg(D_READER, "Stream client %i found video pid: 0x%04X (%i)",
 							cdata->connid, elementary_pid, elementary_pid);
 				break;
 			}
@@ -420,7 +420,7 @@ static void ParsePmtData(emu_stream_client_data *cdata)
 
 				cdata->audio_pids[cdata->audio_pid_count] = elementary_pid;
 				cdata->audio_pid_count++;
-				cs_log_dbg(D_READER, "Stream %i found audio pid: 0x%04X (%i)",
+				cs_log_dbg(D_READER, "Stream client %i found audio pid: 0x%04X (%i)",
 							cdata->connid, elementary_pid, elementary_pid);
 				break;
 			}
@@ -444,13 +444,13 @@ static void ParsePmtData(emu_stream_client_data *cdata)
 
 					cdata->audio_pids[cdata->audio_pid_count] = elementary_pid;
 					cdata->audio_pid_count++;
-					cs_log_dbg(D_READER, "Stream %i found audio pid: 0x%04X (%i)",
+					cs_log_dbg(D_READER, "Stream client %i found audio pid: 0x%04X (%i)",
 								cdata->connid, elementary_pid, elementary_pid);
 				}
 				else if (type == STREAM_TELETEXT)
 				{
 					cdata->teletext_pid = elementary_pid;
-					cs_log_dbg(D_READER, "Stream %i found teletext pid: 0x%04X (%i)",
+					cs_log_dbg(D_READER, "Stream client %i found teletext pid: 0x%04X (%i)",
 								cdata->connid, elementary_pid, elementary_pid);
 				}
 				break;
@@ -462,7 +462,7 @@ static void ParsePmtData(emu_stream_client_data *cdata)
 	// search the keyDB for a fake one
 	if (cdata->caid == NO_CAID_VALUE && stream_client_get_caid(cdata) == 1)
 	{
-		cs_log_dbg(D_READER, "Stream %i found fake caid: 0x%04X (%i)",
+		cs_log_dbg(D_READER, "Stream client %i found fake caid: 0x%04X (%i)",
 					cdata->connid, cdata->caid, cdata->caid);
 	}
 }
@@ -488,7 +488,7 @@ static void ParseCatData(emu_stream_client_data *cdata)
 				cdata->caid = caid;
 			}
 			cdata->emm_pid = b2i(2, data + i + 4) & 0x1FFF;;
-			cs_log_dbg(D_READER, "Stream %i found emm pid: 0x%04X (%i)",
+			cs_log_dbg(D_READER, "Stream client %i found emm pid: 0x%04X (%i)",
 						cdata->connid, cdata->emm_pid, cdata->emm_pid);
 			break;
 		}
@@ -504,7 +504,7 @@ static void ParseEmmData(emu_stream_client_data *cdata)
 	if (keysAdded)
 	{
 		//refresh_entitlements(rdr);
-		cs_log("Stream %i found %i keys", cdata->connid, keysAdded);
+		cs_log("Stream client %i found %i keys", cdata->connid, keysAdded);
 	}
 }
 
