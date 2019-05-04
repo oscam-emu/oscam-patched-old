@@ -1831,7 +1831,8 @@ static void calculate_cw(uint8_t seedType, uint8_t *seed, uint8_t csaUsed, uint8
 	}
 }
 
-int8_t powervu_ecm(uint8_t *ecm, uint8_t *dw, EXTENDED_CW *cw_ex, uint16_t srvid, const ECM_REQUEST *er, emu_stream_client_key_data *cdata)
+int8_t powervu_ecm(uint8_t *ecm, uint8_t *dw, EXTENDED_CW *cw_ex, uint16_t srvid, uint16_t caid,
+					uint16_t tsid, uint16_t onid, uint32_t ens, emu_stream_client_key_data *cdata)
 {
 	uint32_t i, j, k;
 	uint32_t ecmCrc32, keyRef0, keyRef1, keyRef2, channel_hash, group_id = 0;
@@ -1974,13 +1975,10 @@ int8_t powervu_ecm(uint8_t *ecm, uint8_t *dw, EXTENDED_CW *cw_ex, uint16_t srvid
 				cs_log_dbg(D_ATR, "csaUsed: %d, xorMode: %d, ecmSrvid: %04X, hashModeCw: %d, modeCW: %d",
 							csaUsed, xorMode, ecmSrvid, hashModeCw, modeCW);
 
-				if (er != NULL) // "er" does not exist in stream relay
-				{
-					channel_hash = create_channel_hash(er->caid, er->tsid, er->onid, er->ens);
-					group_id = get_channel_group(channel_hash);
+				channel_hash = create_channel_hash(caid, tsid, onid, ens);
+				group_id = get_channel_group(channel_hash);
 
-					cs_log_dbg(D_ATR, "channel hash: %08X, group id: %04X", channel_hash, group_id);
-				}
+				cs_log_dbg(D_ATR, "channel hash: %08X, group id: %04X", channel_hash, group_id);
 
 				decrypt_ok = 0;
 

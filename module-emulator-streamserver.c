@@ -524,7 +524,7 @@ static void ParseEcmData(emu_stream_client_data *cdata)
 		if (data[11] > cdata->ecm_nb || (cdata->ecm_nb == 255 && data[11] == 0) || ((cdata->ecm_nb - data[11]) > 5))
 		{
 			cdata->ecm_nb = data[11];
-			powervu_ecm(data, dcw, NULL, cdata->srvid, NULL, &cdata->key);
+			powervu_ecm(data, dcw, NULL, cdata->srvid, cdata->caid, cdata->tsid, cdata->onid, cdata->ens, &cdata->key);
 		}
 	}
 	//else if () // All other caids
@@ -1316,11 +1316,11 @@ static void *stream_client_handler(void *arg)
 	int8_t streamConnectErrorCount = 0, streamDataErrorCount = 0;
 	int32_t bytesRead = 0, http_status_code = 0;
 	int32_t clientStatus, streamStatus, streamfd;
-	int32_t cur_dvb_buffer_size, cur_dvb_buffer_wait, i, srvidtmp;
+	int32_t cur_dvb_buffer_size, cur_dvb_buffer_wait, i;
 
 	uint8_t *stream_buf;
 	uint16_t packetCount = 0, packetSize = 0, startOffset = 0;
-	uint32_t remainingDataPos, remainingDataLength;
+	uint32_t remainingDataPos, remainingDataLength, tmp_pids[4];
 
 	cs_log("Stream client %i connected", conndata->connid);
 
@@ -1367,30 +1367,30 @@ static void *stream_client_handler(void *arg)
 
 	cs_strncpy(stream_path_copy, stream_path, sizeof(stream_path));
 
-	token = strtok_r(stream_path_copy, ":", &saveptr);
-
-	for (i = 0; token != NULL && i < 3; i++)
+	token = strtok_r(stream_path_copy, ":", &saveptr); // token 0
+	for (i = 1; token != NULL && i < 7; i++) // tokens 1 to 6
 	{
 		token = strtok_r(NULL, ":", &saveptr);
 		if (token == NULL)
 		{
 			break;
 		}
-	}
 
-	if (token != NULL)
-	{
-		if (sscanf(token, "%x", &srvidtmp) < 1)
+		if (i >= 3) // We olny need token 3 (srvid), 4 (tsid), 5 (onid) and 6 (ens)
 		{
-			token = NULL;
-		}
-		else
-		{
-			data->srvid = srvidtmp & 0xFFFF;
+			if (sscanf(token, "%x", &tmp_pids[i - 3]) != 1)
+			{
+				tmp_pids[i - 3] = 0;
+			}
 		}
 	}
 
-	if (token == NULL)
+	data->srvid = tmp_pids[0] & 0xFFFF;
+	data->tsid = tmp_pids[1] & 0xFFFF;
+	data->onid = tmp_pids[2] & 0xFFFF;
+	data->ens = tmp_pids[3];
+
+	if (data->srvid == 0) // We didn't get a srvid - Exit
 	{
 		NULLFREE(http_buf);
 		NULLFREE(stream_buf);
@@ -1405,6 +1405,9 @@ static void *stream_client_handler(void *arg)
 	SAFE_MUTEX_UNLOCK(&emu_fixed_key_srvid_mutex);
 
 	cs_log("Stream client %i request %s", conndata->connid, stream_path);
+
+	cs_log_dbg(D_READER, "Stream client %i received srvid: %04X tsid: %04X onid: %04X ens: %08X",
+				conndata->connid, data->srvid, data->tsid, data->onid, data->ens);
 
 	snprintf(http_buf, 1024, "HTTP/1.0 200 OK\nConnection: Close\nContent-Type: video/mpeg\nServer: stream_enigma2\n\n");
 	clientStatus = send(conndata->connfd, http_buf, strlen(http_buf), 0);
