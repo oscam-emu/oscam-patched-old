@@ -955,12 +955,6 @@ static int8_t newcamd_auth_client(IN_ADDR_T ip, uint8_t *deskey)
 			else
 				{ memset(&mbuf[8], 0, 6); } //mbuf[8] - mbuf[13]
 
-#ifdef WITH_EMU
-			if(aureader && aureader->typ == R_EMU && caid_is_dre(pufilt->caid))
-			{
-				mbuf[10] = aureader->dre36_force_group;
-			}
-#endif
 			mbuf[14] = pufilt->nprids;
 			for(j = 0; j < pufilt->nprids; j++)
 			{
@@ -1012,35 +1006,7 @@ static int8_t newcamd_auth_client(IN_ADDR_T ip, uint8_t *deskey)
 							}
 						}
 					}
-#ifdef WITH_EMU
-					else if(aureader->typ == R_EMU)
-					{
-						if(caid_is_dre(pufilt->caid))
-						{
-							found = 1;
-							memset(&mbuf[22 + 11 * j], 0, 4);
 
-							switch((uint8_t)(pufilt->prids[j]))
-							{
-								case 0x11:
-									mbuf[22 + 11 * j] = aureader->dre36_force_group;
-									break;
-
-								case 0x14:
-									mbuf[22 + 11 * j] = aureader->dre56_force_group;
-									break;
-
-								case 0xfe:
-									mbuf[22 + 11 * j] = 0xED;
-									mbuf[25 + 11 * j] = 0x02;
-									break;
-
-								default:
-									found = 0;
-							}
-						}
-					}
-#endif
 					if(!found)
 					{
 						mbuf[22 + 11 * j] = 0x00;

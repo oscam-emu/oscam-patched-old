@@ -286,7 +286,7 @@ typedef struct filter_s
 } FILTERTYPE;
 
 #ifdef WITH_EXTENDED_CW
-#define MAX_STREAM_INDICES   8 // In practice, 5 is the maximum ever used
+#define MAX_STREAM_INDICES  32 // In practice, 5 is the maximum ever used
 #else
 #define MAX_STREAM_INDICES   1
 #endif

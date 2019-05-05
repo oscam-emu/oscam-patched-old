@@ -984,7 +984,7 @@ struct s_cardsystem
 	void			(*post_process)(struct s_reader *);
 	int32_t			(*get_emm_type)(struct emm_packet_t *, struct s_reader *);
 	int32_t			(*get_emm_filter)(struct s_reader *, struct s_csystem_emm_filter **, uint32_t *);
-	int32_t			(*get_emm_filter_adv)(struct s_reader *, struct s_csystem_emm_filter **, uint32_t *, uint16_t, uint32_t, uint16_t);
+	int32_t			(*get_emm_filter_adv)(struct s_reader *, struct s_csystem_emm_filter **, uint32_t *, uint16_t, uint32_t, uint16_t, uint16_t, uint16_t, uint32_t);
 	int32_t			(*get_tunemm_filter)(struct s_reader *, struct s_csystem_emm_filter **, uint32_t *);
 };
 
@@ -1782,10 +1782,6 @@ struct s_reader										// contains device info, reader info and card info
 #ifdef WITH_EMU
 	FTAB			emu_auproviders;				// AU providers for Emu reader
 	int8_t			emu_datecodedenabled;			// date-coded keys for BISS
-	char			*extee36;						// path to "ee36.bin" - Set by the user via the webif
-	char			*extee56;						// path to "ee56.bin" - Set by the user via the webif
-	uint8_t			dre36_force_group;
-	uint8_t			dre56_force_group;
 #endif
 	uint8_t			cnxlastecm;						// == 0 - last ecm has not been paired ecm, > 0 last ecm has been paired ecm
 	LLIST			*emmstat;						// emm stats
