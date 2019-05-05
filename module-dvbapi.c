@@ -1883,7 +1883,8 @@ void dvbapi_start_emm_filter(int32_t demux_id)
 					{
 						if(rdr->typ == R_EMU)
 						{
-							csystem->get_emm_filter_adv(rdr, &dmx_filter, &filter_count, caid, provid, demux[demux_id].program_number);
+							csystem->get_emm_filter_adv(rdr, &dmx_filter, &filter_count, caid, provid, demux[demux_id].program_number,
+														demux[demux_id].tsid, demux[demux_id].onid, demux[demux_id].ens);
 						}
 						else
 						{
@@ -2258,14 +2259,24 @@ uint32_t dvbapi_get_desc_index(int32_t demux_id, int32_t pid, int32_t stream_id)
 		}
 	}
 
-	// make sure we haven't run out of descramblers
-	if(ca_descramblers_used < ca_descramblers_total)
+	if(selected_api == DVBAPI_3 || selected_api == DVBAPI_1)
 	{
-		ca_descramblers_used++; // increase number of descramblers used
+		// make sure we haven't run out of descramblers
+		if(ca_descramblers_used < ca_descramblers_total)
+		{
+			ca_descramblers_used++; // increase number of descramblers used
+		}
+		else
+		{
+			idx = INDEX_INVALID; // we don't have any descramblers left
+		}
 	}
-	else
+	else // old style check for STAPI, COOLAPI, etc
 	{
-		idx = INDEX_INVALID; // we don't have any descramblers left
+		if(idx > ca_descramblers_total)
+		{
+			idx = INDEX_INVALID; // we don't have any descramblers left
+		}
 	}
 
 	demux[demux_id].ECMpids[pid].index[stream_id] = idx;
