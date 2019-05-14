@@ -655,7 +655,7 @@ int8_t biss_ecm(struct s_reader *rdr, uint16_t caid, const uint8_t *ecm, uint8_t
 	}
 }
 
-static uint8_t parse_session_data_descriptor(const uint8_t *data, uint16_t esid, uint16_t onid, uint32_t *keysAdded)
+static uint16_t parse_session_data_descriptor(const uint8_t *data, uint16_t esid, uint16_t onid, uint32_t *keysAdded)
 {
 	uint8_t descriptor_tag = data[0];
 	uint8_t descriptor_length = data[1];
@@ -702,8 +702,8 @@ static void parse_session_data(const uint8_t *data, RSA *key, uint16_t esid, uin
 
 	if (RSA_private_decrypt(256, data, session_data, key, RSA_PKCS1_OAEP_PADDING) > 0)
 	{
+		uint16_t pos = 0;
 		uint16_t descriptor_length = b2i(2, session_data) & 0x0FFF;
-		uint8_t pos = 0;
 
 		while (pos < descriptor_length)
 		{
