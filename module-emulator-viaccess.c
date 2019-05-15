@@ -378,6 +378,12 @@ static int8_t via26_decrypt(uint8_t *source, uint8_t *dw, uint32_t ident, uint8_
 		{
 			dw[i * 8 + j] = tmpData[j] ^ pXorVector[j];
 		}
+
+		// Fix CW checksum bytes
+		for (j = 3; j < 8; j += 4)
+		{
+			dw[i * 8 + j] = (dw[i * 8 + j - 3] + dw[i * 8 + j - 2] + dw[i * 8 + j - 1]) & 0xFF;
+		}
 	}
 	return 0;
 }
