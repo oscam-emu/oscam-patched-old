@@ -3899,61 +3899,113 @@ void dvbapi_try_next_caid(int32_t demux_id, int8_t checked, uint32_t msgid)
 static void get_demux_options(int32_t demux_id, uint8_t *buffer, uint32_t *ca_mask,
 					uint16_t *demux_index, uint16_t *adapter_index, uint16_t *pmtpid)
 {
-	*ca_mask = 0x01, *demux_index = 0x00, *adapter_index = 0x00, *pmtpid = 0x00;
+	*ca_mask = 0x01;
+	*demux_index = 0x00;
+	*adapter_index = 0x00;
+	*pmtpid = 0x00;
 
-	if(buffer[17] == 0x82 && buffer[18] == 0x02)
+	uint16_t program_info_length = b2i(2, buffer + 4) & 0x0FFF;
+	uint16_t pos = 7; // 4 + 2 (program_info_length) + 1 (ca_pmt_cmd_id)
+
+	while(pos + 1 < program_info_length)
 	{
-		// enigma2
-		*ca_mask = buffer[19];
-		uint32_t demuxid = buffer[20];
+		uint8_t descriptor_tag = buffer[pos];
+		uint8_t descriptor_length = buffer[pos + 1];
 
-		if(demuxid == 0xff)
+		switch(descriptor_tag)
 		{
-			demuxid = 0; // tryfix prismcube (0xff -> "demux-1" = error!)
-		}
-		*demux_index = demuxid;
+			case 0x09: // CA
+				// We parse this descriptor elsewhere
+				break;
 
-		if(buffer[21] == 0x84 && buffer[22] == 0x02)
-		{
-			*pmtpid = b2i(2, buffer + 23);
+			case 0x81: // enigma namespace
+				// We parse this in another function...
+				// Maybe this is changed in the future
+				break;
+
+			case 0x82: // demux, ca_mask, adapter (everyone is using this descriptor differently - what a mess)
+			{
+				if(descriptor_length == 0x02 && (cfg.dvbapi_boxtype == BOXTYPE_PC ||
+					cfg.dvbapi_boxtype == BOXTYPE_PC_NODMX || cfg.dvbapi_boxtype == BOXTYPE_SAMYGO))
+				{
+					*demux_index = buffer[pos + 2]; // it is always 0 but you never know
+					*adapter_index = buffer[pos + 3]; // adapter index can be 0, 1, 2
+					*ca_mask = (1 << *adapter_index); // use adapter_index as ca_mask
+				}
+				else if(descriptor_length == 0x03 && cfg.dvbapi_boxtype == BOXTYPE_QBOXHD)
+				{
+					// ca_mask = buffer[pos + 2]; // with STONE 1.0.4 always 0x01
+					*demux_index = buffer[pos + 3]; // with STONE 1.0.4 always 0x00
+					*adapter_index = buffer[pos + 4]; // with STONE 1.0.4 adapter index can be 0, 1, 2
+					*ca_mask = (1 << *adapter_index); // use adapter_index as ca_mask
+				}
+				else if(descriptor_length == 0x02) // enigma2
+				{
+					*ca_mask = buffer[pos + 2];
+					uint8_t demux_tmp = buffer[pos + 3];
+
+					if(demux_tmp >= 8 && *ca_mask == 0) // openpli based images
+					{
+						*ca_mask = 1 << demux_tmp;
+					}
+
+					if(demux_tmp == 0xFF) // tryfix prismcube (0xFF -> "demux-1" = error!)
+					{
+						demux_tmp = 0;
+					}
+					*demux_index = demux_tmp;
+				}
+				break;
+			}
+
+			case 0x83: // adapter
+			{
+				if(descriptor_length == 0x01)
+				{
+					*adapter_index = buffer[pos + 2];
+				}
+				break;
+			}
+
+			case 0x84: // pmt pid
+			{
+				if(descriptor_length == 0x02)
+				{
+					*pmtpid = b2i(2, buffer + pos + 2);
+				}
+				break;
+			}
+
+			case 0x85: // service type mask (not used by OSCam)
+				break;
+
+			case 0x86: // demux only (new - added in 2019)
+			{
+				if(descriptor_length == 0x01)
+				{
+					*demux_index = buffer[pos + 2];
+					*ca_mask = 1 << *demux_index;
+				}
+				break;
+			}
+
+			default:
+			{
+				cs_log_dbg(D_DVBAPI, "Received unknown CA PMT descriptor (tag: %02X length: %02X)",
+							descriptor_tag, descriptor_length);
+				break;
+			}
 		}
 
-		if(buffer[25] == 0x83 && buffer[26] == 0x01)
-		{
-			*adapter_index = buffer[27]; // from code cahandler.cpp 0x83 index of adapter
-		}
+		pos += 2 + descriptor_length;
 	}
 
+	// Probably this box doesn't send any private
+	// descriptor in the CA PMT, so we have to improvise
 	if(cfg.dvbapi_boxtype == BOXTYPE_IPBOX_PMT)
 	{
 		*ca_mask = demux_id + 1;
 		*demux_index = demux_id;
-	}
-
-	if(cfg.dvbapi_boxtype == BOXTYPE_QBOXHD && buffer[17] == 0x82 && buffer[18] == 0x03)
-	{
-		// ca_mask = buffer[19]; // with STONE 1.0.4 always 0x01
-		*demux_index = buffer[20]; // with STONE 1.0.4 always 0x00
-		*adapter_index = buffer[21]; // with STONE 1.0.4 adapter index can be 0,1,2
-		*ca_mask = (1 << *adapter_index); // use adapter_index as ca_mask (used as index for ca_fd[] array)
-
-		if(buffer[21] == 0x84 && buffer[22] == 0x02)
-		{
-			*pmtpid = b2i(2, buffer + 23);
-		}
-	}
-
-	if((cfg.dvbapi_boxtype == BOXTYPE_PC || cfg.dvbapi_boxtype == BOXTYPE_PC_NODMX || cfg.dvbapi_boxtype == BOXTYPE_SAMYGO)
-		&& buffer[7] == 0x82 && buffer[8] == 0x02)
-	{
-		*demux_index = buffer[9]; // it is always 0 but you never know
-		*adapter_index = buffer[10]; // adapter index can be 0,1,2
-		*ca_mask = (1 << *adapter_index); // use adapter_index as ca_mask (used as index for ca_fd[] array)
-
-		if(buffer[21] == 0x84 && buffer[22] == 0x02)
-		{
-			*pmtpid = b2i(2, buffer + 23);
-		}
 	}
 }
 
