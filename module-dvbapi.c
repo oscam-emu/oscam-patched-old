@@ -3903,6 +3903,10 @@ static void get_demux_options(int32_t demux_id, uint8_t *buffer, uint32_t *ca_ma
 	*demux_index = 0x00;
 	*adapter_index = 0x00;
 	*pmtpid = 0x00;
+	bool is82Parsed = false;
+	bool is83Parsed = false;
+	bool is84Parsed = false;
+	bool is86Parsed = false;
 
 	uint16_t program_info_length = b2i(2, buffer + 4) & 0x0FFF;
 	uint16_t pos = 7; // 4 + 2 (program_info_length) + 1 (ca_pmt_cmd_id)
@@ -3925,12 +3929,18 @@ static void get_demux_options(int32_t demux_id, uint8_t *buffer, uint32_t *ca_ma
 
 			case 0x82: // demux, ca_mask, adapter (everyone is using this descriptor differently - what a mess)
 			{
+				if(is82Parsed)
+				{
+					break;
+				}
+
 				if(descriptor_length == 0x02 && (cfg.dvbapi_boxtype == BOXTYPE_PC ||
 					cfg.dvbapi_boxtype == BOXTYPE_PC_NODMX || cfg.dvbapi_boxtype == BOXTYPE_SAMYGO))
 				{
 					*demux_index = buffer[pos + 2]; // it is always 0 but you never know
 					*adapter_index = buffer[pos + 3]; // adapter index can be 0, 1, 2
 					*ca_mask = (1 << *adapter_index); // use adapter_index as ca_mask
+					is82Parsed = true;
 				}
 				else if(descriptor_length == 0x03 && cfg.dvbapi_boxtype == BOXTYPE_QBOXHD)
 				{
@@ -3938,6 +3948,7 @@ static void get_demux_options(int32_t demux_id, uint8_t *buffer, uint32_t *ca_ma
 					*demux_index = buffer[pos + 3]; // with STONE 1.0.4 always 0x00
 					*adapter_index = buffer[pos + 4]; // with STONE 1.0.4 adapter index can be 0, 1, 2
 					*ca_mask = (1 << *adapter_index); // use adapter_index as ca_mask
+					is82Parsed = true;
 				}
 				else if(descriptor_length == 0x02) // enigma2
 				{
@@ -3954,24 +3965,35 @@ static void get_demux_options(int32_t demux_id, uint8_t *buffer, uint32_t *ca_ma
 						demux_tmp = 0;
 					}
 					*demux_index = demux_tmp;
-				}
+					is82Parsed = true;
+				}				
 				break;
 			}
 
 			case 0x83: // adapter
 			{
+				if(is83Parsed)
+				{
+					break;
+				}
 				if(descriptor_length == 0x01)
 				{
 					*adapter_index = buffer[pos + 2];
+					is83Parsed = true;
 				}
 				break;
 			}
 
 			case 0x84: // pmt pid
 			{
+				if(is84Parsed)
+				{
+					break;
+				}
 				if(descriptor_length == 0x02)
 				{
 					*pmtpid = b2i(2, buffer + pos + 2);
+					is84Parsed = true;
 				}
 				break;
 			}
@@ -3981,10 +4003,15 @@ static void get_demux_options(int32_t demux_id, uint8_t *buffer, uint32_t *ca_ma
 
 			case 0x86: // demux only (new - added in 2019)
 			{
+				if(is86Parsed)
+				{
+					break;
+				}
 				if(descriptor_length == 0x01)
 				{
 					*demux_index = buffer[pos + 2];
 					*ca_mask = 1 << *demux_index;
+					is86Parsed = true;
 				}
 				break;
 			}
