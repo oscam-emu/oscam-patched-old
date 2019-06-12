@@ -3920,7 +3920,7 @@ static void get_demux_options(int32_t demux_id, uint8_t *buffer, uint32_t *ca_ma
 	uint16_t program_info_length = b2i(2, buffer + 4) & 0x0FFF;
 	uint16_t pos = 7; // 4 + 2 (program_info_length) + 1 (ca_pmt_cmd_id)
 
-	while(pos + 1 < program_info_length)
+	while(pos + 1 < 5 + program_info_length)
 	{
 		uint8_t descriptor_tag = buffer[pos];
 		uint8_t descriptor_length = buffer[pos + 1];
