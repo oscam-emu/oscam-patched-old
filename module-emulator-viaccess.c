@@ -124,19 +124,19 @@ static int8_t via1_decrypt(uint8_t *ecm, uint8_t *dw, uint32_t ident, uint8_t de
 
 	if (ident == 0)
 	{
-		return 4;
+		return EMU_CORRUPT_DATA;
 	}
 
 	memset(work_key, 0, 16);
 
 	if (!get_key(work_key, ident, '0', desKeyIndex, 8, 1))
 	{
-		return 2;
+		return EMU_KEY_NOT_FOUND;
 	}
 
 	if (ecmLen < 11)
 	{
-		return 1;
+		return EMU_NOT_SUPPORTED;
 	}
 
 	data = ecm + 9;
@@ -176,7 +176,7 @@ static int8_t via1_decrypt(uint8_t *ecm, uint8_t *dw, uint32_t ident, uint8_t de
 
 	if (foundData != 3)
 	{
-		return 1;
+		return EMU_NOT_SUPPORTED;
 	}
 
 	pH = i = 0;
@@ -256,10 +256,10 @@ static int8_t via1_decrypt(uint8_t *ecm, uint8_t *dw, uint32_t ident, uint8_t de
 
 	if (memcmp(signature, hashbuffer, 8))
 	{
-		return 6;
+		return EMU_CHECKSUM_ERROR;
 	}
 
-	return 0;
+	return EMU_OK;
 }
 
 static int8_t via26_process_dw(uint8_t *indata, uint32_t ident, uint8_t desKeyIndex)
@@ -341,6 +341,7 @@ static int8_t via26_process_dw(uint8_t *indata, uint32_t ident, uint8_t desKeyIn
 		pv2 = T1Key[pv1];
 		indata[i] = pv2;
 	}
+
 	return 0;
 }
 
@@ -352,12 +353,12 @@ static int8_t via26_decrypt(uint8_t *source, uint8_t *dw, uint32_t ident, uint8_
 
 	if (ident == 0)
 	{
-		return 4;
+		return EMU_CORRUPT_DATA;
 	}
 
 	if (!get_key(C1, ident, 'C', 1, 8, 1))
 	{
-		return 2;
+		return EMU_KEY_NOT_FOUND;
 	}
 
 	for (i = 0; i < 2; i++)
@@ -385,7 +386,8 @@ static int8_t via26_decrypt(uint8_t *source, uint8_t *dw, uint32_t ident, uint8_
 			dw[i * 8 + j] = (dw[i * 8 + j - 3] + dw[i * 8 + j - 2] + dw[i * 8 + j - 1]) & 0xFF;
 		}
 	}
-	return 0;
+
+	return EMU_OK;
 }
 
 static void via3_core(uint8_t *data, uint8_t Off, uint32_t ident, uint8_t *XorKey, uint8_t *T1Key)
@@ -643,17 +645,17 @@ static int8_t via3_decrypt(uint8_t *source, uint8_t *dw, uint32_t ident, uint8_t
 
 	if (ident == 0)
 	{
-		return 4;
+		return EMU_CORRUPT_DATA;
 	}
 
 	if (!get_key(C1, ident, 'C', 1, 8, 1))
 	{
-		return 2;
+		return EMU_KEY_NOT_FOUND;
 	}
 
 	if (needsAES && !get_key((uint8_t *)aesKey, ident, 'E', aesKeyIndex, 16, 1))
 	{
-		return 2;
+		return EMU_KEY_NOT_FOUND;
 	}
 
 	if (aesMode == 0x0D || aesMode == 0x11 || aesMode == 0x15)
@@ -743,16 +745,16 @@ static int8_t via3_decrypt(uint8_t *source, uint8_t *dw, uint32_t ident, uint8_t
 
 		if (!is_valid_dcw(dw) || !is_valid_dcw(dw + 8))
 		{
-			return 6;
+			return EMU_CHECKSUM_ERROR;
 		}
 	}
 
-	return 0;
+	return EMU_OK;
 }
 
 int8_t viaccess_ecm(uint8_t *ecm, uint8_t *dw)
 {
-	int8_t doFinalMix = 0, result = 1;
+	int8_t doFinalMix = 0;
 
 	uint8_t nanoCmd = 0, nanoLen = 0, version = 0, providerKeyLen = 0;
 	uint8_t desKeyIndex = 0, aesMode = 0, aesKeyIndex = 0xFF;
@@ -766,7 +768,7 @@ int8_t viaccess_ecm(uint8_t *ecm, uint8_t *dw)
 
 		if (i + nanoLen > ecmLen)
 		{
-			return 1;
+			return EMU_NOT_SUPPORTED;
 		}
 
 		switch (nanoCmd)
@@ -860,6 +862,7 @@ int8_t viaccess_ecm(uint8_t *ecm, uint8_t *dw)
 							break;
 						}
 					}
+
 					return via3_decrypt(ecm + i, dw, currentIdent, desKeyIndex, aesKeyIndex, aesMode, doFinalMix);
 				}
 				break;
@@ -867,9 +870,11 @@ int8_t viaccess_ecm(uint8_t *ecm, uint8_t *dw)
 			default:
 				break;
 		}
+
 		i += nanoLen;
 	}
-	return result;
+
+	return EMU_NOT_SUPPORTED;
 }
 
 // Viaccess EMM EMU
@@ -897,7 +902,7 @@ int8_t viaccess_emm(uint8_t *emm, uint32_t *keysAdded)
 
 		if (i + nanoLen > emmLen)
 		{
-			return 1;
+			return EMU_NOT_SUPPORTED;
 		}
 
 		switch (nanoCmd)
@@ -920,7 +925,7 @@ int8_t viaccess_emm(uint8_t *emm, uint32_t *keysAdded)
 				}
 				else
 				{
-					return 1;
+					return EMU_NOT_SUPPORTED;
 				}
 				break;
 			}
@@ -931,6 +936,7 @@ int8_t viaccess_emm(uint8_t *emm, uint32_t *keysAdded)
 				{
 					break;
 				}
+
 				emmKeyIndex = emm[i + 1];
 				break;
 			}
@@ -944,7 +950,7 @@ int8_t viaccess_emm(uint8_t *emm, uint32_t *keysAdded)
 
 				if (!get_key(emmKey, provider, 'M', emmKeyIndex, 16, 1))
 				{
-					return 2;
+					return EMU_KEY_NOT_FOUND;
 				}
 
 				memset(provName, 0, 17);
@@ -966,8 +972,9 @@ int8_t viaccess_emm(uint8_t *emm, uint32_t *keysAdded)
 					strcmp((char *)provName, "TNTSATPRO") != 0 &&
 					strcmp((char *)provName, "CSAT V") != 0)
 				{
-					return 1;
+					return EMU_NOT_SUPPORTED;
 				}
+
 				break;
 			}
 
@@ -989,7 +996,8 @@ int8_t viaccess_emm(uint8_t *emm, uint32_t *keysAdded)
 					haveNewD0 = 1;
 					break;
 				}
-				return 0;
+
+				return EMU_OK;
 			}
 
 			case 0xBC:
@@ -1025,7 +1033,7 @@ int8_t viaccess_emm(uint8_t *emm, uint32_t *keysAdded)
 				tmp = (uint8_t *)malloc(((nanoLen / 16) + 1) * 16 * sizeof(uint8_t));
 				if (tmp == NULL)
 				{
-					return 7;
+					return EMU_OUT_OF_MEMORY;
 				}
 
 				memcpy(tmp, &emm[i], nanoLen);
@@ -1123,6 +1131,7 @@ int8_t viaccess_emm(uint8_t *emm, uint32_t *keysAdded)
 						default:
 							break;
 					}
+
 					j += subNanoLen;
 				}
 				break;
@@ -1134,11 +1143,12 @@ int8_t viaccess_emm(uint8_t *emm, uint32_t *keysAdded)
 				{
 					break;
 				}
+
 				ui1 = ((emm[i + 2] << 8) | (emm[i + 1] << 16) | (emm[i] << 24) | emm[i + 3]);
 
 				if (ccitt32_crc(emm + 3, emmLen - 11) != ui1)
 				{
-					return 4;
+					return EMU_CHECKSUM_ERROR;
 				}
 
 				if (haveNewD0)
@@ -1163,9 +1173,11 @@ int8_t viaccess_emm(uint8_t *emm, uint32_t *keysAdded)
 			default:
 				break;
 		}
+
 		i += nanoLen;
 	}
-	return 0;
+
+	return EMU_OK;
 }
 
 #endif // WITH_EMU

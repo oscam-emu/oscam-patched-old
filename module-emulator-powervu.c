@@ -798,7 +798,7 @@ static void create_data_unmask_mode_03(uint8_t *ecmBody, uint8_t *data)
 	data[7] = ecmBody[0x27];
 }
 
-static void hash_04_add(uint32_t* buffer, int a, int b, int c, int d, int e, int f)
+static void hash_04_add(uint32_t *buffer, int a, int b, int c, int d, int e, int f)
 {
 	uint32_t tmp1 = (buffer[a] & 1) + (buffer[b] & 1);
 	uint32_t tmp2 = (buffer[a] >> 1) + (buffer[b] >> 1) + (tmp1 >> 1);
@@ -807,7 +807,7 @@ static void hash_04_add(uint32_t* buffer, int a, int b, int c, int d, int e, int
 	buffer[f] = tmp2 + tmp2 + (tmp1 & 1);
 }
 
-static void hash_04_shift(uint32_t* buffer, int a, int b, uint8_t shift)
+static void hash_04_shift(uint32_t *buffer, int a, int b, uint8_t shift)
 {
 	uint32_t tmp1 = (buffer[a] >> (32 - shift)) + (buffer[b] << shift);
 	uint32_t tmp2 = (buffer[b] >> (32 - shift)) + (buffer[a] << shift);
@@ -816,13 +816,13 @@ static void hash_04_shift(uint32_t* buffer, int a, int b, uint8_t shift)
 	buffer[a] = tmp2;
 }
 
-static void hash_04_xor(uint32_t* buffer, int a, int b, int c, int d)
+static void hash_04_xor(uint32_t *buffer, int a, int b, int c, int d)
 {
 	buffer[a] ^= buffer[b];
 	buffer[c] ^= buffer[d];
 }
 
-static void hash_04_swap(uint32_t* buffer, int a, int b)
+static void hash_04_swap(uint32_t *buffer, int a, int b)
 {
 	uint32_t tmp = buffer[a];
 
@@ -830,7 +830,7 @@ static void hash_04_swap(uint32_t* buffer, int a, int b)
 	buffer[b] = tmp;
 }
 
-static void hash_04_core(uint32_t* buffer)
+static void hash_04_core(uint32_t *buffer)
 {
 	hash_04_add(buffer, 0, 6, 7, 1, 7, 6);
 	hash_04_shift(buffer, 5, 4, 0x0D);
@@ -848,7 +848,7 @@ static void hash_04_core(uint32_t* buffer)
 	hash_04_swap(buffer, 3, 2);
 }
 
-static void create_hash_mode_04(uint8_t *data, uint8_t * hash)
+static void create_hash_mode_04(uint8_t *data, uint8_t *hash)
 {
 	int i, j;
 	uint32_t d0, d1, h0, h1, h2, h3;
@@ -924,8 +924,8 @@ static void create_hash_mode_04(uint8_t *data, uint8_t * hash)
 	hash[15] = (uint8_t) (h3 >> 24);
 }
 
-static void create_data_cw_mode_04(uint8_t* seed, int lenSeed, uint8_t* basecw,
-									uint8_t val, uint8_t* ecmBody, uint8_t* data)
+static void create_data_cw_mode_04(uint8_t *seed, int lenSeed, uint8_t *basecw,
+									uint8_t val, uint8_t *ecmBody, uint8_t *data)
 {
 	uint8_t padding[] =
 	{
@@ -967,7 +967,7 @@ static void create_data_cw_mode_04(uint8_t* seed, int lenSeed, uint8_t* basecw,
 	}
 }
 
-static void create_data_unmask_mode_04(uint8_t* ecmBody, uint8_t* data)
+static void create_data_unmask_mode_04(uint8_t *ecmBody, uint8_t *data)
 {
 	uint8_t padding[] =
 	{
@@ -1850,7 +1850,7 @@ int8_t powervu_ecm(uint8_t *ecm, uint8_t *dw, EXTENDED_CW *cw_ex, uint16_t srvid
 	char tmpBuffer2[17];
 
 	emu_stream_cw_item *cw_item;
-	int8_t update_global_key = 0, ret = 1;
+	int8_t update_global_key = 0;
 	int8_t update_global_keys[EMU_STREAM_SERVER_MAX_CONNECTIONS];
 
 	memset(update_global_keys, 0, sizeof(update_global_keys));
@@ -2227,7 +2227,7 @@ int8_t powervu_ecm(uint8_t *ecm, uint8_t *dw, EXTENDED_CW *cw_ex, uint16_t srvid
 		i += nanoLen;
 	}
 
-	return ret;
+	return EMU_NOT_SUPPORTED;
 }
 
 // PowerVu EMM EMU

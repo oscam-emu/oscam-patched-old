@@ -870,36 +870,38 @@ void emu_read_keymemory(struct s_reader *rdr)
 void emu_read_keymemory(struct s_reader *UNUSED(rdr)) { }
 #endif
 
-static const char *get_process_ecm_error_reason(int8_t result)
+static const char *get_error_reason(int8_t result)
 {
 	switch (result)
 	{
-		case 0: return "No error";
-		case 1: return "ECM not supported";
-		case 2: return "Key not found";
-		case 3: return "Nano80 problem";
-		case 4: return "Corrupt data";
-		case 5: return "CW not found";
-		case 6: return "CW checksum error";
-		case 7: return "Out of memory";
-		case 8: return "ECM checksum error";
-		case 9: return "ICG error";
-		default: return "Unknown";
+		case EMU_OK:
+			return "No error";
+
+		case EMU_NOT_SUPPORTED:
+			return "Not supported";
+
+		case EMU_KEY_NOT_FOUND:
+			return "Key not found";
+
+		case EMU_KEY_REJECTED:
+			return "ECM key rejected";
+
+		case EMU_CORRUPT_DATA:
+			return "Corrupt data";
+
+		case EMU_CW_NOT_FOUND:
+			return "CW not found";
+
+		case EMU_CHECKSUM_ERROR:
+			return "Checksum error";
+
+		case EMU_OUT_OF_MEMORY:
+			return "Out of memory";
+
+		default:
+			return "Unknown reason";
 	}
 }
-
-/* Error codes
-0  OK
-1  ECM not supported
-2  Key not found
-3  Nano80 problem
-4  Corrupt data
-5  CW not found
-6  CW checksum error
-7  Out of memory
-8  ECM checksum error
-9  ICG error
-*/
 
 int8_t emu_process_ecm(struct s_reader *rdr, const ECM_REQUEST *er, uint8_t *cw, EXTENDED_CW *cw_ex)
 {
@@ -939,28 +941,10 @@ int8_t emu_process_ecm(struct s_reader *rdr, const ECM_REQUEST *er, uint8_t *cw,
 
 	if (result != 0)
 	{
-		cs_log("ECM failed: %s", get_process_ecm_error_reason(result));
+		cs_log("ECM failed: %s", get_error_reason(result));
 	}
 
 	return result;
-}
-
-static const char *get_process_emm_error_reason(int8_t result)
-{
-	switch (result)
-	{
-		case 0: return "No error";
-		case 1: return "EMM not supported";
-		case 2: return "Key not found";
-		case 3: return "Nano80 problem";
-		case 4: return "Corrupt data";
-		case 5: return "Unknown";
-		case 6: return "Checksum error";
-		case 7: return "Out of memory";
-		case 8: return "EMM checksum error";
-		case 9: return "Wrong provider";
-		default: return "Unknown";
-	}
 }
 
 int8_t emu_process_emm(struct s_reader *rdr, uint16_t caid, const uint8_t *emm, uint32_t *keysAdded)
@@ -984,7 +968,7 @@ int8_t emu_process_emm(struct s_reader *rdr, uint16_t caid, const uint8_t *emm, 
 
 	if (result != 0)
 	{
-		cs_log_dbg(D_EMM,"EMM failed: %s", get_process_emm_error_reason(result));
+		cs_log_dbg(D_EMM,"EMM failed: %s", get_error_reason(result));
 	}
 
 	return result;

@@ -246,7 +246,7 @@ int8_t nagra2_ecm(uint8_t *ecm, uint8_t *dw)
 
 	if (ecmLen < 8)
 	{
-		return 1;
+		return EMU_NOT_SUPPORTED;
 	}
 
 	cmdLen = ecm[4] - 5;
@@ -265,12 +265,12 @@ int8_t nagra2_ecm(uint8_t *ecm, uint8_t *dw)
 
 	if (cmdLen <= 63 || ecmLen < cmdLen + 10)
 	{
-		return 1;
+		return EMU_NOT_SUPPORTED;
 	}
 
 	if (!get_key(ideaKey, ident, '0', ideaKeyNr, 1))
 	{
-		return 2;
+		return EMU_KEY_NOT_FOUND;
 	}
 
 	if (get_key(vKey, ident, 'V', 0, 0))
@@ -280,22 +280,21 @@ int8_t nagra2_ecm(uint8_t *ecm, uint8_t *dw)
 
 	if (!get_key(m1Key, ident, 'M', 1, 1))
 	{
-		return 2;
+		return EMU_KEY_NOT_FOUND;
 	}
 
 	reverse_mem(m1Key, 64);
 
 	dec = (uint8_t *)malloc(sizeof(uint8_t) * cmdLen);
-
 	if (dec == NULL)
 	{
-		return 7;
+		return EMU_OUT_OF_MEMORY;
 	}
 
 	if (!decrypt_ecm(ecm + 9, dec, ideaKey, cmdLen, useVerifyKey ? vKey : 0, m1Key))
 	{
 		free(dec);
-		return 1;
+		return EMU_NOT_SUPPORTED;
 	}
 
 	for (i = (dec[14] & 0x10) ? 16 : 20; i < cmdLen && l != 3; )
@@ -350,12 +349,12 @@ int8_t nagra2_ecm(uint8_t *ecm, uint8_t *dw)
 
 	if (l != 3)
 	{
-		return 1;
+		return EMU_NOT_SUPPORTED;
 	}
 
 	if (mecmAlgo > 0)
 	{
-		return 1;
+		return EMU_NOT_SUPPORTED;
 	}
 
 	identMask = ident & 0xFF00;
@@ -371,7 +370,7 @@ int8_t nagra2_ecm(uint8_t *ecm, uint8_t *dw)
 		memcpy(dw + 12, &tmp2, 4);
 	}
 
-	return 0;
+	return EMU_OK;
 }
 
 #endif // WITH_EMU

@@ -544,12 +544,12 @@ int8_t cryptoworks_ecm(uint32_t caid, uint8_t *ecm, uint8_t *cw)
 
 	if (ecmLen < 8)
 	{
-		return 1;
+		return EMU_NOT_SUPPORTED;
 	}
 
 	if (ecm[7] != ecmLen - 8)
 	{
-		return 1;
+		return EMU_NOT_SUPPORTED;
 	}
 
 	memset(key, 0, 22);
@@ -592,7 +592,7 @@ int8_t cryptoworks_ecm(uint32_t caid, uint8_t *ecm, uint8_t *cw)
 				break;
 
 			default:
-				return 1;
+				return EMU_NOT_SUPPORTED;
 		}
 	}
 
@@ -600,12 +600,12 @@ int8_t cryptoworks_ecm(uint32_t caid, uint8_t *ecm, uint8_t *cw)
 
 	if (!get_key(key, ident, keyIndex, 16, 1))
 	{
-		return 2;
+		return EMU_KEY_NOT_FOUND;
 	}
 
 	if (!get_key(&key[16], ident, 6, 6, 1))
 	{
-		return 2;
+		return EMU_KEY_NOT_FOUND;
 	}
 
 	for (i = 8; i + 1 < ecmLen; i += ecm[i + 1] + 2)
@@ -618,7 +618,7 @@ int8_t cryptoworks_ecm(uint32_t caid, uint8_t *ecm, uint8_t *cw)
 
 			if (newEcmLength == 0 || newEcmLength > ecmLen - (i + 2 + 3))
 			{
-				return 1;
+				return EMU_NOT_SUPPORTED;
 			}
 
 			ecm[i + 2 + 3] = 0x81;
@@ -633,7 +633,7 @@ int8_t cryptoworks_ecm(uint32_t caid, uint8_t *ecm, uint8_t *cw)
 
 	if (ecmLen - 15 < 1)
 	{
-		return 1;
+		return EMU_NOT_SUPPORTED;
 	}
 
 	cryptoworks_signature(ecm + 5, ecmLen - 15, key, signature);
@@ -662,7 +662,7 @@ int8_t cryptoworks_ecm(uint32_t caid, uint8_t *ecm, uint8_t *cw)
 				}
 				if (memcmp(&ecm[i + 2], signature, 8))
 				{
-					return 6;
+					return EMU_CHECKSUM_ERROR;
 				}
 				break;
 		}
@@ -676,13 +676,13 @@ int8_t cryptoworks_ecm(uint32_t caid, uint8_t *ecm, uint8_t *cw)
 				if (i + 2 + ecm[i + 1] <= ecmLen && ecm[i + 1] == 16)
 				{
 					memcpy(cw, &ecm[i + 2], 16);
-					return 0;
+					return EMU_OK;
 				}
 				break;
 		}
 	}
 
-	return 5;
+	return EMU_CW_NOT_FOUND;
 }
 
 #endif // WITH_EMU

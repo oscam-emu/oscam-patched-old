@@ -153,7 +153,7 @@ int8_t irdeto2_ecm(uint16_t caid, uint8_t *oecm, uint8_t *dw)
 
 	if (ecmLen < 12)
 	{
-		return 1;
+		return EMU_NOT_SUPPORTED;
 	}
 
 	length = ecm[11];
@@ -162,7 +162,7 @@ int8_t irdeto2_ecm(uint16_t caid, uint8_t *oecm, uint8_t *dw)
 
 	if (ecmLen < length + 12)
 	{
-		return 1;
+		return EMU_NOT_SUPPORTED;
 	}
 
 	key0Ref = 0;
@@ -234,7 +234,7 @@ int8_t irdeto2_ecm(uint16_t caid, uint8_t *oecm, uint8_t *dw)
 									{
 										dw[j + 3] = (dw[j] + dw[j + 1] + dw[j + 2]) & 0xFF;
 									}
-									return 0;
+									return EMU_OK;
 								}
 							}
 						}
@@ -245,22 +245,22 @@ int8_t irdeto2_ecm(uint16_t caid, uint8_t *oecm, uint8_t *dw)
 
 			if (keyIVRef == 0)
 			{
-				return 2;
+				return EMU_KEY_NOT_FOUND;
 			}
 		}
 
 		if (keySeedRef == 0)
 		{
-			return 2;
+			return EMU_KEY_NOT_FOUND;
 		}
 	}
 
 	if (key0Ref == 0)
 	{
-		return 2;
+		return EMU_KEY_NOT_FOUND;
 	}
 
-	return 1;
+	return EMU_NOT_SUPPORTED;
 }
 
 // Irdeto2 EMM EMU
@@ -443,7 +443,7 @@ int8_t irdeto2_emm(uint16_t caid, uint8_t *oemm, uint32_t *keysAdded)
 
 	if (emmLen < 11)
 	{
-		return 1;
+		return EMU_NOT_SUPPORTED;
 	}
 
 	if (emm[3] == 0xC3 || emm[3] == 0xCB)
@@ -462,7 +462,7 @@ int8_t irdeto2_emm(uint16_t caid, uint8_t *oemm, uint32_t *keysAdded)
 
 	if (emmLen < length + startOffset)
 	{
-		return 1;
+		return EMU_NOT_SUPPORTED;
 	}
 
 	keySeedRef = 0;
@@ -488,14 +488,14 @@ int8_t irdeto2_emm(uint16_t caid, uint8_t *oemm, uint32_t *keysAdded)
 				{
 					if (do_emm_type_op(ident, emm, keySeed, keyIV, keyPMK, emmLen, startOffset, length, keysAdded) == 0)
 					{
-						return 0;
+						return EMU_OK;
 					}
 				}
 				else
 				{
 					if (do_emm_type_pmk(ident, emm, keySeed, keyIV, keyPMK, emmLen, startOffset, length, keysAdded) == 0)
 					{
-						return 0;
+						return EMU_OK;
 					}
 				}
 			}
@@ -510,7 +510,7 @@ int8_t irdeto2_emm(uint16_t caid, uint8_t *oemm, uint32_t *keysAdded)
 
 					if (do_emm_type_op(ident, emm, keySeed, keyIV, keyPMK, emmLen, startOffset, length, keysAdded) == 0)
 					{
-						return 0;
+						return EMU_OK;
 					}
 				}
 
@@ -523,7 +523,7 @@ int8_t irdeto2_emm(uint16_t caid, uint8_t *oemm, uint32_t *keysAdded)
 
 					if (do_emm_type_op(ident, emm, keySeed, keyIV, keyPMK, emmLen, startOffset, length, keysAdded) == 0)
 					{
-						return 0;
+						return EMU_OK;
 					}
 				}
 
@@ -536,20 +536,20 @@ int8_t irdeto2_emm(uint16_t caid, uint8_t *oemm, uint32_t *keysAdded)
 
 					if (do_emm_type_op(ident, emm, keySeed, keyIV, keyPMK, emmLen, startOffset, length, keysAdded) == 0)
 					{
-						return 0;
+						return EMU_OK;
 					}
 				}
 			}
 
 			if (keyPMK0Ref == 0 && keyPMK1Ref == 0 && keyPMK0ERef == 0 && keyPMK1ERef == 0)
 			{
-				return 2;
+				return EMU_KEY_NOT_FOUND;
 			}
 		}
 
 		if (keyIVRef == 0)
 		{
-			return 2;
+			return EMU_KEY_NOT_FOUND;
 		}
 	}
 
@@ -558,7 +558,7 @@ int8_t irdeto2_emm(uint16_t caid, uint8_t *oemm, uint32_t *keysAdded)
 		return 2;
 	}
 
-	return 1;
+	return EMU_NOT_SUPPORTED;
 }
 
 int8_t irdeto2_get_hexserial(uint16_t caid, uint8_t *hexserial)
