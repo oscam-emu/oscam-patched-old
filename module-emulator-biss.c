@@ -176,12 +176,12 @@ static void annotate(char *buf, uint8_t len, const uint8_t *ecm, uint16_t ecmLen
 	// Extract useful information to append to the "Example key ..." message.
 	//
 	// For feeds, the orbital position & frequency are usually embedded in the namespace.
-	// See https://github.com/openatv/enigma2/blob/master/lib/dvb/frontend.cpp#L496
+	// See https://github.com/OpenPLi/enigma2/blob/develop/lib/dvb/frontend.cpp#L476
 	// hash = (sat.orbital_position << 16);
 	// hash |= ((sat.frequency/1000)&0xFFFF)|((sat.polarisation&1) << 15);
 	//
 	// If the onid & tsid appear to be a unique DVB identifier, enigma2 strips the frequency
-	// from our namespace. See https://github.com/openatv/enigma2/blob/master/lib/dvb/scan.cpp#L59
+	// from our namespace. See https://github.com/OpenPLi/enigma2/blob/develop/lib/dvb/scan.cpp#L55
 	// In that case, our annotation contains the onid:tsid:sid triplet in lieu of frequency.
 	//
 	// For the universal case, we print the number of elementary stream pids & pmtpid.
@@ -574,7 +574,7 @@ static int8_t biss2_mode_ca_ecm(const uint8_t *ecm, EXTENDED_CW *cw_ex)
 
 	if (payload_checksum != calculated_checksum)
 	{
-		cs_log_dbg(D_TRACE, "Checksum mismatch (payload: %08X vs calculated: %08X",
+		cs_log_dbg(D_TRACE, "ECM checksum mismatch (payload: %08X vs calculated: %08X",
 					payload_checksum, calculated_checksum);
 		return EMU_CHECKSUM_ERROR;
 	}
@@ -618,6 +618,7 @@ static int8_t biss2_mode_ca_ecm(const uint8_t *ecm, EXTENDED_CW *cw_ex)
 	// Decrypt session words
 	aes_set_key(&aes, (char *)session_key);
 	aes_cbc_decrypt(&aes, cw_ex->session_word, 16, iv);
+	memcpy(iv, ecm + position, 16); // Set iv again to the correct one
 	aes_cbc_decrypt(&aes, cw_ex->session_word + 16, 16, iv);
 
 	// Delete these cs_log calls when everything is confirmed to work correctly
@@ -694,7 +695,7 @@ static uint16_t parse_session_data_descriptor(const uint8_t *data, uint16_t esid
 	return 2 + descriptor_length;
 }
 
-static void parse_session_data(const uint8_t *data, RSA *key, uint16_t esid, uint16_t onid, uint32_t *keysAdded)
+static int8_t parse_session_data(const uint8_t *data, RSA *key, uint16_t esid, uint16_t onid, uint32_t *keysAdded)
 {
 	// session_data is encrypted with RSA 2048 bit OAEP
 	// Maximum size of decrypted session_data is less than (256-41) bytes
@@ -709,7 +710,11 @@ static void parse_session_data(const uint8_t *data, RSA *key, uint16_t esid, uin
 		{
 			pos += parse_session_data_descriptor(session_data + 2 + pos, esid, onid, keysAdded);
 		}
+
+		return EMU_OK;
 	}
+
+	return EMU_NOT_SUPPORTED; // Decryption failed for whatever reason
 }
 
 static int8_t get_rsa_key(struct s_reader *rdr, const uint8_t *ekid, RSA **key)
@@ -736,6 +741,8 @@ int8_t biss_emm(struct s_reader *rdr, const uint8_t *emm, uint32_t *keysAdded)
 	uint16_t entitlement_session_id, original_network_id, descriptor_length;
 	uint16_t pos, emm_length = SCT_LEN(emm);
 	uint32_t payload_checksum, calculated_checksum;
+	int8_t result = EMU_NOT_SUPPORTED;
+	char tmp[17];
 	RSA *key;
 
 	// Calculate crc32 checksum and compare against the checksum bytes of the EMM
@@ -744,7 +751,7 @@ int8_t biss_emm(struct s_reader *rdr, const uint8_t *emm, uint32_t *keysAdded)
 
 	if (payload_checksum != calculated_checksum)
 	{
-		cs_log_dbg(D_TRACE, "Checksum mismatch (payload: %08X vs calculated: %08X",
+		cs_log_dbg(D_TRACE, "EMM checksum mismatch (payload: %08X vs calculated: %08X",
 					payload_checksum, calculated_checksum);
 		return EMU_CHECKSUM_ERROR;
 	}
@@ -760,7 +767,7 @@ int8_t biss_emm(struct s_reader *rdr, const uint8_t *emm, uint32_t *keysAdded)
 
 	if (emm_cipher_type != 0) // EMM payload is not encrypted with RSA_2048_OAEP
 	{
-		cs_log_dbg(D_TRACE, "Cipher type %d not supported", emm_cipher_type);
+		cs_log_dbg(D_TRACE, "EMM cipher type %d not supported", emm_cipher_type);
 		return EMU_NOT_SUPPORTED;
 	}
 
@@ -775,8 +782,22 @@ int8_t biss_emm(struct s_reader *rdr, const uint8_t *emm, uint32_t *keysAdded)
 
 		if (get_rsa_key(rdr, entitlement_key_id, &key)) // Key found
 		{
+			cs_hexdump(0, entitlement_key_id, 8, tmp, sizeof(tmp));
+			cs_log_dbg(D_TRACE, "RSA key found (ekid: %s)", tmp);
+
 			// Parse "encrypted_session_data"
-			parse_session_data(emm + pos, key, entitlement_session_id, original_network_id, keysAdded);
+			result = parse_session_data(emm + pos, key, entitlement_session_id, original_network_id, keysAdded);
+			if (result == EMU_OK)
+			{
+				break; // No need to decrypt again with another key
+			}
+		}
+		else // Multiple ekid's can be present in the EMM - Do not exit just yet
+		{
+			cs_hexdump(0, entitlement_key_id, 8, tmp, sizeof(tmp));
+			cs_log_dbg(D_TRACE, "RSA key not found (ekid: %s)", tmp);
+
+			result = EMU_KEY_NOT_FOUND;
 		}
 
 		pos += 256; // 2048 bits
@@ -787,7 +808,7 @@ int8_t biss_emm(struct s_reader *rdr, const uint8_t *emm, uint32_t *keysAdded)
 		}
 	}
 
-	return EMU_KEY_NOT_FOUND;
+	return result;
 }
 
 static int8_t rsa_key_exists(struct s_reader *rdr, const biss2_rsa_key_t *item)
@@ -832,8 +853,7 @@ uint16_t biss_read_pem(struct s_reader *rdr, uint8_t max_keys)
 		snprintf(tmp, sizeof(tmp), "%sbiss2_private_%02d.pem", emu_keyfile_path, i);
 		if ((fp_pri = fopen(tmp, "r")) == NULL)
 		{
-			// File does not exist
-			continue;
+			continue; // File does not exist
 		}
 
 		cs_log("Reading RSA key from: biss2_private_%02d.pem", i);
@@ -892,10 +912,6 @@ uint16_t biss_read_pem(struct s_reader *rdr, uint8_t max_keys)
 		{
 			ll_append(rdr->ll_biss2_rsa_keys, new_item);
 			count++;
-
-			// Each ekid is listed under the reader's entitlements
-			//cs_hexdump(0, new_item->ekid, 8, tmp, sizeof(tmp));
-			//cs_log("RSA key stored in memory (EKID: %s)", tmp);
 		}
 	}
 
