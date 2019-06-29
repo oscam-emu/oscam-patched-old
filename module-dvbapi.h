@@ -94,6 +94,30 @@
 #define DVBAPI_INDEX_DISABLE      0xFFFFFFFF // only used for ca_pid_t
 
 //-----------------------------------------------------------------------------
+// CA PMT defined values according to EN 50221
+// https://www.dvb.org/resources/public/standards/En50221.V1.pdf
+// https://www.dvb.org/resources/public/standards/R206-001.V1.pdf
+//-----------------------------------------------------------------------------
+
+// ca_pmt_list_management: This parameter is used to indicate whether the user has selected a single program or several
+// programs. The following values can be used:
+
+#define CA_PMT_LIST_MORE   0x00 // The CA PMT object is neither the first one, nor the last one of the list.
+
+#define CA_PMT_LIST_FIRST  0x01 // The CA PMT object is the first one of a new list of more than one CA PMT object.
+								// All previously selected programs are being replaced by the programs of the new list.
+
+#define CA_PMT_LIST_LAST   0x02 // The CA PMT object is the last of the list.
+
+#define CA_PMT_LIST_ONLY   0x03 // The list is made of a single CA PMT object.
+
+#define CA_PMT_LIST_ADD    0x04 // The CA PMT has to be added to an existing list, that is, a new program has been seleced
+								// by the user, but all previously selected programs remain selected.
+
+#define CA_PMT_LIST_UPDATE 0x05 // The CA PMT of a program already in the list is sent again because the version_number or
+								// the current_next_indicator has changed.
+
+//-----------------------------------------------------------------------------
 // api used for internal device communication
 //-----------------------------------------------------------------------------
 
@@ -348,15 +372,15 @@ enum stream_type
 
 typedef struct demux_s
 {
-	int8_t           demux_index;                        // id of the (hardware) demux carrying the TS of this demux - we get this via CaPMT
-	int8_t           adapter_index;                      // id of the (hardware) adapter carrying the TS of this demux - we get this via CaPMT
-	uint32_t         ca_mask;                            // bit mask of ca devices used for descrambling of this demux - we get this via CaPMT
-	int32_t          socket_fd;
+	int8_t           demux_index;                        // ID of the (hardware) demux device carrying this program - we get this via CA PMT
+	int8_t           adapter_index;                      // ID of the adapter device carrying this program - we get this via CA PMT
+	uint32_t         ca_mask;                            // Bit mask of ca devices used for descrambling this program - we get this via CA PMT
+	int32_t          socket_fd;                          // Connection identifier through which we received the CA PMT object
 	uint16_t         client_proto_version;
 	FILTERTYPE       demux_fd[MAX_FILTER];
-	int8_t           ECMpidcount;                        // count of ECM pids in the demux
+	int8_t           ECMpidcount;                        // Count of ECM pids in this program
 	ECMPIDTYPE       ECMpids[MAX_ECM_PIDS];
-	int8_t           EMMpidcount;                        // count of EMM pids in the demux
+	int8_t           EMMpidcount;                        // Count of EMM pids in this program
 	EMMPIDTYPE       EMMpids[MAX_EMM_PIDS];
 	struct timeb     emmstart;                           // last time emm cat was started
 	uint16_t         max_emm_filter;
