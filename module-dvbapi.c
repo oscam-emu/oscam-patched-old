@@ -1776,7 +1776,7 @@ void dvbapi_start_pat_filter(int32_t demux_id)
 	dvbapi_start_filter(demux_id, demux[demux_id].pidindex, 0x00, 0x001, 0x01, 0x00, 0xFF, 0, TYPE_PAT);
 }
 
-void dvbapi_start_pmt_filter(int32_t demux_id, int32_t pmt_pid)
+void dvbapi_start_pmt_filter(int32_t demux_id)
 {
 #if defined(WITH_COOLAPI) || defined(WITH_COOLAPI2)
 	// PMT-Filter breaks API and OSCAM for Coolstream.
@@ -1786,12 +1786,14 @@ void dvbapi_start_pmt_filter(int32_t demux_id, int32_t pmt_pid)
 	uint8_t filter[16], mask[16];
 	memset(filter, 0, 16);
 	memset(mask, 0, 16);
+
 	filter[0] = 0x02;
 	i2b_buf(2, demux[demux_id].program_number, filter + 1); // add srvid to filter since the pid can deliver pmt for multiple srvid
 	mask[0] = 0xFF;
 	mask[1] = 0xFF;
 	mask[2] = 0xFF;
-	dvbapi_set_filter(demux_id, selected_api, pmt_pid, 0x001, 0x01, filter, mask, 0, 0, TYPE_PMT, 0);
+
+	dvbapi_set_filter(demux_id, selected_api, demux[demux_id].pmtpid, 0x001, 0x01, filter, mask, 0, 0, TYPE_PMT, 0);
 }
 
 void dvbapi_start_emm_filter(int32_t demux_id)
@@ -4175,9 +4177,9 @@ int32_t dvbapi_parse_capmt(uint8_t *buffer, uint32_t length, int32_t connfd, cha
 					}
 
 					// free demuxer found, start pat/pmt filter for this new demuxer
-					if(pmtpid)
+					if(demux[demux_id].pmtpid)
 					{
-						dvbapi_start_pmt_filter(demux_id, pmtpid);
+						dvbapi_start_pmt_filter(demux_id);
 					}
 					else
 					{
@@ -4978,6 +4980,7 @@ static void dvbapi_parse_pat(int32_t demux_id, uint8_t *buffer, uint32_t length,
 {
 	uint16_t srvid;
 	uint32_t i;
+
 	dvbapi_stop_filter(demux_id, TYPE_PAT, msgid);
 
 	for(i = 8; i + 7 < length; i += 4)
@@ -4990,7 +4993,8 @@ static void dvbapi_parse_pat(int32_t demux_id, uint8_t *buffer, uint32_t length,
 
 		if(demux[demux_id].program_number == srvid)
 		{
-			dvbapi_start_pmt_filter(demux_id, b2i(2, buffer + i + 2) & 0x1FFF);
+			demux[demux_id].pmtpid = b2i(2, buffer + i + 2) & 0x1FFF;
+			dvbapi_start_pmt_filter(demux_id);
 			break;
 		}
 	}
