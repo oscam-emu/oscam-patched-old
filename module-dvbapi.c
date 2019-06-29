@@ -2475,7 +2475,7 @@ void dvbapi_stop_descrambling(int32_t demux_id, uint32_t msgid)
 			demux[demux_id].ECMpidcount > 0 ? demux[demux_id].ECMpids[i].CAID : NO_CAID_VALUE,
 			channame, sizeof(channame));
 
-	cs_log("Demuxer %d stop descrambling program number %04X (%s)",
+	cs_log("Demuxer %d stopped descrambling for program %04X (%s)",
 			demux_id, demux[demux_id].program_number, channame);
 
 	dvbapi_stop_filter(demux_id, TYPE_EMM, msgid);
@@ -3622,49 +3622,265 @@ void dvbapi_resort_ecmpids(int32_t demux_id)
 	return;
 }
 
-void dvbapi_parse_descriptors(int32_t demux_id, uint32_t info_length, uint8_t *buffer, uint8_t *type)
+static void dvbapi_priority_read_entry_add(int32_t demux_id, uint16_t video_pid)
+{
+	struct s_dvbapi_priority *add_entry;
+
+	for(add_entry = dvbapi_priority; add_entry != NULL; add_entry = add_entry->next)
+	{
+		// ECM pid is misused to hold PMT pid in case of 'A' rule.
+		// Some receivers don't forward the PMT pid, so use the video pid instead
+		if(add_entry->type != 'a' || add_entry->srvid != demux[demux_id].program_number
+			|| (add_entry->ecmpid && demux[demux_id].pmtpid && add_entry->ecmpid != demux[demux_id].pmtpid)
+			|| (add_entry->ecmpid && !demux[demux_id].pmtpid && add_entry->ecmpid != video_pid))
+		{
+			continue;
+		}
+
+		dvbapi_add_ecmpid(demux_id, add_entry->mapcaid, add_entry->mapecmpid, add_entry->mapprovid, 0, "(fake ecm pid)");
+
+		cs_log_dbg(D_DVBAPI, "Demuxer %d added fake ecm pid %04X@%06X:%04X for program %04X", demux_id,
+					add_entry->mapcaid, add_entry->mapprovid, add_entry->mapecmpid, demux[demux_id].program_number);
+		break;
+	}
+}
+
+static void dvbapi_priority_read_entry_map(int32_t demux_id)
+{
+	int32_t j;
+	struct s_dvbapi_priority *map_entry;
+
+	for(j = 0; j < demux[demux_id].ECMpidcount; j++)
+	{
+		map_entry = dvbapi_check_prio_match(demux_id, j, 'm');
+		if(map_entry)
+		{
+			cs_log_dbg(D_DVBAPI, "Demuxer %d mapping ecm pid %d from %04X@%06X to %04X@%06X",
+					demux_id, j, demux[demux_id].ECMpids[j].CAID, demux[demux_id].ECMpids[j].PROVID,
+					map_entry->mapcaid, map_entry->mapprovid);
+
+			demux[demux_id].ECMpids[j].CAID = map_entry->mapcaid;
+			demux[demux_id].ECMpids[j].PROVID = map_entry->mapprovid;
+		}
+	}
+}
+
+static void dvbapi_priority_read_entry_extra(int32_t demux_id)
+{
+	struct s_dvbapi_priority *extra_entry;
+	int32_t j, k, l, m, extra_demux_id;
+
+	for(extra_entry = dvbapi_priority; extra_entry != NULL; extra_entry = extra_entry->next)
+	{
+		if(extra_entry->type != 'x')
+		{
+			continue;
+		}
+
+		for(j = 0; j <= demux[demux_id].ECMpidcount; ++j)
+		{
+			if((extra_entry->caid && extra_entry->caid != demux[demux_id].ECMpids[j].CAID)
+				|| (extra_entry->provid && extra_entry->provid != demux[demux_id].ECMpids[j].PROVID)
+				|| (extra_entry->ecmpid && extra_entry->ecmpid != demux[demux_id].ECMpids[j].ECM_PID)
+				|| (extra_entry->srvid && extra_entry->srvid != demux[demux_id].program_number))
+			{
+				continue;
+			}
+
+			cs_log("Mapping ecm pid %04X@%06X:%04X:%04X to extra demuxer",
+					extra_entry->caid, extra_entry->provid, extra_entry->ecmpid, extra_entry->srvid);
+
+			for(extra_demux_id = 0; extra_demux_id < MAX_DEMUX; extra_demux_id++)
+			{
+				if(demux[extra_demux_id].program_number != 0)
+				{
+					continue; // Skip occupied demuxers
+				}
+			}
+
+			if(extra_demux_id >= MAX_DEMUX)
+			{
+				cs_log("There is no free demuxer for extra streams");
+				continue;
+			}
+
+			demux[extra_demux_id].ECMpids[0] = demux[demux_id].ECMpids[j];
+			demux[extra_demux_id].ECMpidcount = 1;
+			demux[extra_demux_id].STREAMpidcount = 0;
+			demux[extra_demux_id].program_number = demux[demux_id].program_number;
+			demux[extra_demux_id].pmtpid = demux[demux_id].pmtpid;
+			demux[extra_demux_id].demux_index = demux[demux_id].demux_index;
+			demux[extra_demux_id].adapter_index = demux[demux_id].adapter_index;
+			demux[extra_demux_id].ca_mask = demux[demux_id].ca_mask;
+			demux[extra_demux_id].socket_fd = demux[demux_id].socket_fd;
+			demux[extra_demux_id].stopdescramble = 0;
+			demux[extra_demux_id].rdr = NULL;
+			demux[extra_demux_id].curindex = -1;
+
+			// Add streams to extra demux
+			for(k = 0; k < demux[demux_id].STREAMpidcount; ++k)
+			{
+				if(!demux[demux_id].ECMpids[j].streams || (demux[demux_id].ECMpids[j].streams & (1 << k)))
+				{
+					demux[extra_demux_id].ECMpids[0].streams |= (1 << demux[extra_demux_id].STREAMpidcount);
+					demux[extra_demux_id].STREAMpids[demux[extra_demux_id].STREAMpidcount] = demux[demux_id].STREAMpids[k];
+					demux[extra_demux_id].STREAMpidsType[demux[extra_demux_id].STREAMpidcount] = demux[demux_id].STREAMpidsType[k];
+					++demux[extra_demux_id].STREAMpidcount;
+
+					// Shift stream associations in normal demux because we will remove the stream entirely
+					for(l = 0; l < demux[demux_id].ECMpidcount; ++l)
+					{
+						for(m = k; m < demux[demux_id].STREAMpidcount - 1; ++m)
+						{
+							if(demux[demux_id].ECMpids[l].streams & (1 << (m + 1)))
+							{
+								demux[demux_id].ECMpids[l].streams |= (1 << m);
+							}
+							else
+							{
+								demux[demux_id].ECMpids[l].streams &= ~(1 << m);
+							}
+						}
+					}
+
+					// Remove stream association from normal demux device
+					for(l = k; l < demux[demux_id].STREAMpidcount - 1; ++l)
+					{
+						demux[demux_id].STREAMpids[l] = demux[demux_id].STREAMpids[l + 1];
+						demux[demux_id].STREAMpidsType[l] = demux[demux_id].STREAMpidsType[l + 1];
+					}
+
+					--demux[demux_id].STREAMpidcount;
+					--k;
+				}
+			}
+
+			// Remove ecm pid from normal demuxer
+			for(k = j; k < demux[demux_id].ECMpidcount; ++k)
+			{
+				demux[demux_id].ECMpids[k] = demux[demux_id].ECMpids[k + 1];
+			}
+
+			--demux[demux_id].ECMpidcount;
+			--j;
+
+			if(demux[extra_demux_id].STREAMpidcount <= 0)
+			{
+				cs_log("Found no streams for extra demuxer. Not starting additional decoding on it.");
+
+				demux[extra_demux_id].program_number = 0;
+				demux[extra_demux_id].stopdescramble = 1;
+			}
+
+			if(demux[demux_id].STREAMpidcount < 1)
+			{
+				cs_log("Found no streams for normal demuxer. Not starting additional decoding on it.");
+			}
+		}
+	}
+}
+
+static void dvbapi_parse_ca_descriptor(int32_t demux_id, uint8_t *buffer, uint8_t descriptor_length)
+{
+	uint16_t i, ca_system_id, ca_pid;
+	uint32_t ca_provider = 0, ca_data = 0;
+	char txt[40]; // room for PBM: 8 byte pbm and DATE: date
+	memset(txt, 0x00, sizeof(txt));
+
+	if(descriptor_length < 4)
+	{
+		return; // CA descriptor has a minimum length of 4 bytes
+	}
+
+	ca_system_id = b2i(2, buffer);
+	ca_pid = b2i(2, buffer + 2) & 0x1FFF;
+
+	if(caid_is_seca(ca_system_id))
+	{
+		for(i = 2; i < descriptor_length; i += 15)
+		{
+			ca_pid = b2i(2, buffer + i) & 0x1FFF;
+			ca_provider = b2i(2, buffer + i + 2);
+
+			int8_t year = buffer[i + 13] >> 1;
+			int8_t month = (((buffer[i + 13] & 0x01) << 3) | (buffer[i + 14] >> 5));
+			int8_t day = buffer[i + 14] & 0x1F;
+
+			snprintf(txt, sizeof(txt), "PBM: ");
+			cs_hexdump(0, buffer + i + 5, 8, txt + 5, (2 * 8) + 1); // hexdump 8 byte pbm
+			snprintf(txt + 20, sizeof(txt) - 20, " DATE: %d-%d-%d", day, month, year + 1990);
+
+			dvbapi_add_ecmpid(demux_id, ca_system_id, ca_pid, ca_provider, 0, txt);
+		}
+	}
+	else
+	{
+		if(caid_is_viaccess(ca_system_id) && descriptor_length == 0x0F && buffer[10] == 0x14)
+		{
+			ca_provider = b2i(3, buffer + 12) & 0xFFFFF0;
+		}
+		else if(caid_is_nagra(ca_system_id) && descriptor_length == 0x07)
+		{
+			ca_provider = b2i(2, buffer + 5);
+		}
+		else if((ca_system_id >> 8 == 0x4A || ca_system_id == 0x2710) && descriptor_length > 0x04)
+		{
+			ca_provider = buffer[4];
+
+			if(caid_is_dre(ca_system_id) && descriptor_length == 0x0A)
+			{
+				ca_data = b2i(4, buffer + 6);
+				snprintf(txt, 40, "CA DATA: %X", ca_data);
+			}
+		}
+
+		dvbapi_add_ecmpid(demux_id, ca_system_id, ca_pid, ca_provider, ca_data, txt);
+	}
+}
+
+static void dvbapi_parse_pmt_descriptors(int32_t demux_id, uint8_t *buffer, uint16_t length, uint8_t *type)
 {
 	// int32_t ca_pmt_cmd_id = buffer[i + 5];
 	uint8_t descriptor_tag = buffer[0], descriptor_length = 0;
 	uint8_t skip_border = cfg.dvbapi_boxtype == BOXTYPE_SAMYGO ? 0x05 : 0x02; // skip input values <0x05 on samygo
-	uint32_t j, u, k;
+	uint16_t i, j;
 
-	static const char format_identifiers_audio[10][5] =
-	{
-		// "HDMV" format identifier is removed
-		// OSCam does not need to know about Blu-ray
-		"AC-3", "BSSD", "dmat", "DRA1", "DTS1",
-		"DTS2", "DTS3", "EAC3", "mlpa", "Opus",
-	};
-
-	if(info_length < 1)
+	if(length < 1)
 	{
 		return;
 	}
 
 	// skip descriptors with tag 0x00 and 0x01,
 	// or even greater for samygo (not sure why we do this...)
-	if((descriptor_tag < skip_border) && info_length > 0)
+	if((descriptor_tag < skip_border) && length > 0)
 	{
 		buffer++;
-		info_length--;
+		length--;
 	}
 
-	for(j = 0; j + 1 < info_length; j += descriptor_length + 2)
+	for(i = 0; i + 1 < length; i += 2 + descriptor_length)
 	{
-		descriptor_tag = buffer[j];
-		descriptor_length = buffer[j + 1];
+		descriptor_tag = buffer[i];
+		descriptor_length = buffer[i + 1];
 
 		cs_log_dbg(D_DVBAPI, "Demuxer %d found %s descriptor (tag: %02X length: %02X)",
 			demux_id, get_descriptor_tag_txt(descriptor_tag), descriptor_tag, descriptor_length);
 
 		switch(descriptor_tag)
 		{
-			case 0x05: // registration descriptor
+			case 0x05: // Registration descriptor
 			{
-				for(k = 0; k < 10; k++)
+				// "HDMV" format identifier is removed
+				// OSCam does not need to know about Blu-ray
+				const char format_identifiers_audio[10][5] =
 				{
-					if(memcmp(buffer + j + 2, format_identifiers_audio[k], 4) == 0)
+					"AC-3", "BSSD", "dmat", "DRA1", "DTS1",
+					"DTS2", "DTS3", "EAC3", "mlpa", "Opus",
+				};
+
+				for(j = 0; j < 10; j++)
+				{
+					if(memcmp(buffer + i + 2, format_identifiers_audio[j], 4) == 0)
 					{
 						*type = STREAM_AUDIO;
 						break;
@@ -3675,60 +3891,18 @@ void dvbapi_parse_descriptors(int32_t demux_id, uint32_t info_length, uint8_t *b
 
 			case 0x09: // CA descriptor
 			{
-				int32_t descriptor_ca_system_id = b2i(2, buffer + j + 2);
-				int32_t descriptor_ca_pid = b2i(2, buffer + j + 4) & 0x1FFF;
-				int32_t descriptor_ca_provider = 0;
-				uint32_t descriptor_ca_data = 0;
-				char txt[40]; // room for PBM: 8 byte pbm and DATE: date
-				memset(txt, 0x00, sizeof(txt));
-
-				if(descriptor_ca_system_id >> 8 == 0x01)
-				{
-					for(u = 2; u < descriptor_length; u += 15)
-					{
-						descriptor_ca_pid = b2i(2, buffer + j + u + 2) & 0x1FFF;
-						descriptor_ca_provider = b2i(2, buffer + j + u + 4);
-						int8_t year = buffer[j + u + 15] >> 1;
-						int8_t month = (((buffer[j + u + 15] & 0x01) << 3) | (buffer[j + u + 16] >> 5));
-						int8_t day = buffer[j + u + 16] & 0x1F;
-						snprintf(txt, sizeof(txt), "PBM: ");
-						cs_hexdump(0, buffer + j + u + 7, 8, txt + 5, (2 * 8) + 1); // hexdump 8 byte pbm
-						snprintf(txt + 20, sizeof(txt) - 20, " DATE: %d-%d-%d", day, month, year + 1990);
-						dvbapi_add_ecmpid(demux_id, descriptor_ca_system_id, descriptor_ca_pid, descriptor_ca_provider, 0, txt);
-					}
-				}
-				else
-				{
-					if(caid_is_viaccess(descriptor_ca_system_id) && descriptor_length == 0x0F && buffer[j + 12] == 0x14)
-					{
-						descriptor_ca_provider = b2i(3, buffer + j + 14) & 0xFFFFF0;
-					}
-					else if(caid_is_nagra(descriptor_ca_system_id) && descriptor_length == 0x07)
-					{
-						descriptor_ca_provider = b2i(2, buffer + j + 7);
-					}
-					else if((descriptor_ca_system_id >> 8 == 0x4A || descriptor_ca_system_id == 0x2710) && descriptor_length > 0x04)
-					{
-						descriptor_ca_provider = buffer[j + 6];
-						if(caid_is_dre(descriptor_ca_system_id) && descriptor_length == 0xA)
-						{
-							descriptor_ca_data = b2i(4, buffer + j + 8);
-							snprintf(txt, 40, "CA DATA: %X", descriptor_ca_data);
-						}
-					}
-					dvbapi_add_ecmpid(demux_id, descriptor_ca_system_id, descriptor_ca_pid, descriptor_ca_provider, descriptor_ca_data, txt);
-				}
+				dvbapi_parse_ca_descriptor(demux_id, buffer + i + 2, descriptor_length);
 				break;
 			}
 
-			case 0x59: // subtitling descriptor (DVB)
+			case 0x59: // Subtitling descriptor (DVB)
 			{
 				*type = STREAM_SUBTITLE;
 				break;
 			}
 
 			case 0x6A: // AC-3 descriptor (DVB)
-			case 0x7A: // enhanced AC-3 descriptor (DVB)
+			case 0x7A: // Enhanced AC-3 descriptor (DVB)
 			case 0x7B: // DTS descriptor (DVB)
 			case 0x7C: // AAC descriptor (DVB)
 			{
@@ -3736,9 +3910,9 @@ void dvbapi_parse_descriptors(int32_t demux_id, uint32_t info_length, uint8_t *b
 				break;
 			}
 
-			case 0x7F: // extension descriptor (DVB)
+			case 0x7F: // Extension descriptor (DVB)
 			{
-				uint8_t extension_descriptor_tag = buffer[j + 2];
+				uint8_t extension_descriptor_tag = buffer[i + 2];
 
 				cs_log_dbg(D_DVBAPI, "Demuxer %d found %s descriptor (extension tag: %02X)",
 					demux_id, get_extension_descriptor_txt(extension_descriptor_tag), extension_descriptor_tag);
@@ -3762,9 +3936,9 @@ void dvbapi_parse_descriptors(int32_t demux_id, uint32_t info_length, uint8_t *b
 			{
 				if(descriptor_length == 8) // private descriptor of length 8, assume enigma/tvh
 				{
-					demux[demux_id].ens  = b2i(4, buffer + j + 2);
-					demux[demux_id].tsid = b2i(2, buffer + j + 6);
-					demux[demux_id].onid = b2i(2, buffer + j + 8);
+					demux[demux_id].ens  = b2i(4, buffer + i + 2);
+					demux[demux_id].tsid = b2i(2, buffer + i + 6);
+					demux[demux_id].onid = b2i(2, buffer + i + 8);
 					cs_log_dbg(D_DVBAPI, "Demuxer %d assuming enigma private descriptor (namespace: %08X tsid: %04X onid: %04X)",
 							demux_id, demux[demux_id].ens, demux[demux_id].tsid, demux[demux_id].onid);
 				}
@@ -3784,23 +3958,7 @@ void dvbapi_parse_descriptors(int32_t demux_id, uint32_t info_length, uint8_t *b
 	// Apply mapping:
 	if(dvbapi_priority)
 	{
-		struct s_dvbapi_priority *mapentry;
-		for(j = 0; (int32_t)j < demux[demux_id].ECMpidcount; j++)
-		{
-			mapentry = dvbapi_check_prio_match(demux_id, j, 'm');
-			if(mapentry)
-			{
-				cs_log_dbg(D_DVBAPI, "Demuxer %d mapping ecmpid %d from %04X@%06X to %04X@%06X",
-						demux_id,
-						j,
-						demux[demux_id].ECMpids[j].CAID,
-						demux[demux_id].ECMpids[j].PROVID,
-						mapentry->mapcaid, mapentry->mapprovid);
-
-				demux[demux_id].ECMpids[j].CAID = mapentry->mapcaid;
-				demux[demux_id].ECMpids[j].PROVID = mapentry->mapprovid;
-			}
-		}
+		dvbapi_priority_read_entry_map(demux_id);
 	}
 }
 
@@ -4027,7 +4185,7 @@ static void get_demux_options(int32_t demux_id, uint8_t *buffer, uint32_t *ca_ma
 static void dvbapi_capmt_notify(struct demux_s *dmx)
 {
 	struct s_client *cl;
-	for(cl = first_client->next; cl ; cl = cl->next)
+	for(cl = first_client->next; cl; cl = cl->next)
 	{
 		if((cl->typ == 'p' || cl->typ == 'r') && cl->reader && cl->reader->ph.c_capmt)
 		{
@@ -4054,13 +4212,6 @@ int32_t dvbapi_parse_capmt(uint8_t *buffer, uint32_t length, int32_t connfd, cha
 
 	if(!is_real_pmt)
 	{
-#define LIST_MORE   0x00 // *CA application should append a 'MORE' CAPMT object to the list and start receiving the next object
-#define LIST_FIRST  0x01 // *CA application should clear the list when a 'FIRST' CAPMT object is received, and start receiving the next object
-#define LIST_LAST   0x02 // *CA application should append a 'LAST' CAPMT object to the list and start working with the list
-#define LIST_ONLY   0x03 // *CA application should clear the list when an 'ONLY' CAPMT object is received, and start working with the object
-#define LIST_ADD    0x04 // *CA application should append an 'ADD' CAPMT object to the current list and start working with the updated list
-#define LIST_UPDATE 0x05 // *CA application should replace an entry in the list with an 'UPDATE' CAPMT object, and start working with the updated list
-
 #if defined WITH_COOLAPI || defined WITH_COOLAPI2
 		int32_t ca_pmt_list_management = LIST_ONLY;
 #else
@@ -4071,7 +4222,7 @@ int32_t dvbapi_parse_capmt(uint8_t *buffer, uint32_t length, int32_t connfd, cha
 		cs_log_dump_dbg(D_DVBAPI, buffer, length, "capmt:");
 		cs_log_dbg(D_DVBAPI, "Receiver sends PMT command %d for channel %04X", ca_pmt_list_management, program_number);
 
-		if(!pmt_stopmarking && (ca_pmt_list_management == LIST_FIRST || ca_pmt_list_management == LIST_ONLY))
+		if(!pmt_stopmarking && (ca_pmt_list_management == CA_PMT_LIST_FIRST || ca_pmt_list_management == CA_PMT_LIST_ONLY))
 		{
 			for(i = 0; i < MAX_DEMUX; i++)
 			{
@@ -4131,7 +4282,7 @@ int32_t dvbapi_parse_capmt(uint8_t *buffer, uint32_t length, int32_t connfd, cha
 					}
 				}
 
-				if(ca_pmt_list_management == LIST_UPDATE)
+				if(ca_pmt_list_management == CA_PMT_LIST_UPDATE)
 				{
 					cs_log("Demuxer %d PMT update for decoding of SRVID %04X! ", i, program_number);
 				}
@@ -4145,7 +4296,7 @@ int32_t dvbapi_parse_capmt(uint8_t *buffer, uint32_t length, int32_t connfd, cha
 		}
 
 		// start using the new list
-		if(ca_pmt_list_management != LIST_FIRST && ca_pmt_list_management != LIST_MORE)
+		if(ca_pmt_list_management != CA_PMT_LIST_FIRST && ca_pmt_list_management != CA_PMT_LIST_MORE)
 		{
 			for(j = 0; j < MAX_DEMUX; j++)
 			{
@@ -4232,10 +4383,9 @@ int32_t dvbapi_parse_capmt(uint8_t *buffer, uint32_t length, int32_t connfd, cha
 
 	if(program_info_length > 1 && program_info_length < length) // parse program descriptors
 	{
-		dvbapi_parse_descriptors(demux_id, program_info_length, buffer + program_info_start, NULL);
+		dvbapi_parse_pmt_descriptors(demux_id, buffer + program_info_start, program_info_length, NULL);
 	}
 	uint32_t es_info_length = 0, vpid = 0;
-	struct s_dvbapi_priority *addentry;
 
 	for(i = program_info_length + program_info_start; i + 4 < length; i += es_info_length + 5)
 	{
@@ -4250,29 +4400,11 @@ int32_t dvbapi_parse_capmt(uint8_t *buffer, uint32_t length, int32_t connfd, cha
 
 			if(es_info_length != 0 && es_info_length < length) // parse program element descriptors
 			{
-				dvbapi_parse_descriptors(demux_id, es_info_length, buffer + i + 5, &type);
+				dvbapi_parse_pmt_descriptors(demux_id, buffer + i + 5, es_info_length, &type);
 			}
 			else
 			{
-				for(addentry = dvbapi_priority; addentry != NULL; addentry = addentry->next)
-				{
-					if(addentry->type != 'a'
-						|| (addentry->ecmpid && pmtpid && addentry->ecmpid != pmtpid) // ecmpid is misused to hold pmtpid in case of A: rule
-						|| (addentry->ecmpid && !pmtpid && addentry->ecmpid != vpid) // some receivers don't forward pmtpid, use vpid instead
-						|| (addentry->srvid != demux[demux_id].program_number))
-					{
-						continue;
-					}
-
-					cs_log_dbg(D_DVBAPI, "Demuxer %d fake ecmpid %04X@%06X:%04x for unencrypted stream on srvid %04X",
-							demux_id,
-							addentry->mapcaid,
-							addentry->mapprovid,
-							addentry->mapecmpid,
-							demux[demux_id].program_number);
-					dvbapi_add_ecmpid(demux_id, addentry->mapcaid, addentry->mapecmpid, addentry->mapprovid, 0, " (fake ecmpid)");
-					break;
-				}
+				dvbapi_priority_read_entry_add(demux_id, vpid);
 			}
 
 			switch(stream_type)
@@ -4387,114 +4519,7 @@ int32_t dvbapi_parse_capmt(uint8_t *buffer, uint32_t length, int32_t connfd, cha
 	}
 
 	dvbapi_capmt_notify(&demux[demux_id]);
-	struct s_dvbapi_priority *xtraentry;
-	int32_t k, l, m, xtra_demux_id;
-
-	for(xtraentry = dvbapi_priority; xtraentry != NULL; xtraentry = xtraentry->next)
-	{
-		if(xtraentry->type != 'x')
-		{
-			continue;
-		}
-
-		for(j = 0; j <= demux[demux_id].ECMpidcount; ++j)
-		{
-			if((xtraentry->caid && xtraentry->caid != demux[demux_id].ECMpids[j].CAID)
-				|| (xtraentry->provid && xtraentry->provid != demux[demux_id].ECMpids[j].PROVID)
-				|| (xtraentry->ecmpid && xtraentry->ecmpid != demux[demux_id].ECMpids[j].ECM_PID)
-				|| (xtraentry->srvid && xtraentry->srvid != demux[demux_id].program_number))
-			{
-				continue;
-			}
-
-			cs_log("Mapping ecmpid %04X@%06X:%04X:%04X to xtra demuxer/ca-devices",
-				xtraentry->caid, xtraentry->provid, xtraentry->ecmpid, xtraentry->srvid);
-
-			for(xtra_demux_id = 0; xtra_demux_id < MAX_DEMUX && demux[xtra_demux_id].program_number > 0; xtra_demux_id++){ ; }
-
-			if(xtra_demux_id >= MAX_DEMUX)
-			{
-				cs_log("Found no free demux device for extra streams");
-				continue;
-			}
-
-			// copy to new demuxer
-			if(!is_real_pmt)
-			{
-				get_demux_options(demux_id, buffer, &ca_mask, &demux_index, &adapter_index, &pmtpid);
-			}
-
-			demux[xtra_demux_id].ECMpids[0] = demux[demux_id].ECMpids[j];
-			demux[xtra_demux_id].ECMpidcount = 1;
-			demux[xtra_demux_id].STREAMpidcount = 0;
-			demux[xtra_demux_id].program_number = demux[demux_id].program_number;
-			demux[xtra_demux_id].pmtpid = demux[demux_id].pmtpid;
-			demux[xtra_demux_id].demux_index = demux_index;
-			demux[xtra_demux_id].adapter_index = adapter_index;
-			demux[xtra_demux_id].ca_mask = ca_mask;
-			demux[xtra_demux_id].socket_fd = connfd;
-			demux[xtra_demux_id].stopdescramble = 0; // remove deletion mark!
-			demux[xtra_demux_id].rdr = NULL;
-			demux[xtra_demux_id].curindex = -1;
-
-			// add streams to xtra demux
-			for(k = 0; k < demux[demux_id].STREAMpidcount; ++k)
-			{
-				if(!demux[demux_id].ECMpids[j].streams || (demux[demux_id].ECMpids[j].streams & (1 << k)))
-				{
-					demux[xtra_demux_id].ECMpids[0].streams |= (1 << demux[xtra_demux_id].STREAMpidcount);
-					demux[xtra_demux_id].STREAMpids[demux[xtra_demux_id].STREAMpidcount] = demux[demux_id].STREAMpids[k];
-					demux[xtra_demux_id].STREAMpidsType[demux[xtra_demux_id].STREAMpidcount] = demux[demux_id].STREAMpidsType[k];
-					++demux[xtra_demux_id].STREAMpidcount;
-
-					// shift stream associations in normal demux because we will remove the stream entirely
-					for(l = 0; l < demux[demux_id].ECMpidcount; ++l)
-					{
-						for(m = k; m < demux[demux_id].STREAMpidcount - 1; ++m)
-						{
-							if(demux[demux_id].ECMpids[l].streams & (1 << (m + 1)))
-							{
-								demux[demux_id].ECMpids[l].streams |= (1 << m);
-							}
-							else
-							{
-								demux[demux_id].ECMpids[l].streams &= ~(1 << m);
-							}
-						}
-					}
-
-					// remove stream association from normal demux device
-					for(l = k; l < demux[demux_id].STREAMpidcount - 1; ++l)
-					{
-						demux[demux_id].STREAMpids[l] = demux[demux_id].STREAMpids[l + 1];
-						demux[demux_id].STREAMpidsType[l] = demux[demux_id].STREAMpidsType[l + 1];
-					}
-					--demux[demux_id].STREAMpidcount;
-					--k;
-				}
-			}
-
-			// remove ecmpid from normal demuxer
-			for(k = j; k < demux[demux_id].ECMpidcount; ++k)
-			{
-				demux[demux_id].ECMpids[k] = demux[demux_id].ECMpids[k + 1];
-			}
-			--demux[demux_id].ECMpidcount;
-			--j;
-
-			if(demux[xtra_demux_id].STREAMpidcount <= 0)
-			{
-				cs_log("Found no streams for extra demuxer. Not starting additional decoding on it.");
-				demux[xtra_demux_id].program_number = 0;
-				demux[xtra_demux_id].stopdescramble = 1;
-			}
-
-			if(demux[demux_id].STREAMpidcount < 1)
-			{
-				cs_log("Found no streams for normal demuxer. Not starting additional decoding on it.");
-			}
-		}
-	}
+	dvbapi_priority_read_entry_extra(demux_id);
 
 	if(start_descrambling)
 	{
