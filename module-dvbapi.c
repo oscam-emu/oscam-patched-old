@@ -3767,49 +3767,107 @@ static void dvbapi_priority_read_entry_extra(int32_t demux_id)
 	}
 }
 
-void dvbapi_parse_descriptors(int32_t demux_id, uint32_t info_length, uint8_t *buffer, uint8_t *type)
+static void dvbapi_parse_ca_descriptor(int32_t demux_id, uint8_t *buffer, uint8_t descriptor_length)
+{
+	uint16_t i, ca_system_id, ca_pid;
+	uint32_t ca_provider = 0, ca_data = 0;
+	char txt[40]; // room for PBM: 8 byte pbm and DATE: date
+	memset(txt, 0x00, sizeof(txt));
+
+	if(descriptor_length < 4)
+	{
+		return; // CA descriptor has a minimum length of 4 bytes
+	}
+
+	ca_system_id = b2i(2, buffer);
+	ca_pid = b2i(2, buffer + 2) & 0x1FFF;
+
+	if(caid_is_seca(ca_system_id))
+	{
+		for(i = 2; i < descriptor_length; i += 15)
+		{
+			ca_pid = b2i(2, buffer + i) & 0x1FFF;
+			ca_provider = b2i(2, buffer + i + 2);
+
+			int8_t year = buffer[i + 13] >> 1;
+			int8_t month = (((buffer[i + 13] & 0x01) << 3) | (buffer[i + 14] >> 5));
+			int8_t day = buffer[i + 14] & 0x1F;
+
+			snprintf(txt, sizeof(txt), "PBM: ");
+			cs_hexdump(0, buffer + i + 5, 8, txt + 5, (2 * 8) + 1); // hexdump 8 byte pbm
+			snprintf(txt + 20, sizeof(txt) - 20, " DATE: %d-%d-%d", day, month, year + 1990);
+
+			dvbapi_add_ecmpid(demux_id, ca_system_id, ca_pid, ca_provider, 0, txt);
+		}
+	}
+	else
+	{
+		if(caid_is_viaccess(ca_system_id) && descriptor_length == 0x0F && buffer[10] == 0x14)
+		{
+			ca_provider = b2i(3, buffer + 12) & 0xFFFFF0;
+		}
+		else if(caid_is_nagra(ca_system_id) && descriptor_length == 0x07)
+		{
+			ca_provider = b2i(2, buffer + 5);
+		}
+		else if((ca_system_id >> 8 == 0x4A || ca_system_id == 0x2710) && descriptor_length > 0x04)
+		{
+			ca_provider = buffer[4];
+
+			if(caid_is_dre(ca_system_id) && descriptor_length == 0x0A)
+			{
+				ca_data = b2i(4, buffer + 6);
+				snprintf(txt, 40, "CA DATA: %X", ca_data);
+			}
+		}
+
+		dvbapi_add_ecmpid(demux_id, ca_system_id, ca_pid, ca_provider, ca_data, txt);
+	}
+}
+
+static void dvbapi_parse_pmt_descriptors(int32_t demux_id, uint8_t *buffer, uint16_t length, uint8_t *type)
 {
 	// int32_t ca_pmt_cmd_id = buffer[i + 5];
 	uint8_t descriptor_tag = buffer[0], descriptor_length = 0;
 	uint8_t skip_border = cfg.dvbapi_boxtype == BOXTYPE_SAMYGO ? 0x05 : 0x02; // skip input values <0x05 on samygo
-	uint32_t j, u, k;
+	uint16_t i, j;
 
-	static const char format_identifiers_audio[10][5] =
-	{
-		// "HDMV" format identifier is removed
-		// OSCam does not need to know about Blu-ray
-		"AC-3", "BSSD", "dmat", "DRA1", "DTS1",
-		"DTS2", "DTS3", "EAC3", "mlpa", "Opus",
-	};
-
-	if(info_length < 1)
+	if(length < 1)
 	{
 		return;
 	}
 
 	// skip descriptors with tag 0x00 and 0x01,
 	// or even greater for samygo (not sure why we do this...)
-	if((descriptor_tag < skip_border) && info_length > 0)
+	if((descriptor_tag < skip_border) && length > 0)
 	{
 		buffer++;
-		info_length--;
+		length--;
 	}
 
-	for(j = 0; j + 1 < info_length; j += descriptor_length + 2)
+	for(i = 0; i + 1 < length; i += 2 + descriptor_length)
 	{
-		descriptor_tag = buffer[j];
-		descriptor_length = buffer[j + 1];
+		descriptor_tag = buffer[i];
+		descriptor_length = buffer[i + 1];
 
 		cs_log_dbg(D_DVBAPI, "Demuxer %d found %s descriptor (tag: %02X length: %02X)",
 			demux_id, get_descriptor_tag_txt(descriptor_tag), descriptor_tag, descriptor_length);
 
 		switch(descriptor_tag)
 		{
-			case 0x05: // registration descriptor
+			case 0x05: // Registration descriptor
 			{
-				for(k = 0; k < 10; k++)
+				// "HDMV" format identifier is removed
+				// OSCam does not need to know about Blu-ray
+				const char format_identifiers_audio[10][5] =
 				{
-					if(memcmp(buffer + j + 2, format_identifiers_audio[k], 4) == 0)
+					"AC-3", "BSSD", "dmat", "DRA1", "DTS1",
+					"DTS2", "DTS3", "EAC3", "mlpa", "Opus",
+				};
+
+				for(j = 0; j < 10; j++)
+				{
+					if(memcmp(buffer + i + 2, format_identifiers_audio[j], 4) == 0)
 					{
 						*type = STREAM_AUDIO;
 						break;
@@ -3820,60 +3878,18 @@ void dvbapi_parse_descriptors(int32_t demux_id, uint32_t info_length, uint8_t *b
 
 			case 0x09: // CA descriptor
 			{
-				int32_t descriptor_ca_system_id = b2i(2, buffer + j + 2);
-				int32_t descriptor_ca_pid = b2i(2, buffer + j + 4) & 0x1FFF;
-				int32_t descriptor_ca_provider = 0;
-				uint32_t descriptor_ca_data = 0;
-				char txt[40]; // room for PBM: 8 byte pbm and DATE: date
-				memset(txt, 0x00, sizeof(txt));
-
-				if(descriptor_ca_system_id >> 8 == 0x01)
-				{
-					for(u = 2; u < descriptor_length; u += 15)
-					{
-						descriptor_ca_pid = b2i(2, buffer + j + u + 2) & 0x1FFF;
-						descriptor_ca_provider = b2i(2, buffer + j + u + 4);
-						int8_t year = buffer[j + u + 15] >> 1;
-						int8_t month = (((buffer[j + u + 15] & 0x01) << 3) | (buffer[j + u + 16] >> 5));
-						int8_t day = buffer[j + u + 16] & 0x1F;
-						snprintf(txt, sizeof(txt), "PBM: ");
-						cs_hexdump(0, buffer + j + u + 7, 8, txt + 5, (2 * 8) + 1); // hexdump 8 byte pbm
-						snprintf(txt + 20, sizeof(txt) - 20, " DATE: %d-%d-%d", day, month, year + 1990);
-						dvbapi_add_ecmpid(demux_id, descriptor_ca_system_id, descriptor_ca_pid, descriptor_ca_provider, 0, txt);
-					}
-				}
-				else
-				{
-					if(caid_is_viaccess(descriptor_ca_system_id) && descriptor_length == 0x0F && buffer[j + 12] == 0x14)
-					{
-						descriptor_ca_provider = b2i(3, buffer + j + 14) & 0xFFFFF0;
-					}
-					else if(caid_is_nagra(descriptor_ca_system_id) && descriptor_length == 0x07)
-					{
-						descriptor_ca_provider = b2i(2, buffer + j + 7);
-					}
-					else if((descriptor_ca_system_id >> 8 == 0x4A || descriptor_ca_system_id == 0x2710) && descriptor_length > 0x04)
-					{
-						descriptor_ca_provider = buffer[j + 6];
-						if(caid_is_dre(descriptor_ca_system_id) && descriptor_length == 0xA)
-						{
-							descriptor_ca_data = b2i(4, buffer + j + 8);
-							snprintf(txt, 40, "CA DATA: %X", descriptor_ca_data);
-						}
-					}
-					dvbapi_add_ecmpid(demux_id, descriptor_ca_system_id, descriptor_ca_pid, descriptor_ca_provider, descriptor_ca_data, txt);
-				}
+				dvbapi_parse_ca_descriptor(demux_id, buffer + i + 2, descriptor_length);
 				break;
 			}
 
-			case 0x59: // subtitling descriptor (DVB)
+			case 0x59: // Subtitling descriptor (DVB)
 			{
 				*type = STREAM_SUBTITLE;
 				break;
 			}
 
 			case 0x6A: // AC-3 descriptor (DVB)
-			case 0x7A: // enhanced AC-3 descriptor (DVB)
+			case 0x7A: // Enhanced AC-3 descriptor (DVB)
 			case 0x7B: // DTS descriptor (DVB)
 			case 0x7C: // AAC descriptor (DVB)
 			{
@@ -3881,9 +3897,9 @@ void dvbapi_parse_descriptors(int32_t demux_id, uint32_t info_length, uint8_t *b
 				break;
 			}
 
-			case 0x7F: // extension descriptor (DVB)
+			case 0x7F: // Extension descriptor (DVB)
 			{
-				uint8_t extension_descriptor_tag = buffer[j + 2];
+				uint8_t extension_descriptor_tag = buffer[i + 2];
 
 				cs_log_dbg(D_DVBAPI, "Demuxer %d found %s descriptor (extension tag: %02X)",
 					demux_id, get_extension_descriptor_txt(extension_descriptor_tag), extension_descriptor_tag);
@@ -3907,9 +3923,9 @@ void dvbapi_parse_descriptors(int32_t demux_id, uint32_t info_length, uint8_t *b
 			{
 				if(descriptor_length == 8) // private descriptor of length 8, assume enigma/tvh
 				{
-					demux[demux_id].ens  = b2i(4, buffer + j + 2);
-					demux[demux_id].tsid = b2i(2, buffer + j + 6);
-					demux[demux_id].onid = b2i(2, buffer + j + 8);
+					demux[demux_id].ens  = b2i(4, buffer + i + 2);
+					demux[demux_id].tsid = b2i(2, buffer + i + 6);
+					demux[demux_id].onid = b2i(2, buffer + i + 8);
 					cs_log_dbg(D_DVBAPI, "Demuxer %d assuming enigma private descriptor (namespace: %08X tsid: %04X onid: %04X)",
 							demux_id, demux[demux_id].ens, demux[demux_id].tsid, demux[demux_id].onid);
 				}
@@ -4361,7 +4377,7 @@ int32_t dvbapi_parse_capmt(uint8_t *buffer, uint32_t length, int32_t connfd, cha
 
 	if(program_info_length > 1 && program_info_length < length) // parse program descriptors
 	{
-		dvbapi_parse_descriptors(demux_id, program_info_length, buffer + program_info_start, NULL);
+		dvbapi_parse_pmt_descriptors(demux_id, buffer + program_info_start, program_info_length, NULL);
 	}
 	uint32_t es_info_length = 0, vpid = 0;
 
@@ -4378,7 +4394,7 @@ int32_t dvbapi_parse_capmt(uint8_t *buffer, uint32_t length, int32_t connfd, cha
 
 			if(es_info_length != 0 && es_info_length < length) // parse program element descriptors
 			{
-				dvbapi_parse_descriptors(demux_id, es_info_length, buffer + i + 5, &type);
+				dvbapi_parse_pmt_descriptors(demux_id, buffer + i + 5, es_info_length, &type);
 			}
 			else
 			{
