@@ -6068,6 +6068,8 @@ static void dvbapi_handlesockmsg(uint8_t *mbuf, uint16_t chunksize, uint16_t dat
 	uint32_t opcode = b2i(4, mbuf); //get the client opcode (4 bytes)
 	if((opcode & 0xFFFFF000) == DVBAPI_AOT_CA)
 	{
+		cs_log_dump_dbg(D_DVBAPI, mbuf, chunksize, "Received CA PMT object on socket %d:", connfd);
+
 		switch(opcode & 0xFFFFFF00)
 		{
 			case DVBAPI_AOT_CA_PMT:
@@ -6077,8 +6079,7 @@ static void dvbapi_handlesockmsg(uint8_t *mbuf, uint16_t chunksize, uint16_t dat
 					cs_log("Error: packet DVBAPI_AOT_CA_PMT is too short!");
 					break;
 				}
-				cs_log_dbg(D_DVBAPI, "PMT Update on socket %d.", connfd);
-				cs_log_dump_dbg(D_DVBAPI, mbuf, chunksize, "Parsing PMT object:");
+
 				dvbapi_parse_capmt(mbuf + (chunksize - data_len), data_len, connfd, NULL, 0, 0, *client_proto_version, msgid);
 				break;
 			}
@@ -6472,7 +6473,7 @@ static void *dvbapi_main_local(void *cli)
 		{
 			if(listenfd < 0)
 			{
-				cs_log("PMT6: Trying connect to enigma CA PMT listen socket...");
+				cs_log("PMT mode 6: Connecting to enigma CA PMT listen socket...");
 
 				// socket init
 				if((listenfd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0)
@@ -6491,7 +6492,7 @@ static void *dvbapi_main_local(void *cli)
 					pfd2[0].fd = listenfd;
 					pfd2[0].events = (POLLIN | POLLPRI);
 					type[0] = 1;
-					cs_log("PMT6 CA PMT Server connected on fd %d!", listenfd);
+					cs_log("PMT mode 6: Successfully connected to CA PMT server (fd %d)", listenfd);
 				}
 			}
 
