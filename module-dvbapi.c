@@ -1776,7 +1776,7 @@ void dvbapi_start_pat_filter(int32_t demux_id)
 	dvbapi_start_filter(demux_id, demux[demux_id].pidindex, 0x00, 0x001, 0x01, 0x00, 0xFF, 0, TYPE_PAT);
 }
 
-void dvbapi_start_pmt_filter(int32_t demux_id, int32_t pmt_pid)
+void dvbapi_start_pmt_filter(int32_t demux_id)
 {
 #if defined(WITH_COOLAPI) || defined(WITH_COOLAPI2)
 	// PMT-Filter breaks API and OSCAM for Coolstream.
@@ -1786,12 +1786,14 @@ void dvbapi_start_pmt_filter(int32_t demux_id, int32_t pmt_pid)
 	uint8_t filter[16], mask[16];
 	memset(filter, 0, 16);
 	memset(mask, 0, 16);
+
 	filter[0] = 0x02;
 	i2b_buf(2, demux[demux_id].program_number, filter + 1); // add srvid to filter since the pid can deliver pmt for multiple srvid
 	mask[0] = 0xFF;
 	mask[1] = 0xFF;
 	mask[2] = 0xFF;
-	dvbapi_set_filter(demux_id, selected_api, pmt_pid, 0x001, 0x01, filter, mask, 0, 0, TYPE_PMT, 0);
+
+	dvbapi_set_filter(demux_id, selected_api, demux[demux_id].pmtpid, 0x001, 0x01, filter, mask, 0, 0, TYPE_PMT, 0);
 }
 
 void dvbapi_start_emm_filter(int32_t demux_id)
@@ -4188,9 +4190,9 @@ int32_t dvbapi_parse_capmt(uint8_t *buffer, uint32_t length, int32_t connfd, cha
 					}
 
 					// free demuxer found, start pat/pmt filter for this new demuxer
-					if(pmtpid)
+					if(demux[demux_id].pmtpid)
 					{
-						dvbapi_start_pmt_filter(demux_id, pmtpid);
+						dvbapi_start_pmt_filter(demux_id);
 					}
 					else
 					{
@@ -4991,6 +4993,7 @@ static void dvbapi_parse_pat(int32_t demux_id, uint8_t *buffer, uint32_t length,
 {
 	uint16_t srvid;
 	uint32_t i;
+
 	dvbapi_stop_filter(demux_id, TYPE_PAT, msgid);
 
 	for(i = 8; i + 7 < length; i += 4)
@@ -5003,7 +5006,8 @@ static void dvbapi_parse_pat(int32_t demux_id, uint8_t *buffer, uint32_t length,
 
 		if(demux[demux_id].program_number == srvid)
 		{
-			dvbapi_start_pmt_filter(demux_id, b2i(2, buffer + i + 2) & 0x1FFF);
+			demux[demux_id].pmtpid = b2i(2, buffer + i + 2) & 0x1FFF;
+			dvbapi_start_pmt_filter(demux_id);
 			break;
 		}
 	}
@@ -5257,7 +5261,7 @@ void event_handler(int32_t UNUSED(signal))
 			continue;
 		}
 
-		int32_t pmt_id;
+		int32_t demux_id;
 #ifdef QBOXHD
 		uint32_t j1, j2;
 
@@ -5284,7 +5288,7 @@ void event_handler(int32_t UNUSED(signal))
 			}
 		}
 		cs_log_dump_dbg(D_DVBAPI, (uint8_t *)dest, len / 2, "QboxHD pmt.tmp:");
-		pmt_id = dvbapi_parse_capmt((uint8_t *)dest + 4, (len / 2) - 4, -1, dp->d_name, 0, 0, 0, 0);
+		demux_id = dvbapi_parse_capmt((uint8_t *)dest + 4, (len / 2) - 4, -1, dp->d_name, 0, 0, 0, 0);
 #else
 		if(len > sizeof(dest))
 		{
@@ -5308,12 +5312,12 @@ void event_handler(int32_t UNUSED(signal))
 		dest[6] = 0;
 		memcpy(dest + 7, mbuf + 12, len - 12 - 4);
 
-		pmt_id = dvbapi_parse_capmt((uint8_t *)dest, 7 + len - 12 - 4, -1, dp->d_name, 0, 0, 0, 0);
+		demux_id = dvbapi_parse_capmt((uint8_t *)dest, 7 + len - 12 - 4, -1, dp->d_name, 0, 0, 0, 0);
 #endif
-		if(pmt_id >= 0)
+		if(demux_id >= 0)
 		{
-			cs_strncpy(demux[pmt_id].pmt_file, dp->d_name, sizeof(demux[pmt_id].pmt_file));
-			demux[pmt_id].pmt_time = (time_t)pmt_info.st_mtime;
+			cs_strncpy(demux[demux_id].pmt_file, dp->d_name, sizeof(demux[demux_id].pmt_file));
+			demux[demux_id].pmt_time = (time_t)pmt_info.st_mtime;
 		}
 
 		if(cfg.dvbapi_pmtmode == 3)
@@ -6081,6 +6085,8 @@ static void dvbapi_handlesockmsg(uint8_t *mbuf, uint16_t chunksize, uint16_t dat
 	uint32_t opcode = b2i(4, mbuf); //get the client opcode (4 bytes)
 	if((opcode & 0xFFFFF000) == DVBAPI_AOT_CA)
 	{
+		cs_log_dump_dbg(D_DVBAPI, mbuf, chunksize, "Received CA PMT object on socket %d:", connfd);
+
 		switch(opcode & 0xFFFFFF00)
 		{
 			case DVBAPI_AOT_CA_PMT:
@@ -6090,8 +6096,7 @@ static void dvbapi_handlesockmsg(uint8_t *mbuf, uint16_t chunksize, uint16_t dat
 					cs_log("Error: packet DVBAPI_AOT_CA_PMT is too short!");
 					break;
 				}
-				cs_log_dbg(D_DVBAPI, "PMT Update on socket %d.", connfd);
-				cs_log_dump_dbg(D_DVBAPI, mbuf, chunksize, "Parsing PMT object:");
+
 				dvbapi_parse_capmt(mbuf + (chunksize - data_len), data_len, connfd, NULL, 0, 0, *client_proto_version, msgid);
 				break;
 			}
@@ -6485,7 +6490,7 @@ static void *dvbapi_main_local(void *cli)
 		{
 			if(listenfd < 0)
 			{
-				cs_log("PMT6: Trying connect to enigma CA PMT listen socket...");
+				cs_log("PMT mode 6: Connecting to enigma CA PMT listen socket...");
 
 				// socket init
 				if((listenfd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0)
@@ -6504,7 +6509,7 @@ static void *dvbapi_main_local(void *cli)
 					pfd2[0].fd = listenfd;
 					pfd2[0].events = (POLLIN | POLLPRI);
 					type[0] = 1;
-					cs_log("PMT6 CA PMT Server connected on fd %d!", listenfd);
+					cs_log("PMT mode 6: Successfully connected to CA PMT server (fd %d)", listenfd);
 				}
 			}
 
