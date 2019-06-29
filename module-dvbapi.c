@@ -2475,7 +2475,7 @@ void dvbapi_stop_descrambling(int32_t demux_id, uint32_t msgid)
 			demux[demux_id].ECMpidcount > 0 ? demux[demux_id].ECMpids[i].CAID : NO_CAID_VALUE,
 			channame, sizeof(channame));
 
-	cs_log("Demuxer %d stop descrambling program number %04X (%s)",
+	cs_log("Demuxer %d stopped descrambling for program %04X (%s)",
 			demux_id, demux[demux_id].program_number, channame);
 
 	dvbapi_stop_filter(demux_id, TYPE_EMM, msgid);
@@ -4172,7 +4172,7 @@ static void get_demux_options(int32_t demux_id, uint8_t *buffer, uint32_t *ca_ma
 static void dvbapi_capmt_notify(struct demux_s *dmx)
 {
 	struct s_client *cl;
-	for(cl = first_client->next; cl ; cl = cl->next)
+	for(cl = first_client->next; cl; cl = cl->next)
 	{
 		if((cl->typ == 'p' || cl->typ == 'r') && cl->reader && cl->reader->ph.c_capmt)
 		{
@@ -4199,13 +4199,6 @@ int32_t dvbapi_parse_capmt(uint8_t *buffer, uint32_t length, int32_t connfd, cha
 
 	if(!is_real_pmt)
 	{
-#define LIST_MORE   0x00 // *CA application should append a 'MORE' CAPMT object to the list and start receiving the next object
-#define LIST_FIRST  0x01 // *CA application should clear the list when a 'FIRST' CAPMT object is received, and start receiving the next object
-#define LIST_LAST   0x02 // *CA application should append a 'LAST' CAPMT object to the list and start working with the list
-#define LIST_ONLY   0x03 // *CA application should clear the list when an 'ONLY' CAPMT object is received, and start working with the object
-#define LIST_ADD    0x04 // *CA application should append an 'ADD' CAPMT object to the current list and start working with the updated list
-#define LIST_UPDATE 0x05 // *CA application should replace an entry in the list with an 'UPDATE' CAPMT object, and start working with the updated list
-
 #if defined WITH_COOLAPI || defined WITH_COOLAPI2
 		int32_t ca_pmt_list_management = LIST_ONLY;
 #else
@@ -4216,7 +4209,7 @@ int32_t dvbapi_parse_capmt(uint8_t *buffer, uint32_t length, int32_t connfd, cha
 		cs_log_dump_dbg(D_DVBAPI, buffer, length, "capmt:");
 		cs_log_dbg(D_DVBAPI, "Receiver sends PMT command %d for channel %04X", ca_pmt_list_management, program_number);
 
-		if(!pmt_stopmarking && (ca_pmt_list_management == LIST_FIRST || ca_pmt_list_management == LIST_ONLY))
+		if(!pmt_stopmarking && (ca_pmt_list_management == CA_PMT_LIST_FIRST || ca_pmt_list_management == CA_PMT_LIST_ONLY))
 		{
 			for(i = 0; i < MAX_DEMUX; i++)
 			{
@@ -4276,7 +4269,7 @@ int32_t dvbapi_parse_capmt(uint8_t *buffer, uint32_t length, int32_t connfd, cha
 					}
 				}
 
-				if(ca_pmt_list_management == LIST_UPDATE)
+				if(ca_pmt_list_management == CA_PMT_LIST_UPDATE)
 				{
 					cs_log("Demuxer %d PMT update for decoding of SRVID %04X! ", i, program_number);
 				}
@@ -4290,7 +4283,7 @@ int32_t dvbapi_parse_capmt(uint8_t *buffer, uint32_t length, int32_t connfd, cha
 		}
 
 		// start using the new list
-		if(ca_pmt_list_management != LIST_FIRST && ca_pmt_list_management != LIST_MORE)
+		if(ca_pmt_list_management != CA_PMT_LIST_FIRST && ca_pmt_list_management != CA_PMT_LIST_MORE)
 		{
 			for(j = 0; j < MAX_DEMUX; j++)
 			{
