@@ -4200,7 +4200,7 @@ int32_t dvbapi_parse_capmt(uint8_t *buffer, uint32_t length, int32_t connfd, cha
 	if(!is_real_pmt)
 	{
 #if defined WITH_COOLAPI || defined WITH_COOLAPI2
-		int32_t ca_pmt_list_management = LIST_ONLY;
+		int32_t ca_pmt_list_management = CA_PMT_LIST_ONLY;
 #else
 		int32_t ca_pmt_list_management = buffer[0];
 #endif
