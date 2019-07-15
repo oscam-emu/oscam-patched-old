@@ -813,6 +813,7 @@ int32_t dvbapi_net_send(uint32_t request, int32_t socket_fd, uint32_t msgid, int
 		case DVBAPI_CA_SET_DESCR_DATA:
 		{
 			ca_descr_data_t *cadesc_data = (ca_descr_data_t *) data;
+			uint32_t length = cadesc_data->length;
 			if(client_proto_version >= 1)
 			{
 				cadesc_data->index = htonl(cadesc_data->index);
@@ -824,8 +825,8 @@ int32_t dvbapi_net_send(uint32_t request, int32_t socket_fd, uint32_t msgid, int
 			memcpy(&packet[size + 4], &cadesc_data->parity, 4);
 			memcpy(&packet[size + 8], &cadesc_data->data_type, 4);
 			memcpy(&packet[size + 12], &cadesc_data->length, 4);
-			memcpy(&packet[size + 16], cadesc_data->data, cadesc_data->length);
-			size += 16 + cadesc_data->length;
+			memcpy(&packet[size + 16], cadesc_data->data, length);
+			size += 16 + length;
 			break;
 		}
 
