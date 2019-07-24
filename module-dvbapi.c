@@ -4355,6 +4355,7 @@ static void dvbapi_prepare_descrambling(int32_t demux_id, uint32_t msgid)
 	// not included in the CA PMT, we start the PAT filter instead.
 
 #ifdef WITH_EXTENDED_CW
+	uint8_t i;
 	for(i = 0; i < demux[demux_id].ECMpidcount; i++)
 	{
 		if(caid_is_powervu(demux[demux_id].ECMpids[i].CAID))
