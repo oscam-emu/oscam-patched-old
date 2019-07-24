@@ -108,8 +108,222 @@ Next, when a client wants to start a channel, it should send the PMT data (progr
 starts with constant AOT_CA_PMT (0x9F8032). The data format of the CA_PMT is described in chapter 8.4.3.4 (page 30) of
 the EN 50221 PDF (european standard).
 
-Please note that OSCam is expecting the own descriptor injected in the data. Look into get_demux_options() function
-for details.
+-------------------------------------------------------------------------------
+
+Please note that OSCam is expecting a number of private descriptors injected
+into the CA PMT data. They shall be located inside the program info loop. All
+supported descriptors follow the structure defined in 2.6 of Rec. ITU H.222.0
+and they are the following:
+
+---------------------------------------------------------------------
+| descriptor_tag |           Identification           |    Usage    |
+---------------------------------------------------------------------
+|      0x81      |  enigma_namespace_descriptor       |  optional   |
+|      0x82      |  demux_ca_mask_device_descriptor   |  deprecated |
+|      0x83      |  adapter_device_descriptor         |  mandatory  |
+|      0x84      |  pmt_pid_descriptor                |  mandatory  |
+|      0x85      |  service_type_mask_descriptor      |  optional   |
+|      0x86      |  demux_device_descriptor           |  mandatory  |
+|      0x87      |  ca_device_descriptor              |  mandatory  |
+---------------------------------------------------------------------
+
+Descriptors marked as "mandatory" shall be present in the CA PMT message, in
+order OSCam to get all necessary information for the specified program. Below
+is a detailed description for each of the supported descriptors with its
+structure and usage.
+
+-------------------------------------------------------------------------------
+
+1. Enigma namespace descriptor
+
+Provides additional information for the program specified, such as enigma
+namespace (orbital position, frequency and polarization), transport stream id
+and original network id. Although its presense in the CA PMT is optional, it
+is advised to be included as OSCam utilizes these information in many aspects.
+
+---------------------------------------------------------------------
+|                Syntax                |  No. of bits  |  Mnemonic  |
+---------------------------------------------------------------------
+| enigma_namespace_descriptor(){       |               |            |
+|     descriptor_tag                   |       8       |   uimsbf   |
+|     descriptor_length                |       8       |   uimsbf   |
+|     enigma_namespace                 |      32       |   uimsbf   |
+|     transport_stream_id              |      16       |   uimsbf   |
+|     original_network_id              |      16       |   uimsbf   |
+| }                                    |               |            |
+---------------------------------------------------------------------
+
+decriptor_tag - The tag of the descriptor is equal to 0x81.
+
+descriptor_length - The length of the descriptor is equal to 0x08.
+
+ens - This is the enigma namespace as defined in OpenPLi, openATV and other
+open enigma2 images. An example implementation can be found at:
+https://github.com/OpenPLi/enigma2/blob/develop/lib/dvb/frontend.cpp#L476
+
+transport_stream_id – The transport stream id as defined in various DVB SI
+tables.
+
+original_network_id - The original network id as defined in various DVB SI
+tables.
+
+-------------------------------------------------------------------------------
+
+2. Demux and ca mask device descriptor
+
+It was used to provide information about the demux device as well as the ca
+device(s) carrying the specified program. It was created for the DM7025 set top
+box and it is now considered deprecated. Many hosts use this descriptor in a
+different way (carrying different information) than it was originaly designed
+leading to confusion. OSCam will continue to support this descriptor as some
+legacy hosts still use it. For newer hosts, the adapter_device_descriptor (tag
+0x83), the demux_device_descriptor (tag 0x86) and the ca_device_descriptor (tag
+0x87) shall be used for sending the necessary data to OSCam.
+
+---------------------------------------------------------------------
+|                Syntax                |  No. of bits  |  Mnemonic  |
+---------------------------------------------------------------------
+| demux_ca_mask_device_descriptor(){   |               |            |
+|     descriptor_tag                   |       8       |   uimsbf   |
+|     descriptor_length                |       8       |   uimsbf   |
+|     ca_mask                          |       8       |   uimsbf   |
+|     demux_device                     |       8       |   uimsbf   |
+| }                                    |               |            |
+---------------------------------------------------------------------
+
+decriptor_tag - The tag of the descriptor is equal to 0x82.
+
+descriptor_length - The length of the descriptor is equal to 0x02.
+
+ca_mask - It is a bit mask of the ca device(s) carrying the specified program.
+Bit 0 corresonds to ca0, bit 1 corresponds to ca1 and so on.
+
+demux_device - The demux device that carries the specified program. It is
+limited to values between 0x00 and 0x08 in older enigma2 images.
+
+-------------------------------------------------------------------------------
+
+3. Adapter device descriptor
+
+Provides information about the adapter device carrying the specified program.
+
+---------------------------------------------------------------------
+|                Syntax                |  No. of bits  |  Mnemonic  |
+---------------------------------------------------------------------
+| adapter_device_descriptor(){         |               |            |
+|     descriptor_tag                   |       8       |   uimsbf   |
+|     descriptor_length                |       8       |   uimsbf   |
+|     adapter_device                   |       8       |   uimsbf   |
+| }                                    |               |            |
+---------------------------------------------------------------------
+
+decriptor_tag - The tag of the descriptor is equal to 0x83.
+
+descriptor_length - The length of the descriptor is equal to 0x01.
+
+adapter_device - The adapter device that carries the specified program. It can
+take values from 0x00 to 0xFF, thus a maximum number of different 256 adapters
+are supported.
+
+-------------------------------------------------------------------------------
+
+4. PMT pid descriptor
+
+Provides information about the PMT pid of the specified program.
+
+---------------------------------------------------------------------
+|                Syntax                |  No. of bits  |  Mnemonic  |
+---------------------------------------------------------------------
+| pmt_pid_descriptor(){                |               |            |
+|     descriptor_tag                   |       8       |   uimsbf   |
+|     descriptor_length                |       8       |   uimsbf   |
+|     pmt_pid                          |      16       |   uimsbf   |
+| }                                    |               |            |
+---------------------------------------------------------------------
+
+decriptor_tag - The tag of the descriptor is equal to 0x84.
+
+descriptor_length - The length of the descriptor is equal to 0x02.
+
+pmt_pid - The pid that carries the PMT table of the specified program.
+
+-------------------------------------------------------------------------------
+
+5. Service type mask descriptor
+
+It provides information about the type (live tv, recording, streaming service,
+or any combination) of the program specified. It's currently not unitilized in
+OSCam and its usage in considered optional.
+
+---------------------------------------------------------------------
+|                Syntax                |  No. of bits  |  Mnemonic  |
+---------------------------------------------------------------------
+| service_type_mask_descriptor(){      |               |            |
+|     descriptor_tag                   |       8       |   uimsbf   |
+|     descriptor_length                |       8       |   uimsbf   |
+|     service_type_mask                |      32       |   uimsbf   |
+| }                                    |               |            |
+---------------------------------------------------------------------
+
+decriptor_tag - The tag of the descriptor is equal to 0x85.
+
+descriptor_length - The length of the descriptor is equal to 0x04.
+
+service_type_mask - This is a bit mask of the different service types enabled
+for the specified program. Service type values are defined in enigma2 and can
+be found at https://github.com/OpenPLi/enigma2/blob/develop/lib/dvb/pmt.h#L135
+
+-------------------------------------------------------------------------------
+
+6. Demux device descriptor
+
+It is used to provide information about the demux device carrying the specified
+program. It is a replacement to the deprecated demux_ca_mask_device_descriptor
+(tag 0x82), as it supports up to 256 different demux devices.
+
+---------------------------------------------------------------------
+|                Syntax                |  No. of bits  |  Mnemonic  |
+---------------------------------------------------------------------
+| demux_device_descriptor(){           |               |            |
+|     descriptor_tag                   |       8       |   uimsbf   |
+|     descriptor_length                |       8       |   uimsbf   |
+|     demux_device                     |       8       |   uimsbf   |
+| }                                    |               |            |
+---------------------------------------------------------------------
+
+decriptor_tag - The tag of the descriptor is equal to 0x86.
+
+descriptor_length - The length of the descriptor is equal to 0x01.
+
+demux_device - The demux device that carries the specified program. Its value
+can be between 0x00 and 0xFF.
+
+-------------------------------------------------------------------------------
+
+7. Ca device descriptor
+
+This descriptor provides OSCam with information about the ca device carrying
+the specified program. It is created as a replacement to the deprecated
+demux_ca_mask_device_descriptor (tag 0x82). It has the following syntax:
+
+---------------------------------------------------------------------
+|                Syntax                |  No. of bits  |  Mnemonic  |
+---------------------------------------------------------------------
+| ca_device_descriptor(){              |               |            |
+|     descriptor_tag                   |       8       |   uimsbf   |
+|     descriptor_length                |       8       |   uimsbf   |
+|     ca_device                        |       8       |   uimsbf   |
+| }                                    |               |            |
+---------------------------------------------------------------------
+
+decriptor_tag - The tag of the descriptor is equal to 0x87.
+
+descriptor_length - The length of the descriptor is equal to 0x01.
+
+ca_device - The ca device that carries the specified program. Its value can be
+between 0x00 and 0xFF (256 different ca devices supported).
+
+-------------------------------------------------------------------------------
 
 After OSCam parses the PMT data, it starts filtering ECM PIDs. It sends the following request to the client:
 
