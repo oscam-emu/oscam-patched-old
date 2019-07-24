@@ -453,7 +453,7 @@ static void *mca_main_thread(void *cli)
 				int new_len = mca_capmt_remove_duplicates(msg.buf + 2, msg.buf_len - 2);
 				if(new_len < msg.buf_len - 2)
 					{ cs_log_dump_dbg(D_DVBAPI, msg.buf + 2, new_len, "capmt (duplicates removed):"); }
-				int demux_id = dvbapi_parse_capmt(msg.buf + 2, new_len, -1, NULL, 0, 0, 0, 0);
+				int demux_id = dvbapi_parse_capmt(msg.buf + 2, new_len, -1, NULL, 0, 0);
 
 				uint8_t mask[12];
 				uint8_t comp[12];
