@@ -117,6 +117,25 @@
 #define CA_PMT_LIST_UPDATE 0x05 // The CA PMT of a program already in the list is sent again because the version_number or
 								// the current_next_indicator has changed.
 
+// ca_pmt_cmd_id: This parameter indicates what response is required from the application to a CA PMT object. It can
+// take the following values:
+
+#define CA_PMT_CMD_OK_DESCRAMBLING 0x01 // The host does not expect answer to the CA PMT and the application can start
+										// descrambling the program or start an MMI dialogue immediately.
+
+#define CA_PMT_CMD_OK_MMI          0x02 // The application can start an MMI dialogue, but shall not start descrambling
+										// before reception of a new CA PMT object with "ca_pmt_cmd_id" set to
+										// "ok_descrambling". In this case the host shall quarantee that an MMI session
+										// can be opened by the CA application.
+
+#define CA_PMT_CMD_QUERY           0x03 // The host expects to receive a CA PMT reply. In this case, the applicaiton is
+										// not allowed to start descrambling or MMI dialogue before reception of a new
+										// CA PMT object with "ca_pmt_cmd_id" set to "ok_descrambling or "ok_mmi".
+
+#define CA_PMT_CMD_NOT_SELETED     0x04 // It indicates to the CA application that the host no longer requires that CA
+										// application to attempt to descramble the service. The CA application shall
+										// close any MMI dialogue it has opened.
+
 //-----------------------------------------------------------------------------
 // api used for internal device communication
 //-----------------------------------------------------------------------------
@@ -402,8 +421,8 @@ typedef struct demux_s
 	struct s_reader  *rdr;
 	char             pmt_file[30];
 	time_t           pmt_time;
-	uint8_t          stopdescramble;
-	uint8_t          running;
+	bool             stop_descrambling;                  // Program is marked to stop descrambling (not selected in the new CA PMT list)
+	bool             running;                            // Descrambling is currently running for this program
 	uint8_t          old_ecmfiltercount;                 // previous ecm filter count
 	uint8_t          old_emmfiltercount;                 // previous emm filter count
 	pthread_mutex_t  answerlock;                         // request mode 1 avoid race
@@ -465,7 +484,7 @@ int32_t dvbapi_stop_filter(int32_t demux_id, int32_t type, uint32_t msgid);
 struct s_dvbapi_priority *dvbapi_check_prio_match(int32_t demux_id, int32_t pidindex, char type);
 void dvbapi_send_dcw(struct s_client *client, ECM_REQUEST *er);
 void dvbapi_write_cw(int32_t demux_id, int32_t pid, int32_t stream_id, uint8_t *cw, uint8_t cw_length, uint8_t *iv, uint8_t iv_length, enum ca_descr_algo algo, enum ca_descr_cipher_mode cipher_mode, uint32_t msgid);
-int32_t dvbapi_parse_capmt(uint8_t *buffer, uint32_t length, int32_t connfd, char *pmtfile, int8_t is_real_pmt, uint16_t existing_demux_id, uint16_t client_proto_version, uint32_t msgid);
+int32_t dvbapi_parse_capmt(const uint8_t *buffer, uint32_t length, int32_t connfd, char *pmtfile, uint16_t client_proto_version, uint32_t msgid);
 void request_cw(struct s_client *client, ECM_REQUEST *er, int32_t demux_id, uint8_t delayed_ecm_check);
 void dvbapi_try_next_caid(int32_t demux_id, int8_t checked, uint32_t msgid);
 void dvbapi_read_priority(void);
