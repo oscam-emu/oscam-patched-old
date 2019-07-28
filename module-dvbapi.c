@@ -4162,11 +4162,12 @@ static void dvbapi_parse_pmt_info(int32_t demux_id, const uint8_t *buffer, uint1
 	cs_log("Demuxer %d found %d ECM pids and %d STREAM pids in %sPMT", demux_id,
 		demux[demux_id].ECMpidcount, demux[demux_id].STREAMpidcount, ca_pmt_cmd_id != NULL ? "CA " : "");
 
-	// Various retarded boxes misuse the "ca_pmt_cmd_id" value.
-	// Make sure we pass a value we can work with later on...
-	if(cfg.dvbapi_boxtype == BOXTYPE_DUCKBOX)
+	// Various retarded boxes misuse the "ca_pmt_cmd_id" value,
+	// usually by setting it to zero. If we are on CA PMT parsing,
+	// make sure we pass a value we can work with later on.
+	if(ca_pmt_cmd_id != NULL)
 	{
-		*ca_pmt_cmd_id = CA_PMT_CMD_OK_DESCRAMBLING;
+		*ca_pmt_cmd_id = (*ca_pmt_cmd_id < CA_PMT_CMD_OK_DESCRAMBLING) ? CA_PMT_CMD_OK_DESCRAMBLING : *ca_pmt_cmd_id;
 	}
 
 	// If no elementary streams are available, set the PMT pid as the
