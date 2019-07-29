@@ -4082,13 +4082,24 @@ static void dvbapi_parse_pmt_es_info(int32_t demux_id, const uint8_t *buffer, ui
 
 		if(es_info_length != 0 && es_info_length < length)
 		{
-			// We are on CA PMT parsing
-			// Only enigma2 and Spark follow the CA PMT specification ("ca_pmt_cmd_id"
-			// shall be present in the ES info loop), so we need to check for the box type.
-			if(ca_pmt_cmd_id != NULL && cfg.dvbapi_boxtype == BOXTYPE_DREAMBOX)
+			if(ca_pmt_cmd_id != NULL) // We are on CA PMT parsing
 			{
-				*ca_pmt_cmd_id = buffer[i + 5]; // It should be identical for all ES and the same as in program info
-				offset = 1;
+				// Only enigma2, Spark and VDR follow the CA PMT specification ("ca_pmt_cmd_id"
+				// shall be present in the ES info loop). For the first two, checking for boxtype
+				// "dreambox" is sufficient, but for VDR this is not enough, because it shares
+				// the same boxtype with tvheadend. So, for every other box (including VDR and
+				// tvheadend), we stick to the old style check based on the value (descriptors
+				// with tag 0x00 or 0x01 are not allowed, so this works), while for enigma2 we
+				// do a proper check, because the "ca_pmt_cmd_id" can also take greater values.
+				if(cfg.dvbapi_boxtype == BOXTYPE_DREAMBOX)
+				{
+					*ca_pmt_cmd_id = buffer[i + 5]; // It should be identical for all ES and the same as in program info
+					offset = 1;
+				}
+				else
+				{
+					offset = (buffer[i + 5] <= 0x01) ? 1 : 0;
+				}
 			}
 
 			// Parse descriptors at ES level
@@ -4175,11 +4186,12 @@ static void dvbapi_parse_pmt_info(int32_t demux_id, const uint8_t *buffer, uint1
 	cs_log("Demuxer %d found %d ECM pids and %d STREAM pids in %sPMT", demux_id,
 		demux[demux_id].ECMpidcount, demux[demux_id].STREAMpidcount, ca_pmt_cmd_id != NULL ? "CA " : "");
 
-	// Various retarded boxes misuse the "ca_pmt_cmd_id" value.
-	// Make sure we pass a value we can work with later on...
-	if(cfg.dvbapi_boxtype == BOXTYPE_DUCKBOX)
+	// Various retarded boxes misuse the "ca_pmt_cmd_id" value,
+	// usually by setting it to zero. If we are on CA PMT parsing,
+	// make sure we pass a value we can work with later on.
+	if(ca_pmt_cmd_id != NULL)
 	{
-		*ca_pmt_cmd_id = CA_PMT_CMD_OK_DESCRAMBLING;
+		*ca_pmt_cmd_id = (*ca_pmt_cmd_id < CA_PMT_CMD_OK_DESCRAMBLING) ? CA_PMT_CMD_OK_DESCRAMBLING : *ca_pmt_cmd_id;
 	}
 
 	// If no elementary streams are available, set the PMT pid as the
@@ -4329,7 +4341,7 @@ static void get_demux_parameters(const uint8_t *buffer, demux_parameters_t *para
 
 			default:
 			{
-				cs_log_dbg(D_DVBAPI, "Received unknown CA PMT descriptor (tag: %02X length: %02X)",
+				cs_log_dbg(D_DVBAPI, "Skipped unsupported or CA PMT irrelevant descriptor (tag: %02X length: %02X)",
 					descriptor_tag, descriptor_length);
 				break;
 			}
@@ -5414,6 +5426,7 @@ void event_handler(int32_t UNUSED(signal))
 				memcpy(dest + j1, &tmp, 4);
 			}
 		}
+
 		cs_log_dump_dbg(D_DVBAPI, (uint8_t *)dest, len / 2, "QboxHD pmt.tmp:");
 		demux_id = dvbapi_parse_capmt((uint8_t *)dest + 4, (len / 2) - 4, -1, dp->d_name, 0, 0);
 #else
@@ -5428,19 +5441,21 @@ void event_handler(int32_t UNUSED(signal))
 			cs_log_dbg(D_DVBAPI, "event_handler() received pmt is too small! (%d < 16 bytes!)", len);
 			continue;
 		}
-		cs_log_dump_dbg(D_DVBAPI, mbuf, len, "pmt:");
 
-		dest[0] = 0x03;
-		dest[1] = mbuf[3];
-		dest[2] = mbuf[4];
+		cs_log_dump_dbg(D_DVBAPI, mbuf, len, "PMT file:"); // Original PMT file
 
-		uint32_t pmt_program_length = b2i(2, mbuf + 10) & 0xFFF;
-		i2b_buf(2, pmt_program_length + 1, (uint8_t *) dest + 4);
-		dest[6] = 0;
+		// Do some tidying on the PMT file to make it compatible with the CA PMT parser
+		dest[0] = CA_PMT_LIST_ONLY;
+		memcpy(dest + 1, mbuf + 3, 2); // program_number
+		uint16_t pmt_program_info_length = b2i(2, mbuf + 10) & 0x0FFF;
+		i2b_buf(2, pmt_program_info_length + 1, (uint8_t *)dest + 4);
+		dest[6] = CA_PMT_CMD_OK_DESCRAMBLING;
 		memcpy(dest + 7, mbuf + 12, len - 12 - 4);
 
+		cs_log_dump_dbg(D_DVBAPI, (uint8_t *)dest, 7 + len - 12 - 4, "CA PMT:"); // Actual CA PMT message
 		demux_id = dvbapi_parse_capmt((uint8_t *)dest, 7 + len - 12 - 4, -1, dp->d_name, 0, 0);
 #endif
+
 		if(demux_id >= 0)
 		{
 			cs_strncpy(demux[demux_id].pmt_file, dp->d_name, sizeof(demux[demux_id].pmt_file));
