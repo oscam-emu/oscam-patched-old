@@ -4317,7 +4317,7 @@ static void get_demux_parameters(const uint8_t *buffer, demux_parameters_t *para
 
 			default:
 			{
-				cs_log_dbg(D_DVBAPI, "Received unknown CA PMT descriptor (tag: %02X length: %02X)",
+				cs_log_dbg(D_DVBAPI, "Skipped unsupported or CA PMT irrelevant descriptor (tag: %02X length: %02X)",
 					descriptor_tag, descriptor_length);
 				break;
 			}
@@ -5402,6 +5402,7 @@ void event_handler(int32_t UNUSED(signal))
 				memcpy(dest + j1, &tmp, 4);
 			}
 		}
+
 		cs_log_dump_dbg(D_DVBAPI, (uint8_t *)dest, len / 2, "QboxHD pmt.tmp:");
 		demux_id = dvbapi_parse_capmt((uint8_t *)dest + 4, (len / 2) - 4, -1, dp->d_name, 0, 0);
 #else
@@ -5416,19 +5417,21 @@ void event_handler(int32_t UNUSED(signal))
 			cs_log_dbg(D_DVBAPI, "event_handler() received pmt is too small! (%d < 16 bytes!)", len);
 			continue;
 		}
-		cs_log_dump_dbg(D_DVBAPI, mbuf, len, "pmt:");
 
-		dest[0] = 0x03;
-		dest[1] = mbuf[3];
-		dest[2] = mbuf[4];
+		cs_log_dump_dbg(D_DVBAPI, mbuf, len, "PMT file:"); // Original PMT file
 
-		uint32_t pmt_program_length = b2i(2, mbuf + 10) & 0xFFF;
-		i2b_buf(2, pmt_program_length + 1, (uint8_t *) dest + 4);
-		dest[6] = 0;
+		// Do some tidying on the PMT file to make it compatible with the CA PMT parser
+		dest[0] = CA_PMT_LIST_ONLY;
+		memcpy(dest + 1, mbuf + 3, 2); // program_number
+		uint16_t pmt_program_info_length = b2i(2, mbuf + 10) & 0x0FFF;
+		i2b_buf(2, pmt_program_info_length + 1, (uint8_t *)dest + 4);
+		dest[6] = CA_PMT_CMD_OK_DESCRAMBLING;
 		memcpy(dest + 7, mbuf + 12, len - 12 - 4);
 
+		cs_log_dump_dbg(D_DVBAPI, (uint8_t *)dest, 7 + len - 12 - 4, "CA PMT:"); // Actual CA PMT message
 		demux_id = dvbapi_parse_capmt((uint8_t *)dest, 7 + len - 12 - 4, -1, dp->d_name, 0, 0);
 #endif
+
 		if(demux_id >= 0)
 		{
 			cs_strncpy(demux[demux_id].pmt_file, dp->d_name, sizeof(demux[demux_id].pmt_file));
