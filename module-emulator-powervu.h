@@ -47,7 +47,7 @@ int8_t powervu_get_hexserials(uint8_t hexserials[][4], uint32_t maxCount, uint16
  * new method of entering ECM keys, where one key can serve every channel in the group. Since
  * there is no srvid to search for, we need to know the group id prior to searching for EMM
  * keys. To do so, this function calulates a hash using the tsid, onid and enigma namespace of
- * the transponder, which is only available in enigma2 and Tvheadend/VDR.
+ * the transponder, which is only available in enigma2.
  *
  * Hexserials must be of type "uint8_t hexserials[maxCount][4]" like before. It returns the
  * count of hexserials added as filters.
