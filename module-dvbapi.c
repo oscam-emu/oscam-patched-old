@@ -4069,13 +4069,24 @@ static void dvbapi_parse_pmt_es_info(int32_t demux_id, const uint8_t *buffer, ui
 
 		if(es_info_length != 0 && es_info_length < length)
 		{
-			// We are on CA PMT parsing
-			// Only enigma2 and Spark follow the CA PMT specification ("ca_pmt_cmd_id"
-			// shall be present in the ES info loop), so we need to check for the box type.
-			if(ca_pmt_cmd_id != NULL && cfg.dvbapi_boxtype == BOXTYPE_DREAMBOX)
+			if(ca_pmt_cmd_id != NULL) // We are on CA PMT parsing
 			{
-				*ca_pmt_cmd_id = buffer[i + 5]; // It should be identical for all ES and the same as in program info
-				offset = 1;
+				// Only enigma2, Spark and VDR follow the CA PMT specification ("ca_pmt_cmd_id"
+				// shall be present in the ES info loop). For the first two, checking for boxtype
+				// "dreambox" is sufficient, but for VDR this is not enough, because it shares
+				// the same boxtype with tvheadend. So, for every other box (including VDR and
+				// tvheadend), we stick to the old style check based on the value (descriptors
+				// with tag 0x00 or 0x01 are not allowed, so this works), while for enigma2 we
+				// do a proper check, because the "ca_pmt_cmd_id" can also take greater values.
+				if(cfg.dvbapi_boxtype == BOXTYPE_DREAMBOX)
+				{
+					*ca_pmt_cmd_id = buffer[i + 5]; // It should be identical for all ES and the same as in program info
+					offset = 1;
+				}
+				else
+				{
+					offset = (buffer[i + 5] <= 0x01) ? 1 : 0;
+				}
 			}
 
 			// Parse descriptors at ES level
