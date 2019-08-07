@@ -148,7 +148,7 @@ int8_t irdeto2_ecm(uint16_t caid, uint8_t *oecm, uint8_t *dw)
 {
 	uint8_t keyNr = 0, length, end, key[16], okeySeed[16], keySeed[16], keyIV[16], tmp[16];
 	uint8_t ecmCopy[EMU_MAX_ECM_LEN], *ecm = oecm;
-	uint16_t ecmLen = get_ecm_len(ecm);
+	uint16_t ecmLen = SCT_LEN(ecm);
 	uint32_t key0Ref, keySeedRef, keyIVRef, ident, i, j, l;
 
 	if (ecmLen < 12)
@@ -438,7 +438,7 @@ int8_t irdeto2_emm(uint16_t caid, uint8_t *oemm, uint32_t *keysAdded)
 {
 	uint8_t length, okeySeed[16], keySeed[16], keyIV[16], keyPMK[16], startOffset, emmType;
 	uint8_t emmCopy[EMU_MAX_EMM_LEN], *emm = oemm;
-	uint16_t emmLen = get_ecm_len(emm);
+	uint16_t emmLen = SCT_LEN(emm);
 	uint32_t ident, keySeedRef, keyIVRef, keyPMK0Ref, keyPMK1Ref, keyPMK0ERef, keyPMK1ERef;
 
 	if (emmLen < 11)

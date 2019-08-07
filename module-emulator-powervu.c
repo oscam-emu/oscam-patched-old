@@ -1842,7 +1842,7 @@ int8_t powervu_ecm(uint8_t *ecm, uint8_t *dw, EXTENDED_CW *cw_ex, uint16_t srvid
 	uint32_t i, j, k;
 	uint32_t ecmCrc32, keyRef0, keyRef1, keyRef2, channel_hash, group_id = 0;
 
-	uint16_t ecmLen = get_ecm_len(ecm);
+	uint16_t ecmLen = SCT_LEN(ecm);
 	uint16_t nanoLen, channelId, ecmSrvid;
 
 	uint8_t keyIndex, sbox, decrypt_ok, calculateAll, hashModeCw = 0, needsUnmasking, xorMode;
@@ -2317,7 +2317,7 @@ int8_t powervu_emm(uint8_t *emm, uint32_t *keysAdded)
 {
 	uint8_t emmInfo, emmType, decryptOk = 0;
 	uint8_t emmKey[7], tmpEmmKey[7], tmp[26];
-	uint16_t emmLen = get_ecm_len(emm);
+	uint16_t emmLen = SCT_LEN(emm);
 	uint32_t i, uniqueAddress, groupId, keyRef = 0;
 	//uint32_t emmCrc32;
 	char keyName[EMU_MAX_CHAR_KEYNAME], keyValue[16];

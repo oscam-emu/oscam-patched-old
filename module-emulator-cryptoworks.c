@@ -539,7 +539,7 @@ int8_t cryptoworks_ecm(uint32_t caid, uint8_t *ecm, uint8_t *cw)
 {
 	int32_t provider = -1;
 	uint8_t keyIndex = 0, nanoLength, newEcmLength, key[22], signature[8], nano80Algo = 1;
-	uint16_t i, j, ecmLen = get_ecm_len(ecm);
+	uint16_t i, j, ecmLen = SCT_LEN(ecm);
 	uint32_t ident;
 
 	if (ecmLen < 8)

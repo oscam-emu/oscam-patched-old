@@ -386,7 +386,7 @@ static int8_t biss_mode1_ecm(struct s_reader *rdr, uint16_t caid, const uint8_t 
 	// in the namespace hash, universal hash and the "All Feeds" search methods.
 
 	uint32_t i, ens = 0, hash = 0;
-	uint16_t pid = 0, ecmLen = get_ecm_len(ecm);
+	uint16_t pid = 0, ecmLen = SCT_LEN(ecm);
 	uint8_t *sw, sw_length, ecmCopy[ecmLen];
 	char tmpBuffer1[33], tmpBuffer2[90] = "0", tmpBuffer3[90] = "0";
 

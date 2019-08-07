@@ -241,7 +241,7 @@ int8_t nagra2_ecm(uint8_t *ecm, uint8_t *dw)
 	int32_t l = 0, s;
 
 	uint8_t cmdLen, ideaKeyNr, *dec, ideaKey[16], vKey[16], m1Key[64], mecmAlgo = 0;
-	uint16_t i = 0, ecmLen = get_ecm_len(ecm);
+	uint16_t i = 0, ecmLen = SCT_LEN(ecm);
 	uint32_t ident, identMask, tmp1, tmp2, tmp3;
 
 	if (ecmLen < 8)

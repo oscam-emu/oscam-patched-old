@@ -17,11 +17,6 @@
 
 // Shared functions
 
-inline uint16_t get_ecm_len(const uint8_t *ecm)
-{
-	return (((ecm[1] & 0x0F) << 8) | ecm[2]) + 3;
-}
-
 int8_t is_valid_dcw(uint8_t *dw)
 {
 	uint8_t i;
@@ -911,7 +906,7 @@ int8_t emu_process_ecm(struct s_reader *rdr, const ECM_REQUEST *er, uint8_t *cw,
 		return 4;
 	}
 
-	uint16_t ecmLen = get_ecm_len(er->ecm);
+	uint16_t ecmLen = SCT_LEN(er->ecm);
 	uint8_t ecmCopy[ecmLen];
 	int8_t result = 1;
 
@@ -949,7 +944,7 @@ int8_t emu_process_ecm(struct s_reader *rdr, const ECM_REQUEST *er, uint8_t *cw,
 
 int8_t emu_process_emm(struct s_reader *rdr, uint16_t caid, const uint8_t *emm, uint32_t *keysAdded)
 {
-	uint16_t emmLen = get_ecm_len(emm);
+	uint16_t emmLen = SCT_LEN(emm);
 	uint8_t emmCopy[emmLen];
 	int8_t result = 1;
 

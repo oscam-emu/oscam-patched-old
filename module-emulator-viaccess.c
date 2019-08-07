@@ -120,7 +120,7 @@ static int8_t via1_decrypt(uint8_t *ecm, uint8_t *dw, uint32_t ident, uint8_t de
 	uint8_t work_key[16], signature[8], hashbuffer[8], prepared_key[16], hashkey[16];
 	uint8_t *data, *des_data1, *des_data2;
 
-	uint16_t ecmLen = get_ecm_len(ecm);
+	uint16_t ecmLen = SCT_LEN(ecm);
 
 	if (ident == 0)
 	{
@@ -758,7 +758,7 @@ int8_t viaccess_ecm(uint8_t *ecm, uint8_t *dw)
 
 	uint8_t nanoCmd = 0, nanoLen = 0, version = 0, providerKeyLen = 0;
 	uint8_t desKeyIndex = 0, aesMode = 0, aesKeyIndex = 0xFF;
-	uint16_t i = 0, keySelectPos = 0, ecmLen = get_ecm_len(ecm);
+	uint16_t i = 0, keySelectPos = 0, ecmLen = SCT_LEN(ecm);
 	uint32_t currentIdent = 0;
 
 	for (i = 4; i + 2 < ecmLen; )
@@ -886,7 +886,7 @@ int8_t viaccess_emm(uint8_t *emm, uint32_t *keysAdded)
 	uint8_t nanoLen = 0, subNanoLen = 0, haveEmmXorKey = 0, haveNewD0 = 0;
 	uint8_t ecmKeys[6][16], keyD0[2], emmKey[16], emmXorKey[16], provName[17];
 
-	uint16_t i = 0, j = 0, k = 0, emmLen = get_ecm_len(emm);
+	uint16_t i = 0, j = 0, k = 0, emmLen = SCT_LEN(emm);
 	uint32_t ui1, ui2, ui3, ecmKeyIndex[6], provider = 0, ecmProvider = 0;
 
 	char keyName[EMU_MAX_CHAR_KEYNAME], keyValue[36];

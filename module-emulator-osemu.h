@@ -70,7 +70,6 @@ void emu_clear_keydata(void);
 uint8_t emu_read_keyfile(struct s_reader *rdr, const char *path);
 void emu_read_keymemory(struct s_reader *rdr);
 
-extern uint16_t get_ecm_len(const uint8_t *ecm);
 int8_t is_valid_dcw(uint8_t *dw);
 int8_t char_to_bin(uint8_t *out, const char *in, uint32_t inLen);
 void date_to_str(char *dateStr, uint8_t len, int8_t offset, uint8_t format);
