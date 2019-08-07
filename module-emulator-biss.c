@@ -296,14 +296,25 @@ static int8_t is_valid_namespace(uint32_t namespace)
 	orbital = (namespace >> 16) & 0x0FFF;
 	frequency = namespace & 0x7FFF;
 
-	if ((namespace & 0xA0000000) != 0xA0000000) return 0;   // Value isn't flagged as namespace
-	if (namespace == 0xA0000000) return 0;                  // Empty namespace
+	if ((namespace & 0xF0000000) != 0xA0000000) return 0;   // Value isn't flagged as namespace
+	if ((namespace & 0x0FFFFFFF) == 0x00000000) return 0;   // Empty namespace
 	if (orbital > 3599) return 0;                           // Allow only DVB-S
 	if (frequency == 0) return 1;                           // Stripped namespace
 	if (frequency >= 3400 && frequency <= 4200) return 1;   // Super extended C band
 	if (frequency >= 10700 && frequency <= 12750) return 1; // Ku band Europe
 
 	return 0;
+}
+
+static int8_t is_valid_tsid_onid(uint16_t tsid, uint16_t onid)
+{
+	// tsid and onid form a valid provider as long as they
+	// are not 0x0000, or any combination of 0x0001 and 0xFFFF.
+
+	if (!tsid || !onid) return 0;
+	if ((tsid == 0x0001 || tsid == 0xFFFF) && (onid == 0x0001 || onid == 0xFFFF)) return 0;
+
+	return 1;
 }
 
 static int8_t get_sw(uint32_t provider, uint8_t *sw, uint8_t sw_length, int8_t dateCoded, int8_t printMsg)
@@ -351,51 +362,36 @@ static int8_t get_sw(uint32_t provider, uint8_t *sw, uint8_t sw_length, int8_t d
 	}
 }
 
-static int8_t biss_mode1_ecm(struct s_reader *rdr, uint16_t caid, const uint8_t *ecm, uint8_t *dw,
-								uint16_t srvid, uint16_t ecmpid, EXTENDED_CW *cw_ex)
+static int8_t biss_mode1_ecm(struct s_reader *rdr, const uint8_t *ecm, uint16_t caid, uint16_t ecm_pid, uint8_t *dw, EXTENDED_CW *cw_ex)
 {
-	// Oscam's fake ecm consists of [sid] [pmtpid] [pid1] [pid2] ... [pidx] [tsid] [onid] [namespace]
-	//
+	// Oscam's fake ecm consists of [sid] [pmtpid] [pid1] [pid2] ... [pidx] [tsid] [onid] [ens]
 	// On enigma boxes tsid, onid and namespace should be non zero, while on non-enigma
-	// boxes they are usually all zero.
+	// boxes they are usually all zero. The top 4 bits of the namespace are flagged with 0xA.
+
 	// The emulator creates a unique channel hash using srvid and enigma namespace or
 	// srvid, tsid, onid and namespace (in case of namespace without frequency) and
 	// another weaker (not unique) hash based on every pid of the channel. This universal
 	// hash should be available on all types of stbs (enigma and non-enigma).
 
-	// Flags inside [namespace]
-	//
-	// emu r748- : no namespace, no flag
-	// emu r749  : 0x80000000 (full namespase), 0xC0000000 (stripped namespace, injected with tsid^onid^ecmpid^0x1FFF)
-	// emu r752+ : 0xA0000000 (pure namespace, either full, stripped, or null)
-
-	// Key searches are made in order:
-	// Highest priority / tightest test first
-	// Lowest priority / loosest test last
-	//
-	// 1st: namespace hash (only on enigma boxes)
-	// 2nd: universal hash (all box types with emu r752+)
-	// 3rd: valid tsid, onid combination
-	// 4th: faulty ecmpid (other than 0x1FFF)
-	// 5th: reverse order pid (audio, video, pmt pids)
-	// 6th: standard BISS ecmpid (0x1FFF)
-	// 7th: default "All Feeds" key
+	// Key searches are made from highest priority (tightest test first) to lowest priority
+	// (loosest test last):
+	// 1. Namespace hash (only on enigma boxes)
+	// 2. Universal hash (all box types with emu r752+)
+	// 3. Valid tsid, onid combination
+	// 4. Reverse order pid (audio, video, pmt)
+	// 5. Legacy srvid, ecm pid combination
+	// 6. Default "All Feeds" key
 
 	// If enabled in the webif, a date based key search is performed. If the expiration
 	// date has passed, the key is not sent back from get_sw(). This option is used only
 	// in the namespace hash, universal hash and the "All Feeds" search methods.
 
 	uint32_t i, ens = 0, hash = 0;
-	uint16_t pid = 0, ecmLen = SCT_LEN(ecm);
-	uint8_t *sw, sw_length, ecmCopy[ecmLen];
-	char tmpBuffer1[33], tmpBuffer2[90] = "0", tmpBuffer3[90] = "0";
+	uint16_t srvid, tsid = 0, onid = 0, pid, ecm_len = SCT_LEN(ecm);
+	uint8_t *sw, sw_length, ecm_copy[ecm_len];
+	char tmp_buffer1[33], tmp_buffer2[90] = "0", tmp_buffer3[90] = "0";
 
-	if (caid == 0x2600) // BISS1
-	{
-		sw = dw;
-		sw_length = 8;
-	}
-	else // BISS2
+	if (caid == 0x2602 && cw_ex != NULL) // BISS2
 	{
 		cw_ex->mode = CW_MODE_ONE_CW;
 		cw_ex->algo = CW_ALGO_AES128;
@@ -405,147 +401,125 @@ static int8_t biss_mode1_ecm(struct s_reader *rdr, uint16_t caid, const uint8_t 
 		sw = cw_ex->session_word;
 		sw_length = 16;
 	}
-
-	// First try using the unique namespace hash (enigma only)
-	if (ecmLen >= 13) // ecmLen >= 13, allow patching the ecmLen for r749 ecms
+	else // BISS1
 	{
-		memcpy(ecmCopy, ecm, ecmLen);
-		ens = b2i(4, ecm + ecmLen - 4); // Namespace will be the last 4 bytes
-
-		if (is_valid_namespace(ens)) // An r752+ extended ecm with valid namespace
-		{
-			unify_orbitals(&ens);
-			i2b_buf(4, ens, ecmCopy + ecmLen - 4);
-
-			for (i = 0; i < 5; i++) // Find key matching hash made with frequency modified to: f+0, then f-1, f+1, f-2, lastly f+2
-			{
-				ecmCopy[ecmLen - 1] = (i & 1) ? ecmCopy[ecmLen - 1] - i : ecmCopy[ecmLen - 1] + i; // frequency +/- 1, 2 MHz
-
-				if (0 != (ens & 0xFFFF)) // Full namespace - Calculate hash with srvid and namespace only
-				{
-					i2b_buf(2, srvid, ecmCopy + ecmLen - 6); // Put [srvid] right before [namespace]
-					hash = crc32(caid, ecmCopy + ecmLen - 6, 6);
-				}
-				else // Namespace without frequency - Calculate hash with srvid, tsid, onid and namespace
-				{
-					i2b_buf(2, srvid, ecmCopy + ecmLen - 10); // Put [srvid] right before [tsid] [onid] [namespace] sequence
-					hash = crc32(caid, ecmCopy + ecmLen - 10, 10);
-				}
-
-				if (get_sw(hash, sw, sw_length, rdr->emu_datecodedenabled, i == 0 ? 2 : 1)) // Do not print "key not found" for frequency off by 1, 2
-				{
-					memcpy(sw + sw_length, sw, sw_length);
-					return 0;
-				}
-
-				if (i == 0) // No key found matching our hash: create example SoftCam.Key BISS line for the live log
-				{
-					annotate(tmpBuffer2, sizeof(tmpBuffer2), ecmCopy, ecmLen, hash, 1, rdr->emu_datecodedenabled);
-				}
-
-				if (0 == (ens & 0xFFFF)) // Namespace without frequency - Do not iterate
-				{
-					break;
-				}
-			}
-		}
-
-		if ((ens & 0xA0000000) == 0x80000000) // r749 ecms only (exclude r752+ ecms)
-		{
-			cs_log("Hey! Network buddy, you need to upgrade your OSCam-Emu");
-			ecmCopy[ecmLen] = 0xA0; // Patch ecm to look like r752+
-			ecmLen += 4;
-		}
+		sw = dw;
+		sw_length = 8;
 	}
 
-	// Try using the universal channel hash (namespace not available)
-	if (ecmLen >= 17) // ecmLen >= 17, length of r749 ecms has been patched to match r752+ ecms
+	srvid = b2i(2, ecm + 3);
+
+	if (ecm_len >= 17) // Likely an r752+ extended ecm
 	{
-		ens = b2i(4, ecmCopy + ecmLen - 4); // Namespace will be last 4 bytes
+		tsid = b2i(2, ecm + ecm_len - 8);
+		onid = b2i(2, ecm + ecm_len - 6);
+		ens = b2i(4, ecm + ecm_len - 4);
+	}
 
-		if ((ens & 0xE0000000) == 0xA0000000) // We have an r752+ style ecm which contains pmtpid
+	// 1. Namespace hash (enigma only)
+	if (is_valid_namespace(ens))
+	{
+		unify_orbitals(&ens);
+		memcpy(ecm_copy, ecm, ecm_len);
+		i2b_buf(4, ens, ecm_copy + ecm_len - 4);
+
+		for (i = 0; i < 5; i++) // Find key matching hash made with frequency modified to: f+0, then f-1, f+1, f-2, lastly f+2
 		{
-			memcpy(ecmCopy, ecm, ecmLen - 8); // Make a new ecmCopy from the original ecm as the old ecmCopy may be altered in namespace hash (skip [tsid] [onid] [namespace])
-			hash = crc32(caid, ecmCopy + 3, ecmLen - 3 - 8); // ecmCopy doesn't have [tsid] [onid] [namespace] part
+			ecm_copy[ecm_len - 1] = (i & 1) ? ecm_copy[ecm_len - 1] - i : ecm_copy[ecm_len - 1] + i; // frequency +/- 1, 2 MHz
 
-			if (get_sw(hash, sw, sw_length, rdr->emu_datecodedenabled, 2)) // Key found
+			if (0 != (ens & 0xFFFF)) // Full namespace - Calculate hash with srvid and namespace only
+			{
+				i2b_buf(2, srvid, ecm_copy + ecm_len - 6); // Put [srvid] right before [ens]
+				hash = crc32(caid, ecm_copy + ecm_len - 6, 6);
+			}
+			else // Namespace without frequency - Calculate hash with srvid, tsid, onid and namespace
+			{
+				i2b_buf(2, srvid, ecm_copy + ecm_len - 10); // Put [srvid] right before [tsid] [onid] [ens] sequence
+				hash = crc32(caid, ecm_copy + ecm_len - 10, 10);
+			}
+
+			if (get_sw(hash, sw, sw_length, rdr->emu_datecodedenabled, i == 0 ? 2 : 1)) // Do not print "key not found" for frequency off by 1, 2
 			{
 				memcpy(sw + sw_length, sw, sw_length);
 				return 0;
 			}
 
-			// No key found matching our hash: create example SoftCam.Key BISS line for the live log
-			annotate(tmpBuffer3, sizeof(tmpBuffer3), ecmCopy, ecmLen, hash, 0, rdr->emu_datecodedenabled);
-		}
-	}
-
-	// Try using only [tsid][onid] (useful when many channels on a transpoder use the same session word)
-	if (ecmLen >= 17) // ecmLen >= 17, length of r749 ecms has been patched to match r752+ ecms
-	{
-		ens = b2i(4, ecmCopy + ecmLen - 4); // Namespace will be last 4 bytes
-
-		// We have an r752+ style ecm with stripped namespace, thus a valid [tsid][onid] combo to use as provider
-		if ((ens & 0xE000FFFF) == 0xA0000000 && get_sw(b2i(4, ecm + ecmLen - 8), sw, sw_length, 0, 2))
-		{
-			memcpy(sw + sw_length, sw, sw_length);
-			return 0;
-		}
-
-		if ((ens & 0xE0000000) == 0xA0000000) // Strip [tsid] [onid] [namespace] on r752+ ecms
-		{
-			ecmLen -= 8;
-		}
-	}
-
-	// Try using ecmpid if it seems to be faulty (should be 0x1FFF always for BISS)
-	if (ecmpid != 0x1FFF && ecmpid != 0)
-	{
-		if (get_sw((srvid << 16) | ecmpid, sw, sw_length, 0, 2))
-		{
-			memcpy(sw + sw_length, sw, sw_length);
-			return 0;
-		}
-	}
-
-	// Try to get the pid from oscam's fake ecm (only search [pid1] [pid2] ... [pidx] to be compatible with emu r748-)
-	if (ecmLen >= 7) // Use >= 7 for radio channels with just one (audio) pid
-	{
-		// Reverse search order: last pid in list first
-		// Better identifies channels where they share identical video pid but have variable counts of audio pids
-		for (i = ecmLen - 2; i >= 5; i -= 2)
-		{
-			pid = b2i(2, ecm + i);
-
-			if (get_sw((srvid << 16) | pid, sw, sw_length, 0, 2))
+			if (i == 0) // No key found matching our hash: create example SoftCam.Key BISS line for the live log
 			{
-				memcpy(sw + sw_length, sw, sw_length);
-				return 0;
+				annotate(tmp_buffer2, sizeof(tmp_buffer2), ecm_copy, ecm_len, hash, 1, rdr->emu_datecodedenabled);
+			}
+
+			if (0 == (ens & 0xFFFF)) // Namespace without frequency - Do not iterate
+			{
+				break;
 			}
 		}
 	}
 
-	// Try using the standard BISS ecm pid
-	if (ecmpid == 0x1FFF || ecmpid == 0)
+	// 2. Universal hash (in r752+ style ecms that contain pmt pid)
+	if ((ens & 0xF0000000) == 0xA0000000)
 	{
-		if (get_sw((srvid << 16) | 0x1FFF, sw, sw_length, 0, 2))
+		hash = crc32(caid, ecm + 3, ecm_len - 3 - 8); // Do not include [tsid] [onid] [ens] in the hash
+
+		if (get_sw(hash, sw, sw_length, rdr->emu_datecodedenabled, 2))
+		{
+			memcpy(sw + sw_length, sw, sw_length);
+			return 0;
+		}
+
+		// No key found matching our hash: create example SoftCam.Key BISS line for the live log
+		annotate(tmp_buffer3, sizeof(tmp_buffer3), ecm_copy, ecm_len, hash, 0, rdr->emu_datecodedenabled);
+	}
+
+	// 3. Valid [tsid] [onid] combination
+	if (is_valid_tsid_onid(tsid, onid))
+	{
+		if (get_sw(tsid << 16 | onid, sw, sw_length, 0, 2))
 		{
 			memcpy(sw + sw_length, sw, sw_length);
 			return 0;
 		}
 	}
 
-	// Default BISS key for events with many feeds sharing the same session word
-	if (ecmpid != 0 && get_sw(0xA11FEED5, sw, sw_length, rdr->emu_datecodedenabled, 2)) // Limit to local ecms, block netwotk ecms
+	// 4. Reverse order pid search
+	// (better identifies channels with variable counts of audio pids)
+	// Strip [tsid] [onid] [ens] on r752+ ecms to be compatible with older versions)
+	if ((ens & 0xF0000000) == 0xA0000000)
+	{
+		ecm_len -= 8;
+	}
+
+	for (i = ecm_len - 2; i >= 5; i -= 2)
+	{
+		pid = b2i(2, ecm + i);
+
+		if (get_sw((srvid << 16) | pid, sw, sw_length, 0, 2))
+		{
+			memcpy(sw + sw_length, sw, sw_length);
+			return 0;
+		}
+	}
+
+	// 5. Legacy [srvid] [ecm pid] combination
+	if (get_sw((srvid << 16) | ecm_pid, sw, sw_length, 0, 2))
 	{
 		memcpy(sw + sw_length, sw, sw_length);
-		cs_hexdump(0, sw, sw_length, tmpBuffer1, sizeof(tmpBuffer1));
-		cs_log("No specific match found. Using 'All Feeds' key: %s", tmpBuffer1);
+		return 0;
+	}
+
+	// 6. Default BISS key for events with many feeds sharing the same session word
+	// (limited to local ecms, network ecms with ecm pid equal to zero are blocked)
+	if (ecm_pid != 0 && get_sw(0xA11FEED5, sw, sw_length, rdr->emu_datecodedenabled, 2))
+	{
+		memcpy(sw + sw_length, sw, sw_length);
+		cs_hexdump(0, sw, sw_length, tmp_buffer1, sizeof(tmp_buffer1));
+		cs_log("No specific match found. Using 'All Feeds' key: %s", tmp_buffer1);
 		return 0;
 	}
 
 	// Print example key lines for available hash search methods, if no key is found
-	if (strncmp(tmpBuffer2, "0", 2)) cs_log("Example key based on namespace hash: %s", tmpBuffer2);
-	if (strncmp(tmpBuffer3, "0", 2)) cs_log("Example key based on universal hash: %s", tmpBuffer3);
+	if (strncmp(tmp_buffer2, "0", 2)) cs_log("Example key based on namespace hash: %s", tmp_buffer2);
+	if (strncmp(tmp_buffer3, "0", 2)) cs_log("Example key based on universal hash: %s", tmp_buffer3);
 
 	// Check if universal hash is common and warn user
 	if (is_common_hash(hash)) cs_log("Feed has commonly used pids, universal hash clashes in SoftCam.Key are likely!");
@@ -636,16 +610,15 @@ static int8_t biss2_mode_ca_ecm(const uint8_t *ecm, EXTENDED_CW *cw_ex)
 	return EMU_OK;
 }
 
-int8_t biss_ecm(struct s_reader *rdr, uint16_t caid, const uint8_t *ecm, uint8_t *dw, uint16_t srvid,
-				uint16_t ecmpid, EXTENDED_CW *cw_ex)
+int8_t biss_ecm(struct s_reader *rdr, const uint8_t *ecm, uint16_t caid, uint16_t ecm_pid, uint8_t *dw, EXTENDED_CW *cw_ex)
 {
 	switch (caid)
 	{
 		case 0x2600:
-			return biss_mode1_ecm(rdr, caid, ecm, dw, srvid, ecmpid, NULL);
+			return biss_mode1_ecm(rdr, ecm, caid, ecm_pid, dw, NULL);
 
 		case 0x2602:
-			return biss_mode1_ecm(rdr, caid, ecm, NULL, srvid, ecmpid, cw_ex);
+			return biss_mode1_ecm(rdr, ecm, caid, ecm_pid, NULL, cw_ex);
 
 		case 0x2610:
 			return biss2_mode_ca_ecm(ecm, cw_ex);

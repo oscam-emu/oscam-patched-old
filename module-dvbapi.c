@@ -2651,9 +2651,9 @@ int32_t dvbapi_start_descrambling(int32_t demux_id, int32_t pid, int8_t checked,
 			er->ens &= 0x0FFFFFFF; // clear top 4 bits (in case of DVB-T/C or garbage), prepare for flagging
 			er->ens |= 0xA0000000; // flag to emu: this is the namespace, not a pid
 
-			i2b_buf(2, er->tsid, er->ecm + 3 + er->ecm[2]);     // place tsid after the last stream pid
-			i2b_buf(2, er->onid, er->ecm + 3 + er->ecm[2] + 2); // place onid right after tsid
-			i2b_buf(4, er->ens, er->ecm + 3 + er->ecm[2] + 4);  // place namespace at the end of the ecm
+			i2b_buf(2, er->tsid, er->ecm + er->ecmlen);     // place tsid after the last stream pid
+			i2b_buf(2, er->onid, er->ecm + er->ecmlen + 2); // place onid right after tsid
+			i2b_buf(4, er->ens, er->ecm + er->ecmlen + 4);  // place namespace at the end of the ecm
 
 			er->ecm[2] += 8;
 			er->ecmlen += 8;
