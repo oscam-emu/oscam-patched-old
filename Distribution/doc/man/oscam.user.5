@@ -52,7 +52,7 @@ where DAY=\fBSUN,MON,TUE,WED,THU,FRI,SAT\fP or \fBALL\fP (for all possible days)
 .RS 3n
 
 account enabled from hh:mm to hh:mm for the specified day(s), default:none
- 
+
 comma (,) to separate times and semicolon(; ) to separate the different days.
 You can use ALL@ if you want the same time frames for everyday.
 
@@ -76,12 +76,12 @@ unique level:
 
  \fB0\fP = disabled (default)
  \fB1\fP = only one connection per user is allowed
- \fB2\fP = set user to fake if source ip is different 
+ \fB2\fP = set user to fake if source ip is different
      (e.g. for newcamd clients with different CAIDs and ports)
- \fB3\fP = only one connection per user, but only the last login 
+ \fB3\fP = only one connection per user, but only the last login
      will survive (old MpCS behavior)
- \fB4\fP = set user only to fake if source ip is different, 
-     but only the last login will survive 
+ \fB4\fP = set user only to fake if source ip is different,
+     but only the last login will survive
 .RE
 .PP
 \fBnumusers\fP = \fBquantity\fP
@@ -194,9 +194,9 @@ set cache exchange mode
 
  \fB0\fP: disable cache exchange mode (default)
  \fB1\fP: enable cache exchange pull mode
- \fB2\fP: enable cache exchange push mode for camd 3.5x / 3.57x and 
+ \fB2\fP: enable cache exchange push mode for camd 3.5x / 3.57x and
     CCcam protocol
- \fB3\fP: enable reverse cache exchange push mode for camd 3.5x / 3.57x 
+ \fB3\fP: enable reverse cache exchange push mode for camd 3.5x / 3.57x
     and CCcam protocol
 
 \fIIdentical cache exchange modes must be set on local OSCam user account and remote OSCam server.\fR
@@ -212,7 +212,7 @@ define maximum hops for cache exchange, default=10
 \fBno_wait_time\fP = \fB0\fP|\fB1\fP
 .RS 3n
 set wait time behaviour:
- 
+
  \fB0\fP: use \fBwait_time\fP set in \fBoscam.conf\fP (default)
  \fB1\fP: do not use \fBwait_time\fP set in \fBoscam.conf\fP
 .RE
@@ -254,7 +254,7 @@ time waiting for inactive user, default:none
 .PP
 \fBsuppresscmd08\fP = \fB0\fP|\fB1\fP
 .RS 3n
-0 = tell camd 3.5x, 3.57x and 3.78x clients not to request again for rejected 
+0 = tell camd 3.5x, 3.57x and 3.78x clients not to request again for rejected
 CAID, service ID and provider ID combination, 1 =  disable, default:0
 .RE
 .PP
@@ -283,7 +283,7 @@ example: caid = 0100
 .RS 3n
 AU setting, default:none:
 
-  \fBlabel of reader\fP = sending EMMs to specified reader 
+  \fBlabel of reader\fP = sending EMMs to specified reader
                     \fI(security issue: clients can see SC data!)\fR
   \fB1\fP               = auto AU is sending EMMs to \fIall\fR readers
                     \fI(security issue: clients can see SC data!)\fR
@@ -309,8 +309,8 @@ The ServiceID can also be used for wildcarded CAIDs.
 .PP
 \fBemmreassembly\fP = \fB0\fP|\fB1\fP||\fB2\fP
 .RS 3n
-EMM reassembly, should be set for Viaccess and Cryptoworks readers if the 
-client that you are using to send EMMs is reassembling them instead of 
+EMM reassembly, should be set for Viaccess and Cryptoworks readers if the
+client that you are using to send EMMs is reassembling them instead of
 just sending them to OSCam for processing.
 
   \fB0\fP: disabled
@@ -386,8 +386,8 @@ CCcam stealth:
 
  \fB-1\fP = use CCcam stealth of \fBoscam.conf\fR (default)
   \fB0\fP = use extended OSCam-CCcam protocol
-  \fB1\fP = behaviour like the original CCcam: no activate partner 
-      detection and extended OSCam-CCcam protocol, prevent 
+  \fB1\fP = behaviour like the original CCcam: no activate partner
+      detection and extended OSCam-CCcam protocol, prevent
       other OSCam to detect the server as OSCam server
 .RE
 .SH EXAMPLES
@@ -398,7 +398,7 @@ CCcam stealth:
  au         = myserialmousereader
  services   = myservice
  betatunnel = 0100.0001:0101,0100.0002:0101
- caid       = 0100 
+ caid       = 0100
  ident      = 0100:000000
  uniq       = 1
 .SH "SEE ALSO"
