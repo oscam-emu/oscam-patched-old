@@ -1,6 +1,7 @@
 	<input name="part" type="hidden" value="dvbapi">
 	<input name="enabled" type="hidden" value="0">
 	<input name="au" type="hidden" value="0">
+	<input name="ecminfo_file" type="hidden" value="0">
 	<input name="write_sdt_prov" type="hidden" value="0">
 	<TABLE CLASS="config">
 		<TR><TH COLSPAN="2">Edit DVB Api Config</TH></TR>
@@ -31,6 +32,7 @@
 		</TR>
 		<TR><TD><A>Listen port:</A></TD><TD><input name="listen_port" class="short" type="text" maxlength="5" value="##LISTENPORT##"> TCP port to listen instead of camd.socket</TD></TR>
 		<TR><TD><A>Delayer:</A></TD><TD><input name="delayer" class="withunit short" type="text" maxlength="4" value="##DELAYER##"> ms</TD></TR>
+		<TR><TD><A>Enable ecm.info file:</A></TD><TD><input name="ecminfo_file" type="checkbox" value="1" ##ECMINFOFILECHECKED##><label></label>
 		<TR><TD><A>ecm.info type:</A></TD>
 			<TD>
 				<select name="ecminfo_type">
