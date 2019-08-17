@@ -7837,7 +7837,7 @@ void dvbapi_send_dcw(struct s_client *client, ECM_REQUEST *er)
 #ifndef __CYGWIN__
 		else if(!cfg.dvbapi_listenport && cfg.dvbapi_boxtype != BOXTYPE_PC_NODMX)
 #endif
-		if(cfg.dvbapi_boxtype != BOXTYPE_SAMYGO)
+		if(cfg.dvbapi_ecminfo_file != 0 && cfg.dvbapi_boxtype != BOXTYPE_SAMYGO)
 		{
 #ifdef WITH_EXTENDED_CW
 			// Only print CWs for index 0 in ecm.info file

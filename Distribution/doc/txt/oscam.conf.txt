@@ -820,6 +820,12 @@ DESCRIPTIONS
 	   5 = do not use signal handler for monitoring /tmp,
 	       disable camd.socket
 
+	   ecminfo_file = 0|1
+	  ecm.info types:
+
+	   0 = Disable ecm.info file
+	   1 = Enable ecm.info file (default)
+
        ecminfo_type = 0|1|2|3|4|5
 	  ecm.info types:
 

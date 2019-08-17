@@ -258,7 +258,10 @@ void azbox_send_dcw(struct s_client *client, ECM_REQUEST *er)
 
 	delayer(er, delay);
 
-	dvbapi_write_ecminfo_file(client, er, demux[0].last_cw[0][0], demux[0].last_cw[0][1], 8);
+	if(cfg.dvbapi_ecminfo_file != 0)
+	{
+		dvbapi_write_ecminfo_file(client, er, demux[0].last_cw[0][0], demux[0].last_cw[0][1], 8);
+	}
 
 	openxcas_busy = 0;
 
