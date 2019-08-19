@@ -37,9 +37,9 @@ DESCRIPTIONS
 
        allowedtimeframe = DAY@HH:MM-HH:MM[,HH:MM-HH:MM][,HH:MM-HH:MM][;DAY@HH:MM-HH:MM[,HH:MM-HH:MM][,HH:MM-HH:MM]]
                     where DAY=SUN,MON,TUE,WED,THU,FRI,SAT or ALL (for all possible days)
-                    
+
 	  account enabled from hh:mm to hh:mm for the specified day(s), default:none
-	  
+
       comma (,) to separate times and semicolon(; ) to separate the different days.
       You can use ALL@ if you want the same time frames for everyday.
 
@@ -300,8 +300,8 @@ EXAMPLES
 	uniq	   = 1
 
 SEE ALSO
-       list_smargo(1), oscam(1), oscam.ac(5), oscam.cacheex(5), oscam.cert(5), oscam.conf(5), oscam.dvbapi(5),	oscam.fakecws(5),
-       oscam.guess(5),	oscam.ird(5),  oscam.provid(5),  oscam.ratelimit(5),  oscam.server(5), oscam.services(5), oscam.tiers(5),
+       list_smargo(1), oscam(1), oscam.ac(5), oscam.cacheex(5), oscam.cert(5), oscam.conf(5), oscam.dvbapi(5), oscam.fakecws(5),
+       oscam.guess(5), oscam.ird(5), oscam.provid(5), oscam.ratelimit(5), oscam.server(5), oscam.services(5), oscam.tiers(5),
        oscam.srvid(5), oscam.srvid2(5), oscam.whitelist(5)
 
 

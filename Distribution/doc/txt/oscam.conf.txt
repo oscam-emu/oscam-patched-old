@@ -759,10 +759,10 @@ DESCRIPTIONS
 
        gbox_reconnect = time
 	  send message to peers in seconds, default:180, min:60, max:300
-	  
+
        log_hello = 0|1
 	  1 = log hello messages ,default:1
-	  
+
        dis_attack_txt = 0|1
 	  1 = disable creation of file attack.txt ,default:0
 
@@ -819,6 +819,12 @@ DESCRIPTIONS
 	   4 = do not use signal handler for monitoring /tmp
 	   5 = do not use signal handler for monitoring /tmp,
 	       disable camd.socket
+
+	   ecminfo_file = 0|1
+	  ecm.info types:
+
+	   0 = Disable ecm.info file
+	   1 = Enable ecm.info file (default)
 
        ecminfo_type = 0|1|2|3|4|5
 	  ecm.info types:
@@ -1062,8 +1068,8 @@ CACHING
 	  ECM and checksum in cache already.
 
 SEE ALSO
-       list_smargo(1),	 oscam(1),   oscam.ac(5),   oscam.cacheex(5),	oscam.cert(5),	 oscam.dvbapi(5),  oscam.fakecws(5),  oscam.guess(5),  oscam.ird(5),
-       oscam.provid(5),  oscam.ratelimit(5),   oscam.server(5),   oscam.services(5),   oscam.srvid(5),	 oscam.srvid2(5),   oscam.tiers(5),   oscam.user(5),
+       list_smargo(1), oscam(1), oscam.ac(5), oscam.cacheex(5), oscam.cert(5), oscam.dvbapi(5), oscam.fakecws(5), oscam.guess(5), oscam.ird(5),
+       oscam.provid(5), oscam.ratelimit(5), oscam.server(5), oscam.services(5), oscam.srvid(5), oscam.srvid2(5), oscam.tiers(5), oscam.user(5),
        oscam.whitelist(5)
 
 
