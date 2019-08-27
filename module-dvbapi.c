@@ -4708,153 +4708,11 @@ static void dvbapi_parse_pmt(int32_t demux_id, const uint8_t *buffer, uint32_t l
 	dvbapi_parse_pmt_info(demux_id, buffer + 10, length - 10 - 4, NULL); // last 4 bytes are the CRC-32
 }
 
-static uint32_t dvbapi_extract_sdt_string(char *buf, uint32_t buflen, uint8_t *source, uint32_t sourcelen)
-{
-	uint32_t i, j, offset = 0;
-	int8_t iso_mode = -1;
-	char *tmpbuf;
-	const uint8_t *ptr_in;
-	uint8_t *ptr_out;
-	size_t in_bytes, out_bytes;
-
-	if(sourcelen == 0)
-	{
-		buf[0] = '\0';
-		return 1;
-	}
-
-	if(!cs_malloc(&tmpbuf, buflen))
-	{
-		return 0;
-	}
-
-	if((sourcelen + 1) > buflen)
-	{
-		sourcelen = buflen - 1;
-	}
-
-	if(sourcelen > 0 && source[0] < 0x20)
-	{
-		//ISO-8859
-		if(source[0] >= 0x01 && source[0] <= 0x0B && source[0] != 0x08)
-		{
-			offset = 1;
-			iso_mode = 4 + source[0];
-		}
-		//ISO-8859
-		else if(source[0] == 0x10 && source[1] == 0x00 && source[2] >= 0x01 && source[2] <= 0x0F && source[2] != 0x0C)
-		{
-			offset = 3; iso_mode = source[2];
-		}
-		//Unicode
-		else if(source[0] == 0x11)
-		{
-			offset = 1;
-			iso_mode = -2;
-		}
-		//missing: 0x12 Korean Character Set KSC5601-1987
-		//missing: 0x13 Simplified Chinese Character Set GB-2312-1980
-		//missing: 0x14 Big5 subset of ISO/IEC 10646-1 (Traditional Chinese)
-		//Unicode as UTF-8
-		else if(source[0] == 0x15)
-		{
-			offset = 1;
-			iso_mode = -3;
-		}
-		//missing: 0x1F Described by encoding_type_id *standard not finished yet*
-		//Reserved for future use
-		else
-		{
-			NULLFREE(tmpbuf); return 0;
-		}
-	}
-
-	if(offset >= sourcelen)
-	{
-		NULLFREE(tmpbuf); return 0;
-	}
-
-	if(iso_mode >= -1)
-	{
-		for(i = 0, j = 0; i < (sourcelen - offset); i++)
-		{
-			if(((uint8_t)source[offset + i]) >= 0x80 && ((uint8_t)source[offset + i]) <= 0x9F)
-			{
-				continue;
-			}
-			tmpbuf[j] = source[offset + i];
-			j++;
-		}
-		tmpbuf[j] = '\0';
-	}
-
-	ptr_in = (const uint8_t *)tmpbuf;
-	in_bytes = strlen(tmpbuf);
-	ptr_out = (uint8_t *)buf;
-	out_bytes = buflen;
-
-#ifdef READ_SDT_CHARSETS
-	if(iso_mode >= -1)
-	{
-		memset(buf, 0, buflen);
-		cs_log_dbg(D_DVBAPI, "sdt-info dbg: iso_mode: %d offset: %u", iso_mode, offset);
-		cs_log_dump_dbg(D_DVBAPI, (uint8_t *)tmpbuf, in_bytes, "sdt-info dbg: raw string: ");
-
-		if(iso_mode == -1)
-		{
-			if(ISO6937toUTF8(&ptr_in, &in_bytes, &ptr_out, &out_bytes) == (size_t)(-1))
-			{
-				cs_log_dbg(D_DVBAPI, "sdt-info error: ISO6937toUTF8 failed");
-				NULLFREE(tmpbuf);
-				return 0;
-			}
-		}
-		else
-		{
-			if(ISO8859toUTF8(iso_mode, &ptr_in, &in_bytes, &ptr_out, &out_bytes) == (size_t)(-1))
-			{
-				cs_log_dbg(D_DVBAPI, "sdt-info error: ISO8859toUTF8 failed");
-				NULLFREE(tmpbuf);
-				return 0;
-			}
-		}
-	}
-#else
-	if(iso_mode >= -1)
-	{
-		cs_strncpy(buf, tmpbuf, buflen);
-		cs_log_dbg(D_DVBAPI, "sdt-info warning: your build of oscam does not support iso-to-utf8 conversion, special chars may be corrupted!");
-	}
-#endif
-	else if(iso_mode == -2)
-	{
-		memset(buf, 0, buflen);
-		cs_log_dbg(D_DVBAPI, "sdt-info dbg: iso_mode: %d offset: %u", iso_mode, offset);
-
-		if(UnicodetoUTF8(&ptr_in, &in_bytes, &ptr_out, &out_bytes) == (size_t)(-1))
-		{
-			cs_log_dbg(D_DVBAPI, "sdt-info error: UnicodetoUTF8 failed");
-			NULLFREE(tmpbuf);
-			return 0;
-		}
-	}
-	else if(iso_mode == -3)
-	{
-		memcpy(buf, source + offset, sourcelen - offset);
-		buf[sourcelen - offset] = '\0';
-		cs_log_dbg(D_DVBAPI, "sdt-info dbg: iso_mode: -3 offset: %u", offset);
-	}
-	cs_log_dump_dbg(D_DVBAPI, (uint8_t*)buf, strlen(buf), "sdt-info dbg: encoded string: ");
-	NULLFREE(tmpbuf);
-	return 1;
-}
-
 static void dvbapi_create_srvid_line(int32_t demux_id, char *buffer, uint32_t buflen)
 {
-	int32_t i, j;
+	int32_t i, j, pos = 0;
 	uint16_t caid_done[32], cur_caid;
 	uint8_t caid_done_count = 0, skip_caid;
-	int32_t pos = 0;
 
 	if(demux[demux_id].ECMpidcount == 0)
 	{
@@ -4894,17 +4752,282 @@ static void dvbapi_create_srvid_line(int32_t demux_id, char *buffer, uint32_t bu
 				pos += snprintf(buffer + pos, buflen - pos, "@%06X", demux[demux_id].ECMpids[j].PROVID);
 			}
 		}
+
 		caid_done[caid_done_count] = demux[demux_id].ECMpids[i].CAID;
 		caid_done_count++;
 	}
 }
 
-static const char *dvbapi_get_service_type(uint8_t service_type_id)
+static void dvbapi_write_sdt_info(int32_t demux_id, const char *provider_name, const char* service_name, const char *service_type)
 {
-	switch(service_type_id)
+	int8_t did_save_srvid = 0;
+	int32_t provid, caid, pidindex;
+	char tmp[256], srvid_line[1024];
+	FILE *fpsave = NULL;
+
+	pidindex = demux[demux_id].pidindex;
+	if(pidindex != -1)
+	{
+		caid = demux[demux_id].ECMpids[pidindex].CAID;
+		provid = demux[demux_id].ECMpids[pidindex].PROVID;
+	}
+	else
+	{
+		if(demux[demux_id].ECMpidcount == 0 || demux[demux_id].ECMpids[0].CAID == 0)
+		{
+			caid = NO_CAID_VALUE;
+			provid = NO_PROVID_VALUE;
+		}
+		else
+		{
+			caid = demux[demux_id].ECMpids[0].CAID;
+			provid = demux[demux_id].ECMpids[0].PROVID;
+		}
+	}
+
+	if(strlen(provider_name) && caid != NO_CAID_VALUE)
+	{
+		get_providername_or_null(provid, caid, tmp, sizeof(tmp));
+
+		if(tmp[0] == '\0')
+		{
+			get_config_filename(tmp, sizeof(tmp), "oscam.provid");
+
+			if((fpsave = fopen(tmp, "a")))
+			{
+				fprintf(fpsave, "\n%04X@%06X|%s|", caid, provid, provider_name);
+				fclose(fpsave);
+				init_provid();
+			}
+		}
+	}
+
+	if(strlen(service_name))
+	{
+		get_servicename_or_null(cur_client(), demux[demux_id].program_number, provid, caid, tmp, sizeof(tmp));
+
+		if(tmp[0] == '\0')
+		{
+			get_config_filename(tmp, sizeof(tmp), "oscam.srvid2");
+
+			if(!access(tmp, F_OK) && (fpsave = fopen(tmp, "a")))
+			{
+				if((caid != NO_CAID_VALUE) || (cfg.dvbapi_read_sdt > 1))
+				{
+					dvbapi_create_srvid_line(demux_id, srvid_line, sizeof(srvid_line));
+
+					if(cfg.dvbapi_write_sdt_prov)
+					{
+						fprintf(fpsave, "\n%04X:%s|%s|%s||%s", demux[demux_id].program_number, srvid_line, service_name, service_type, provider_name);
+					}
+					else
+					{
+						fprintf(fpsave, "\n%04X:%s|%s|%s", demux[demux_id].program_number, srvid_line, service_name, service_type);
+					}
+
+					did_save_srvid = 1;
+				}
+			}
+			else
+			{
+				get_config_filename(tmp, sizeof(tmp), "oscam.srvid");
+
+				if((fpsave = fopen(tmp, "a")))
+				{
+					if((caid != NO_CAID_VALUE) || (cfg.dvbapi_read_sdt > 1))
+					{
+						dvbapi_create_srvid_line(demux_id, srvid_line, sizeof(srvid_line));
+
+						if(cfg.dvbapi_write_sdt_prov)
+						{
+							fprintf(fpsave, "\n%s:%04X|%s|%s|%s", srvid_line, demux[demux_id].program_number, provider_name, service_name, service_type);
+						}
+						else
+						{
+							fprintf(fpsave, "\n%s:%04X||%s|%s", srvid_line, demux[demux_id].program_number, service_name, service_type);
+						}
+
+						did_save_srvid = 1;
+					}
+				}
+			}
+
+			if(fpsave)
+			{
+				fclose(fpsave);
+			}
+
+			if(did_save_srvid)
+			{
+				init_srvid();
+			}
+		}
+	}
+}
+
+static uint32_t dvbapi_extract_sdt_string(char *buf, uint32_t buflen, const uint8_t *source, uint8_t sourcelen)
+{
+	uint32_t i, j, offset = 0;
+	int8_t iso_mode = -1;
+	char *tmpbuf;
+	const uint8_t *ptr_in;
+	uint8_t *ptr_out;
+	size_t in_bytes, out_bytes;
+
+	if(sourcelen == 0)
+	{
+		buf[0] = '\0';
+		return 1;
+	}
+
+	if(!cs_malloc(&tmpbuf, buflen))
+	{
+		return 0;
+	}
+
+	if(sourcelen > buflen - 1)
+	{
+		sourcelen = buflen - 1;
+	}
+
+	if(sourcelen > 0 && source[0] < 0x20)
+	{
+		if(source[0] >= 0x01 && source[0] <= 0x0B && source[0] != 0x08) // ISO/IEC 8859
+		{
+			offset = 1;
+			iso_mode = 4 + source[0];
+		}
+		else if(source[0] == 0x10) // Dynamically selected part of ISO/IEC 8859
+		{
+			if(source[1] == 0x00 && source[2] >= 0x01 && source[2] <= 0x0F && source[2] != 0x0C)
+			{
+				offset = 3;
+				iso_mode = source[2];
+			}
+		}
+		else if(source[0] == 0x11) // ISO/IEC 10646
+		{
+			offset = 1;
+			iso_mode = -2;
+		}
+		// missing: 0x12 KSX1001-2004 (Korean Character Set)
+		// missing: 0x13 GB-2312-1980 (Simplified Chinese Character Set)
+		// missing: 0x14 Big5 subset of ISO/IEC 10646 (Traditional Chinese)
+		else if(source[0] == 0x15) // UTF-8 encoding of ISO/IEC 10646
+		{
+			offset = 1;
+			iso_mode = -3;
+		}
+		// missing: 0x1F Described by encoding_type_id
+		else
+		{
+			NULLFREE(tmpbuf);
+			return 0;
+		}
+	}
+
+	if(offset >= sourcelen)
+	{
+		NULLFREE(tmpbuf);
+		return 0;
+	}
+
+	if(iso_mode >= -1)
+	{
+		for(i = 0, j = 0; i < sourcelen - offset; i++)
+		{
+			if(source[offset + i] >= 0x80 && source[offset + i] <= 0x9F)
+			{
+				continue;
+			}
+
+			tmpbuf[j] = source[offset + i];
+			j++;
+		}
+
+		tmpbuf[j] = '\0';
+	}
+
+	ptr_in = (const uint8_t *)tmpbuf;
+	in_bytes = strlen(tmpbuf);
+	ptr_out = (uint8_t *)buf;
+	out_bytes = buflen;
+
+#ifdef READ_SDT_CHARSETS
+	if(iso_mode >= -1)
+	{
+		memset(buf, 0, buflen);
+		cs_log_dbg(D_DVBAPI, "sdt-info dbg: iso_mode: %d offset: %u", iso_mode, offset);
+		cs_log_dump_dbg(D_DVBAPI, (uint8_t *)tmpbuf, in_bytes, "sdt-info dbg: raw string:");
+
+		if(iso_mode == -1)
+		{
+			if(ISO6937toUTF8(&ptr_in, &in_bytes, &ptr_out, &out_bytes) == (size_t)(-1))
+			{
+				cs_log_dbg(D_DVBAPI, "sdt-info error: ISO6937toUTF8 failed");
+				NULLFREE(tmpbuf);
+				return 0;
+			}
+		}
+		else
+		{
+			if(ISO8859toUTF8(iso_mode, &ptr_in, &in_bytes, &ptr_out, &out_bytes) == (size_t)(-1))
+			{
+				cs_log_dbg(D_DVBAPI, "sdt-info error: ISO8859toUTF8 failed");
+				NULLFREE(tmpbuf);
+				return 0;
+			}
+		}
+	}
+#else
+	if(iso_mode >= -1)
+	{
+		cs_strncpy(buf, tmpbuf, buflen);
+		cs_log_dbg(D_DVBAPI, "sdt-info warning: your build of oscam does not support iso-to-utf8 conversion, special chars may be corrupted!");
+	}
+#endif
+	else if(iso_mode == -2)
+	{
+		memset(buf, 0, buflen);
+		cs_log_dbg(D_DVBAPI, "sdt-info dbg: iso_mode: %d offset: %u", iso_mode, offset);
+
+		if(UnicodetoUTF8(&ptr_in, &in_bytes, &ptr_out, &out_bytes) == (size_t)(-1))
+		{
+			cs_log_dbg(D_DVBAPI, "sdt-info error: UnicodetoUTF8 failed");
+			NULLFREE(tmpbuf);
+			return 0;
+		}
+	}
+	else if(iso_mode == -3) // No conversion, already in UTF-8
+	{
+		memcpy(buf, source + offset, sourcelen - offset);
+		buf[sourcelen - offset] = '\0';
+		cs_log_dbg(D_DVBAPI, "sdt-info dbg: iso_mode: -3 offset: %u", offset);
+	}
+
+	cs_log_dump_dbg(D_DVBAPI, (uint8_t *)buf, strlen(buf), "sdt-info dbg: encoded string:");
+	NULLFREE(tmpbuf);
+	return 1;
+}
+
+static const char *dvbapi_get_service_type(uint8_t service_type)
+{
+	switch(service_type)
 	{
 		case 0x01:
+		case 0x0B:
 		case 0x11:
+		case 0x16:
+		case 0x17:
+		case 0x18:
+		case 0x19:
+		case 0x1A:
+		case 0x1B:
+		case 0x1C:
+		case 0x1D:
+		case 0x1E:
+		case 0x1F:
+		case 0x20:
 			return "TV";
 
 		case 0x02:
@@ -4919,199 +5042,84 @@ static const char *dvbapi_get_service_type(uint8_t service_type_id)
 			return "Data";
 
 		default:
-			return "TV";
+			return "unknown";
 	}
 }
 
-static void dvbapi_parse_sdt(int32_t demux_id, uint8_t *buffer, uint32_t length, uint32_t msgid)
+static void dvbapi_parse_service_descriptor(int32_t demux_id, const uint8_t *buffer, uint8_t descriptor_length)
 {
-	uint8_t tag, data_length = 0, provider_name_length, service_name_length, service_type;
-	uint16_t service_id, descriptor_length, dpos;
-	uint32_t section_length, pos;
-	int8_t did_save_srvid = 0;
-	int32_t provid, caid, pidindex;
-	char provider_name[64], service_name[64], tmp[256], srvid_line[1024];
-	const char *type;
-	FILE *fpsave = NULL;
+	uint8_t service_provider_name_length, service_name_length;
+	char service_provider_name[64], service_name[64];
+	const char *service_type;
 
-	cs_log_dump_dbg(D_DVBAPI, buffer, length, "sdt-info dbg: sdt data: ");
+	if(descriptor_length < 3)
+	{
+		return; // Service descriptor has a minimum length of 3 bytes
+	}
 
-	if(length < 3)
+	service_type = dvbapi_get_service_type(buffer[0]);
+
+	service_provider_name_length = buffer[1];
+	if(2 + service_provider_name_length + 1 > descriptor_length)
 	{
 		return;
 	}
 
-	if(buffer[0] != 0x42)
+	service_name_length = buffer[2 + service_provider_name_length];
+	if(2 + service_provider_name_length + 1 + service_name_length > descriptor_length)
 	{
 		return;
 	}
 
-	section_length = b2i(2, buffer + 1) & 0xFFF;
-	if(section_length + 3 != length)
+	if(!dvbapi_extract_sdt_string(service_provider_name, sizeof(service_provider_name), buffer + 2, service_provider_name_length) ||
+		!dvbapi_extract_sdt_string(service_name, sizeof(service_name), buffer + 2 + service_provider_name_length + 1, service_name_length))
 	{
 		return;
 	}
 
-	for(pos = 11; pos + 5 < length; pos += descriptor_length)
-	{
-		service_id = b2i(2, buffer + pos);
-		descriptor_length = b2i(2, buffer + pos + 3) & 0xFFF;
+	cs_log_dbg(D_DVBAPI, "Demuxer %d got service info (provider: %s - name: %s - type: %s)",
+		demux_id, service_provider_name, service_name, service_type);
 
-		if((pos + 5 + descriptor_length) >= length)
-		{
-			return;
-		}
-		pos += 5;
+	dvbapi_write_sdt_info(demux_id, service_provider_name, service_name, service_type);
+}
+
+static void dvbapi_parse_sdt(int32_t demux_id, const uint8_t *buffer, uint16_t length, uint32_t msgid)
+{
+	uint8_t descriptor_tag, descriptor_length;
+	uint16_t service_id, descriptors_loop_length, i, j;
+
+	if(buffer[0] != 0x42) // SDT sections with table_id value 0x42 describe the actual TS
+	{
+		return;
+	}
+
+	// Get the tsid and onid (in enigma2 STBs we have
+	// already received them in the CA PMT message)
+	demux[demux_id].tsid = b2i(2, buffer + 3);
+	demux[demux_id].onid = b2i(2, buffer + 8);
+
+	for(i = 11; i + 5 < length; i += 5 + descriptors_loop_length)
+	{
+		service_id = b2i(2, buffer + i);
+		descriptors_loop_length = b2i(2, buffer + i + 3) & 0x0FFF;
 
 		if(service_id != demux[demux_id].program_number)
 		{
 			continue;
 		}
 
-		for(dpos = 0; dpos + 1 < descriptor_length; dpos += (2 + data_length))
+		for(j = 0; j + 1 < descriptors_loop_length; j += 2 + descriptor_length)
 		{
-			tag = buffer[pos + dpos];
-			data_length = buffer[pos + dpos + 1];
+			descriptor_tag = buffer[i + 5 + j];
+			descriptor_length = buffer[i + 5 + j + 1];
 
-			if(dpos + 1 + data_length >= descriptor_length)
+			if(descriptor_tag == 0x48)
 			{
-				break;
+				dvbapi_parse_service_descriptor(demux_id, buffer + i + 5 + j + 2, descriptor_length);
 			}
-
-			if(tag != 0x48)
-			{
-				continue;
-			}
-
-			if(dpos + 3 >= descriptor_length)
-			{
-				break;
-			}
-
-			service_type = buffer[pos + dpos + 2];
-			provider_name_length = buffer[pos + dpos + 3];
-
-			if((dpos + 4 + provider_name_length + 1) > descriptor_length)
-			{
-				break;
-			}
-
-			service_name_length = buffer[pos + dpos + 4 + provider_name_length];
-			if((dpos + 4 + provider_name_length + 1 + service_name_length) > descriptor_length)
-			{
-				break;
-			}
-
-			pidindex = demux[demux_id].pidindex;
-			if(pidindex !=-1)
-			{
-				provid = demux[demux_id].ECMpids[pidindex].PROVID;
-				caid = demux[demux_id].ECMpids[pidindex].CAID;
-			}
-			else
-			{
-				if(demux[demux_id].ECMpidcount == 0 || demux[demux_id].ECMpids[0].CAID == 0)
-				{
-					caid = NO_CAID_VALUE;
-					provid = NO_PROVID_VALUE;
-				}
-				else
-				{
-					caid = demux[demux_id].ECMpids[0].CAID;
-					provid = demux[demux_id].ECMpids[0].PROVID;
-				}
-			}
-
-			if(!dvbapi_extract_sdt_string(provider_name, sizeof(provider_name), buffer + pos + dpos + 4, provider_name_length))
-			{
-				break;
-			}
-
-			if(!dvbapi_extract_sdt_string(service_name, sizeof(service_name), buffer + pos + dpos + 4 + provider_name_length + 1, service_name_length))
-			{
-				break;
-			}
-
-			cs_log_dbg(D_DVBAPI,"sdt-info (provider: %s - channel: %s)", provider_name, service_name);
-			dvbapi_stop_filter(demux_id, TYPE_SDT, msgid);
-
-			if(strlen(provider_name) && caid != NO_CAID_VALUE)
-			{
-				get_providername_or_null(provid, caid, tmp, sizeof(tmp));
-				if(tmp[0] == '\0')
-				{
-					get_config_filename(tmp, sizeof(tmp), "oscam.provid");
-					if((fpsave = fopen(tmp, "a")))
-					{
-						fprintf(fpsave, "\n%04X@%06X|%s|", caid, provid, provider_name);
-						fclose(fpsave);
-						init_provid();
-					}
-				}
-			}
-
-			if(strlen(service_name))
-			{
-				get_servicename_or_null(cur_client(), service_id, provid, caid, tmp, sizeof(tmp));
-
-				if(tmp[0] == '\0')
-				{
-					type = dvbapi_get_service_type(service_type);
-					get_config_filename(tmp, sizeof(tmp), "oscam.srvid2");
-
-					if(!access(tmp, F_OK) && (fpsave = fopen(tmp, "a")))
-					{
-						if((caid != NO_CAID_VALUE) || (cfg.dvbapi_read_sdt > 1))
-						{
-							dvbapi_create_srvid_line(demux_id, srvid_line, sizeof(srvid_line));
-
-							if(cfg.dvbapi_write_sdt_prov)
-							{
-								fprintf(fpsave, "\n%04X:%s|%s|%s||%s", service_id, srvid_line, service_name, type, provider_name);
-							}
-							else
-							{
-								fprintf(fpsave, "\n%04X:%s|%s|%s", service_id, srvid_line, service_name, type);
-							}
-							did_save_srvid = 1;
-						}
-					}
-					else
-					{
-						get_config_filename(tmp, sizeof(tmp), "oscam.srvid");
-
-						if((fpsave = fopen(tmp, "a")))
-						{
-							if((caid != NO_CAID_VALUE) || (cfg.dvbapi_read_sdt > 1))
-							{
-								dvbapi_create_srvid_line(demux_id, srvid_line, sizeof(srvid_line));
-
-								if(cfg.dvbapi_write_sdt_prov)
-								{
-									fprintf(fpsave, "\n%s:%04X|%s|%s|%s", srvid_line, service_id, provider_name, service_name, type);
-								}
-								else
-								{
-									fprintf(fpsave, "\n%s:%04X||%s|%s", srvid_line, service_id, service_name, type);
-								}
-								did_save_srvid = 1;
-							}
-						}
-					}
-
-					if(fpsave)
-					{
-						fclose(fpsave);
-					}
-
-					if(did_save_srvid)
-					{
-						init_srvid();
-					}
-				}
-			}
-			return;
 		}
+
+		dvbapi_stop_filter(demux_id, TYPE_SDT, msgid);
 	}
 }
 
