@@ -4358,6 +4358,7 @@ static void dvbapi_capmt_notify(struct demux_s *dmx)
 static void dvbapi_prepare_descrambling(int32_t demux_id, uint32_t msgid)
 {
 	bool is_powervu = false, start_emm = true;
+	char service_name[CS_SERVICENAME_SIZE];
 
 	// The CA PMT should have given us enough info to determine if descrambling
 	// is possible. Parsing the (real) PMT is not necessary, unless we have a
@@ -4398,8 +4399,11 @@ static void dvbapi_prepare_descrambling(int32_t demux_id, uint32_t msgid)
 		// (there are images with limited amount of filters available!)
 		dvbapi_stop_all_emm_sdt_filtering(msgid);
 
-		cs_log_dbg(D_DVBAPI, "Demuxer %d started descrambling for program %04X (fd: %d)",
-			demux_id, demux[demux_id].program_number, demux[demux_id].socket_fd);
+		get_servicename(dvbapi_client, demux[demux_id].program_number, demux[demux_id].ECMpids[0].PROVID,
+			demux[demux_id].ECMpids[0].CAID, service_name, sizeof(service_name));
+
+		cs_log_dbg(D_DVBAPI, "Demuxer %d started descrambling for program %04X (%s) (fd: %d)",
+			demux_id, demux[demux_id].program_number, service_name, demux[demux_id].socket_fd);
 
 		demux[demux_id].running = true; // mark channel as running
 		openxcas_set_sid(demux[demux_id].program_number);
@@ -4410,8 +4414,11 @@ static void dvbapi_prepare_descrambling(int32_t demux_id, uint32_t msgid)
 	}
 	else if(demux[demux_id].ECMpidcount == 0) // FTA: do logging and part of ecm handler
 	{
-		cs_log_dbg(D_DVBAPI, "Demuxer %d no descrambling needed for FTA program %04X (fd: %d)",
-			demux_id, demux[demux_id].program_number, demux[demux_id].socket_fd);
+		get_servicename(dvbapi_client, demux[demux_id].program_number, NO_PROVID_VALUE, NO_CAID_VALUE,
+			service_name, sizeof(service_name));
+
+		cs_log_dbg(D_DVBAPI, "Demuxer %d no descrambling needed for FTA program %04X (%s) (fd: %d)",
+			demux_id, demux[demux_id].program_number, service_name, demux[demux_id].socket_fd);
 
 		demux[demux_id].running = false; // reset running flag
 		demux[demux_id].pidindex = -1; // reset ecmpid used for descrambling
