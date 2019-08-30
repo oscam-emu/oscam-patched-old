@@ -12,10 +12,11 @@
 #include "oscam-time.h"
 #include "oscam-lock.h"
 
-static int32_t poll_gsms_data (uint16_t *boxid, uint8_t *num, char *text)
+static int32_t poll_gsms_data(uint16_t *boxid, uint8_t *num, char *text)
 {
 	char *fext= FILE_GSMS_TXT;
 	char *fname = get_gbox_tmp_fname(fext);
+
 	FILE *fhandle = fopen(fname, "r");
 	if(!fhandle)
 	{
@@ -29,9 +30,9 @@ static int32_t poll_gsms_data (uint16_t *boxid, uint8_t *num, char *text)
 	char *tail;
 
 	memset(buffer, 0, sizeof(buffer));
-	fseek(fhandle, 0L, SEEK_END);
+	fseek(fhandle, 0, SEEK_END);
 	length1 = ftell(fhandle);
-	fseek(fhandle, 0L, SEEK_SET);
+	fseek(fhandle, 0, SEEK_SET);
 
 	if(length1 < 13)
 	{
@@ -43,14 +44,14 @@ static int32_t poll_gsms_data (uint16_t *boxid, uint8_t *num, char *text)
 
 	if(fgets(buffer, 140, fhandle) != NULL)
 	{
-		*boxid = strtol (buffer, &tail, 16);
-		*num = atoi (tail);
+		*boxid = strtol(buffer, &tail, 16);
+		*num = atoi(tail);
 	}
 
 	fclose(fhandle);
 	unlink(fname);
 
-	if (length1 > (127 + 7))
+	if(length1 > 127 + 7)
 	{
 		length = 127 + 7;
 	}
@@ -59,11 +60,12 @@ static int32_t poll_gsms_data (uint16_t *boxid, uint8_t *num, char *text)
 		length = length1;
 	}
 
-	cs_log_dbg(D_READER, "total msg length taken from %s = %d, limitted to %d", fname, length1, length);
+	cs_log_dbg(D_READER, "total msg length taken from %s = %d, limited to %d", fname, length1, length);
 	cs_strncpy(text, buffer + 7, sizeof(buffer));
 
 	return 0;
 }
+
 static void write_gsms_to_osd_file(struct s_client *cli, uint8_t *gsms)
 {
 	char *fext= FILE_OSD_MSG;
@@ -78,7 +80,9 @@ static void write_gsms_to_osd_file(struct s_client *cli, uint8_t *gsms)
 		for(i = 0; i < strlen((char *)gsms); i++)
 		{
 			if(!isalnum(gsms[i]) && gsms[i] != ' ')
-				{ gsms[i] = '_'; }
+			{
+				gsms[i] = '_';
+			}
 		}
 
 		memset(gsms_buf, 0, sizeof(gsms_buf));
@@ -87,17 +91,19 @@ static void write_gsms_to_osd_file(struct s_client *cli, uint8_t *gsms)
 
 		char *cmd = gsms_buf;
 		FILE *p;
-		if ((p = popen(cmd, "w")) == NULL)
+		if((p = popen(cmd, "w")) == NULL)
 		{
-			cs_log("Error %s",fname);
+			cs_log("Error %s", fname);
 			return;
 		}
+
 		pclose(p);
 	}
+
 	return;
 }
 
-void write_gsms_ack (struct s_client *cli)
+void write_gsms_ack(struct s_client *cli)
 {
 	char tsbuf[28];
 	time_t walltime = cs_time();
@@ -105,18 +111,20 @@ void write_gsms_ack (struct s_client *cli)
 	struct gbox_peer *peer = cli->gbox;
 	char *fext = FILE_GSMS_ACK;
 	char *fname = get_gbox_tmp_fname(fext);
+
 	FILE *fhandle = fopen(fname, "a+");
 	if(!fhandle)
 	{
 		cs_log("Couldn't open %s: %s", fname, strerror(errno));
 		return;
 	}
-	fprintf(fhandle, "Peer %04X (%s) confirmed receipt of GSMS on %s",peer->gbox.id, cli->reader->device, tsbuf);
+
+	fprintf(fhandle, "Peer %04X (%s) confirmed receipt of GSMS on %s", peer->gbox.id, cli->reader->device, tsbuf);
 	fclose(fhandle);
 	return;
 }
 
-static void write_gsms_nack (struct s_client *cl, uint8_t inf)
+static void write_gsms_nack(struct s_client *cl, uint8_t inf)
 {
 	char tsbuf[28];
 	time_t walltime = cs_time();
@@ -147,7 +155,7 @@ static void write_gsms_nack (struct s_client *cl, uint8_t inf)
 	return;
 }
 
-void write_gsms_msg (struct s_client *cli, uint8_t *gsms, uint16_t type, uint16_t UNUSED(msglen))
+void write_gsms_msg(struct s_client *cli, uint8_t *gsms, uint16_t type, uint16_t UNUSED(msglen))
 {
 	char tsbuf[28];
 	time_t walltime = cs_time();
@@ -166,23 +174,20 @@ void write_gsms_msg (struct s_client *cli, uint8_t *gsms, uint16_t type, uint16_
 
 	if(type == 0x30)
 	{
-		fprintf(fhandle, "Normal message received from %04X %s on %s%s\n\n",
-			peer->gbox.id, cli->reader->device, tsbuf, gsms);
+		fprintf(fhandle, "Normal message received from %04X %s on %s%s\n\n", peer->gbox.id, cli->reader->device, tsbuf, gsms);
 		rdr->gbox_gsms_peer = peer->gbox.id;
 		snprintf(rdr->last_gsms, sizeof(rdr->last_gsms), "%s %s", gsms, tsbuf); // for easy handling of gsms by webif
 	}
 	else if(type == 0x31)
 	{
-		fprintf(fhandle, "OSD message received from %04X %s on %s%s\n\n",
-			peer->gbox.id, cli->reader->device, tsbuf, gsms);
+		fprintf(fhandle, "OSD message received from %04X %s on %s%s\n\n", peer->gbox.id, cli->reader->device, tsbuf, gsms);
 		write_gsms_to_osd_file(cli, gsms);
 		rdr->gbox_gsms_peer = peer->gbox.id;
 		snprintf(rdr->last_gsms, sizeof(rdr->last_gsms), "%s %s", gsms, tsbuf); // for easy handling of gsms by webif
 	}
 	else
 	{
-		fprintf(fhandle, "Corrupted message received from %04X %s on %s%s\n\n",
-			peer->gbox.id, cli->reader->device, tsbuf, gsms);
+		fprintf(fhandle, "Corrupted message received from %04X %s on %s%s\n\n", peer->gbox.id, cli->reader->device, tsbuf, gsms);
 	}
 
 	fclose(fhandle);
@@ -203,14 +208,16 @@ static void gbox_send_gsms2peer(struct s_client *cl, char *gsms, uint8_t msg_typ
 	struct s_reader *rdr = cl->reader;
 
 	gbox_message_header(outbuf, MSG_GSMS, peer->gbox.password, local_gbox_pw);
+
 	outbuf[10] = (peer->gbox.id >> 8) & 0xff;
 	outbuf[11] = peer->gbox.id & 0xff;
 	outbuf[12] = (local_gbox_id >> 8) & 0xff;
 	outbuf[13] = local_gbox_id & 0xff;
 	outbuf[14] = msg_type;
 	outbuf[15] = gsms_len;
-	memcpy(&outbuf[16], gsms,gsms_len);
+	memcpy(outbuf + 16, gsms, gsms_len);
 	outbuf[16 + gsms_len] = 0;
+
 	cs_log("<-[gbx] send GSMS to %s:%d id: %04X", rdr->device, rdr->r_port, peer->gbox.id);
 	gbox_send(cl, outbuf, gsms_len + 17);
 	return;
@@ -239,6 +246,7 @@ int gbox_direct_send_gsms(uint16_t boxid, uint8_t num, char *gsms)
 		gsms_len = GBOX_MAX_MSG_TXT;
 		cs_log("GBOX message is too long so it will be truncated to max. [%d]", GBOX_MAX_MSG_TXT);
 	}
+
 	cs_strncpy(text, gsms, sizeof(text));
 
 	switch(num)
@@ -270,37 +278,38 @@ int gbox_direct_send_gsms(uint16_t boxid, uint8_t num, char *gsms)
 	struct s_client *cl;
 	cs_readlock(__func__, &clientlist_lock);
 
-	for (cl = first_client; cl; cl = cl->next)
+	for(cl = first_client; cl; cl = cl->next)
 	{
 		peer_found=0;
 		if(cl->gbox && cl->typ == 'p')
 		{
 			struct gbox_peer *peer = cl->gbox;
-			if (peer->online && boxid == 0xFFFF) // send gsms to all peers online
+			if(peer->online && boxid == 0xFFFF) // send gsms to all peers online
 			{
 				gbox_send_gsms2peer(cl, text, msg_type, gsms_len);
 				peer_found=1;
 			}
 
-			if (!peer->online && boxid == 0xFFFF)
+			if(!peer->online && boxid == 0xFFFF)
 			{
 				cs_log("GBOX Info: peer %04X is OFFLINE", peer->gbox.id);
 				write_gsms_nack( cl, 1);
 			}
 
-			if (peer->online && boxid == peer->gbox.id)
+			if(peer->online && boxid == peer->gbox.id)
 			{
 				gbox_send_gsms2peer(cl, text, msg_type, gsms_len);
 				peer_found=1;
 			}
 
-			if (!peer->online && boxid == peer->gbox.id)
+			if(!peer->online && boxid == peer->gbox.id)
 			{
 				cs_log("GBOX WARNING: send GSMS failed - peer %04X is OFFLINE", peer->gbox.id);
 				write_gsms_nack( cl, 0);
 			}
 		}
 	}
+
 	cs_readunlock(__func__, &clientlist_lock);
 	return peer_found;
 }
@@ -312,19 +321,20 @@ void gbox_get_online_peers(void)
 
 	for(i = 0; i < GBOX_MAX_DEST_PEERS; i++)
 	{
-		cfg.gbox_dest_peers[i]='\0';
+		cfg.gbox_dest_peers[i] = '\0';
 	}
+
 	cfg.gbox_dest_peers_num = 0;
 	cs_readlock(__func__, &clientlist_lock);
 
 	for(cl = first_client; cl; cl = cl->next)
 	{
-		if((cl->gbox && cl->typ == 'p') && (n < GBOX_MAX_DEST_PEERS))
+		if(cl->gbox && cl->typ == 'p' && n < GBOX_MAX_DEST_PEERS)
 		{
 			struct gbox_peer *peer = cl->gbox;
-			if (peer->online) // peer is online
+			if(peer->online) // peer is online
 			{
-				cfg.gbox_dest_peers[n++] = (peer->gbox.id);
+				cfg.gbox_dest_peers[n++] = peer->gbox.id;
 			}
 		}
 	}
@@ -356,13 +366,15 @@ void gbox_init_send_gsms(void)
 	if(poll_result)
 	{
 		if(poll_result != -2)
-			{ cs_log("ERROR polling file %s", fname); }
-	return;
+		{
+			cs_log("ERROR polling file %s", fname);
+		}
+
+		return;
 	}
 
 	int8_t gsms_len = strlen(text);
-	cs_log_dbg(D_READER,"got from %s: box_ID = %04X num = %d gsms_length = %d txt = %s",
-		fname, boxid, num, gsms_len, text);
+	cs_log_dbg(D_READER,"got from %s: box_ID = %04X num = %d gsms_length = %d txt = %s", fname, boxid, num, gsms_len, text);
 
 	switch(num)
 	{
@@ -389,8 +401,7 @@ void gbox_init_send_gsms(void)
 			return;
 	}
 
-	cs_log_dbg(D_READER,"init gsms to boxid= %04X length= %d msg_type= %02X ",
-		boxid, gsms_len, msg_type);
+	cs_log_dbg(D_READER,"init gsms to boxid= %04X length= %d msg_type= %02X ", boxid, gsms_len, msg_type);
 
 	uint8_t id_valid = 0;
 	struct s_client *cl;
@@ -429,12 +440,14 @@ void gbox_init_send_gsms(void)
 			}
 		}
 	}
+
 	cs_readunlock(__func__, &clientlist_lock);
 
 	if(!id_valid)
 	{
 		cs_log("WARNING: send GSMS failed - peer_id unknown");
 	}
+
 	return;
 }
 
@@ -446,17 +459,18 @@ void gbox_send_gsms_ack(struct s_client *cli)
 	uint32_t local_gbox_pw = gbox_get_local_gbox_password();
 	struct s_reader *rdr = cli->reader;
 
-	if (peer->online)
+	if(peer->online)
 	{
 		gbox_message_header(outbuf, MSG_GSMS_ACK, peer->gbox.password, local_gbox_pw);
+
 		outbuf[10] = 0;
 		outbuf[11] = 0;
 		outbuf[12] = (local_gbox_id >> 8) & 0xff;
 		outbuf[13] = local_gbox_id & 0xff;
 		outbuf[14] = 0x1;
 		outbuf[15] = 0;
-		cs_log_dbg(D_READER,"<-[gbx] send GSMS_ACK to %s:%d id: %04X",
-			rdr->device, rdr->r_port, peer->gbox.id);
+
+		cs_log_dbg(D_READER,"<-[gbx] send GSMS_ACK to %s:%d id: %04X", rdr->device, rdr->r_port, peer->gbox.id);
 		gbox_send(cli, outbuf, 16);
 	}
 }
@@ -485,13 +499,14 @@ static void sms_sender(void)
 
 	while(sms_sender_active)
 	{
-		if (file_exists(fname))
+		if(file_exists(fname))
 		{
 			gbox_init_send_gsms();
 		}
 
 		sleepms_on_cond(__func__, &sleep_cond_mutex, &sleep_cond, 1000);
 	}
+
 	pthread_exit(NULL);
 }
 
