@@ -2999,8 +2999,8 @@ void dvbapi_read_priority(void)
 #if defined(WITH_STAPI) || defined(WITH_STAPI5)
 		if(type == 's')
 		{
-			strncpy(entry->devname, str1, 29);
-			strncpy(entry->pmtfile, str1 + 64, 29);
+			cs_strncpy(entry->devname, str1, sizeof(entry->devname));
+			cs_strncpy(entry->pmtfile, str1 + 64, sizeof(entry->pmtfile));
 			entry->disablefilter = disablefilter;
 			cs_log_dbg(D_DVBAPI, "stapi prio: ret=%d | %c: %s %s | disable %d",
 				ret, type, entry->devname, entry->pmtfile, disablefilter);
