@@ -172,6 +172,9 @@ static const char *get_descriptor_tag_txt(uint8_t descriptor_tag)
 		case 0x7C: return "AAC"; // with stream type 0x06
 		case 0x7D: return "XAIT location";
 		case 0x7F: return "DVB extension";
+		// Valid in ATSC context:
+		case 0x81: return "AC-3"; // with stream type 0x81
+		case 0xCC: return "enhanced AC-3"; // with stream type 0x87
 		default: return "user private";
 	}
 }
@@ -190,6 +193,7 @@ static const char *get_extension_descriptor_txt(uint8_t extension_tag)
 		case 0x18: return "protection message";
 		case 0x19: return "audio preselection";
 		case 0x20: return "TTML subtitling"; // (could become 0x1A, value in A038 draft seems weird)
+		case 0x21: return "DTS-UHD"; // with stream type 0x06 (could become 0x1B, value in A038 draft seems weird)
 		default: return "Undefined";
 	}
 }
@@ -3920,6 +3924,8 @@ static void dvbapi_parse_pmt_descriptors(int32_t demux_id, const uint8_t *buffer
 			case 0x7A: // Enhanced AC-3 descriptor (DVB)
 			case 0x7B: // DTS descriptor (DVB)
 			case 0x7C: // AAC descriptor (DVB)
+			case 0x81: // AC-3 descriptor (ATSC)
+			case 0xCC: // Enhanced AC-3 descriptor (ATSC)
 			{
 				*type = STREAM_AUDIO;
 				break;
@@ -3937,6 +3943,7 @@ static void dvbapi_parse_pmt_descriptors(int32_t demux_id, const uint8_t *buffer
 					case 0x0E: // DTS-HD descriptor (DVB)
 					case 0x0F: // DTS Neural descriptor (DVB)
 					case 0x15: // AC-4 descriptor (DVB)
+					case 0x21: // DTS-UHD descriptor (DVB)
 						*type = STREAM_AUDIO;
 						break;
 
@@ -3944,13 +3951,6 @@ static void dvbapi_parse_pmt_descriptors(int32_t demux_id, const uint8_t *buffer
 						*type = STREAM_UNDEFINED;
 						break;
 				}
-				break;
-			}
-
-			case 0x81: // AC-3 descriptor (ATSC)
-			{
-				*type = STREAM_AUDIO;
-				cs_log_dbg(D_DVBAPI, "Demuxer %d assuming AC-3 descriptor (ATSC)", demux_id);
 				break;
 			}
 
