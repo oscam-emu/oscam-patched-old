@@ -9,6 +9,7 @@
 #define TYPE_SDT 3
 #define TYPE_PAT 4
 #define TYPE_PMT 5
+#define TYPE_CAT 6
 
 // api
 #define DVBAPI_3    0
