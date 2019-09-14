@@ -2236,6 +2236,7 @@ struct s_config
 	int8_t			dvbapi_read_sdt;
 	int8_t			dvbapi_write_sdt_prov;
 	int8_t			dvbapi_extended_cw_api;
+	int8_t      		dvbapi_extended_cw_pids;            // pid limiter
 #endif
 
 #ifdef CS_ANTICASC

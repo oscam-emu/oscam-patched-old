@@ -4107,12 +4107,19 @@ static void dvbapi_parse_pmt_es_info(int32_t demux_id, const uint8_t *buffer, ui
 {
 	uint16_t i, elementary_pid, es_info_length, offset = 0;
 	uint8_t stream_type, type;
+	uint8_t max_pids = MAX_STREAM_PIDS;
+
+	// pid limiter for PowerVu (when limited number of hw descramblers)
+	if(caid_is_powervu(demux[demux_id].ECMpids[0].CAID))
+	{
+		max_pids = cfg.dvbapi_extended_cw_pids;
+	}
 
 	for(i = 0; i + 4 < length; i += 5 + es_info_length)
 	{
-		if(demux[demux_id].STREAMpidcount >= MAX_STREAM_PIDS)
+		if(demux[demux_id].STREAMpidcount >= max_pids)
 		{
-			cs_log("Demuxer %d reached maximum number of elementary streams", demux_id);
+			cs_log("Demuxer %d reached maximum number of elementary streams (%d)", demux_id, max_pids);
 			break;
 		}
 
