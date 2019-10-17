@@ -1082,6 +1082,7 @@ static const struct config_list reader_opts[] =
 	DEF_OPT_UINT8("gbox_max_ecm_send"             , OFS(gbox_maxecmsend),                 DEFAULT_GBOX_MAX_ECM_SEND),
 	DEF_OPT_UINT8("gbox_reshare"                  , OFS(gbox_reshare),                    DEFAULT_GBOX_RESHARE),
 	DEF_OPT_UINT8("cccam_reshare"                 , OFS(gbox_cccam_reshare),              DEFAULT_CCC_GBOX_RESHARE),
+	DEF_OPT_UINT8("force_remm"                    , OFS(gbox_force_remm),                 0),
 #endif
 	DEF_OPT_STR("readnano"                        , OFS(emmfile),                         NULL),
 	DEF_OPT_FUNC("services"                       , OFS(sidtabs),                         reader_services_fn),
@@ -1308,7 +1309,7 @@ static bool reader_check_setting(const struct config_list *UNUSED(clist), void *
 	// These are written only when the reader is GBOX
 	static const char *gbox_settings[] =
 	{
-		"gbox_max_distance", "gbox_max_ecm_send", "gbox_reshare", "cccam_reshare",
+		"gbox_max_distance", "gbox_max_ecm_send", "gbox_reshare", "cccam_reshare", "force_remm",
 		0
 	};
 	if(reader->typ != R_GBOX)

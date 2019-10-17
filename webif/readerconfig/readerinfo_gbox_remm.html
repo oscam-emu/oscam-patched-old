@@ -1,10 +1,11 @@
-				<TR><TH COLSPAN="2">Gbox Remote EMM Info</TH></TR>
-				<TR><TD><A>Remote EMM Request from:</A></TD>
+				<TR><TH COLSPAN="2">Gbox Remote EMM</TH></TR>
+				<TR><TD><A>Force REMM:</A></TD><TD><input name="force_remm" class="short" type="text" maxlength="2" value="##FORCEREMM##"><label>&nbsp;NOTE: Use only if AU card is not activated or entitlements are expired</label></TD></TR>
+				<TR><TD><A>INFO: REMM Request from Peer:</A></TD>
 				<TD CLASS="invisible">
 					<TABLE>
 						<TR>
-							<TD><A>Peer: </A><input name="remmcntd" type="hidden" value="0"><input name="remmcntd" type="checkbox" value="1" ##REMMCNLDCHK##></TD>
 							<TD><A>ID: </A><input name="gbox_remm_peer" class="short" type="text" maxlength="4" value="##GBOXREMMPEER##"></TD>
+							<TD><A>is active </A><input name="remmcntd" type="hidden" value="0"><input name="remmcntd" type="checkbox" value="1" ##REMMCNLDCHK##></TD>
 							<TD><A>req emm type: </A><input name="rqremm-u" type="hidden" value="0"><input name="rqremm-u" type="checkbox" value="1" ##REMMUNIQCHK##><label>unique</label></TD>
 							<TD><input name="rqremm-s" type="hidden" value="0"><input name="rqremm-s" type="checkbox" value="1" ##REMMSHAREDCHK##><label>shared</label></TD>
 							<TD><input name="rqremm-g" type="hidden" value="0"><input name="rqremm-g" type="checkbox" value="1" ##REMMEMMGLOBALCHK##><label>global</label></TD>

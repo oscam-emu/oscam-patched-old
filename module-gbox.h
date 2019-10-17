@@ -162,6 +162,7 @@ struct gbox_peer
 	struct s_client *my_user;
 	uint16_t filtered_cards;
 	uint16_t total_cards;
+	uint32_t last_remm_crc;
 };
 
 struct gbox_ecm_request_ext
