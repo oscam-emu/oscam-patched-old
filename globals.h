@@ -1771,6 +1771,7 @@ struct s_reader										// contains device info, reader info and card info
 	char			last_gsms[128];
 	uint16_t		gbox_remm_peer;
 	uint16_t		gbox_gsms_peer;
+	uint8_t			gbox_force_remm;
 #endif
 
 #ifdef MODULE_PANDORA

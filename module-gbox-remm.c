@@ -312,7 +312,7 @@ void gbox_send_remm_req(struct s_client *cli, ECM_REQUEST *er)
 	cl->lastcaid = er->caid;
 	cl->disable_counter++;
 
-	if (cl->disable_counter < 6) // delay 5 ecm
+	if (!cli->reader->gbox_force_remm && cl->disable_counter < 6) // delay 6 ecm
 		{ return; }
 
 	if(!memcmp(cl->lastserial, aureader->hexserial, 8))
@@ -327,6 +327,34 @@ void gbox_send_remm_req(struct s_client *cli, ECM_REQUEST *er)
 		{ cl->disable_counter = 0; }
 	else
 		{ return; }
+
+	uint8_t total_ent = 0;
+	uint8_t active_ent = 0;
+
+	if(aureader->ll_entitlements) // check for active entitlements
+		{
+			time_t now = time((time_t *)0);
+			LL_ITER itr = ll_iter_create(aureader->ll_entitlements);
+			S_ENTITLEMENT *ent;
+
+			while((ent = ll_iter_next(&itr)))
+				{
+					total_ent++;
+					if((ent->end > now) && (ent->type != 7))
+						{
+							active_ent++;
+						}
+				}
+					//cs_log("AU card %s: Total entitlements: %d - active entitlements: %d", aureader->label, total_ent,  active_ent);
+		}
+
+	if(total_ent && cli->reader->gbox_force_remm)
+		{
+			if(active_ent >= cli->reader->gbox_force_remm)
+				{
+					cs_log("WARNING: Card '%s' got %d active entitlements - consider to disable 'force_remm'", aureader->label, active_ent);
+				}
+		}
 
 	memset(mbuf, 0, sizeof(mbuf));
 
@@ -354,6 +382,7 @@ void gbox_send_remm_req(struct s_client *cli, ECM_REQUEST *er)
 
 	i2b_buf(2, er->pid, mbuf +21);
 	i2b_buf(2, au_caid, mbuf +23);
+
 	memcpy(mbuf +29, aureader->hexserial, 6); // serial 6 bytes
 	mbuf[37] = aureader->nprov;
 
@@ -395,20 +424,27 @@ void gbox_send_remm_req(struct s_client *cli, ECM_REQUEST *er)
 
 int32_t gbox_send_remm_data(EMM_PACKET *ep)
 {
-	uint8_t *buf;
 	struct s_client *cli = cur_client();
 	struct gbox_peer *peer = cli->gbox;
 
-	if(!cli->gbox || !cli->reader->tcp_connected || !ep)
+	if(!cli->gbox || !cli->reader->tcp_connected || !ep || !cli->reader->gbox_remm_peer)
 	{ return 0; }
 
+	uint32_t remm_crc = gbox_get_checksum(&ep->emm[0], ep->emmlen);
+
+	if(remm_crc == peer->last_remm_crc)
+		{ return 0; }
+
+	peer->last_remm_crc = remm_crc;
+
+	uint8_t *buf;
+
 	if(!cs_malloc(&buf, ep->emmlen +27 +15))
-	{ return -1; }
+		{ return -1; }
 
 	memset(buf, 0, 26);
 	memset(buf +27, 0xff, ep->emmlen + 15);
 
-	uint32_t remm_crc = gbox_get_checksum(&ep->emm[0], ep->emmlen);
 	uint16_t local_gbox_id = gbox_get_local_gbox_id();
 	uint32_t local_gbox_pw = gbox_get_local_gbox_password();
 
