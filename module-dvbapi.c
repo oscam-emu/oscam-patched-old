@@ -6161,18 +6161,14 @@ static void dvbapi_get_packet_size(uint8_t *mbuf, uint16_t mbuf_len, uint16_t *c
 	if((opcode & 0xFFFFF000) == DVBAPI_AOT_CA) // min 4+size bytes
 	{
 		// parse packet size (ASN.1)
-		uint32_t size = 0;
+		uint32_t sizebytes = 0;
+		uint32_t tmp_data_len = mbuf[3] & 0x7F;
 		if(mbuf[3] & 0x80)
 		{
-			uint32_t tmp_data_len = 0;
-			size = mbuf[3] & 0x7F;
-			if(3 + size < mbuf_len)
+			sizebytes = tmp_data_len;
+			if(3 + sizebytes < mbuf_len)
 			{
-				uint32_t k;
-				for(k = 0; k < size; k++)
-				{
-					tmp_data_len = (tmp_data_len << 8) | mbuf[4 + k];
-				}
+				tmp_data_len = b2i(sizebytes, mbuf + 4);
 			}
 			else
 			{
@@ -6185,19 +6181,11 @@ static void dvbapi_get_packet_size(uint8_t *mbuf, uint16_t mbuf_len, uint16_t *c
 			if(tmp_data_len > 0xFFFF)
 			{
 				cs_log("Socket command too big: %d bytes", tmp_data_len);
-				(*data_len) = 0xFFFF - 4 - size;
-			}
-			else
-			{
-				(*data_len) = tmp_data_len;
+				tmp_data_len = 0xFFFF - 4 - sizebytes;
 			}
 		}
-		else
-		{
-			(*data_len) = mbuf[3] & 0x7F;
-		}
-
-		(*chunksize) = 4 + size + (*data_len);
+		(*data_len) = tmp_data_len;
+		(*chunksize) = 4 + sizebytes + (*data_len);
 		cs_log_dbg(D_DVBAPI, "Got packet with opcode %08X and size %" PRIu16, opcode, (*chunksize));
 	}
 	else

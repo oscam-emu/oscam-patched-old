@@ -297,6 +297,8 @@ uint32_t b2i(int32_t n, const uint8_t *b)
 {
 	switch(n)
 	{
+		case 1:
+			return b[0];
 		case 2:
 			return (b[0] << 8) | b[1];
 
