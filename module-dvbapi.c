@@ -6133,6 +6133,17 @@ static uint16_t dvbapi_get_nbof_missing_header_bytes(uint8_t *mbuf, uint16_t mbu
 	}
 }
 
+static void set_chunksize_data_len_to_invalid(uint16_t *chunksize, uint16_t *data_len)
+{
+	(*chunksize) = 1;
+	(*data_len) = 1;
+}
+
+static void log_packeterror(uint16_t mbuf_len, const char* command)
+{ 
+	cs_log("dvbapi_get_packet_size(): error - buffer length (%" PRIu16 ") too short for %s", mbuf_len, command);
+}
+
 static void dvbapi_get_packet_size(uint8_t *mbuf, uint16_t mbuf_len, uint16_t *chunksize, uint16_t *data_len, uint16_t client_proto_version)
 {
 	//chunksize: size of complete chunk in the buffer (an opcode with the data)
@@ -6149,99 +6160,128 @@ static void dvbapi_get_packet_size(uint8_t *mbuf, uint16_t mbuf_len, uint16_t *c
 	if(mbuf_len < 4 + msgid_size)
 	{
 		cs_log("dvbapi_get_packet_size(): error - buffer length (%" PRIu16 ") too short", mbuf_len);
-		(*chunksize) = 1;
-		(*data_len) = 1;
+		set_chunksize_data_len_to_invalid(chunksize, data_len);
 		return;
 	}
 
 	mbuf += msgid_size;
+	
+	int32_t commandsize = 0;
+	char* command = "DVBAPI_UNKNOWN_COMMAND";
+	uint32_t tmp_data_len = 0;
 	uint32_t opcode = b2i(4, mbuf); //get the client opcode (4 bytes)
 
 	//detect the opcode, its size (chunksize) and its internal data size (data_len)
-	if((opcode & 0xFFFFF000) == DVBAPI_AOT_CA) // min 4+size bytes
+	switch (opcode)
 	{
-		// parse packet size (ASN.1)
-		uint32_t sizebytes = 0;
-		uint32_t tmp_data_len = mbuf[3] & 0x7F;
-		if(mbuf[3] & 0x80)
+		case DVBAPI_AOT_CA_STOP:
 		{
-			sizebytes = tmp_data_len;
-			if(3 + sizebytes < mbuf_len)
+			command = "DVBAPI_AOT_CA_STOP";
+			// parse packet size (ASN.1)
+			uint32_t sizebytes = 1;
+			commandsize = 3;
+			tmp_data_len = mbuf[3] & 0x7F;
+			if(mbuf[3] & 0x80)
 			{
-				tmp_data_len = b2i(sizebytes, mbuf + 4);
+				commandsize = 4;
+				sizebytes = tmp_data_len;
+				if(3 + sizebytes < mbuf_len)
+				{
+					tmp_data_len = b2i(sizebytes, mbuf + 4);
+				}
+				else
+				{
+					log_packeterror(mbuf_len, command);
+					break;
+				}
+			}
+			commandsize += sizebytes;
+			break;
+		}
+		case DVBAPI_FILTER_DATA:
+		{
+			command = "DVBAPI_FILTER_DATA";
+			commandsize = 9;
+			if(mbuf_len < commandsize)
+			{
+				log_packeterror(mbuf_len, command);
+				break;
+			}
+			tmp_data_len = b2i(2, mbuf + 7) & 0x0FFF;
+			break;
+		}
+
+		case DVBAPI_CLIENT_INFO:
+		{
+			command = "DVBAPI_CLIENT_INFO";
+			commandsize = 7;
+			if(mbuf_len < commandsize)
+			{
+				log_packeterror(mbuf_len, command);
+				break;
+			}
+			tmp_data_len = mbuf[6];
+			break;
+		}
+		
+		default:
+		{
+			if((opcode & 0xFFFFFF00) == DVBAPI_AOT_CA_PMT)
+			{
+				command = "DVBAPI_AOT_CA_PMT";
+				// parse packet size (ASN.1)
+				uint32_t sizebytes = 1;
+				commandsize = 3;
+				tmp_data_len = mbuf[3] & 0x7F;
+				if(mbuf[3] & 0x80)
+				{
+					commandsize = 4;
+					sizebytes = tmp_data_len;
+					if(3 + sizebytes < mbuf_len)
+					{
+						tmp_data_len = b2i(sizebytes, mbuf + 4);
+					}
+					else
+					{
+						log_packeterror(mbuf_len, command);
+						break;
+					}
+				}
+				commandsize += sizebytes;
+				break;
 			}
 			else
 			{
-				cs_log("dvbapi_get_packet_size(): error - buffer length (%" PRIu16 ") too short for opcode %08X", mbuf_len, opcode);
-				(*chunksize) = 1;
-				(*data_len) = 1;
-				return;
-			}
-
-			if(tmp_data_len > 0xFFFF)
-			{
-				cs_log("Socket command too big: %d bytes", tmp_data_len);
-				tmp_data_len = 0xFFFF - 4 - sizebytes;
-			}
-		}
-		(*data_len) = tmp_data_len;
-		(*chunksize) = 4 + sizebytes + (*data_len);
-		cs_log_dbg(D_DVBAPI, "Got packet with opcode %08X and size %" PRIu16, opcode, (*chunksize));
-	}
-	else
-	{
-		switch (opcode)
-		{
-			case DVBAPI_FILTER_DATA: // min 9 bytes
-			{
-				if(mbuf_len < 9)
-				{
-					cs_log("dvbapi_get_packet_size(): error - buffer length (%" PRIu16 ") too short for DVBAPI_FILTER_DATA", mbuf_len);
-					(*chunksize) = 1;
-					(*data_len) = 1;
-					return;
-				}
-				(*data_len) = b2i(2, mbuf + 7) & 0x0FFF;
-				(*chunksize) = 6 + 3 + (*data_len);
-				cs_log_dbg(D_DVBAPI, "Got DVBAPI_FILTER_DATA packet with size %" PRIu16, (*chunksize));
-				break;
-			}
-
-			case DVBAPI_CLIENT_INFO: // min 7 bytes
-			{
-				if(mbuf_len < 7)
-				{
-					cs_log("dvbapi_get_packet_size(): error - buffer length (%" PRIu16 ") too short for DVBAPI_CLIENT_INFO", mbuf_len);
-					(*chunksize) = 1;
-					(*data_len) = 1;
-					return;
-				}
-				(*data_len) = mbuf[6];
-				(*chunksize) = 6 + 1 + (*data_len);
-				cs_log_dbg(D_DVBAPI, "Got DVBAPI_CLIENT_INFO packet with size %" PRIu16, (*chunksize));
-				break;
-			}
-
-			default:
-			{
 				cs_log("Unknown socket command received: 0x%08X", opcode);
-				(*chunksize) = 1;
-				(*data_len) = 1;
-				break;
 			}
+			break;
 		}
 	}
-
-	if((*chunksize) < 1)
+	
+	if(mbuf_len < commandsize + tmp_data_len)
 	{
-		(*chunksize) = 1;
-		(*data_len) = 1;
+		cs_log("dvbapi_get_packet_size(): error - buffer length (%" PRIu16 ") too short for %s", mbuf_len, command);
+		set_chunksize_data_len_to_invalid(chunksize, data_len);
+		return;
+	}
+	
+	if(tmp_data_len + commandsize > 0xFFFF)
+	{
+		cs_log("Socket command too big: %d bytes => truncated!", tmp_data_len);
+		tmp_data_len = 0xFFFF - commandsize;
+	}
+	
+	(*data_len) = tmp_data_len;
+
+	if((*data_len) < 1)
+	{
+		cs_log("Socket command without data => ignoring!");
+		set_chunksize_data_len_to_invalid(chunksize, data_len);
+		return;
 	}
 
-	if((*chunksize) > 1)
-	{
-		(*chunksize) += msgid_size;
-	}
+	(*chunksize) += msgid_size + commandsize + (*data_len);
+	cs_log_dbg(D_DVBAPI, "Got %s packet with size %" PRIu16, command,(*chunksize));
 }
 
 static void dvbapi_handlesockmsg(uint8_t *mbuf, uint16_t chunksize, uint16_t data_len, uint8_t *add_to_poll, int32_t connfd, uint16_t *client_proto_version)
