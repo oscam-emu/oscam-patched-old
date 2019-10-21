@@ -6144,6 +6144,39 @@ static void log_packeterror(uint16_t mbuf_len, const char* command)
 	cs_log("dvbapi_get_packet_size(): error - buffer length (%" PRIu16 ") too short for %s", mbuf_len, command);
 }
 
+static bool is_commansize_valid(uint32_t commandsize, uint16_t mbuf_len, const char* command)
+{
+	if(mbuf_len < commandsize)
+	{
+		log_packeterror(mbuf_len, command);
+		return false;
+	}
+	return true;
+}
+
+static uint8_t get_asn1packetsize(uint8_t *mbuf, uint16_t mbuf_len, const char *command, uint32_t *tmp_data_len)
+{
+	uint8_t sizebytes = 1;
+	uint8_t commandsize = 3;
+	*tmp_data_len = mbuf[3] & 0x7F;
+	if(mbuf[3] & 0x80)
+	{
+		commandsize = 4;
+		sizebytes = *tmp_data_len;
+		if(3 + sizebytes < mbuf_len)
+		{
+			*tmp_data_len = b2i(sizebytes, mbuf + 4);
+		}
+		else
+		{
+			log_packeterror(mbuf_len, command);
+			*tmp_data_len = 0;
+			return 0;
+		}
+	}
+	return commandsize + sizebytes;
+}
+
 static void dvbapi_get_packet_size(uint8_t *mbuf, uint16_t mbuf_len, uint16_t *chunksize, uint16_t *data_len, uint16_t client_proto_version)
 {
 	//chunksize: size of complete chunk in the buffer (an opcode with the data)
@@ -6177,37 +6210,17 @@ static void dvbapi_get_packet_size(uint8_t *mbuf, uint16_t mbuf_len, uint16_t *c
 		case DVBAPI_AOT_CA_STOP:
 		{
 			command = "DVBAPI_AOT_CA_STOP";
-			// parse packet size (ASN.1)
-			uint32_t sizebytes = 1;
-			commandsize = 3;
-			tmp_data_len = mbuf[3] & 0x7F;
-			if(mbuf[3] & 0x80)
-			{
-				commandsize = 4;
-				sizebytes = tmp_data_len;
-				if(3 + sizebytes < mbuf_len)
-				{
-					tmp_data_len = b2i(sizebytes, mbuf + 4);
-				}
-				else
-				{
-					log_packeterror(mbuf_len, command);
-					break;
-				}
-			}
-			commandsize += sizebytes;
+			commandsize = get_asn1packetsize(mbuf, mbuf_len, command, &tmp_data_len);
 			break;
 		}
 		case DVBAPI_FILTER_DATA:
 		{
 			command = "DVBAPI_FILTER_DATA";
 			commandsize = 9;
-			if(mbuf_len < commandsize)
+			if(is_commansize_valid(commandsize, mbuf_len, command))
 			{
-				log_packeterror(mbuf_len, command);
-				break;
+				tmp_data_len = b2i(2, mbuf + 7) & 0x0FFF;
 			}
-			tmp_data_len = b2i(2, mbuf + 7) & 0x0FFF;
 			break;
 		}
 
@@ -6215,12 +6228,10 @@ static void dvbapi_get_packet_size(uint8_t *mbuf, uint16_t mbuf_len, uint16_t *c
 		{
 			command = "DVBAPI_CLIENT_INFO";
 			commandsize = 7;
-			if(mbuf_len < commandsize)
+			if(is_commansize_valid(commandsize, mbuf_len, command))
 			{
-				log_packeterror(mbuf_len, command);
-				break;
+				tmp_data_len = mbuf[6];
 			}
-			tmp_data_len = mbuf[6];
 			break;
 		}
 		
@@ -6229,25 +6240,7 @@ static void dvbapi_get_packet_size(uint8_t *mbuf, uint16_t mbuf_len, uint16_t *c
 			if((opcode & 0xFFFFFF00) == DVBAPI_AOT_CA_PMT)
 			{
 				command = "DVBAPI_AOT_CA_PMT";
-				// parse packet size (ASN.1)
-				uint32_t sizebytes = 1;
-				commandsize = 3;
-				tmp_data_len = mbuf[3] & 0x7F;
-				if(mbuf[3] & 0x80)
-				{
-					commandsize = 4;
-					sizebytes = tmp_data_len;
-					if(3 + sizebytes < mbuf_len)
-					{
-						tmp_data_len = b2i(sizebytes, mbuf + 4);
-					}
-					else
-					{
-						log_packeterror(mbuf_len, command);
-						break;
-					}
-				}
-				commandsize += sizebytes;
+				commandsize = get_asn1packetsize(mbuf, mbuf_len, command, &tmp_data_len);
 				break;
 			}
 			else
