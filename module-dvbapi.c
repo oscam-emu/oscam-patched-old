@@ -6163,7 +6163,7 @@ static uint8_t get_asn1packetsize(uint8_t *mbuf, uint16_t mbuf_len, const char *
 	{
 		commandsize = 4;
 		sizebytes = *tmp_data_len;
-		if(3 + sizebytes < mbuf_len)
+		if(commandsize + sizebytes < mbuf_len)
 		{
 			*tmp_data_len = b2i(sizebytes, mbuf + 4);
 		}
@@ -6251,7 +6251,7 @@ static void dvbapi_get_packet_size(uint8_t *mbuf, uint16_t mbuf_len, uint16_t *c
 		}
 	}
 	
-	if(mbuf_len < commandsize + tmp_data_len)
+	if(tmp_data_len + commandsize > mbuf_len)
 	{
 		cs_log("dvbapi_get_packet_size(): error - buffer length (%" PRIu16 ") too short for %s", mbuf_len, command);
 		set_chunksize_data_len_to_invalid(chunksize, data_len);
@@ -6263,17 +6263,10 @@ static void dvbapi_get_packet_size(uint8_t *mbuf, uint16_t mbuf_len, uint16_t *c
 		cs_log("Socket command too big: %d bytes => truncated!", tmp_data_len);
 		tmp_data_len = 0xFFFF - commandsize;
 	}
-	
+
 	(*data_len) = tmp_data_len;
-
-	if((*data_len) < 1)
-	{
-		cs_log("Socket command without data => ignoring!");
-		set_chunksize_data_len_to_invalid(chunksize, data_len);
-		return;
-	}
-
-	(*chunksize) += msgid_size + commandsize + (*data_len);
+	(*chunksize) += msgid_size + commandsize + tmp_data_len;
+	
 	cs_log_dbg(D_DVBAPI, "Got %s packet with size %" PRIu16, command,(*chunksize));
 }
 
