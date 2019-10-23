@@ -1393,9 +1393,17 @@ static uint8_t gbox_add_local_cards(void)
 			slot = gbox_next_free_slot(local_gbox.id);
 
 			// SECA, Viaccess and Cryptoworks have multiple providers
-			if(caid_is_seca(cl->reader->caid) || caid_is_viaccess(cl->reader->caid) || caid_is_cryptoworks(cl->reader->caid))
+			if(caid_is_seca(cl->reader->caid) || caid_is_cryptoworks(cl->reader->caid))
 			{
 				for(i = 0; i < cl->reader->nprov; i++)
+				{
+					prid = cl->reader->prid[i][1] << 16 | cl->reader->prid[i][2] << 8 | cl->reader->prid[i][3];
+					gbox_add_card(local_gbox.id, gbox_get_caprovid(cl->reader->caid, prid), slot, DEFAULT_GBOX_RESHARE, 0, GBOX_CARD_TYPE_LOCAL, NULL);
+				}
+			}
+			else if(caid_is_viaccess(cl->reader->caid)) //skip via issuer
+			{
+				for(i = 1; i < cl->reader->nprov; i++)
 				{
 					prid = cl->reader->prid[i][1] << 16 | cl->reader->prid[i][2] << 8 | cl->reader->prid[i][3];
 					gbox_add_card(local_gbox.id, gbox_get_caprovid(cl->reader->caid, prid), slot, DEFAULT_GBOX_RESHARE, 0, GBOX_CARD_TYPE_LOCAL, NULL);

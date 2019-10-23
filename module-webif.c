@@ -2843,6 +2843,7 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 			tpl_addVar(vars, TPLADD, "REMMUNIQCHK", (rdr->blockemm & EMM_UNIQUE) ? "" : "checked");
 			tpl_addVar(vars, TPLADD, "REMMSHAREDCHK", (rdr->blockemm & EMM_SHARED) ? "" : "checked");
 			tpl_addVar(vars, TPLADD, "REMMGLOBALCHK", (rdr->blockemm & EMM_GLOBAL) ? "" : "checked");
+			tpl_addVar(vars, TPLADD, "REMMEMMUNKNOWNCHK", (rdr->blockemm & EMM_UNKNOWN) ? "" : "checked");
 		}
 	if(rdr->gbox_gsms_peer)
 		{
