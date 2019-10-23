@@ -411,7 +411,7 @@ void gbox_send_remm_req(struct s_client *cli, ECM_REQUEST *er)
 
 	mbuf[119] = (aureader->blockemm & EMM_SHARED && !(aureader->saveemm & EMM_SHARED)) ? 0 : 1;
 	mbuf[120] = (aureader->blockemm & EMM_UNIQUE && !(aureader->saveemm & EMM_UNIQUE)) ? 0 : 1;
-	mbuf[121] = 0; // (aureader->blockemm & EMM_UNKNOWN && !(aureader->saveemm & EMM_UNKNOWN)) ? 0 : 1;
+	mbuf[121] = (aureader->blockemm & EMM_UNKNOWN && !(aureader->saveemm & EMM_UNKNOWN)) ? 0 : 1;
 
 	cs_log("<- %04X sends REMM REQ for type = %s%s%s%s to %s peer-id=%04X for reader=%s, caid=%04X", local_gbox_id,
 		mbuf[120] == 1 ? "UQ " : "", mbuf[119] == 1 ? "SH " : "", mbuf[118] == 1 ? "GL " : "", mbuf[121] == 1 ? "UK" : "",
