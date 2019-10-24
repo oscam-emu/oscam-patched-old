@@ -6144,33 +6144,30 @@ static void log_packeterror(uint16_t mbuf_len, const char* command)
 	cs_log("dvbapi_get_packet_size(): error - buffer length (%" PRIu16 ") too short for %s", mbuf_len, command);
 }
 
-static bool is_commansize_valid(uint32_t commandsize, uint16_t mbuf_len, const char* command)
+static bool is_commandsize_valid(uint32_t commandsize, uint16_t mbuf_len, const char* command)
 {
-	if(mbuf_len < commandsize)
+	bool isValid = mbuf_len >= commandsize;
+	if(!isValid)
 	{
 		log_packeterror(mbuf_len, command);
-		return false;
 	}
-	return true;
+	return isValid;
 }
 
 static uint8_t get_asn1packetsize(uint8_t *mbuf, uint16_t mbuf_len, const char *command, uint32_t *tmp_data_len)
 {
-	uint8_t sizebytes = 1;
-	uint8_t commandsize = 3;
+	uint8_t sizebytes = 0;
+	uint8_t commandsize = 4;
 	*tmp_data_len = mbuf[3] & 0x7F;
 	if(mbuf[3] & 0x80)
 	{
-		commandsize = 4;
 		sizebytes = *tmp_data_len;
-		if(commandsize + sizebytes < mbuf_len)
+		if(is_commandsize_valid(3 + sizebytes, mbuf_len, command))
 		{
 			*tmp_data_len = b2i(sizebytes, mbuf + 4);
 		}
 		else
 		{
-			log_packeterror(mbuf_len, command);
-			*tmp_data_len = 0;
 			return 0;
 		}
 	}
@@ -6217,7 +6214,7 @@ static void dvbapi_get_packet_size(uint8_t *mbuf, uint16_t mbuf_len, uint16_t *c
 		{
 			command = "DVBAPI_FILTER_DATA";
 			commandsize = 9;
-			if(is_commansize_valid(commandsize, mbuf_len, command))
+			if(is_commandsize_valid(commandsize, mbuf_len, command))
 			{
 				tmp_data_len = b2i(2, mbuf + 7) & 0x0FFF;
 			}
@@ -6228,7 +6225,7 @@ static void dvbapi_get_packet_size(uint8_t *mbuf, uint16_t mbuf_len, uint16_t *c
 		{
 			command = "DVBAPI_CLIENT_INFO";
 			commandsize = 7;
-			if(is_commansize_valid(commandsize, mbuf_len, command))
+			if(is_commandsize_valid(commandsize, mbuf_len, command))
 			{
 				tmp_data_len = mbuf[6];
 			}
@@ -6249,6 +6246,12 @@ static void dvbapi_get_packet_size(uint8_t *mbuf, uint16_t mbuf_len, uint16_t *c
 			}
 			break;
 		}
+	}
+	
+	if(tmp_data_len == 0 || commandsize == 0)
+	{
+		set_chunksize_data_len_to_invalid(chunksize, data_len);
+		return;
 	}
 	
 	if(tmp_data_len + commandsize > mbuf_len)
@@ -6400,7 +6403,7 @@ static void dvbapi_handlesockmsg(uint8_t *mbuf, uint16_t chunksize, uint16_t dat
 		{
 			case DVBAPI_FILTER_DATA:
 			{
-				if(data_len < 1)
+				if(data_len < 9)
 				{
 					cs_log("Error: packet DVBAPI_FILTER_DATA is too short!");
 					break;
