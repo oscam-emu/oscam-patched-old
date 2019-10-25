@@ -6268,7 +6268,7 @@ static void dvbapi_get_packet_size(uint8_t *mbuf, uint16_t mbuf_len, uint16_t *c
 	}
 
 	(*data_len) = tmp_data_len;
-	(*chunksize) += msgid_size + commandsize + tmp_data_len;
+	(*chunksize) += commandsize + tmp_data_len;
 	
 	cs_log_dbg(D_DVBAPI, "Got %s packet with size %" PRIu16, command,(*chunksize));
 }
@@ -6438,12 +6438,13 @@ static void dvbapi_handlesockmsg(uint8_t *mbuf, uint16_t chunksize, uint16_t dat
 					last_client_name[data_len] = 0;
 					cs_log("Client connected: '%s' (protocol version = %" PRIu16 ")", last_client_name, client_proto);
 				}
-
-				(*client_proto_version) = client_proto; // setting the global var according to the client
-				last_client_proto_version = client_proto;
-
-				// as a response we are sending our info to the client:
 				dvbapi_net_send(DVBAPI_SERVER_INFO, connfd, msgid, -1, -1, NULL, NULL, NULL, client_proto);
+
+				// now the protocol handshake is complete set correct version so all further packets are sent with correct message id.
+				(*client_proto_version) = client_proto; 
+				
+				// setting the global var according to the client
+				last_client_proto_version = client_proto;
 				break;
 			}
 
@@ -7134,6 +7135,8 @@ static void *dvbapi_main_local(void *cli)
 						if(!dvbapi_handlesockdata(connfd, mbuf, mbuf_size, unhandled_buf_used[i], &add_to_poll, &unhandled_buf_used[i], &client_proto_version[i]))
 						{
 							unhandled_buf_used[i] = 0;
+							client_proto_version[i] = 0; // reset protocol, next client could old protocol.
+							last_client_proto_version = 0;
 							// client disconnects, stop all assigned decoding
 							cs_log_dbg(D_DVBAPI, "Socket %d reported connection close", connfd);
 							int active_conn = 0; // other active connections counter
