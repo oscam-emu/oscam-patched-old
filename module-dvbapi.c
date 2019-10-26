@@ -4015,7 +4015,6 @@ void request_cw(struct s_client *client, ECM_REQUEST *er, int32_t demux_id, uint
 	}
 
 	er->adapter_index = demux[demux_id].adapter_index;
-	cs_log_dbg(D_DVBAPI, "Demuxer %d get controlword!", demux_id);
 	get_cw(client, er);
 
 #ifdef WITH_DEBUG
