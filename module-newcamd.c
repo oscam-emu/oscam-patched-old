@@ -1333,7 +1333,7 @@ static void newcamd_process_ecm(struct s_client *cl, uint8_t *buf, int32_t len)
 	}
 
 	ecmlen = SCT_LEN((&buf[2]));
-	if(ecmlen < 3 || ecmlen > MAX_ECM_SIZE || ecmlen + 2 > len)
+	if(ecmlen < 3 || ecmlen > MAX_ECM_SIZE || ecmlen + 2 >= len)
 	{
 		return;
 	}
