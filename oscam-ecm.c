@@ -2054,7 +2054,7 @@ void get_cw(struct s_client *client, ECM_REQUEST *er)
 	if(er->ecmlen > 2)
 	{
 		sct_len = SCT_LEN(er->ecm);
-		if(sct_len > er->ecmlen || sct_len == 0)
+		if(sct_len > er->ecmlen || sct_len < 4)
 		{
 			er->rc = E_INVALID;
 			er->rcEx = E2_GLOBAL;

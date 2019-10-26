@@ -5540,9 +5540,9 @@ void dvbapi_process_input(int32_t demux_id, int32_t filter_num, uint8_t *buffer,
 	uint16_t filtertype = demux[demux_id].demux_fd[filter_num].type;
 	uint16_t sctlen = SCT_LEN(buffer);
 	
-	if(sctlen == 0)
+	if(sctlen < 4)
 	{
-		cs_log_dbg(D_DVBAPI, "Received filter data with section length 0 -> invalid length!");
+		cs_log_dbg(D_DVBAPI, "Received filter data with invalid section length!");
 		return;
 	}
 
@@ -6034,7 +6034,7 @@ void dvbapi_process_input(int32_t demux_id, int32_t filter_num, uint8_t *buffer,
 			pbuf += done;
 			sctlen = SCT_LEN(pbuf);
 
-			if(unhandled < 4 || (int32_t)sctlen > unhandled || sctlen > MAX_EMM_SIZE || sctlen == 0)
+			if(unhandled < 4 || (int32_t)sctlen > unhandled || sctlen > MAX_EMM_SIZE || sctlen < 4)
 			{
 				break;
 			}

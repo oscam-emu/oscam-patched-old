@@ -669,7 +669,7 @@ static void camd35_process_ecm(uint8_t *buf, int buflen)
 
 	uint16_t ecmlen = SCT_LEN((&buf[20]));
 
-	if(ecmlen > MAX_ECM_SIZE || ecmlen + 20 > buflen || ecmlen == 0)
+	if(ecmlen > MAX_ECM_SIZE || ecmlen + 20 > buflen || ecmlen < 4)
 	{
 		return;
 	}
