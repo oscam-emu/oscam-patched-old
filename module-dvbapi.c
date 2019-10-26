@@ -4281,10 +4281,12 @@ static void get_demux_parameters(const uint8_t *buffer, demux_parameters_t *para
 
 		switch(descriptor_tag)
 		{
-			case 0x09: // We parse ca_descriptor() later
+			case CA:
+			{
 				break;
+			}
 
-			case 0x81: // enigma_namespace_descriptor()
+			case ENIGMA_NAMESPACE:
 			{
 				if(descriptor_length == 0x08)
 				{
@@ -4295,7 +4297,7 @@ static void get_demux_parameters(const uint8_t *buffer, demux_parameters_t *para
 				break;
 			}
 
-			case 0x82: // demux, ca_mask, adapter (deprecated - applications should use descriptors 0x83, 0x86 and 0x87 instead)
+			case DEMUX_CA_MASK_ADAPTER:
 			{
 				if(descriptor_length == 0x02 && (cfg.dvbapi_boxtype == BOXTYPE_PC ||
 					cfg.dvbapi_boxtype == BOXTYPE_PC_NODMX || cfg.dvbapi_boxtype == BOXTYPE_SAMYGO))
@@ -4330,7 +4332,7 @@ static void get_demux_parameters(const uint8_t *buffer, demux_parameters_t *para
 				break;
 			}
 
-			case 0x83: // adapter_device_descriptor()
+			case ADAPTER_DEVICE:
 			{
 				if(descriptor_length == 0x01)
 				{
@@ -4339,7 +4341,7 @@ static void get_demux_parameters(const uint8_t *buffer, demux_parameters_t *para
 				break;
 			}
 
-			case 0x84: // pmt_pid_descriptor()
+			case PMT_PID:
 			{
 				if(descriptor_length == 0x02)
 				{
@@ -4348,10 +4350,10 @@ static void get_demux_parameters(const uint8_t *buffer, demux_parameters_t *para
 				break;
 			}
 
-			case 0x85: // service_type_mask_descriptor() (not used by OSCam)
+			case SERVICE_TYPE_MASK:
 				break;
 
-			case 0x86: // demux_device_descriptor()
+			case DEMUX_DEVICE:
 			{
 				if(descriptor_length == 0x01)
 				{
@@ -4361,7 +4363,7 @@ static void get_demux_parameters(const uint8_t *buffer, demux_parameters_t *para
 				break;
 			}
 
-			case 0x87: // ca_device_descriptor()
+			case CA_DEVICE:
 			{
 				if(descriptor_length == 0x01)
 				{
@@ -4372,8 +4374,7 @@ static void get_demux_parameters(const uint8_t *buffer, demux_parameters_t *para
 
 			default:
 			{
-				cs_log_dbg(D_DVBAPI, "Skipped unsupported or CA PMT irrelevant descriptor (tag: %02X length: %02X)",
-					descriptor_tag, descriptor_length);
+				cs_log_dbg(D_DVBAPI, "Skipped unsupported or CA PMT irrelevant descriptor (tag: %02X length: %02X)", descriptor_tag, descriptor_length);
 				break;
 			}
 		}
@@ -4730,7 +4731,7 @@ int32_t dvbapi_parse_capmt(const uint8_t *buffer, uint32_t length, int32_t connf
 			return -1;
 		}
 
-		case CA_PMT_CMD_NOT_SELETED:
+		case CA_PMT_CMD_NOT_SELECTED:
 		{
 			cs_log("Program %04X is not selected for descrambling", demux[demux_id].program_number);
 			dvbapi_stop_descrambling(demux_id, msgid); // Clear all data from this demuxer
@@ -6199,9 +6200,9 @@ static void dvbapi_get_packet_size(uint8_t *mbuf, uint16_t mbuf_len, uint16_t *c
 	int32_t commandsize = 0;
 	char* command = "DVBAPI_UNKNOWN_COMMAND";
 	uint32_t tmp_data_len = 0;
-	uint32_t opcode = b2i(4, mbuf); //get the client opcode (4 bytes)
+	uint32_t opcode = b2i(4, mbuf);
+	cs_log_dump_dbg(D_DVBAPI, mbuf-msgid_size, mbuf_len, "Got packet opcode: %04X, msgidsize: %d, clientproto: %d", opcode, msgid_size, client_proto_version);
 
-	//detect the opcode, its size (chunksize) and its internal data size (data_len)
 	switch (opcode)
 	{
 		case DVBAPI_AOT_CA_STOP:
@@ -6256,21 +6257,22 @@ static void dvbapi_get_packet_size(uint8_t *mbuf, uint16_t mbuf_len, uint16_t *c
 	
 	if(tmp_data_len + commandsize > mbuf_len)
 	{
-		cs_log("dvbapi_get_packet_size(): error - buffer length (%" PRIu16 ") too short for %s", mbuf_len, command);
+		
+		cs_log("This %s packet is incomplete => command length is (%" PRIu16 ")", command, tmp_data_len + commandsize);
 		set_chunksize_data_len_to_invalid(chunksize, data_len);
 		return;
 	}
 	
 	if(tmp_data_len + commandsize > 0xFFFF)
 	{
-		cs_log("Socket command too big: %d bytes => truncated!", tmp_data_len);
+		cs_log("This packet is too big: %d bytes => truncated!", tmp_data_len);
 		tmp_data_len = 0xFFFF - commandsize;
 	}
 
 	(*data_len) = tmp_data_len;
 	(*chunksize) += commandsize + tmp_data_len;
 	
-	cs_log_dbg(D_DVBAPI, "Got %s packet with size %" PRIu16, command,(*chunksize));
+	cs_log_dbg(D_DVBAPI, "This is a %s packet with size %d => lets process it!", command, (*chunksize));
 }
 
 static void dvbapi_handlesockmsg(uint8_t *mbuf, uint16_t chunksize, uint16_t data_len, uint8_t *add_to_poll, int32_t connfd, uint16_t *client_proto_version)
@@ -6287,89 +6289,97 @@ static void dvbapi_handlesockmsg(uint8_t *mbuf, uint16_t chunksize, uint16_t dat
 		mbuf += 5;
 	}
 
-	uint32_t opcode = b2i(4, mbuf); //get the client opcode (4 bytes)
-	if((opcode & 0xFFFFF000) == DVBAPI_AOT_CA)
+	uint32_t opcode = b2i(4, mbuf);
+	
+	switch(opcode)
 	{
-		cs_log_dump_dbg(D_DVBAPI, mbuf, chunksize, "Received CA PMT object on socket %d:", connfd);
-
-		switch(opcode & 0xFFFFFF00)
+		case DVBAPI_FILTER_DATA:
 		{
-			case DVBAPI_AOT_CA_PMT:
-			{
-				if(data_len < 5)
-				{
-					cs_log("Error: packet DVBAPI_AOT_CA_PMT is too short!");
-					break;
-				}
+			int32_t demux_id = mbuf[4];
+			int32_t filter_num = mbuf[5];
 
-				dvbapi_parse_capmt(mbuf + (chunksize - data_len), data_len, connfd, NULL, *client_proto_version, msgid);
+			if(demux_id < 0 || demux_id >= MAX_DEMUX)
+			{
+				cs_log("dvbapi_handlesockmsg(): error - received invalid demux_id (%d)", demux_id);
 				break;
 			}
 
-			case (DVBAPI_AOT_CA_STOP & 0xFFFFFF00):
+			if(filter_num < 0 || filter_num >= MAX_FILTER)
 			{
-				// 9F 80 3f 04 83 02 00 <demux index>
-				if(opcode != DVBAPI_AOT_CA_STOP)
-				{
-					cs_log_dbg(D_DVBAPI, "dvbapi_handlesockmsg(): DVBAPI_AOT_CA opcode unknown: %08X", opcode);
-					break;
-				}
+				cs_log("dvbapi_handlesockmsg(): error - received invalid filter_num (%d)", filter_num);
+				break;
+			}
+			dvbapi_process_input(demux_id, filter_num, mbuf + 6, data_len + 3, msgid);
+			break;
+		}
 
+		case DVBAPI_CLIENT_INFO:
+		{
+			uint16_t client_proto = b2i(2, mbuf + 4);
+			NULLFREE(last_client_name);
+
+			if(cs_malloc(&last_client_name, data_len + 1))
+			{
+				memcpy(last_client_name, &mbuf[7], data_len);
+				last_client_name[data_len] = 0;
+				cs_log("Client connected: '%s' (protocol version = %" PRIu16 ")", last_client_name, client_proto);
+			}
+			dvbapi_net_send(DVBAPI_SERVER_INFO, connfd, msgid, -1, -1, NULL, NULL, NULL, client_proto);
+
+			// now the protocol handshake is complete set correct version so all further packets are sent with correct message id.
+			(*client_proto_version) = client_proto; 
+				
+			// setting the global var according to the client
+			last_client_proto_version = client_proto;
+			break;
+		}
+			
+		case DVBAPI_AOT_CA_PMT:
+		{
+			cs_log_dbg(D_DVBAPI,"Received DVBAPI_AOT_CA_PMT object on socket %d:", connfd);
+			dvbapi_parse_capmt(mbuf + (chunksize - data_len), data_len, connfd, NULL, *client_proto_version, msgid);
+			(*add_to_poll) = 0;
+			break;
+		}
+
+		case (DVBAPI_AOT_CA_STOP):
+		{
+			cs_log_dbg(D_DVBAPI, "Received DVBAPI_AOT_CA_STOP object on socket %d:", connfd);
+			if(cfg.dvbapi_boxtype == BOXTYPE_IPBOX || cfg.dvbapi_boxtype == BOXTYPE_PC_NODMX || cfg.dvbapi_listenport)
+			{
 				int32_t i;
-
-				if(data_len < 4)
+				int32_t demux_index = mbuf[7];
+				for(i = 0; i < MAX_DEMUX; i++)
 				{
-					cs_log("Error: packet DVBAPI_AOT_CA_STOP is too short!");
-					break;
-				}
-
-				// ipbox fix
-				if(cfg.dvbapi_boxtype == BOXTYPE_IPBOX || cfg.dvbapi_boxtype == BOXTYPE_PC_NODMX || cfg.dvbapi_listenport)
-				{
-					int32_t demux_index = mbuf[7];
-					for(i = 0; i < MAX_DEMUX; i++)
+					// 0xff demux_index is a wildcard => close all related demuxers
+					if(demux_index == 0xff)
 					{
-						// 0xff demux_index is a wildcard => close all related demuxers
-						if(demux_index == 0xff)
-						{
-							if(demux[i].socket_fd == connfd)
-							{
-								dvbapi_stop_descrambling(i, msgid);
-							}
-						}
-						else if(demux[i].demux_index == demux_index)
+						if(demux[i].socket_fd == connfd)
 						{
 							dvbapi_stop_descrambling(i, msgid);
+						}
+					}
+					else if(demux[i].demux_index == demux_index)
+					{
+						dvbapi_stop_descrambling(i, msgid);
+						break;
+					}
+				}
+					
+				// ipbox fix
+				if(cfg.dvbapi_boxtype == BOXTYPE_IPBOX)
+				{
+					// check do we have any demux running on this fd
+					int16_t execlose = 1;
+					for(i = 0; i < MAX_DEMUX; i++)
+					{
+						if(demux[i].socket_fd == connfd)
+						{
+							execlose = 0;
 							break;
 						}
 					}
-
-					if(cfg.dvbapi_boxtype == BOXTYPE_IPBOX)
-					{
-						// check do we have any demux running on this fd
-						int16_t execlose = 1;
-						for(i = 0; i < MAX_DEMUX; i++)
-						{
-							if(demux[i].socket_fd == connfd)
-							{
-								execlose = 0;
-								break;
-							}
-						}
-
-						if(execlose)
-						{
-							int32_t ret = close(connfd);
-							if(ret < 0)
-							{
-								cs_log("ERROR: Could not close PMT fd (errno=%d %s)", errno, strerror(errno));
-							}
-						}
-					}
-				}
-				else
-				{
-					if(cfg.dvbapi_pmtmode != 6)
+					if(execlose)
 					{
 						int32_t ret = close(connfd);
 						if(ret < 0)
@@ -6378,85 +6388,39 @@ static void dvbapi_handlesockmsg(uint8_t *mbuf, uint16_t chunksize, uint16_t dat
 						}
 					}
 				}
-				break;
+					
+				if(cfg.dvbapi_listenport)
+				{
+					(*add_to_poll) = 1;
+					break;
+				}
 			}
-
-			default:
+			else if(cfg.dvbapi_pmtmode != 6)
 			{
-				cs_log_dbg(D_DVBAPI, "dvbapi_handlesockmsg(): DVBAPI_AOT_CA opcode unknown: %08X", opcode);
-				break;
+				int32_t ret = close(connfd);
+				if(ret < 0)
+				{
+					cs_log("ERROR: Could not close PMT fd (errno=%d %s)", errno, strerror(errno));
+				}
 			}
-		}
-
-		if(cfg.dvbapi_listenport && opcode == DVBAPI_AOT_CA_STOP)
-		{
-			(*add_to_poll) = 1;
-		}
-		else
-		{
 			(*add_to_poll) = 0;
+			break;
 		}
-	}
-	else
-	{
-		switch(opcode)
+		default:
 		{
-			case DVBAPI_FILTER_DATA:
+			if((opcode & 0xFFFFFF00) == DVBAPI_AOT_CA_PMT)
 			{
-				if(data_len < 9)
-				{
-					cs_log("Error: packet DVBAPI_FILTER_DATA is too short!");
-					break;
-				}
-
-				int32_t demux_id = mbuf[4];
-				int32_t filter_num = mbuf[5];
-
-				if(demux_id < 0 || demux_id >= MAX_DEMUX)
-				{
-					cs_log("dvbapi_handlesockmsg(): error - received invalid demux_id (%d)", demux_id);
-					break;
-				}
-
-				if(filter_num < 0 || filter_num >= MAX_FILTER)
-				{
-					cs_log("dvbapi_handlesockmsg(): error - received invalid filter_num (%d)", filter_num);
-					break;
-				}
-				dvbapi_process_input(demux_id, filter_num, mbuf + 6, data_len + 3, msgid);
-				break;
+				cs_log_dbg(D_DVBAPI, "Received DVBAPI_AOT_CA_PMT object on socket %d:", connfd);
+				dvbapi_parse_capmt(mbuf + (chunksize - data_len), data_len, connfd, NULL, *client_proto_version, msgid);
 			}
-
-			case DVBAPI_CLIENT_INFO:
+			else
 			{
-				uint16_t client_proto = b2i(2, mbuf + 4);
-				NULLFREE(last_client_name);
-
-				if(cs_malloc(&last_client_name, data_len + 1))
-				{
-					memcpy(last_client_name, &mbuf[7], data_len);
-					last_client_name[data_len] = 0;
-					cs_log("Client connected: '%s' (protocol version = %" PRIu16 ")", last_client_name, client_proto);
-				}
-				dvbapi_net_send(DVBAPI_SERVER_INFO, connfd, msgid, -1, -1, NULL, NULL, NULL, client_proto);
-
-				// now the protocol handshake is complete set correct version so all further packets are sent with correct message id.
-				(*client_proto_version) = client_proto; 
-				
-				// setting the global var according to the client
-				last_client_proto_version = client_proto;
-				break;
+				cs_log("Unknown socket command received: 0x%08X", opcode);
 			}
-
-			default:
-			{
-				cs_log_dbg(D_DVBAPI, "dvbapi_handlesockmsg(): opcode unknown: %08X", opcode);
-				cs_log_dump(mbuf, chunksize, "Unknown command:");
-				break;
-			}
+			break;
 		}
 	}
-}
+}	
 
 static bool dvbapi_handlesockdata(int32_t connfd, uint8_t *mbuf, uint16_t mbuf_size, uint16_t unhandled_len,
 					uint8_t *add_to_poll, uint16_t *new_unhandled_len, uint16_t *client_proto_version)
