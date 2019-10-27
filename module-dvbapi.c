@@ -4163,11 +4163,12 @@ static void dvbapi_parse_pmt_es_info(int32_t demux_id, const uint8_t *buffer, ui
 			case 0x1C:
 			case 0x2D:
 			case 0x2E:
+			case 0x81:
 				demux[demux_id].STREAMpidsType[demux[demux_id].STREAMpidcount] = STREAM_AUDIO;
 				break;
 
 			case 0x06:
-			case 0x81:
+			//case 0x81: some ATSC AC-3 streams do not contain the AC-3 descriptor!
 			case 0x87:
 				// Set the type based on the descriptors for these stream types
 				demux[demux_id].STREAMpidsType[demux[demux_id].STREAMpidcount] = type;
