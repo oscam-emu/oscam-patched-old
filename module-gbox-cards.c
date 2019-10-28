@@ -508,7 +508,7 @@ static int8_t is_already_pending(LLIST *pending_cards, uint16_t peer_id, uint8_t
 	return ret;
 }
 
-uint8_t gbox_get_cards_for_ecm(uint8_t *send_buf, int32_t len2, uint8_t max_cards, ECM_REQUEST *er, uint32_t *current_avg_card_time, uint16_t peer_id)
+uint8_t gbox_get_cards_for_ecm(uint8_t *send_buf, int32_t len2, uint8_t max_cards, ECM_REQUEST *er, uint32_t *current_avg_card_time, uint16_t peer_id, uint8_t force_remm)
 {
 	if (!send_buf || !er)
 		{ return 0; }
@@ -596,9 +596,18 @@ uint8_t gbox_get_cards_for_ecm(uint8_t *send_buf, int32_t len2, uint8_t max_card
 					{
 						if (srvid_bad->bad_strikes < 3)
 						{
-							sid_verified = 2;
-							srvid_bad->bad_strikes++;
-						}
+						 sid_verified = 2;
+							if(!force_remm)
+							 	{
+							 		srvid_bad->bad_strikes++;
+							 	}
+							else
+								{
+									srvid_bad->bad_strikes = 1;
+									cs_log("cards.c - get card for ecm - Block bad sid - %d bad strikes", srvid_bad->bad_strikes);
+								}
+ 						}
+
 						else
 							{ sid_verified = 1; }
 						cs_log_dbg(D_READER, "ID: %04X SL: %02X SID: %04X is bad %d", card->id.peer, card->id.slot, srvid_bad->srvid.sid, srvid_bad->bad_strikes);

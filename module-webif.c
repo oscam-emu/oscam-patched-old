@@ -2834,6 +2834,7 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 	tpl_printf(vars, TPLADD, "GBOXRESHARE",   "%d", rdr->gbox_reshare);
 	tpl_printf(vars, TPLADD, "PEERGBOXID",  "%04X", gbox_convert_password_to_id((uint32_t)a2i(rdr->r_pwd, 4)));
 	tpl_addVar(vars, TPLADD, "PEERONLSTAT", (get_peer_onl_status(gbox_convert_password_to_id((uint32_t)a2i(rdr->r_pwd, 4)))) ? "checked" : "");
+	tpl_printf(vars, TPLADD, "FORCEREMM", "%d", rdr->gbox_force_remm);
 
 	if(rdr->blockemm & 0x80)
 		{
@@ -2842,6 +2843,7 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 			tpl_addVar(vars, TPLADD, "REMMUNIQCHK", (rdr->blockemm & EMM_UNIQUE) ? "" : "checked");
 			tpl_addVar(vars, TPLADD, "REMMSHAREDCHK", (rdr->blockemm & EMM_SHARED) ? "" : "checked");
 			tpl_addVar(vars, TPLADD, "REMMGLOBALCHK", (rdr->blockemm & EMM_GLOBAL) ? "" : "checked");
+			tpl_addVar(vars, TPLADD, "REMMEMMUNKNOWNCHK", (rdr->blockemm & EMM_UNKNOWN) ? "" : "checked");
 		}
 	if(rdr->gbox_gsms_peer)
 		{

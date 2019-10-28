@@ -192,7 +192,6 @@ void gbox_write_peer_onl(void)
 					peer->onlinestat = 1;
 					cs_log("comeONLINE: %s %s boxid: %04X v2.%02X cards:%d", cl->reader->device,
 						cs_inet_ntoa(cl->ip), peer->gbox.id, peer->gbox.minor_version, peer->filtered_cards);
-
 					write_msg_info(cl, MSGID_COMEONLINE, 0, peer->filtered_cards);
 				}
 			}
@@ -1394,9 +1393,17 @@ static uint8_t gbox_add_local_cards(void)
 			slot = gbox_next_free_slot(local_gbox.id);
 
 			// SECA, Viaccess and Cryptoworks have multiple providers
-			if(caid_is_seca(cl->reader->caid) || caid_is_viaccess(cl->reader->caid) || caid_is_cryptoworks(cl->reader->caid))
+			if(caid_is_seca(cl->reader->caid) || caid_is_cryptoworks(cl->reader->caid))
 			{
 				for(i = 0; i < cl->reader->nprov; i++)
+				{
+					prid = cl->reader->prid[i][1] << 16 | cl->reader->prid[i][2] << 8 | cl->reader->prid[i][3];
+					gbox_add_card(local_gbox.id, gbox_get_caprovid(cl->reader->caid, prid), slot, DEFAULT_GBOX_RESHARE, 0, GBOX_CARD_TYPE_LOCAL, NULL);
+				}
+			}
+			else if(caid_is_viaccess(cl->reader->caid)) //skip via issuer
+			{
+				for(i = 1; i < cl->reader->nprov; i++)
 				{
 					prid = cl->reader->prid[i][1] << 16 | cl->reader->prid[i][2] << 8 | cl->reader->prid[i][3];
 					gbox_add_card(local_gbox.id, gbox_get_caprovid(cl->reader->caid, prid), slot, DEFAULT_GBOX_RESHARE, 0, GBOX_CARD_TYPE_LOCAL, NULL);
@@ -1596,7 +1603,7 @@ static int8_t gbox_check_header_recvd(struct s_client *cli, struct s_client *pro
 	}
 	else // error my passw
 	{
-		cs_log("-> ATTACK ALERT from IP %s - peer sends wrong local password", cs_inet_ntoa(cli->ip));
+		cs_log("-> ATTACK ALERT from IP %s - peer sends wrong local password: %08X", cs_inet_ntoa(cli->ip), my_received_pw);
 		cs_log_dbg(D_READER,"-> received data: %s", cs_hexdump(0, data, n, tmp, sizeof(tmp)));
 		handle_attack(cli, GBOX_ATTACK_LOCAL_PW, 0);
 		return -1;
@@ -1697,6 +1704,14 @@ static void gbox_send_dcw(struct s_client *cl, ECM_REQUEST *er)
 	}
 	struct gbox_peer *peer = cli->gbox;
 
+	struct gbox_ecm_request_ext *ere = er->src_data;
+
+	if(er->rc == E_NOTFOUND && cli->reader->gbox_force_remm && ere->gbox_rev >> 4)
+	{ 
+		gbox_send_remm_req(cli, er);
+		return;
+	}
+
 	if(er->rc >= E_NOTFOUND)
 	{
 		cs_log_dbg(D_READER, "unable to decode!");
@@ -1706,8 +1721,6 @@ static void gbox_send_dcw(struct s_client *cl, ECM_REQUEST *er)
 
 	uint8_t buf[60];
 	memset(buf, 0, sizeof(buf));
-
-	struct gbox_ecm_request_ext *ere = er->src_data;
 
 	gbox_message_header(buf, MSG_CW , peer->gbox.password, 0);
 	i2b_buf(2, er->pid, buf + 6); // PID
@@ -1912,7 +1925,7 @@ static int32_t gbox_send_ecm(struct s_client *cli, ECM_REQUEST *er)
 	send_buf[len1 + 9] = 0x00;
 	buflen = len1 + 10;
 
-	nb_matching_crds = gbox_get_cards_for_ecm(&send_buf[0], len1 + 10, cli->reader->gbox_maxecmsend, er, &current_avg_card_time, peer->gbox.id);
+	nb_matching_crds = gbox_get_cards_for_ecm(&send_buf[0], len1 + 10, cli->reader->gbox_maxecmsend, er, &current_avg_card_time, peer->gbox.id, cli->reader->gbox_force_remm);
 
 	if (nb_matching_crds == cli->reader->gbox_maxecmsend)
 	{
