@@ -6261,14 +6261,6 @@ static void dvbapi_get_packet_size(uint8_t *mbuf, uint16_t mbuf_len, uint16_t *c
 		return;
 	}
 	
-	if(tmp_data_len + commandsize > mbuf_len)
-	{
-		
-		cs_log("This %s packet is incomplete => command length is (%" PRIu16 ")", command, tmp_data_len + commandsize);
-		set_chunksize_data_len_to_invalid(chunksize, data_len);
-		return;
-	}
-	
 	if(tmp_data_len + commandsize > 0xFFFF)
 	{
 		cs_log("This packet is too big: %d bytes => truncated!", tmp_data_len);
@@ -6278,7 +6270,14 @@ static void dvbapi_get_packet_size(uint8_t *mbuf, uint16_t mbuf_len, uint16_t *c
 	(*data_len) = tmp_data_len;
 	(*chunksize) += commandsize + tmp_data_len;
 	
-	cs_log_dbg(D_DVBAPI, "This is a %s packet with size %d => lets process it!", command, (*chunksize));
+	if(*chunksize > mbuf_len)
+	{
+		cs_log_dbg(D_DVBAPI, "This %s packet is incomplete => command length is (%" PRIu16 ")", command, *chunksize);
+	}
+	else
+	{
+		cs_log_dbg(D_DVBAPI, "This is a %s packet with size %d => lets process it!", command, (*chunksize));
+	}
 }
 
 static void dvbapi_handlesockmsg(uint8_t *mbuf, uint16_t chunksize, uint16_t data_len, uint8_t *add_to_poll, int32_t connfd, uint16_t *client_proto_version)
