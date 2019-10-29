@@ -6097,10 +6097,7 @@ static int32_t dvbapi_recv(int32_t connfd, uint8_t *mbuf, size_t rlen)
 
 static uint16_t dvbapi_get_nbof_missing_header_bytes(uint8_t *mbuf, uint16_t mbuf_len)
 {
-	if(mbuf_len < 4)
-	{
-		return 4 - mbuf_len;
-	}
+	
 	uint32_t opcode = b2i(4, mbuf); //get the client opcode (4 bytes)
 
 	// detect the opcode, its size (chunksize) and its internal data size (data_len)
@@ -6123,14 +6120,14 @@ static uint16_t dvbapi_get_nbof_missing_header_bytes(uint8_t *mbuf, uint16_t mbu
 			case DVBAPI_FILTER_DATA: // min 9 bytes
 				if(mbuf_len < 9)
 				{
-					return 9 - mbuf_len;
+					return (9 - mbuf_len);
 				}
 				return 0;
 
 			case DVBAPI_CLIENT_INFO: // min 7 bytes
 				if(mbuf_len < 7)
 				{
-					return 7 - mbuf_len;
+					return (7 - mbuf_len);
 				}
 				return 0;
 
@@ -6181,33 +6178,25 @@ static uint8_t get_asn1packetsize(uint8_t *mbuf, uint16_t mbuf_len, const char *
 	return commandsize + sizebytes;
 }
 
-static void dvbapi_get_packet_size(uint8_t *mbuf, uint16_t mbuf_len, uint16_t *chunksize, uint16_t *data_len, uint16_t client_proto_version)
+static void dvbapi_get_packet_size(uint8_t *mbuf, uint16_t mbuf_len, uint16_t *chunksize, uint16_t *data_len)
 {
 	//chunksize: size of complete chunk in the buffer (an opcode with the data)
 	//data_len: variable for internal data length (eg. for the filter data size, PMT len)
-	uint32_t msgid_size = 0;
 	(*chunksize) = 0;
 	(*data_len) = 0;
 
-	if(client_proto_version >= 3)
-	{
-		msgid_size = 5;
-	}
-
-	if(mbuf_len < 4 + msgid_size)
+	if(mbuf_len < 4)
 	{
 		cs_log("dvbapi_get_packet_size(): error - buffer length (%" PRIu16 ") too short", mbuf_len);
 		set_chunksize_data_len_to_invalid(chunksize, data_len);
 		return;
 	}
 
-	mbuf += msgid_size;
-	
 	int32_t commandsize = 0;
 	char* command = "DVBAPI_UNKNOWN_COMMAND";
 	uint32_t tmp_data_len = 0;
 	uint32_t opcode = b2i(4, mbuf);
-	cs_log_dump_dbg(D_DVBAPI, mbuf-msgid_size, mbuf_len, "Got packet opcode: %04X, msgidsize: %d, clientproto: %d", opcode, msgid_size, client_proto_version);
+	
 
 	switch (opcode)
 	{
@@ -6433,9 +6422,25 @@ static bool dvbapi_handlesockdata(int32_t connfd, uint8_t *mbuf, uint16_t mbuf_s
 	int32_t recv_result;
 	uint16_t chunksize = 1, data_len = 1;
 	uint8_t packet_count = 0;
-	uint16_t missing_header_bytes = dvbapi_get_nbof_missing_header_bytes(mbuf, unhandled_len);
-
-	if(missing_header_bytes)
+	uint32_t msgid_size = 0;
+	if(*client_proto_version >= 3)
+	{
+		msgid_size = 5;
+	}
+	
+	uint16_t missing_header_bytes = 0;
+	
+	if(unhandled_len  < 4 + msgid_size)
+	{
+		missing_header_bytes = (4 + msgid_size) - unhandled_len;
+	}
+	else
+	{
+		missing_header_bytes += dvbapi_get_nbof_missing_header_bytes(mbuf+msgid_size, unhandled_len-msgid_size);
+		missing_header_bytes += msgid_size;
+	}
+	
+	if(missing_header_bytes != 0)
 	{
 		// read first few bytes so we know packet type and length
 		cs_log_dbg(D_TRACE, "%s reading %" PRIu16 " bytes from connection fd %d",
@@ -6450,18 +6455,21 @@ static bool dvbapi_handlesockdata(int32_t connfd, uint8_t *mbuf, uint16_t mbuf_s
 		else
 		{
 			unhandled_len += recv_result;
-			if(unhandled_len < dvbapi_get_nbof_missing_header_bytes(mbuf, unhandled_len))
+			if(unhandled_len < missing_header_bytes)
 			{
 				(*new_unhandled_len) = unhandled_len;
 				return true;
 			}
 		}
 	}
-
+	
+	// we got at least the first few bytes, detect packet type and length, then read the missing bytes
 	do
 	{
-		// we got at least the first few bytes, detect packet type and length, then read the missing bytes
-		dvbapi_get_packet_size(mbuf, unhandled_len, &chunksize, &data_len, *client_proto_version);
+		cs_log_dump_dbg(D_DVBAPI, mbuf, unhandled_len, "Got packet a packet (msgid size: %d, clientprotocol: %d)", msgid_size, *client_proto_version);
+		dvbapi_get_packet_size(mbuf+msgid_size, unhandled_len-msgid_size, &chunksize, &data_len);
+		
+		chunksize+=msgid_size;
 		if(chunksize > mbuf_size)
 		{
 			cs_log("***** WARNING: SOCKET DATA BUFFER OVERFLOW (%" PRIu16 " bytes), PLEASE REPORT! ****** ", chunksize);
@@ -6471,7 +6479,7 @@ static bool dvbapi_handlesockdata(int32_t connfd, uint8_t *mbuf, uint16_t mbuf_s
 
 		if(unhandled_len < chunksize) // we are missing some bytes, try to read them
 		{
-			cs_log_dbg(D_TRACE, "Continue to read %d bytes from connection fd %d", chunksize - unhandled_len, connfd);
+			cs_log_dbg(D_TRACE, "Continue to read the missing %d bytes from connection fd %d", chunksize - unhandled_len, connfd);
 			recv_result = dvbapi_recv(connfd, mbuf + unhandled_len, mbuf_size - unhandled_len);
 			if(recv_result < 1)
 			{
@@ -6490,7 +6498,7 @@ static bool dvbapi_handlesockdata(int32_t connfd, uint8_t *mbuf, uint16_t mbuf_s
 		}
 
 		// we got at least one full packet, handle it, then return
-		dvbapi_handlesockmsg(mbuf, chunksize, data_len, add_to_poll, connfd, client_proto_version);
+		dvbapi_handlesockmsg(mbuf, chunksize-msgid_size, data_len, add_to_poll, connfd, client_proto_version);
 
 		unhandled_len -= chunksize;
 		if(unhandled_len > 0)
@@ -6498,7 +6506,7 @@ static bool dvbapi_handlesockdata(int32_t connfd, uint8_t *mbuf, uint16_t mbuf_s
 			memmove(mbuf, mbuf + chunksize, unhandled_len);
 		}
 		packet_count++;
-	} while(dvbapi_get_nbof_missing_header_bytes(mbuf, unhandled_len) == 0 && packet_count < 7);
+	} while(msgid_size + dvbapi_get_nbof_missing_header_bytes(mbuf+msgid_size, unhandled_len-msgid_size) == 0 && packet_count < 7);
 
 	(*new_unhandled_len) = unhandled_len;
 	return true;
