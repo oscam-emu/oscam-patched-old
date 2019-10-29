@@ -6506,7 +6506,7 @@ static bool dvbapi_handlesockdata(int32_t connfd, uint8_t *mbuf, uint16_t mbuf_s
 			memmove(mbuf, mbuf + chunksize, unhandled_len);
 		}
 		packet_count++;
-	} while(msgid_size + dvbapi_get_nbof_missing_header_bytes(mbuf+msgid_size, unhandled_len-msgid_size) == 0 && packet_count < 7);
+	} while(dvbapi_get_nbof_missing_header_bytes(mbuf+msgid_size, unhandled_len-msgid_size) == 0 && packet_count < 7);
 
 	(*new_unhandled_len) = unhandled_len;
 	return true;
