@@ -6095,43 +6095,56 @@ static int32_t dvbapi_recv(int32_t connfd, uint8_t *mbuf, size_t rlen)
 	return len;
 }
 
-static uint16_t dvbapi_get_nbof_missing_header_bytes(uint8_t *mbuf, uint16_t mbuf_len)
+static uint16_t dvbapi_get_nbof_missing_header_bytes(uint8_t *mbuf, uint16_t mbuf_len, uint32_t msgid_size)
 {
-	uint32_t opcode = b2i(4, mbuf); //get the client opcode (4 bytes)
-
-	// detect the opcode, its size (chunksize) and its internal data size (data_len)
-	if((opcode & 0xFFFFF000) == DVBAPI_AOT_CA) // min 4+size bytes
+	uint16_t commandsize = 4;
+	commandsize += msgid_size;
+	if(mbuf_len < commandsize)
 	{
-		if(mbuf[3] & 0x80)
-		{
-			uint32_t size = mbuf[3] & 0x7F;
-			if(mbuf_len < (4 + size))
-			{
-				return (4 + size) - mbuf_len;
-			}
-		}
-		return 0;
+		return commandsize - mbuf_len;
 	}
 	else
 	{
-		switch (opcode)
+		mbuf += msgid_size;
+		uint32_t opcode = b2i(4, mbuf);
+
+		if((opcode & 0xFFFFF000) == DVBAPI_AOT_CA)
 		{
-			case DVBAPI_FILTER_DATA: // min 9 bytes
-				if(mbuf_len < 9)
+			if(mbuf[3] & 0x80)
+			{
+				uint32_t size = mbuf[3] & 0x7F;
+				if(mbuf_len < (commandsize + size))
 				{
-					return (9 - mbuf_len);
+					return (commandsize + size) - mbuf_len;
 				}
-				return 0;
+			}
+			return 0;
+		}
+		else
+		{
+			switch (opcode)
+			{
+				case DVBAPI_FILTER_DATA:
+					commandsize = 9;
+					commandsize += msgid_size;
+					if(mbuf_len < commandsize)
+					{
+						return commandsize - mbuf_len;
+					}
+					return 0;
 
-			case DVBAPI_CLIENT_INFO: // min 7 bytes
-				if(mbuf_len < 7)
-				{
-					return (7 - mbuf_len);
-				}
-				return 0;
+				case DVBAPI_CLIENT_INFO:
+					commandsize = 7;
+					commandsize += msgid_size;
+					if(mbuf_len < commandsize)
+					{
+						return commandsize - mbuf_len;
+					}
+					return 0;
 
-			default:
-				return 0;
+				default:
+					return 0;
+			}
 		}
 	}
 }
@@ -6422,6 +6435,7 @@ static bool dvbapi_handlesockdata(int32_t connfd, uint8_t *mbuf, uint16_t mbuf_s
 	uint16_t chunksize = 1, data_len = 1;
 	uint8_t packet_count = 1;
 	uint32_t msgid_size = 0;
+	uint16_t missing_header_bytes = 0;
 	if(*client_proto_version >= 3)
 	{
 		msgid_size = 5;
@@ -6429,17 +6443,7 @@ static bool dvbapi_handlesockdata(int32_t connfd, uint8_t *mbuf, uint16_t mbuf_s
 	
 	do
 	{
-		uint16_t missing_header_bytes = 0;
-	
-		if(unhandled_len  < 4 + msgid_size)
-		{
-			missing_header_bytes = (4 + msgid_size) - unhandled_len;
-		}
-		else
-		{
-			missing_header_bytes = dvbapi_get_nbof_missing_header_bytes(mbuf+msgid_size, unhandled_len-msgid_size);
-			missing_header_bytes += msgid_size;
-		}
+		missing_header_bytes = dvbapi_get_nbof_missing_header_bytes(mbuf, unhandled_len, msgid_size);
 	
 		if(missing_header_bytes != 0)
 		{
