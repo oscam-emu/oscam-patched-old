@@ -2562,11 +2562,7 @@ void dvbapi_stop_descrambling(int32_t demux_id, uint32_t msgid)
 	}
 	demux[demux_id].pidindex = -1;
 	demux[demux_id].curindex = -1;
-	if(ca_descramblers_used > 0) // it should never go below 0, but you never know
-	{
-		ca_descramblers_used--; // decrease number of used descramblers
-	}
-
+	
 	if(!cfg.dvbapi_listenport && cfg.dvbapi_boxtype != BOXTYPE_PC_NODMX)
 	{
 		unlink(ECMINFO_FILE);
@@ -8702,6 +8698,7 @@ int8_t remove_streampid_from_list(uint8_t cadevice, uint16_t pid, uint32_t idx)
 				{
 					ll_iter_remove_data(&itr);
 					cs_log_dbg(D_DVBAPI, "Removed last indexer of streampid %04X from ca%d", pid, cadevice);
+					ca_descramblers_used = count_active_indexers();
 					return REMOVED_STREAMPID_LASTINDEX;
 				}
 				else if(removed == 1)
@@ -8984,6 +8981,42 @@ uint32_t is_ca_used(uint8_t cadevice, int32_t pid)
 		}
 	}
 	return INDEX_INVALID; // no indexer found for this pid!
+}
+
+uint32_t count_active_indexers(void)
+{
+	struct s_streampid *listitem;
+	LL_ITER itr;
+	if(!ll_activestreampids)
+	{
+		return 0;
+	}
+
+	bool indexer_in_use[ca_descramblers_total];
+	memset(&indexer_in_use, 0, sizeof(indexer_in_use));
+	
+	uint32_t usecounter = 0;
+	if(ll_count(ll_activestreampids) > 0)
+	{
+		itr = ll_iter_create(ll_activestreampids);
+		while((listitem = ll_iter_next(&itr)))
+		{	
+			if(listitem->caindex != INDEX_INVALID && listitem->caindex < INDEX_MAX)
+			{
+				indexer_in_use[listitem->caindex] = true;
+			}
+		}
+		uint32_t i = 0;
+		for(i = 0; i < ca_descramblers_total; i++)
+		{
+			if(indexer_in_use[i] == true)
+			{
+				usecounter++;
+			}
+		}
+	}
+	
+	return usecounter;
 }
 
 uint16_t dvbapi_get_client_proto_version(void)
