@@ -167,7 +167,7 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 						expire_date = expire_date1 <= expire_date2 ? expire_date1 : expire_date2;
 						break;
 
-					case 0x186A: // HD04
+					case 0x186A: // HD04, HD05
 						start_date = b2i(0x04, cta_res + 53);
 						expire_date1 = b2i(0x04, cta_res + 39);
 						expire_date2 = b2i(0x04, cta_res + 57);

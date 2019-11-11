@@ -511,6 +511,7 @@ int8_t update_streampid_list(uint8_t cadevice, uint16_t pid, uint32_t idx, bool 
 int8_t remove_streampid_from_list(uint8_t cadevice, uint16_t pid, uint32_t idx);
 void disable_unused_streampids(int16_t demux_id);
 uint32_t is_ca_used(uint8_t cadevice, int32_t pid);
+uint32_t count_active_indexers(void);
 uint16_t dvbapi_get_client_proto_version(void);
 const char *dvbapi_get_client_name(void);
 void rotate_emmfilter(int32_t demux_id);
