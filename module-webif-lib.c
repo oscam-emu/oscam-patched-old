@@ -904,7 +904,7 @@ SSL_CTX *SSL_Webif_Init(void)
 	if(!ctx)
 		goto out_err;
 
-	if(SSL_CTX_use_certificate_file(ctx, path, SSL_FILETYPE_PEM) <= 0)
+	if(SSL_CTX_use_certificate_chain_file(ctx, path) <=0)
 		goto out_err;
 
 	if(SSL_CTX_use_PrivateKey_file(ctx, path, SSL_FILETYPE_PEM) <= 0)
