@@ -1,6 +1,7 @@
 #include "globals.h"
 #ifdef READER_VIDEOGUARD
 #include "cscrypt/md5.h"
+#include "cscrypt/des.h"
 #include "oscam-work.h"
 #include "reader-common.h"
 #include "reader-videoguard-common.h"
@@ -246,7 +247,7 @@ static void do_post_dw_hash(struct s_reader *reader, uint8_t *cw, const uint8_t 
 
 static void vg2_read_tiers(struct s_reader *reader)
 {
-	def_resp;
+	uint8_t cta_res[CTA_RES_LEN];
 	struct videoguard_data *csystem_data = reader->csystem_data;
 
 	if(reader->readtiers == 1)
@@ -348,27 +349,28 @@ static void vg2_read_tiers(struct s_reader *reader)
 		// ins2a is not needed and causes an error on some cards eg Sky Italy 09CD
 		// check if ins2a is in command table before running it
 
-		static const uint8_t ins2a[5] = { 0xD0, 0x2a, 0x00, 0x00, 0x00 };
+		static const uint8_t ins2a[5] = { 0xD1, 0x2a, 0x00, 0x00, 0x00 };
 		if(cmd_exists(reader, ins2a))
 		{
 			l = do_cmd(reader, ins2a, NULL, NULL, cta_res);
 			if(l < 0 || !status_ok(cta_res + l))
 			{
-				rdr_log(reader, "classD0 ins2a: failed");
+				rdr_log(reader, "classD1 ins2a: failed");
 				return;
 			}
 		}
 
-		static const uint8_t ins76007f[5] = { 0xD0, 0x76, 0x00, 0x7f, 0x02 };
-		if(!write_cmd_vg(ins76007f, NULL) || !status_ok(cta_res + 2))
+		static const uint8_t ins76007f[5] = { 0xD1, 0x76, 0x00, 0x7f, 0x02 };
+		l = do_cmd(reader, ins76007f, NULL, NULL, cta_res);
+		if(l < 0 || !status_ok(cta_res + 2))
 		{
-			rdr_log(reader, "classD0 ins76007f: failed");
+			rdr_log(reader, "classD1 ins76007f: failed");
 			return;
 		}
 		int32_t num = cta_res[1];
 
 		int32_t i;
-		uint8_t ins76[5] = { 0xD0, 0x76, 0x00, 0x00, 0x00 };
+		uint8_t ins76[5] = { 0xD1, 0x76, 0x00, 0x00, 0x00 };
 
 		// some cards start real tiers info in middle of tier info
 		// and have blank tiers between old tiers and real tiers eg 09AC
@@ -512,11 +514,11 @@ void videoguard2_poll_status(struct s_reader *reader)
 					}
 
 					reader->VgFuse = cta_res[2];
-					static const uint8_t ins7403[5] = { 0xD0, 0x74, 0x03, 0x00, 0x00 };
+					static const uint8_t ins7403a[5] = { 0xD1, 0x74, 0x03, 0x00, 0x00 };
 
-					if((do_cmd(reader, ins7403, NULL, NULL, cta_res) < 0))
+					if((do_cmd(reader, ins7403a, NULL, NULL, cta_res) < 0))
 					{
-						rdr_log(reader, "classD0 ins7403: failed");
+						rdr_log(reader, "classD1 ins7403a: failed");
 					}
 					else
 					{
@@ -876,18 +878,16 @@ static int32_t videoguard2_card_init(struct s_reader *reader, ATR *newatr)
 
 	uint8_t ins4C[5] = { 0xD0, 0x4C, 0x00, 0x00, 0x09 };
 	uint8_t len4c = 0, mode = 0;
-	uint8_t payload4C[0xF] = { 0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+	uint8_t payload4C[0xF] = { 0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x44, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
 	if(cmd_table_get_info(reader, ins4C, &len4c, &mode))
 	{
 		ins4C[4] = len4c; // don't mind if payload is > of ins len, it will be cutted after write_cmd_vg()
 		if(len4c > 9)
 		{
-			payload4C[8] = 0x44; // value taken from v14 boot log
-			rdr_log(reader, "Extended 4C detected");
+			rdr_log_dbg(reader, D_READER, "extended ins4C detected");
 		}
 	}
-
 	memcpy(payload4C, boxID, 4);
 	if(!write_cmd_vg(ins4C, payload4C))
 	{
@@ -1071,29 +1071,15 @@ static int32_t videoguard2_card_init(struct s_reader *reader, ATR *newatr)
 		rdr_log(reader, "classD1 ins742A: failed");
 	}
 
-	static const uint8_t ins4Ca[5] = { 0xD1, 0x4C, 0x00, 0x00, 0x00 };
-	uint8_t ins741C[5] = { 0xD1, 0x74, 0x1C, 0x00, 0x00 };
-	if(len4c > 9)
+	static const uint8_t ins741C[5] = { 0xD1, 0x74, 0x1C, 0x00, 0x00 };
+	if(do_cmd(reader, ins741C, NULL, NULL, cta_res) < 0)
 	{
-		if((l = read_cmd_len(reader, ins741C)) < 0) // We need to know the exact len
-		{
-			return ERROR;
-		}
-
-		ins741C[4] = l;
-		if(do_cmd(reader, ins741C, NULL, NULL, cta_res) < 0) // from log this payload is copied on 4c
-		{
-			rdr_log(reader, "classD1 ins741C: failed");
-		}
-		else
-		{
-			if(l > 8) // if payload4c is length 0xF, we can't copy over more than 8 bytes in the next memcopy
-			{
-				l = 8;
-			}
-			memcpy(payload4C + 8, cta_res, l);
-		}
+		rdr_log(reader, "classD1 ins741C: failed");
 	}
+
+	static const uint8_t ins4Ca[5] = { 0xD1, 0x4C, 0x00, 0x00, 0x00 };
+
+	payload4C[4] = 0x83;
 
 	l = do_cmd(reader, ins4Ca, payload4C, NULL, cta_res);
 	if(l < 0 || !status_ok(cta_res))
@@ -1331,6 +1317,9 @@ static int32_t videoguard2_do_ecm(struct s_reader *reader, const ECM_REQUEST *er
 					if((buff_0F[1] >> 4) & 1) // case 0f_0x xx 10 xx xx xx xx
 					{
 						rdr_log(reader, "classD3 ins54: no cw --> Card needs pairing/extra data");
+						if((reader->caid == 0x98C || reader->caid == 0x98D) && (buff_0F[5] == 0)){ //case 0f_0x xx 10 xx xx xx 00
+							rdr_log(reader, "classD3 ins54: no cw --> unassigned Boxid");
+						}
 						test_0F = 0;
 					}
 
@@ -1351,30 +1340,11 @@ static int32_t videoguard2_do_ecm(struct s_reader *reader, const ECM_REQUEST *er
 						rdr_log(reader, "classD3 ins54: no cw --> Card needs pin");
 						test_0F = 0;
 					}
-				}
 
-				// Only for Sky Germany 'V14/V15' Card
-				if(reader->caid == 0x98C || reader->caid == 0x98D)
-				{
-					// case 0f_0x xx xx xx xx xx 08 > 0x08 = binary xxxx1xx0
-					if((~buff_0F[5] & 1) && ((buff_0F[5] >> 3) & 1))
+					if((reader->caid == 0x98C || reader->caid == 0x98D) && ((buff_0F[5] >> 3) & 1)) //case 0f_0x xx xx xx xx xx XX = binary xxxx1xxx
 					{
-						rdr_log(reader, "classD3 ins54: no cw --> Card is paired! (Debug-ECM-Info: 0F_06 %02X %02X %02X %02X %02X %02X)",
-								buff_0F[0], buff_0F[1], buff_0F[2], buff_0F[3], buff_0F[4], buff_0F[5]);
-					}
-
-					// case 0f_0x xx xx xx xx xx 00 > 0x00 = binary xxxx0xx0
-					if((~buff_0F[5] & 1) && (~(buff_0F[5] >> 3) & 1))
-					{
-						rdr_log(reader, "classD3 ins54: no cw --> Card is prepaired / Card is paired, but the pairing is deactivated (Debug-ECM-Info: 0F_06 %02X %02X %02X %02X %02X %02X)",
-								buff_0F[0], buff_0F[1], buff_0F[2], buff_0F[3], buff_0F[4], buff_0F[5]);
-					}
-
-					// case 0f_0x xx xx xx xx xx 01 > 0x01 = binary xxxxxxx1
-					if(buff_0F[5] & 1)
-					{
-						rdr_log(reader, "classD3 ins54: no cw --> Card is not paired (Debug-ECM-Info: 0F_06 %02X %02X %02X %02X %02X %02X)",
-								buff_0F[0], buff_0F[1], buff_0F[2], buff_0F[3], buff_0F[4], buff_0F[5]);
+						rdr_log(reader, "classD3 ins54: no cw --> CW-overcrypt%s is required! (Debug-ECM-Info: 0F_06 %02X %02X %02X %02X %02X %02X)",
+								(((buff_0F[5] >> 1) & 1) ? " (and assignment)" : ""), buff_0F[0], buff_0F[1], buff_0F[2], buff_0F[3], buff_0F[4], buff_0F[5]); //case 0f_0x xx xx xx xx xx XX = binary xxxx1x?x
 					}
 				}
 
@@ -1389,11 +1359,88 @@ static int32_t videoguard2_do_ecm(struct s_reader *reader, const ECM_REQUEST *er
 			// copy cw1 in place
 			memcpy(ea->cw + 0, rbuff + 5, 8);
 
-			// case 55_01 xx where bit0==1
+			// case 55_01 xx where bit0==1, CW is crypted
 			if(buff_55[0] & 1)
 			{
-				rdr_log(reader, "classD3 ins54: CW is crypted, pairing active, bad cw");
-				return ERROR;
+				if((buff_55[0] >> 3) & 1) //case 55_01 xx where bit3==1, CW-Overcrypt may not required
+				{
+					rdr_log_dbg(reader, D_READER, "classD3 ins54: Tag55_01 = %02X, CW-overcrypt may not required", buff_55[0]);
+				}
+				if(~((buff_55[0] >> 2) & 1)) //case 55_01 xx where bit2==0, no AES overcrypt
+				{
+					if((buff_55[0] >> 1) & 1) //case 55_01 xx where bit1==1, unique Pairing
+					{
+						rdr_log_dbg(reader, D_READER, "classD3 ins54: CW is crypted, trying to decrypt unique pairing mode 0x%02X", buff_55[0]);
+						if(er->ecm[0] & 1){ //log crypted CW
+							rdr_log_dbg(reader, D_READER, "crypted CW is: 0000000000000000%02X%02X%02X%02X%02X%02X%02X%02X", ea->cw[0], ea->cw[1], ea->cw[2], ea->cw[3], ea->cw[4], ea->cw[5], ea->cw[6], ea->cw[7]);
+						} else {
+							rdr_log_dbg(reader, D_READER, "crypted CW is: %02X%02X%02X%02X%02X%02X%02X%02X0000000000000000", ea->cw[0], ea->cw[1], ea->cw[2], ea->cw[3], ea->cw[4], ea->cw[5], ea->cw[6], ea->cw[7]);
+						}
+						if((reader->k1_unique[16] == 0x08) || (reader->k1_unique[16] == 0x10)) //check k1 for unique pairing mode is DES(8 bytes) or 3DES(16 bytes) long
+						{
+							if(reader->k1_unique[16] == 0x08){
+								rdr_log_dbg(reader, D_READER, "use k1(DES) for CW decryption in unique pairing mode");
+								des_ecb_decrypt(ea->cw, reader->k1_unique, 0x08);
+							}
+							else
+							{
+								rdr_log_dbg(reader, D_READER, "use k1(3DES) for CW decryption in unique pairing mode");
+								des_ecb3_decrypt(ea->cw, reader->k1_unique);
+							}
+							if(er->ecm[0] & 1){ //log decrypted CW
+								rdr_log_dbg(reader, D_READER, "decrypted CW is: 0000000000000000%02X%02X%02X%02X%02X%02X%02X%02X", ea->cw[0], ea->cw[1], ea->cw[2], ea->cw[3], ea->cw[4], ea->cw[5], ea->cw[6], ea->cw[7]);
+							} else {
+								rdr_log_dbg(reader, D_READER, "decrypted CW is: %02X%02X%02X%02X%02X%02X%02X%02X0000000000000000", ea->cw[0], ea->cw[1], ea->cw[2], ea->cw[3], ea->cw[4], ea->cw[5], ea->cw[6], ea->cw[7]);
+							}
+						}
+						else
+						{
+							rdr_log_dbg(reader, D_READER, "k1 for unique pairing mode is not set");
+							return ERROR;
+						}
+					}
+					else //case 55_01 xx where bit1==0, generic Pairing
+					{
+						rdr_log_dbg(reader, D_READER, "classD3 ins54: CW is crypted, trying to decrypt generic pairing mode 0x%02X", buff_55[0]);
+						if(er->ecm[0] & 1){ //log crypted CW
+							rdr_log_dbg(reader, D_READER, "crypted CW is: 0000000000000000%02X%02X%02X%02X%02X%02X%02X%02X", ea->cw[0], ea->cw[1], ea->cw[2], ea->cw[3], ea->cw[4], ea->cw[5], ea->cw[6], ea->cw[7]);
+						} else {
+							rdr_log_dbg(reader, D_READER, "crypted CW is: %02X%02X%02X%02X%02X%02X%02X%02X0000000000000000", ea->cw[0], ea->cw[1], ea->cw[2], ea->cw[3], ea->cw[4], ea->cw[5], ea->cw[6], ea->cw[7]);
+						}
+						if((reader->k1_generic[16] == 0x08) || (reader->k1_generic[16] == 0x10)) //check k1 for generic pairing mode is DES(8 bytes) or 3DES(16 bytes) long
+						{
+							if(reader->k1_generic[16] == 0x08){
+								rdr_log_dbg(reader, D_READER, "use k1(DES) for CW decryption in generic pairing mode");
+								des_ecb_decrypt(ea->cw, reader->k1_generic, 0x08);
+							}
+							else
+							{
+								rdr_log_dbg(reader, D_READER, "use k1(3DES) for CW decryption in generic pairing mode");
+								des_ecb3_decrypt(ea->cw, reader->k1_generic);
+							}
+							if(er->ecm[0] & 1){ //log decrypted CW
+								rdr_log_dbg(reader, D_READER, "decrypted CW is: 0000000000000000%02X%02X%02X%02X%02X%02X%02X%02X", ea->cw[0], ea->cw[1], ea->cw[2], ea->cw[3], ea->cw[4], ea->cw[5], ea->cw[6], ea->cw[7]);
+							} else {
+								rdr_log_dbg(reader, D_READER, "decrypted CW is: %02X%02X%02X%02X%02X%02X%02X%02X0000000000000000", ea->cw[0], ea->cw[1], ea->cw[2], ea->cw[3], ea->cw[4], ea->cw[5], ea->cw[6], ea->cw[7]);
+							}
+						}
+						else
+						{
+							rdr_log_dbg(reader, D_READER, "k1 for generic pairing mode is not set");
+							return ERROR;
+						}
+					}
+				}
+				else //unkown pairing mode or AES overcrypt
+				{
+					rdr_log_dbg(reader, D_READER, "classD3 ins54: CW is crypted, unknown pairing mode 0x%02X, AES overcrypt?", buff_55[0]);
+					if(er->ecm[0] & 1){ //log crypted CW
+						rdr_log_dbg(reader, D_READER, "crypted CW is: 0000000000000000%02X%02X%02X%02X%02X%02X%02X%02X", ea->cw[0], ea->cw[1], ea->cw[2], ea->cw[3], ea->cw[4], ea->cw[5], ea->cw[6], ea->cw[7]);
+					} else {
+						rdr_log_dbg(reader, D_READER, "crypted CW is: %02X%02X%02X%02X%02X%02X%02X%02X0000000000000000", ea->cw[0], ea->cw[1], ea->cw[2], ea->cw[3], ea->cw[4], ea->cw[5], ea->cw[6], ea->cw[7]);
+					}
+					return ERROR;
+				}
 			}
 
 			// case 55_01 xx where bit2==1, old dimeno_PostProcess_Decrypt(reader, rbuff, ea->cw);
