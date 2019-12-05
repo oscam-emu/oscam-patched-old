@@ -796,6 +796,9 @@ int32_t read_cmd_len(struct s_reader *reader, const uint8_t *cmd)
 	cmd2[3] |= 0x80;
 	cmd2[4] = 1;
 
+	uint8_t rxbuff[8];
+	memcpy(rxbuff, cmd2, 5);
+
 	// some card reply with L 91 00 (L being the command length).
 	if(!write_cmd_vg(cmd2, NULL) || !status_ok(cta_res + 1) || cta_res[0] == 0)
 	{
@@ -809,8 +812,16 @@ int32_t read_cmd_len(struct s_reader *reader, const uint8_t *cmd)
 			rdr_log_dbg(reader, D_READER, "failed to read %02x%02x cmd length (%02x %02x)",
 						cmd[1], cmd[2], cta_res[0], cta_res[1]);
 		}
+
+		memcpy(rxbuff + 5, cta_res, 3);
+		cCamCryptVG_PostProcess_Decrypt(reader, rxbuff);
+
 		return -1;
 	}
+
+	memcpy(rxbuff + 5, cta_res, 3);
+	cCamCryptVG_PostProcess_Decrypt(reader, rxbuff);
+
 	return cta_res[0];
 }
 
