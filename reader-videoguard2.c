@@ -1064,7 +1064,7 @@ static int32_t videoguard2_card_init(struct s_reader *reader, ATR *newatr)
 			rdr_log(reader, "classD1 ins7423: failed");
 		}
 	}
-
+/*
 	static const uint8_t ins742A[5] = { 0xD1, 0x74, 0x2A, 0x00, 0x00 };
 	if(do_cmd(reader, ins742A, NULL, NULL, cta_res) < 0)
 	{
@@ -1076,7 +1076,7 @@ static int32_t videoguard2_card_init(struct s_reader *reader, ATR *newatr)
 	{
 		rdr_log(reader, "classD1 ins741C: failed");
 	}
-
+*/
 	static const uint8_t ins4Ca[5] = { 0xD1, 0x4C, 0x00, 0x00, 0x00 };
 
 	payload4C[4] = 0x83;
