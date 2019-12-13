@@ -2522,6 +2522,18 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 		for(i = 0; i < 4 ; i++) { tpl_printf(vars, TPLAPPEND, "INS2E06", "%02X", rdr->ins2e06[i]); }
 	}
 
+	// k1 for generic pairing mode
+	if(rdr->k1_generic[0x10])
+	{
+		for(i = 0; i < rdr->k1_generic[0x10] ; i++) { tpl_printf(vars, TPLAPPEND, "K1_GENERIC", "%02X", rdr->k1_generic[i]); }
+	}
+
+	// k1 for unique pairing mode
+	if(rdr->k1_unique[0x10])
+	{
+		for(i = 0; i < rdr->k1_unique[0x10] ; i++) { tpl_printf(vars, TPLAPPEND, "K1_UNIQUE", "%02X", rdr->k1_unique[i]); }
+	}
+
 	// ATR
 	if(rdr->atr[0])
 		for(i = 0; i < rdr->atrlen / 2; i++)

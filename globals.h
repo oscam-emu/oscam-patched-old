@@ -1746,6 +1746,8 @@ struct s_reader										// contains device info, reader info and card info
 	uint8_t			ins7E11[0x01 + 1];
 	uint8_t			ins2e06[0x04 + 1];
 	int8_t			ins7e11_fast_reset;
+	uint8_t			k1_generic[0x10 + 1];			// k1 for generic pairing mode
+	uint8_t			k1_unique[0x10 + 1];			// k1 for unique pairing mode
 	uint8_t			sc8in1_dtrrts_patch;			// fix for kernel commit 6a1a82df91fa0eb1cc76069a9efe5714d087eccd
 
 #ifdef READER_VIACCESS
