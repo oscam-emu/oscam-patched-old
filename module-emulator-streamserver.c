@@ -245,14 +245,6 @@ static void ParseDescriptors(uint8_t *buffer, uint16_t info_length, uint8_t *typ
 	uint8_t descriptor_tag = buffer[0], descriptor_length = 0;
 	uint32_t j, k;
 
-	static const char format_identifiers_audio[10][5] =
-	{
-		// "HDMV" format identifier is removed
-		// OSCam does not need to know about Blu-ray
-		"AC-3", "BSSD", "dmat", "DRA1", "DTS1",
-		"DTS2", "DTS3", "EAC3", "mlpa", "Opus",
-	};
-
 	if (info_length < 1)
 	{
 		return;
@@ -265,8 +257,16 @@ static void ParseDescriptors(uint8_t *buffer, uint16_t info_length, uint8_t *typ
 
 		switch (descriptor_tag)
 		{
-			case 0x05: // registration descriptor
+			case 0x05: // Registration descriptor
 			{
+				// "HDMV" format identifier is removed
+				// OSCam does not need to know about Blu-ray
+				const char format_identifiers_audio[10][5] =
+				{
+					"AC-3", "BSSD", "dmat", "DRA1", "DTS1",
+					"DTS2", "DTS3", "EAC3", "mlpa", "Opus",
+				};
+
 				for (k = 0; k < 10; k++)
 				{
 					if (memcmp(buffer + j + 2, format_identifiers_audio[k], 4) == 0)
@@ -301,6 +301,7 @@ static void ParseDescriptors(uint8_t *buffer, uint16_t info_length, uint8_t *typ
 			case 0x7B: // DTS descriptor (DVB)
 			case 0x7C: // AAC descriptor (DVB)
 			case 0x81: // AC-3 descriptor (ATSC)
+			case 0xCC: // Enhanced AC-3 descriptor (ATSC)
 			{
 				*type = STREAM_AUDIO;
 				break;
@@ -315,6 +316,7 @@ static void ParseDescriptors(uint8_t *buffer, uint16_t info_length, uint8_t *typ
 					case 0x0E: // DTS-HD descriptor (DVB)
 					case 0x0F: // DTS Neural descriptor (DVB)
 					case 0x15: // AC-4 descriptor (DVB)
+					case 0x21: // DTS-UHD descriptor (DVB)
 						*type = STREAM_AUDIO;
 						break;
 				}
@@ -388,16 +390,16 @@ static void ParsePmtData(emu_stream_client_data *cdata)
 
 		switch (stream_type)
 		{
-			case 0x01: // MPEG-1 video
-			case 0x02: // MPEG-1 (constrained parameter), MPEG-2 video
-			case 0x10: // MPEG-4 video
-			case 0x1B: // AVC video
-			case 0x20: // MVC video
-			case 0x24: // HEVC video
-			case 0x25: // HEVC video
-			case 0x42: // Chinese video
-			case 0xD1: // Dirac video
-			case 0xEA: // VC-1 video
+			case 0x01:
+			case 0x02:
+			case 0x10:
+			case 0x1B:
+			case 0x20:
+			case 0x24:
+			case 0x25:
+			case 0x42:
+			case 0xD1:
+			case 0xEA:
 			{
 				cdata->video_pid = elementary_pid;
 				cs_log_dbg(D_READER, "Stream client %i found video pid: 0x%04X (%i)",
@@ -405,13 +407,14 @@ static void ParsePmtData(emu_stream_client_data *cdata)
 				break;
 			}
 
-			case 0x03: // MPEG-1 part 3 audio (MP1, MP2, MP3)
-			case 0x04: // MPEG-2 part 3 audio (MP1, MP2, MP3)
-			case 0x0F: // MPEG-2 part 7 audio (AAC)
-			case 0x11: // MPEG-4 part 3 audio (AAC, HE AAC and AAC v2)
-			case 0x1C: // MPEG-4 part 3 audio (DST, ALS, SLS)
-			case 0x2D: // MPEG-H part 3 3D audio (main stream)
-			case 0x2E: // MPEG-H part 3 3D audio (auxiliary stream)
+			case 0x03:
+			case 0x04:
+			case 0x0F:
+			case 0x11:
+			case 0x1C:
+			case 0x2D:
+			case 0x2E:
+			case 0x81:
 			{
 				if (cdata->audio_pid_count >= EMU_STREAM_MAX_AUDIO_SUB_TRACKS)
 				{
@@ -425,12 +428,9 @@ static void ParsePmtData(emu_stream_client_data *cdata)
 				break;
 			}
 
-			case 0x06: // AC-3, Enhanced AC-3, AC-4, DTS, DTS-HD and DTS-UHD audio (DVB)
-			case 0x81: // AC-3 audio (ATSC)
-			case 0x87: // Enhanced AC-3 audio (ATSC)
-			//case 0x88: // DTS-HD audio (ATSC 2.0) /* fixme: has ATSC 2.0 ever been used? */
-			//case 0x??: // AC-4 audio (ATSC 3.0) /* fixme: add the actual value when it gets published */
-			//case 0x??: // MPEG-H part 3 3D audio (ATSC 3.0) /* fixme: add the actual value when it gets published */
+			case 0x06:
+			//case 0x81: // some ATSC AC-3 streams do not contain the AC-3 descriptor!
+			case 0x87:
 			{
 				uint8_t type = STREAM_UNDEFINED;
 				ParseDescriptors(data + i + 5, es_info_length, &type);
