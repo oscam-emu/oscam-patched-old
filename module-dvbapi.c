@@ -25,7 +25,6 @@
 #include "oscam-work.h"
 #include "reader-irdeto.h"
 #include "cscrypt/md5.h"
-
 extern int32_t exit_oscam;
 
 #if defined (__CYGWIN__)
@@ -7940,12 +7939,13 @@ void dvbapi_write_ecminfo_file(struct s_client *client, ECM_REQUEST *er, uint8_t
 #define ECMINFO_TYPE_MGCAMD   3
 #define ECMINFO_TYPE_CCCAM    4
 #define ECMINFO_TYPE_CAMD3    5
+#define ECMINFO_TYPE_GBOX     6
 
 	FILE *ecmtxt = fopen(ECMINFO_FILE, "w");
 	if(ecmtxt != NULL && er->rc < E_NOTFOUND)
 	{
 		char tmp[49]; // holds 16 byte cw - (2 hex digits + 1 space) * 16 byte + string termination)
-		const char *reader_name = NULL, *from_name = NULL, *proto_name = NULL;
+		const char *reader_name = NULL, *from_name = NULL, *proto_name = NULL, *from_device= NULL ;
 		int8_t hops = 0;
 		int32_t from_port = 0;
 		char system_name[64];
@@ -8000,6 +8000,14 @@ void dvbapi_write_ecminfo_file(struct s_client *client, ECM_REQUEST *er, uint8_t
 			fprintf(ecmtxt, "CAID 0x%04X, PID 0x%04X, PROVIDER 0x%06X\n",
 				er->caid, er->pid, (uint) er->prid);
 		}
+#ifdef MODULE_GBOX
+		else if(cfg.dvbapi_ecminfo_type == ECMINFO_TYPE_GBOX)
+		{
+			fprintf(ecmtxt, "===== %s ECM on CaID 0x%04X, pid 0x%04X, sid 0x%04X =====\nprov: %04X, slot: %d, level: %d, dist: %d\nprovider: %06X\n",
+				system_name, er->caid, er->pid, er->srvid, er->selected_reader->gbox_cw_src_peer, er->selected_reader->gbox_crd_slot_lev >> 4,
+				er->selected_reader->gbox_crd_slot_lev & 0xf, er->selected_reader->currenthops, (uint) er->prid);
+		}
+#endif
 
 		switch(er->rc)
 		{
@@ -8010,12 +8018,13 @@ void dvbapi_write_ecminfo_file(struct s_client *client, ECM_REQUEST *er, uint8_t
 					if(is_network_reader(er->selected_reader))
 					{
 						from_name = er->selected_reader->device;
+						from_port = er->selected_reader->r_port;
 					}
 					else
 					{
 						from_name = "local";
+						from_device = er->selected_reader->device;
 					}
-					from_port = er->selected_reader->r_port;
 					proto_name = reader_get_type_desc(er->selected_reader, 1);
 					hops = er->selected_reader->currenthops;
 				}
@@ -8044,6 +8053,36 @@ void dvbapi_write_ecminfo_file(struct s_client *client, ECM_REQUEST *er, uint8_t
 				from_name = "cache3";
 				proto_name = "none";
 				break;
+		}
+		
+		if(cfg.dvbapi_ecminfo_type == ECMINFO_TYPE_GBOX)
+		{
+			switch(er->rc)
+			{
+				case E_FOUND:
+					if(er->selected_reader)
+					{
+						if(is_network_reader(er->selected_reader))
+						{
+							fprintf(ecmtxt, "reader: %s\nfrom: %s:%d\nprotocol: %s\n",
+								reader_name, from_name, from_port, proto_name);
+						}
+						else
+							{
+								fprintf(ecmtxt, "reader: %s\nfrom: %s - %s\nprotocol: %s\n",
+									reader_name, from_name, from_device, proto_name);
+							}
+					}
+					break;
+
+				case E_CACHE1:
+				case E_CACHE2:
+				case E_CACHEEX:
+					fprintf(ecmtxt, "reader: %s\nfrom: %s:%d\nprotocol: %s\n",
+						reader_name, from_name, from_port, proto_name);
+					break;
+			}
+				fprintf(ecmtxt, "ecm time: %.3f\n", (float) client->cwlastresptime / 1000);
 		}
 
 		if(cfg.dvbapi_ecminfo_type <= ECMINFO_TYPE_OSCAM_MS)

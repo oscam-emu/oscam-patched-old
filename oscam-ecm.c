@@ -2817,11 +2817,10 @@ int32_t format_ecm(ECM_REQUEST *ecm, char *result, size_t size)
 #endif
 	cs_hexdump(0, ecm->cw, 16, cwhex, sizeof(cwhex));
 #ifdef MODULE_GBOX
-	struct gbox_ecm_request_ext *ere = ecm->src_data;
-	if(ere && check_client(ecm->client) && get_module(ecm->client)->num == R_GBOX && ere->gbox_hops)
-		{ return ecmfmt(result, size, ecm->caid, ecm->onid, ecm->prid, ecm->chid, ecm->pid, ecm->srvid, ecm->ecmlen, ecmd5hex, csphash, cwhex, ere->gbox_peer, ere->gbox_hops, payload, tier); }
-	else if (ecm->selected_reader && ecm->selected_reader->typ == R_GBOX && ecm->gbox_ecm_id)
-		{ return ecmfmt(result, size, ecm->caid, ecm->onid, ecm->prid, ecm->chid, ecm->pid, ecm->srvid, ecm->ecmlen, ecmd5hex, csphash, cwhex, ecm->gbox_ecm_id, 0, payload, tier); }
+	if(check_client(ecm->client) && get_module(ecm->client)->num == R_GBOX && ecm->gbox_ecm_dist)	
+		{ return ecmfmt(result, size, ecm->caid, ecm->onid, ecm->prid, ecm->chid, ecm->pid, ecm->srvid, ecm->ecmlen, ecmd5hex, csphash, cwhex, ecm->gbox_ecm_src_peer, ecm->gbox_ecm_dist, payload, tier); }
+	else if (ecm->selected_reader && ecm->selected_reader->typ == R_GBOX && !ecm->gbox_ecm_dist)
+		{ return ecmfmt(result, size, ecm->caid, ecm->onid, ecm->prid, ecm->chid, ecm->pid, ecm->srvid, ecm->ecmlen, ecmd5hex, csphash, cwhex, ecm->selected_reader->gbox_cw_src_peer, ecm->selected_reader->currenthops, payload, tier); }
 	else
 #endif
 		return ecmfmt(result, size, ecm->caid, ecm->onid, ecm->prid, ecm->chid, ecm->pid, ecm->srvid, ecm->ecmlen, ecmd5hex, csphash, cwhex, 0,

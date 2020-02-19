@@ -25,6 +25,7 @@ void gbox_add_good_sid(uint16_t id_card, uint16_t caid, uint8_t slot, uint16_t s
 void gbox_remove_bad_sid(uint16_t id_peer, uint8_t id_slot, uint16_t sid);
 uint8_t gbox_next_free_slot(uint16_t id);
 uint8_t gbox_get_cards_for_ecm(uint8_t *send_buf, int32_t len2, uint8_t max_cards, ECM_REQUEST *er, uint32_t *current_avg_card_time, uint16_t peer_id, uint8_t force_remm);
+uint8_t gbox_get_crd_dist_lev(uint16_t crd_id);
 #endif
 
 #endif
