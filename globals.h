@@ -1051,7 +1051,9 @@ typedef struct ecm_request_t
 
 #if defined MODULE_GBOX
 	uint32_t		gbox_crc;						// rcrc for gbox, used to identify ECM task in peer responses
-	uint16_t		gbox_ecm_id;
+	uint16_t		gbox_cw_src_peer;
+	uint16_t		gbox_ecm_src_peer;
+	uint8_t			gbox_ecm_dist;
 	uint8_t			gbox_ecm_status;
 	LLIST			*gbox_cards_pending;			// type gbox_card_pending
 #endif
@@ -1774,6 +1776,8 @@ struct s_reader										// contains device info, reader info and card info
 	uint16_t		gbox_remm_peer;
 	uint16_t		gbox_gsms_peer;
 	uint8_t			gbox_force_remm;
+	uint16_t		gbox_cw_src_peer;
+	uint8_t			gbox_crd_slot_lev;
 #endif
 
 #ifdef MODULE_PANDORA
