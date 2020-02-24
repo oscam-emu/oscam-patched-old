@@ -1189,7 +1189,6 @@ static const struct config_list gbox_opts[] =
 	DEF_OPT_UINT32("gbox_reconnect", OFS(gbox_reconnect)   , DEFAULT_GBOX_RECONNECT),
 	DEF_OPT_FUNC("my_vers"         , OFS(gbox_my_vers)     , gbox_my_vers_fn),
 	DEF_OPT_FUNC("my_cpu_api"      , OFS(gbox_my_cpu_api)  , gbox_my_cpu_api_fn),
-	DEF_OPT_UINT8("ccc_reshare"    , OFS(ccc_reshare)      , 0),
 	DEF_OPT_UINT8("gsms_disable"   , OFS(gsms_dis)         , 1),
 	DEF_OPT_UINT8("dis_attack_txt" , OFS(dis_attack_txt)   , 0),
 	DEF_OPT_UINT8("log_hello"      , OFS(log_hello)        , 1),
@@ -1202,6 +1201,8 @@ static const struct config_list gbox_opts[] =
 	DEF_OPT_UINT8("gbox_msg_type"  , OFS(gbox_msg_type)    , 0),
 	DEF_OPT_FUNC("gbox_dest_peers" , OFS(gbox_dest_peers)  , gbox_dest_peers_fn ),
 	DEF_OPT_FUNC("gbox_msg_txt"    , OFS(gbox_msg_txt)     , gbox_msg_txt_fn ),
+	DEF_OPT_UINT8("ccc_reshare"    , OFS(cc_gbx_reshare_en), 0),
+	DEF_OPT_FUNC("ccc_gbx_caid"    , OFS(ccc_gbx_check_caidtab), check_caidtab_fn),
 	DEF_LAST_OPT
 };
 #else

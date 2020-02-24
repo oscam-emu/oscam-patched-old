@@ -1771,7 +1771,7 @@ struct s_reader										// contains device info, reader info and card info
 	uint8_t			gbox_maxdist;
 	uint8_t			gbox_maxecmsend;
 	uint8_t			gbox_reshare;
-	uint8_t			gbox_cccam_reshare;
+	int8_t			gbox_cccam_reshare;
 	char			last_gsms[128];
 	uint16_t		gbox_remm_peer;
 	uint16_t		gbox_gsms_peer;
@@ -2174,7 +2174,7 @@ struct s_config
 	uint8_t			log_hello;
 	uint8_t			dis_attack_txt;
 	char			*gbox_tmp_dir;
-	uint8_t			ccc_reshare;
+	uint8_t			cc_gbx_reshare_en;
 	uint16_t		gbox_ignored_peer[GBOX_MAX_IGNORED_PEERS];
 	uint8_t			gbox_ignored_peer_num;
 	uint16_t		accept_remm_peer[GBOX_MAX_REMM_PEERS];
@@ -2185,7 +2185,8 @@ struct s_config
 	uint8_t			gbox_msg_type;
 	uint16_t		gbox_dest_peers[GBOX_MAX_DEST_PEERS];
 	uint8_t			gbox_dest_peers_num;
-	char			gbox_msg_txt[GBOX_MAX_MSG_TXT+1];
+	char				gbox_msg_txt[GBOX_MAX_MSG_TXT+1];
+	CAIDTAB			ccc_gbx_check_caidtab;
 #endif
 #ifdef MODULE_SERIAL
 	char			*ser_device;

@@ -476,19 +476,23 @@ void gbox_send_hello(struct s_client *proxy, uint8_t hello_stat)
 				}
 				else if(card->type == GBOX_CARD_TYPE_CCCAM)
 				{
-					if(proxy->reader->gbox_cccam_reshare > proxy->reader->gbox_reshare)
-					{
-						proxy->reader->gbox_cccam_reshare = proxy->reader->gbox_reshare;
-					}
-
-					// cs_log_dbg(D_READER,"send to peer ccc-card %04X - level=%d crd-owner=%04X", card->caprovid >> 16, proxy->reader->gbox_cccam_reshare, card->id.peer);
+					if(proxy->reader->gbox_cccam_reshare < 0)
+						{ continue; }
+					else
+					{ 
+						if(proxy->reader->gbox_cccam_reshare > proxy->reader->gbox_reshare)
+						{
+							proxy->reader->gbox_cccam_reshare = proxy->reader->gbox_reshare;
+						}
+					// cs_log_dbg(D_READER,"send to peer %04X - ccc-card %04X - level=%d crd-owner=%04X", peer->gbox.id, card->caprovid >> 16, proxy->reader->gbox_cccam_reshare, card->id.peer);
 					*(++ptr) = card->caprovid >> 24;
 					*(++ptr) = card->caprovid >> 16;
 					*(++ptr) = card->caprovid >> 8;
 					*(++ptr) = card->caprovid & 0xff;
 					*(++ptr) = 1;
 					*(++ptr) = card->id.slot;
-					*(++ptr) = ((proxy->reader->gbox_cccam_reshare - 1) << 4) + card->dist + 1;
+					*(++ptr) = ((proxy->reader->gbox_cccam_reshare) << 4) + card->dist + 1;
+					}
 				}
 				else if(proxy->reader->gbox_reshare > 0)
 				{
@@ -1416,12 +1420,14 @@ static uint8_t gbox_add_local_cards(void)
 		} // end local readers
 
 #ifdef MODULE_CCCAM
-		if((cfg.ccc_reshare) &&	(cfg.cc_reshare > -1) && cl->typ == 'p' && cl->reader && cl->reader->typ == R_CCCAM && cl->cc)
-		{
+	if((cfg.cc_gbx_reshare_en) &&	(cfg.cc_reshare > -1) && cl->typ == 'p' && cl->reader && cl->reader->typ == R_CCCAM && cl->cc)
+	{
 			cc = cl->cc;
 			it = ll_iter_create(cc->cards);
 
-			while((card = ll_iter_next(&it)))
+		while((card = ll_iter_next(&it)))
+		{
+			if((chk_ctab_ex(card->caid, &cfg.ccc_gbx_check_caidtab)))
 			{
 				// calculate gbox id from cc node
 				node1 = ll_has_elements(card->remote_nodes);
@@ -1442,8 +1448,9 @@ static uint8_t gbox_add_local_cards(void)
 				{
 					gbox_add_card(cc_peer_id, gbox_get_caprovid(card->caid, 0), slot, DEFAULT_CCC_GBOX_RESHARE, card->hop, GBOX_CARD_TYPE_CCCAM, NULL);
 				}
-			}
-		} // end cccam
+			}	
+		}
+	} // end cccam
 #endif
 	} // end for clients
 
