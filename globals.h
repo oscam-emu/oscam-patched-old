@@ -1499,6 +1499,10 @@ struct s_reader										// contains device info, reader info and card info
 	int8_t			needsglobalfirst;				// 0:Write one Global EMM for SHARED EMM disabled 1:Write one Global EMM for SHARED EMM enabled
 #endif
 #ifdef READER_NAGRA_MERLIN
+	uint8_t			irdid[4];
+	uint8_t			irdid_length;
+	uint8_t			public_exponent[3];
+	uint8_t			public_exponent_length;
 	uint8_t			mod1[112];
 	uint8_t			mod1_length;
 	uint8_t			data50[80];
@@ -1523,9 +1527,7 @@ struct s_reader										// contains device info, reader info and card info
 	uint8_t			block3[8];
 	uint8_t			v[8];
 	uint8_t			iout[8];
-	uint32_t		dword_83DBC;
 	uint8_t			data2[4];
-	uint8_t			cak7expo[0x11];
 	uint8_t			data[0x80];
 	uint8_t			step1[0x60];
 	uint8_t			step2[0x68];
