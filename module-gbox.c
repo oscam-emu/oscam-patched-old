@@ -1091,7 +1091,9 @@ static int8_t gbox_incoming_ecm(struct s_client *cli, uint8_t *data, int32_t n)
 	//TODO: What do we do with our own checkcode @-7?
 	er->gbox_crc = gbox_get_checksum(&er->ecm[0], er->ecmlen);
 	er->gbox_ecm_dist = data[n - 15] + 1;
-
+	
+	memcpy(&ere->gbox_routing_info[0], &data[n - 15 - er->gbox_ecm_dist + 1], er->gbox_ecm_dist - 1);
+	
 	er->caid = gbox_get_caid(caprovid);
 	er->prid = gbox_get_provid(caprovid);
 
@@ -1771,21 +1773,22 @@ static void gbox_send_dcw(struct s_client *cl, ECM_REQUEST *er)
 		{ buf[41] = 0x03; } // source of cw -> cache
 	else
 		{ buf[41] = 0x01; } // source of cw -> card, emu
-		
+
 	uint8_t cw_dist = gbox_get_crd_dist_lev(er->gbox_cw_src_peer) & 0xf;
 
 	buf[42] = ((check_setup()) | (cw_dist + 1));
 	buf[43] = ere->gbox_rev & 0xf0;
-	
-	//buf[44] = 0;
-	//gbox_send(cli, buf, 45); 
 
+	// This copies the routing info from ECM to cw answer.
+	memcpy(&buf[44], &ere->gbox_routing_info, er->gbox_ecm_dist - 1);
+	buf[44 + er->gbox_ecm_dist - 1] = er->gbox_ecm_dist - 1;	//act. dist 
+/*
   uint8_t i;
 		for(i = 0; i < er->gbox_ecm_dist; i++)
 		{ 
 			buf[44 +i] = i;
 		}
-
+*/
 	gbox_send(cli, buf, 44 + er->gbox_ecm_dist);
 
 	/*

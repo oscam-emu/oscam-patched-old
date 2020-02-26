@@ -167,9 +167,6 @@ struct gbox_peer
 
 struct gbox_ecm_request_ext
 {
-	uint8_t gbox_hops;
-	uint16_t gbox_peer;
-	uint16_t gbox_mypeer;
 	uint8_t gbox_slot;
 	uint8_t gbox_version;
 	uint8_t gbox_rev;
