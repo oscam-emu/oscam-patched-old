@@ -1153,7 +1153,10 @@ static char *send_oscam_config_gbox(struct templatevars *vars, struct uriparams 
 	tpl_printf(vars, TPLADD, "GBOXMYVERS", "%02X", cfg.gbox_my_vers);
 	tpl_printf(vars, TPLAPPEND, "GBOXMYCPUAPI", "%02X", cfg.gbox_my_cpu_api);
 #ifdef MODULE_CCCAM
-	if(cfg.ccc_reshare == 1)  { tpl_addVar(vars, TPLADD, "GBOXCCCRESHARE", "checked"); }
+	if(cfg.cc_gbx_reshare_en == 1)  { tpl_addVar(vars, TPLADD, "GBOXCCCRESHARE", "checked"); }
+	char *value = mk_t_caidtab(&cfg.ccc_gbx_check_caidtab);
+	tpl_addVar(vars, TPLADD, "CCC2GBOXCAID", value);
+	free_mk_t(value);
 	tpl_addVar(vars, TPLAPPEND, "CCCDEPENDINGCONFIG", tpl_getTpl(vars, "CCCAMRESHAREBIT"));
 #endif
 	if(cfg.log_hello == 1)  { tpl_addVar(vars, TPLADD, "GBOXLOGHELLO", "checked"); }

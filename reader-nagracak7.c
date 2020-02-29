@@ -7,19 +7,19 @@
 #include "oscam-time.h"
 #include "reader-common.h"
 #include "reader-nagra-common.h"
+#include "reader-nagracak7.h"
 #include "oscam-work.h"
 #include "cscrypt/des.h"
 #include "cscrypt/mdc2.h"
 
-static const uint8_t public_exponent[] = { 0x01, 0x00, 0x01 };
 static const uint8_t d00ff[] = { 0x00, 0xFF, 0xFF, 0xFF };
-static const uint8_t irdid[] = { 0x64, 0x65, 0x6D, 0x6F }; // fake -> ASCII HEX-bytes of "demo"
-static const uint8_t data1[] = { 0x00, 0x00, 0x00, 0x01 };
+static uint8_t data1[] = { 0x00, 0x00, 0x00, 0x01 };
 
 // Datatypes
-#define IRDINFO 0x03
-#define TIERS   0x0C
-#define SYSID   0x05
+#define SYSID_CAID 			0x02
+#define IRDINFO 			0x03
+#define DT05				0x05
+#define TIERS				0x0C
 
 static time_t tier_date(uint64_t date, char *buf, int32_t l)
 {
@@ -34,7 +34,7 @@ static time_t tier_date(uint64_t date, char *buf, int32_t l)
 	return ut;
 }
 
-void rsa_decrypt(uint8_t *edata50, int len, uint8_t *out, uint8_t *key, int keylen)
+void rsa_decrypt(uint8_t *edata50, int len, uint8_t *out, uint8_t *key, int keylen, uint8_t *expo, uint8_t expolen)
 {
 	BN_CTX *ctx0 = BN_CTX_new();
 #ifdef WITH_LIBCRYPTO
@@ -45,7 +45,7 @@ void rsa_decrypt(uint8_t *edata50, int len, uint8_t *out, uint8_t *key, int keyl
 	BIGNUM *bnCT0 = BN_CTX_get(ctx0);
 	BIGNUM *bnPT0 = BN_CTX_get(ctx0);
 	BN_bin2bn(&key[0], keylen, bnN0);
-	BN_bin2bn(public_exponent, 0x03, bnE0);
+	BN_bin2bn(&expo[0], expolen, bnE0);
 	BN_bin2bn(&edata50[0], len, bnCT0);
 	BN_mod_exp(bnPT0, bnCT0, bnE0, bnN0, ctx0);
 	memset(out,0x00,len);
@@ -84,7 +84,7 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 
 	switch(dt)
 	{
-		case 0x02:
+		case SYSID_CAID:
 		{
 			reader->prid[0][0] = 0x00;
 			reader->prid[0][1] = 0x00;
@@ -113,12 +113,12 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 			return OK;
 		}
 
-		case SYSID: // case 0x05
+		case DT05: // case 0x05
 		{
 			IDEA_KEY_SCHEDULE ks;
 			memcpy(reader->edata,cta_res + 26, 0x70);
 			reader->dt5num = cta_res[20];
-			rsa_decrypt(reader->edata, 0x70, reader->out, reader->mod1, reader->mod1_length);
+			rsa_decrypt(reader->edata, 0x70, reader->out, reader->mod1, reader->mod1_length, reader->public_exponent, reader->public_exponent_length);
 
 			if(reader->dt5num == 0x00)
 			{
@@ -262,60 +262,6 @@ static int32_t CAK7GetDataType(struct s_reader *reader, uint8_t dt)
 	return OK;
 }
 
-void sub_6AD78(uint32_t *dinit) // gbox function
-{
-	uint32_t v0 = (uint32_t) * dinit;
-	double f0;
-	f0 = v0;
-	double f12 = 16807;
-	double f15 = 2147483647;
-	f12 = f0 * f12;
-	double v12;
-	v12 = fmod(f12, f15);
-	*dinit = v12;
-}
-
-void calc_cak7_exponent(uint32_t *dinit, uint8_t *out, uint8_t len)
-{
-	memset(out, 0x00, len);
-
-	sub_6AD78(dinit);
-
-	int nR4 = 0;
-	int nR5 = 0;
-	while(true)
-	{
-		uint32_t nR0 = (uint32_t)* dinit;
-		int nR3 = nR4 + 3;
-		nR5 += 4;
-
-		if(nR3 > len)
-		{
-			break;
-		}
-
-		out[nR5 - 1] = ((nR0    ) & 0xFF);
-		out[nR5 - 2] = ((nR0 >> 8) & 0xFF);
-		out[nR5 - 3] = ((nR0 >> 16) & 0xFF);
-		out[nR5 - 4] = ((nR0 >> 24) & 0xFF);
-		nR4 += 4;
-		sub_6AD78(dinit);
-
-	}
-
-	uint32_t nR0 = (uint32_t)* dinit;
-	while(nR4 < len)
-	{
-		out[nR4] = nR0 & 0xFF;
-		nR4++;
-		nR0 >>= 8;
-	}
-
-	out[0] &= 0x03;
-	out[0x10] |= 0x01;
-
-}
-
 void CAK7_getCamKey(struct s_reader *reader)
 {
 	def_resp;
@@ -327,22 +273,37 @@ void CAK7_getCamKey(struct s_reader *reader)
 	0x70,0xAB,0x43,0xF5,0x68,0xA2,0xB1,0xB5,0x8A,0x8E,0x02,0x5F,0x96,0x06,0xA8,0xC3,0x4F,0x15,0xCD,0x99,0xC2,
 	0x69,0xB8,0x35,0x68,0x11,0x4C,0x00,0x00,0x00,0x00,0x00,0x08,0x00,0x00,0xCC,0xCC,0xCC,0xCC};
 
+	get_random_bytes(data1, 0x04);
+	if (data1[3] == 0xFF)
+	{
+		data1[3]--;
+	}	
+	memcpy(cmd0e + 9, data1, 0x04);
+	data1[3]++;
+		
+	if (reader->irdid_length == 4)
+	{
+		memcpy(&cmd0e[14], reader->irdid, reader->irdid_length); // inject irdid
+	}
+		
+	// inject provid	
+	cmd0e[18] = reader->prid[0][2];
+	cmd0e[19] = reader->prid[0][3];
+
 	if (reader->nuid_length == 4)
 	{
-		memcpy(cmd0e + 132, reader->nuid, reader->nuid_length); // inject NUID
+		memcpy(&cmd0e[132], reader->nuid, reader->nuid_length); // inject NUID
 	}
 
 	do_cak7_cmd(reader,cta_res, &cta_lr, cmd0e, sizeof(cmd0e), 0x20);
-	reader->dword_83DBC =  (cta_res[18] << 24);
-	reader->dword_83DBC += (cta_res[19] << 16);
-	reader->dword_83DBC += (cta_res[20] <<  8);
-	reader->dword_83DBC += (cta_res[21]      );
-	calc_cak7_exponent(&reader->dword_83DBC, reader->cak7expo, 0x11);
+
 	memcpy(reader->cardid,cta_res + 14, 4);
 	rdr_log_dump_dbg(reader, D_READER, reader->cardid, 0x04, "CardSerial: ");
+
 	memcpy(reader->hexserial + 2, reader->cardid, 4);
 	memcpy(reader->sa[0], reader->cardid, 3);
 	memcpy(reader->sa[1], reader->sa[0], 4);
+
 	unsigned long datal = (cta_res[9] << 24) + (cta_res[10] << 16) + (cta_res[11] << 8) + (cta_res[12]);
 	datal++;
 	reader->data2[0] = (datal >> 24) & 0xFF;
@@ -350,85 +311,25 @@ void CAK7_getCamKey(struct s_reader *reader)
 	reader->data2[2] = (datal >>  8) & 0xFF;
 	reader->data2[3] = (datal      ) & 0xFF;
 
-	BN_CTX *ctx0 = BN_CTX_new();
-#ifdef WITH_LIBCRYPTO
-	BN_CTX_start(ctx0);
-#endif
-	BIGNUM *bnN0 = BN_CTX_get(ctx0);
-	BIGNUM *bnE0 = BN_CTX_get(ctx0);
-	BIGNUM *bnCT0 = BN_CTX_get(ctx0);
-	BIGNUM *bnPT0 = BN_CTX_get(ctx0);
-	BN_bin2bn(&reader->mod50[0], 0x50, bnN0);
-	BN_bin2bn(&reader->cak7expo[0], 0x11, bnE0);
-	BN_bin2bn(&reader->data50[0], 0x50, bnCT0);
-	BN_mod_exp(bnPT0, bnCT0, bnE0, bnN0, ctx0);
-	memset(reader->data, 0x00, sizeof(reader->data));
-	BN_bn2bin(bnPT0, reader->data + (0x50 - BN_num_bytes(bnPT0)));
-	BN_CTX_end(ctx0);
-	BN_CTX_free(ctx0);
+	rsa_decrypt(reader->data50, reader->data50_length, reader->data, reader->mod50, reader->mod50_length, reader->public_exponent, reader->public_exponent_length);
 
 	memcpy(&reader->step1[0], d00ff, 4);
 	memcpy(&reader->step1[4], reader->data, 0x50);
-	memcpy(&reader->step1[4 + 0x50], irdid, 0x04);
+	memcpy(&reader->step1[4 + 0x50], reader->irdid, reader->irdid_length);
 	memcpy(&reader->step1[4 + 4 + 0x50], data1, 0x04);
 	memcpy(&reader->step1[4 + 4 + 4 + 0x50], reader->data2, 0x04);
-
-	BN_CTX *ctx1 = BN_CTX_new();
-#ifdef WITH_LIBCRYPTO
-	BN_CTX_start(ctx1);
-#endif
-	BIGNUM *bnN1 = BN_CTX_get(ctx1);
-	BIGNUM *bnE1 = BN_CTX_get(ctx1);
-	BIGNUM *bnCT1 = BN_CTX_get(ctx1);
-	BIGNUM *bnPT1 = BN_CTX_get(ctx1);
-	BN_bin2bn(&reader->key60[0], 0x60, bnN1);
-	BN_bin2bn(&reader->exp60[0], 0x60, bnE1);
-	BN_bin2bn(&reader->step1[0], 0x60, bnCT1);
-	BN_mod_exp(bnPT1, bnCT1, bnE1, bnN1, ctx1);
-	BN_bn2bin(bnPT1, reader->data + (0x60 - BN_num_bytes(bnPT1)));
-	BN_CTX_end(ctx1);
-	BN_CTX_free(ctx1);
+	rsa_decrypt(reader->step1, 0x60, reader->data, reader->key60, reader->key60_length, reader->exp60, reader->exp60_length);
 
 	memcpy(&reader->step2[0], d00ff, 4);
 	memcpy(&reader->step2[4], reader->cardid, 4);
 	memcpy(&reader->step2[8], reader->data, 0x60);
-
-	BN_CTX *ctx2 = BN_CTX_new();
-#ifdef WITH_LIBCRYPTO
-	BN_CTX_start(ctx2);
-#endif
-	BIGNUM *bnN2 = BN_CTX_get(ctx2);
-	BIGNUM *bnE2 = BN_CTX_get(ctx2);
-	BIGNUM *bnCT2 = BN_CTX_get(ctx2);
-	BIGNUM *bnPT2 = BN_CTX_get(ctx2);
-	BN_bin2bn(&reader->kdt05_10[0], 0x68, bnN2);
-	BN_bin2bn(public_exponent, 3, bnE2);
-	BN_bin2bn(&reader->step2[0], 0x68, bnCT2);
-	BN_mod_exp(bnPT2, bnCT2, bnE2, bnN2, ctx2);
-	BN_bn2bin(bnPT2, reader->data + (0x68 - BN_num_bytes(bnPT2)));
-	BN_CTX_end(ctx2);
-	BN_CTX_free(ctx2);
+	rsa_decrypt(reader->step2, 0x68, reader->data, reader->kdt05_10, 0x68, reader->public_exponent, reader->public_exponent_length);
 
 	memcpy(&reader->step3[0], d00ff, 4);
 	memcpy(&reader->step3[4], reader->data, 0x68);
-
-	BN_CTX *ctx3 = BN_CTX_new();
-#ifdef WITH_LIBCRYPTO
-	BN_CTX_start(ctx3);
-#endif
-	BIGNUM *bnN3 = BN_CTX_get(ctx3);
-	BIGNUM *bnE3 = BN_CTX_get(ctx3);
-	BIGNUM *bnCT3 = BN_CTX_get(ctx3);
-	BIGNUM *bnPT3 = BN_CTX_get(ctx3);
-	BN_bin2bn(&reader->kdt05_00[0], 0x6c, bnN3);
-	BN_bin2bn(public_exponent, 3, bnE3);
-	BN_bin2bn(&reader->step3[0], 0x6c, bnCT3);
-	BN_mod_exp(bnPT3, bnCT3, bnE3, bnN3, ctx3);
-	BN_bn2bin(bnPT3, reader->data + (0x6c - BN_num_bytes(bnPT3)));
-	BN_CTX_end(ctx3);
-	BN_CTX_free(ctx3);
-
-	uint8_t cmd03[] = {0xCC,0xCC,0xCC,0xCC, 0x00,0x00,0x0A,0x03,0x6C,
+	rsa_decrypt(reader->step3, 0x6c, reader->data, reader->kdt05_00, 0x6c, reader->public_exponent, reader->public_exponent_length);
+	
+	uint8_t cmd03[] = {0xCC,0xCC,0xCC,0xCC,0x00,0x00,0x0A,0x03,0x6C,
 	0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,
 	0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,
 	0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,
@@ -436,48 +337,16 @@ void CAK7_getCamKey(struct s_reader *reader)
 	0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,
 	0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,
 	0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,
-	0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC };
+	0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC};
 
 	memcpy(&cmd03[9],reader->data,0x6c);
 	do_cak7_cmd(reader,cta_res,&cta_lr,cmd03,sizeof(cmd03),0x90);
+
 	memcpy(reader->encrypted,&cta_res[10],0x68);
+	rsa_decrypt(reader->encrypted, 0x68, reader->result, reader->kdt05_10, 0x68, reader->public_exponent, reader->public_exponent_length);
 
-	BN_CTX *ctx = BN_CTX_new();
-#ifdef WITH_LIBCRYPTO
-	BN_CTX_start(ctx);
-#endif
-	BIGNUM *bnN = BN_CTX_get(ctx);
-	BIGNUM *bnE = BN_CTX_get(ctx);
-	BIGNUM *bnCT = BN_CTX_get(ctx);
-	BIGNUM *bnPT = BN_CTX_get(ctx);
-	BN_bin2bn(&reader->kdt05_10[0], 104, bnN);
-	BN_bin2bn(public_exponent, 3, bnE);
-	BN_bin2bn(&reader->encrypted[0], 104, bnCT);
-	BN_mod_exp(bnPT, bnCT, bnE, bnN, ctx);
-	memset(reader->result, 0, 104);
-	BN_bn2bin(bnPT, reader->result + (104 - BN_num_bytes(bnPT)));
-	BN_CTX_end(ctx);
-	BN_CTX_free(ctx);
-
-	//uint8_t stillencrypted[0x50];
 	memcpy(reader->stillencrypted,&reader->result[12],0x50);
-
-	//uint8_t resultrsa[0x50];
-	BN_CTX *ctxs = BN_CTX_new();
-#ifdef WITH_LIBCRYPTO
-	BN_CTX_start(ctxs);
-#endif
-	BIGNUM *bnNs  = BN_CTX_get(ctxs);
-	BIGNUM *bnEs  = BN_CTX_get(ctxs);
-	BIGNUM *bnCTs = BN_CTX_get(ctxs);
-	BIGNUM *bnPTs = BN_CTX_get(ctxs);
-	BN_bin2bn(&reader->mod50[0], reader->mod50_length, bnNs);
-	BN_bin2bn(&reader->cak7expo[0], 0x11, bnEs);
-	BN_bin2bn(&reader->stillencrypted[0], 0x50, bnCTs);
-	BN_mod_exp(bnPTs, bnCTs, bnEs, bnNs, ctxs);
-	BN_bn2bin(bnPTs, reader->resultrsa + (0x50 - BN_num_bytes(bnPTs)));
-	BN_CTX_end(ctxs);
-	BN_CTX_free(ctxs);
+	rsa_decrypt(reader->stillencrypted, 0x50, reader->resultrsa, reader->mod50, reader->mod50_length, reader->public_exponent, reader->public_exponent_length);
 
 	uint8_t mdc_hash[MDC2_DIGEST_LENGTH];
 	memset(mdc_hash,0x00,MDC2_DIGEST_LENGTH);
@@ -495,6 +364,18 @@ static int32_t nagra3_card_init(struct s_reader *reader, ATR *newatr)
 	get_atr;
 
 	memset(reader->hexserial, 0x00, 0x08);
+
+	reader->public_exponent[0] = 0x01;
+	reader->public_exponent[1] = 0x00;
+	reader->public_exponent[2] = 0x01;
+	reader->public_exponent_length = 3;
+
+	reader->irdid[0] = 0x64;
+	reader->irdid[1] = 0x65;
+	reader->irdid[2] = 0x6D;
+	reader->irdid[3] = 0x6F;
+	reader->irdid_length = 4;
+
 	reader->cak7_seq = 0;
 	cs_clear_entitlement(reader);
 
@@ -509,24 +390,23 @@ static int32_t nagra3_card_init(struct s_reader *reader, ATR *newatr)
 	}
 
 	// check the completeness of the required CAK7 keys
-	if(reader->mod1_length && reader->data50_length && reader->mod50_length && reader->key60_length && reader->exp60_length && reader->nuid_length)
+	if(reader->mod1_length && reader->irdid_length && reader->data50_length && reader->mod50_length && reader->key60_length && reader->exp60_length && reader->nuid_length)
 	{
-		rdr_log_dbg(reader, D_READER, "All parameters are set.");
+		rdr_log_dbg(reader, D_READER, "All parameters for CAK7 global pairing are set.");
 	}
 	else
 	{
-		rdr_log(reader, "ERROR: Not all required parameters are set!");
+		rdr_log(reader, "ERROR: Not all required CAK7 parameters are set!");
 		reader->card_status = CARD_FAILURE;
 		return ERROR;
 	}
 
 	reader->nprov = 1;
 
-	//CAK7GetDataType(reader, 0x09);
-	CAK7GetDataType(reader, 0x05);
+	CAK7GetDataType(reader, DT05);
+	CAK7GetDataType(reader, SYSID_CAID); // sysid+caid
 	CAK7_getCamKey(reader);
-	//CAK7GetDataType(reader, 0x09);
-	CAK7GetDataType(reader, 0x02); // sysid+caid
+
 
 	rdr_log(reader, "ready for requests");
 	return OK;
@@ -540,12 +420,12 @@ static int32_t nagra3_card_info(struct s_reader *reader)
 	rdr_log_sensitive(reader, "SER:    {%s}", cs_hexdump(1, reader->hexserial + 2, 4, tmp, sizeof(tmp)));
 	rdr_log(reader, "CAID:   %04X", reader->caid);
 	rdr_log(reader, "Prv.ID: %s(sysid)", cs_hexdump(1, reader->prid[0], 4, tmp, sizeof(tmp)));
-	CAK7GetDataType(reader, 0x03);
+	CAK7GetDataType(reader, IRDINFO);
 	cs_clear_entitlement(reader); // reset the entitlements
 	rdr_log(reader, "-----------------------------------------");
 	rdr_log(reader, "|id  |tier    |valid from  |valid to    |");
 	rdr_log(reader, "+----+--------+------------+------------+");
-	CAK7GetDataType(reader, 0x0C);
+	CAK7GetDataType(reader, TIERS);
 	rdr_log(reader, "-----------------------------------------");
 	uint8_t i;
 	for(i = 1; i < reader->nprov; i++)
@@ -560,8 +440,8 @@ static void nagra3_post_process(struct s_reader *reader)
 {
 	if((reader->cak7_camstate & 64) == 64)
 	{
-		rdr_log(reader, "renew Session Key: CAK7");
-		CAK7_getCamKey(reader);
+		rdr_log_dbg(reader, D_READER, "renew Session Key: CAK7");
+		add_job(reader->client, ACTION_READER_RENEW_SK, NULL, 0); //CAK7_getCamKey
 	}
 }
 
@@ -668,7 +548,7 @@ static int32_t nagra3_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 	memcpy(&emmreq[14], ep->emm + 9, ep->emm[9] + 1);
 	do_cak7_cmd(reader, cta_res, &cta_lr, emmreq, sizeof(emmreq), 0xB0);
 
-	if(cta_res[cta_lr-2] != 0x90 && cta_res[cta_lr-1] != 0x00)
+	if(cta_res[cta_lr - 2] != 0x90 && cta_res[cta_lr - 1] != 0x00)
 	{
 		rdr_log(reader, "(EMM) Reader will be restart now cause: %02X %02X card answer!!!", cta_res[cta_lr - 2], cta_res[cta_lr - 1]);
 		reader->card_status = CARD_NEED_INIT;
