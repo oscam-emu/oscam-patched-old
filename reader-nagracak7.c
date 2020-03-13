@@ -1,6 +1,5 @@
 #include "globals.h"
 #ifdef READER_NAGRA_MERLIN
-#include "math.h"
 #include "cscrypt/bn.h"
 #include "cscrypt/idea.h"
 #include "csctapi/icc_async.h"
@@ -277,16 +276,16 @@ void CAK7_getCamKey(struct s_reader *reader)
 	if (data1[3] == 0xFF)
 	{
 		data1[3]--;
-	}	
+	}
 	memcpy(cmd0e + 9, data1, 0x04);
 	data1[3]++;
-		
+
 	if (reader->irdid_length == 4)
 	{
 		memcpy(&cmd0e[14], reader->irdid, reader->irdid_length); // inject irdid
 	}
-		
-	// inject provid	
+
+	// inject provid
 	cmd0e[18] = reader->prid[0][2];
 	cmd0e[19] = reader->prid[0][3];
 
@@ -296,6 +295,11 @@ void CAK7_getCamKey(struct s_reader *reader)
 	}
 
 	do_cak7_cmd(reader,cta_res, &cta_lr, cmd0e, sizeof(cmd0e), 0x20);
+
+	reader->cak7_restart =  (cta_res[22] << 16);
+	reader->cak7_restart += (cta_res[23] <<  8);
+	reader->cak7_restart += (cta_res[24]      );
+	reader->cak7_restart--;
 
 	memcpy(reader->cardid,cta_res + 14, 4);
 	rdr_log_dump_dbg(reader, D_READER, reader->cardid, 0x04, "CardSerial: ");
@@ -328,7 +332,7 @@ void CAK7_getCamKey(struct s_reader *reader)
 	memcpy(&reader->step3[0], d00ff, 4);
 	memcpy(&reader->step3[4], reader->data, 0x68);
 	rsa_decrypt(reader->step3, 0x6c, reader->data, reader->kdt05_00, 0x6c, reader->public_exponent, reader->public_exponent_length);
-	
+
 	uint8_t cmd03[] = {0xCC,0xCC,0xCC,0xCC,0x00,0x00,0x0A,0x03,0x6C,
 	0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,
 	0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,
@@ -357,6 +361,22 @@ void CAK7_getCamKey(struct s_reader *reader)
 
 	memcpy(&reader->cak7_aes_key[16],mdc_hash,16);
 	memcpy(reader->cak7_aes_key,mdc_hash,16);
+}
+
+void CAK7_reinit(struct s_reader *reader)
+{
+	ATR newatr[ATR_MAX_SIZE];
+	memset(newatr, 0, 1);
+	if(ICC_Async_Activate(reader, newatr, 0))
+	{
+		reader->card_status = CARD_NEED_INIT;
+		add_job(reader->client, ACTION_READER_RESTART, NULL, 0);
+	}
+	else
+	{
+		reader->cak7_seq = 0;
+		CAK7_getCamKey(reader);
+	}
 }
 
 static int32_t nagra3_card_init(struct s_reader *reader, ATR *newatr)
@@ -407,7 +427,6 @@ static int32_t nagra3_card_init(struct s_reader *reader, ATR *newatr)
 	CAK7GetDataType(reader, SYSID_CAID); // sysid+caid
 	CAK7_getCamKey(reader);
 
-
 	rdr_log(reader, "ready for requests");
 	return OK;
 }
@@ -438,7 +457,12 @@ static int32_t nagra3_card_info(struct s_reader *reader)
 
 static void nagra3_post_process(struct s_reader *reader)
 {
-	if((reader->cak7_camstate & 64) == 64)
+	if(reader->cak7_seq >= reader->cak7_restart)
+	{
+		rdr_log(reader, "reinit necessary to reset command counter");
+		CAK7_reinit(reader);
+	}
+	else if((reader->cak7_camstate & 64) == 64)
 	{
 		rdr_log_dbg(reader, D_READER, "renew Session Key: CAK7");
 		add_job(reader->client, ACTION_READER_RENEW_SK, NULL, 0); //CAK7_getCamKey
