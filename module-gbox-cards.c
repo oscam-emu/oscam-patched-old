@@ -568,7 +568,7 @@ uint8_t gbox_get_cards_for_ecm(uint8_t *send_buf, int32_t len2, uint8_t max_card
 						else
 						{
 							nb_matching_crds++;
-							if (time_since_lastcw < GBOX_SID_CONFIRM_TIME && er->gbox_ecm_status == GBOX_ECM_NOT_ASKED)
+							if (time_since_lastcw < GBOX_SID_CONFIRM_TIME && er->gbox_ecm_status == GBOX_ECM_NEW_REQ)
 								{ enough = 1; }
 						}
 						i2b_buf(2, card->id.peer, send_buf + len2);

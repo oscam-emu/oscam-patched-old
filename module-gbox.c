@@ -1189,7 +1189,7 @@ static int32_t gbox_chk_recvd_dcw(struct s_client *cli, uint8_t *dcw, int32_t *r
 			gbox_add_good_sid(id_card, proxy->ecmtask[i].caid, data[36], proxy->ecmtask[i].srvid, cw_time);
 			gbox_remove_all_bad_sids(&proxy->ecmtask[i], proxy->ecmtask[i].srvid);
 
-			if(proxy->ecmtask[i].gbox_ecm_status == GBOX_ECM_NOT_ASKED || proxy->ecmtask[i].gbox_ecm_status == GBOX_ECM_ANSWERED)
+			if(proxy->ecmtask[i].gbox_ecm_status == GBOX_ECM_NEW_REQ || proxy->ecmtask[i].gbox_ecm_status == GBOX_ECM_ANSWERED)
 			{
 				return -1;
 			}
@@ -1804,56 +1804,9 @@ static void gbox_send_dcw(struct s_client *cl, ECM_REQUEST *er)
 			ere->gbox_rev >> 4,	ere->gbox_rev & 0xf, cli->port);
 }
 
-/* // see r11270
-void *gbox_rebroadcast_thread(struct gbox_rbc_thread_args *args)
-{
-	if (!args) { return NULL; }
-
-	struct s_client *cli = args->cli;
-	ECM_REQUEST *er = args->er;
-	uint32_t waittime = args->waittime;
-
-	//NEEDFIX currently the next line avoids a second rebroadcast
-	if (!is_valid_client(cli)) { return NULL; }
-
-	SAFE_MUTEX_LOCK(&cli->thread_lock);
-	cli->thread_active = 1;
-	SAFE_SETSPECIFIC(getclient, cli);
-	set_thread_name(__func__);
-	cli->thread_active = 0;
-	SAFE_MUTEX_UNLOCK(&cli->thread_lock);
-
-	cs_sleepms(waittime);
-	if (!cli || cli->kill || !cli->gbox || !er) { return NULL; }
-	SAFE_MUTEX_LOCK(&cli->thread_lock);
-	cli->thread_active = 1;
-
-	struct gbox_peer *peer = cli->gbox;
-
-	struct timeb t_now, tbc;
-	cs_ftime(&t_now);
-
-	tbc = er->tps;
-	add_ms_to_timeb_diff(&tbc, cfg.ctimeout);
-	int32_t time_to_timeout = (int32_t) comp_timeb(&tbc, &t_now);
-
-	//ecm is not answered yet and still chance to get CW
-	if (er->rc >= E_NOTFOUND && time_to_timeout > GBOX_DEFAULT_CW_TIME)
-	{
-		cs_writelock(__func__, &peer->lock);
-		gbox_send_ecm(cli, er);
-		cs_writeunlock(__func__, &peer->lock);
-	}
-	cli->thread_active = 0;
-	SAFE_MUTEX_UNLOCK(&cli->thread_lock);
-
-	return NULL;
-}
-*/
-
 static int32_t gbox_send_ecm(struct s_client *cli, ECM_REQUEST *er)
 {
-	if(!cli || !er || !cli->reader)
+	if(!cli || !cli->reader || !er || !er->ecmlen)
 	{
 		return -1;
 	}
@@ -1887,19 +1840,14 @@ static int32_t gbox_send_ecm(struct s_client *cli, ECM_REQUEST *er)
 		cs_log_dbg(D_READER, "%s replied to this ecm already", cli->reader->label);
 	}
 
-	if(er->gbox_ecm_status == GBOX_ECM_NOT_ASKED)
+	if(er->gbox_ecm_status == GBOX_ECM_NEW_REQ)
 	{
 		er->gbox_cards_pending = ll_create("pending_gbox_cards");
 	}
 
 	uint8_t send_buf[1024];
 	int32_t buflen, len1;
-
-	if(!er->ecmlen)
-	{
-		return 0;
-	}
-
+	
 	len1 = er->ecmlen + 18; // length till end of ECM
 
 	er->gbox_crc = gbox_get_checksum(&er->ecm[0], er->ecmlen);
@@ -1907,7 +1855,6 @@ static int32_t gbox_send_ecm(struct s_client *cli, ECM_REQUEST *er)
 	memset(send_buf, 0, sizeof(send_buf));
 
 	uint8_t nb_matching_crds = 0;
-	uint8_t max_ecm_reached = 0;
 	uint32_t current_avg_card_time = 0;
 
 	gbox_message_header(send_buf, MSG_ECM , peer->gbox.password, local_gbox.password);
@@ -1947,13 +1894,9 @@ static int32_t gbox_send_ecm(struct s_client *cli, ECM_REQUEST *er)
 
 	nb_matching_crds = gbox_get_cards_for_ecm(&send_buf[0], len1 + 10, cli->reader->gbox_maxecmsend, er, &current_avg_card_time, peer->gbox.id, cli->reader->gbox_force_remm);
 
-	if (nb_matching_crds == cli->reader->gbox_maxecmsend)
-	{
-		max_ecm_reached = 1;
-	}
 	buflen += nb_matching_crds * 3;
 
-	if(!nb_matching_crds && er->gbox_ecm_status == GBOX_ECM_NOT_ASKED)
+	if(!nb_matching_crds && er->gbox_ecm_status == GBOX_ECM_NEW_REQ)
 	{
 		cs_log_dbg(D_READER, "no valid card found for CAID: %04X PROV: %06X", er->caid, er->prid);
 		write_ecm_answer(cli->reader, er, E_NOTFOUND, E2_CCCAM_NOCARD, NULL, NULL, 0, NULL);
@@ -1971,9 +1914,6 @@ static int32_t gbox_send_ecm(struct s_client *cli, ECM_REQUEST *er)
 				send_buf[buflen] = i;
 				buflen++;
 			}
-
-	//	send_buf[buflen] = er->gbox_ecm_dist +=1;
-	//	buflen++;
 
 		memcpy(&send_buf[buflen], gbox_get_my_checkcode(), 7);
 		buflen = buflen + 7;
@@ -2005,56 +1945,19 @@ static int32_t gbox_send_ecm(struct s_client *cli, ECM_REQUEST *er)
 		{
 			cs_log_dbg(D_READER, "Pending Card ID: %04X Slot: %02X time: %d", pending->id.peer, pending->id.slot, pending->pending_time);
 			er->gbox_cw_src_peer = pending->id.peer;
+			cs_log_dbg(D_READER,"<- ECM (<-%d) - caid: %04X prov: %06X sid: %04X to cw-src-peer: %04X - ecm_src_peer: %04X", 
+				gbox_get_crd_dist_lev(er->gbox_cw_src_peer) & 0xf, er->caid, er->prid, er->srvid, er->gbox_cw_src_peer, er->gbox_ecm_src_peer);
 		}
 		ll_li_destroy(li);
 
-		if(er->gbox_ecm_status > GBOX_ECM_NOT_ASKED)
+		if(er->gbox_ecm_status == GBOX_ECM_NEW_REQ)
 		{
 			er->gbox_ecm_status++;
-		}
-		else
-		{
-			if(max_ecm_reached)
-			{
-				er->gbox_ecm_status = GBOX_ECM_SENT;
-			}
-			else
-			{
-				er->gbox_ecm_status = GBOX_ECM_SENT_ALL;
-			}
 			cli->pending++;
 		}
 
-	  cs_log_dbg(D_READER,"<- ECM (<-%d) - caid: %04X prov: %06X sid: %04X to %d card(s) of cw-src-peer: %04X - ecm_src_peer: %04X", 
-			gbox_get_crd_dist_lev(er->gbox_cw_src_peer) & 0xf, er->caid, er->prid, er->srvid, nb_matching_crds, er->gbox_cw_src_peer, er->gbox_ecm_src_peer);
-
 		gbox_send(cli, send_buf, buflen);
 		cli->reader->last_s = time((time_t *) 0);
-
-/*	// see r11270
-		if(er->gbox_ecm_status < GBOX_ECM_ANSWERED)
-		{
-			//Create thread to rebroacast ecm after time
-			struct gbox_rbc_thread_args args;
-			args.cli = cli;
-			args.er = er;
-			if ((current_avg_card_time > 0) && (cont_card_1 == 1))
-			{
-				args.waittime = current_avg_card_time + (current_avg_card_time / 2);
-				if (args.waittime < GBOX_MIN_REBROADCAST_TIME)
-				{ args.waittime = GBOX_MIN_REBROADCAST_TIME; }
-			}
-			else
-				{ args.waittime = GBOX_REBROADCAST_TIMEOUT; }
-			cs_log_dbg(D_READER, "Creating rebroadcast thread with waittime: %d", args.waittime);
-			int32_t ret = start_thread("rebroadcast", (void *)gbox_rebroadcast_thread, &args, NULL, 1, 1);
-			if(ret)
-			{
-				return -1;
-			}
-		}
-		else
-*/		{ er->gbox_ecm_status--; }
 	}
 	return 0;
 }
