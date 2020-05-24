@@ -125,29 +125,48 @@ void cc_xor(uint8_t *buf)
 void cc_cw_crypt(struct s_client *cl, uint8_t *cws, uint32_t cardid)
 {
 	struct cc_data *cc = cl->cc;
-	uint64_t node_id;
+	uint64_t unode_id;
+	int64_t snode_id;
 	uint8_t tmp;
 	int32_t i;
 
 	if(cl->typ != 'c')
 	{
-		node_id = b2ll(8, cc->node_id);
+		unode_id = b2ll(8, cc->node_id);
 	}
 	else
 	{
-		node_id = b2ll(8, cc->peer_node_id);
+		unode_id = b2ll(8, cc->peer_node_id);
 	}
-
-	for(i = 0; i < 16; i++)
+	
+	if(unode_id > 0x7FFFFFFFFFFFFFFF)
 	{
-		tmp = cws[i] ^(node_id >> (4 * i));
-
-		if(i & 1)
+		for(i = 0; i < 16; i++)
 		{
-			tmp = ~tmp;
-		}
+			tmp = cws[i] ^(unode_id >> (4 * i));
 
-		cws[i] = (cardid >> (2 * i)) ^ tmp;
+			if(i & 1)
+			{
+				tmp = ~tmp;
+			}
+
+			cws[i] = (cardid >> (2 * i)) ^ tmp;
+		}
+	}
+	else
+	{
+		snode_id = unode_id;
+		for(i = 0; i < 16; i++)
+		{
+			tmp = cws[i] ^(snode_id >> (4 * i));
+
+			if(i & 1)
+			{
+				tmp = ~tmp;
+			}
+
+			cws[i] = (cardid >> (2 * i)) ^ tmp;
+		}
 	}
 }
 
