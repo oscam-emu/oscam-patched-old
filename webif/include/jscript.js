@@ -1710,7 +1710,7 @@ $(document).ready(function () {
 	// help wiki links
 	if (typeof oscamconf != "undefined") {
 		var language = $('meta[http-equiv="language"]').attr("content");
-		var wikihref = "http://www.streamboard.tv/wiki/OSCam/" + language + "/Config/oscam." + oscamconf + "#";
+		var wikihref = "https://wiki.streamboard.tv/wiki/OSCam/" + language + "/Config/oscam." + oscamconf + "#";
 		$("form table a").click(function () {
 			if (!$(this).attr("href") && !$(this).attr("name")) {
 				if ($(this).data('p')) {
