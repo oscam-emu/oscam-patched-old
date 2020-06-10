@@ -1170,9 +1170,9 @@ static int32_t gbox_chk_recvd_dcw(struct s_client *cli, uint8_t *dcw, int32_t *r
 	*rc = 1;
 	memcpy(dcw, data + 14, 16);
 	uint32_t crc = b2i(4, data + 30);
-	char tmp[32];
+	char tmp[33];
 	cs_log_dbg(D_READER,"-> CW (->%d) received cw: %s from CW-source-peer=%04X, caid=%04X, slot= %d, ecm_pid=%04X, sid=%04X, crc=%08X, cw-src-type=%d, cw-dist=%d, hw-type=%d, rev=%01X.%01X, chid=%04X", data[42] & 0x0f,
-			cs_hexdump(0, dcw, 32, tmp, sizeof(tmp)), data[10] << 8 | data[11], data[34] << 8 | data[35], data[36], data[6] << 8 | data[7],
+			cs_hexdump(0, dcw, 16, tmp, sizeof(tmp)), data[10] << 8 | data[11], data[34] << 8 | data[35], data[36], data[6] << 8 | data[7],
 			data[8] << 8 | data[9], crc, data[41], data[42] & 0x0f, data[42] >> 4, data[43] >> 4,
 			data[43] & 0x0f, data[37] << 8 | data[38]);
 
