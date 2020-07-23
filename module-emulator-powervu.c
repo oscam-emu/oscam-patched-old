@@ -2241,10 +2241,101 @@ int8_t powervu_ecm(uint8_t *ecm, uint8_t *dw, EXTENDED_CW *cw_ex, uint16_t srvid
 }
 
 // PowerVu EMM EMU
+static void create_data_unmask_emm_mode_03(uint8_t *emmBody, uint8_t *data)
+{
+	int i;
+	uint8_t padding[] =
+	{
+		0xB3, 0x60, 0x35, 0xC8, 0x5C, 0x26, 0xC1, 0xD0,
+		0x88, 0x86, 0x57, 0xB6, 0x45, 0xA7, 0xDF, 0x7E,
+		0xF0, 0xA8, 0x49, 0xFB, 0x79, 0x6C, 0xAF, 0xB0
+	};
+
+	memcpy(data + 0x28, padding, 0x18);
+
+	for (i = 0; i < 5; i++)
+	{
+		data[0 + i * 8] = emmBody[0x18 + i * 0x1B];
+		data[1 + i * 8] = emmBody[0x16 + i * 0x1B];
+		data[2 + i * 8] = emmBody[0x07 + i * 0x1B];
+		data[3 + i * 8] = emmBody[0x0B + i * 0x1B];
+		data[4 + i * 8] = emmBody[0x06 + i * 0x1B];
+		data[5 + i * 8] = emmBody[0x19 + i * 0x1B];
+		data[6 + i * 8] = emmBody[0x15 + i * 0x1B];
+		data[7 + i * 8] = emmBody[0x03 + i * 0x1B];
+	}
+}
+
+static uint8_t get_mode_unmask_emm(uint8_t *extraData)
+{
+	uint16_t data = ((uint16_t)extraData[0] << 8) + extraData[1];
+
+	if (data == 0)
+	{
+		return 0x00;
+	}
+
+	switch (data & 0x0881)
+	{
+		case 0x0080:
+		case 0x0881:
+			return 0x01;
+
+		case 0x0001:
+		case 0x0880:
+			return 0x02;
+
+		case 0x0800:
+		case 0x0081:
+			return 0x03;
+
+		case 0x0000:
+		case 0x0801:
+			switch (data & 0x9020)
+			{
+				case 0x8000:
+				case 0x9000:
+					return 0x04;
+
+				case 0x0020:
+				case 0x9020:
+					return 0x05;
+
+				case 0x0000:
+				case 0x1000:
+					return 0x06;
+
+				case 0x1020:
+				case 0x8020:
+					switch (data & 0x2014)
+					{
+						case 0x2004:
+						case 0x2010:
+							return 0x07;
+
+						case 0x0000:
+						case 0x0004:
+							return 0x08;
+
+						case 0x0014:
+						case 0x2014:
+							return 0x09;
+
+						case 0x0010:
+						case 0x2000:
+							return 0x00;
+					}
+					break;
+			}
+			break;
+	}
+	return 0x00;
+}
+
 static void unmask_emm(uint8_t *emm)
 {
 	uint32_t crc, i, l;
-	uint8_t hashModeEmm, data[30], mask[16];
+	uint8_t hashModeEmm, modeUnmask, data[30], mask[16];
 
 	uint8_t sourcePos[] =
 	{
@@ -2264,19 +2355,60 @@ static void unmask_emm(uint8_t *emm)
 	create_data_ecm_emm(emm, sourcePos, 19, 30, data);
 
 	hashModeEmm = emm[8] ^ crc8_calc(data, 30);
+	modeUnmask = get_mode_unmask_emm(emm + 16);
 
-	create_hash(data, 30, mask, hashModeEmm);
+	if ((modeUnmask == 0x00) || (modeUnmask > 4))
+	{
+		create_hash(data, 30, mask, hashModeEmm);
+
+		// Unmask Body
+		for (i = 0; i < 30; i++)
+		{
+			emm[19 + destPos[i]] ^= mask[i & 0x0F];
+		}
+	}
+	else if (modeUnmask == 0x03)
+	{
+		for (i = 0; i < 5; i++)
+		{
+			emm[0x13 + 0x03 + i * 0x1B] -= emm[0x13 + 0x0D + i * 0x1B];
+			emm[0x13 + 0x06 + i * 0x1B] -= emm[0x13 + 0x1A + i * 0x1B];
+			emm[0x13 + 0x07 + i * 0x1B] -= emm[0x13 + 0x10 + i * 0x1B];
+			emm[0x13 + 0x0B + i * 0x1B] -= emm[0x13 + 0x17 + i * 0x1B];
+			emm[0x13 + 0x15 + i * 0x1B] -= emm[0x13 + 0x05 + i * 0x1B];
+			emm[0x13 + 0x16 + i * 0x1B] -= emm[0x13 + 0x0F + i * 0x1B];
+			emm[0x13 + 0x18 + i * 0x1B] -= emm[0x13 + 0x14 + i * 0x1B];
+			emm[0x13 + 0x19 + i * 0x1B] -= emm[0x13 + 0x04 + i * 0x1B];
+		}
+
+		create_data_unmask_emm_mode_03(emm + 0x13, data);
+		create_hash_mode_03(data, mask);
+
+		for (i = 0; i < 5; i++)
+		{
+			emm[0x13 + 0x14 + i * 0x1B] ^= mask[0x00];
+			emm[0x13 + 0x0F + i * 0x1B] ^= mask[0x01];
+			emm[0x13 + 0x10 + i * 0x1B] ^= mask[0x02];
+			emm[0x13 + 0x17 + i * 0x1B] ^= mask[0x03];
+			emm[0x13 + 0x1A + i * 0x1B] ^= mask[0x04];
+			emm[0x13 + 0x04 + i * 0x1B] ^= mask[0x05];
+			emm[0x13 + 0x05 + i * 0x1B] ^= mask[0x06];
+			emm[0x13 + 0x0D + i * 0x1B] ^= mask[0x07];
+			emm[0x13 + 0x09 + i * 0x1B] ^= mask[0x08];
+			emm[0x13 + 0x0A + i * 0x1B] ^= mask[0x09];
+			emm[0x13 + 0x0E + i * 0x1B] ^= mask[0x0A];
+			emm[0x13 + 0x11 + i * 0x1B] ^= mask[0x0B];
+			emm[0x13 + 0x12 + i * 0x1B] ^= mask[0x0C];
+			emm[0x13 + 0x13 + i * 0x1B] ^= mask[0x0D];
+			emm[0x13 + 0x08 + i * 0x1B] ^= mask[0x0E];
+			emm[0x13 + 0x0C + i * 0x1B] ^= mask[0x0F];
+		}
+	}
 
 	// Fix Header
 	emm[3] &= 0x0F;
 	emm[3] |= 0x10;
 	emm[8] = 0x00;
-
-	// Unmask Body
-	for (i = 0; i < 30; i++)
-	{
-		emm[19 + destPos[i]] ^= mask[i & 0x0F];
-	}
 
 	// Fix CRC (optional)
 	l = (((emm[1] << 8) + emm[2]) & 0xFFF) + 3 - 4;
