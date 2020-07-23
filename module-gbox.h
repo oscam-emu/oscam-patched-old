@@ -6,22 +6,20 @@
 #define NO_GBOX_ID                   0
 #define GBOX_MAXHOPS                 5
 #define DEFAULT_GBOX_MAX_DIST        2
-#define DEFAULT_GBOX_MAX_ECM_SEND    3
+#define DEFAULT_GBOX_MAX_ECM_SEND    5
 #define DEFAULT_GBOX_RESHARE         2
 #define DEFAULT_CCC_GBOX_RESHARE     1
 #define DEFAULT_GBOX_RECONNECT     180
 #define GBOX_MIN_RECONNECT          60
 #define GBOX_MAX_RECONNECT         300
 #define CS_GBOX_MAX_LOCAL_CARDS     16
-#define GBOX_REBROADCAST_TIMEOUT  1250
-#define GBOX_MIN_REBROADCAST_TIME  100
 #define GBOX_SID_CONFIRM_TIME     3600
 #define GBOX_DEFAULT_CW_TIME       500
 #define RECEIVE_BUFFER_SIZE       1024
 #define MIN_GBOX_MESSAGE_LENGTH     10 // CMD + pw + pw. TODO: Check if is really min
 #define MIN_ECM_LENGTH               8
 #define STATS_WRITE_TIME           300 // write stats file every 5 min
-#define MAX_GBOX_CARDS            1024 // send max. 1024 to peer
+#define MAX_GBOX_CARDS            1024 // send max. 1024 cards to peer
 #define LOCAL_GBOX_MAJOR_VERSION  0x02
 
 #define MSG_ECM       0x445C
@@ -34,11 +32,9 @@
 #define MSG_GSMS      0x0FFF
 #define MSG_HERE      0xA0A1
 
-#define GBOX_ECM_NOT_ASKED      0
+#define GBOX_ECM_NEW_REQ        0
 #define GBOX_ECM_SENT           1
-#define GBOX_ECM_SENT_ALL       2
-#define GBOX_ECM_SENT_ALL_TWICE 3
-#define GBOX_ECM_ANSWERED       4
+#define GBOX_ECM_ANSWERED       2
 
 #define GBOX_CARD_TYPE_GBOX  0
 #define GBOX_CARD_TYPE_LOCAL 1

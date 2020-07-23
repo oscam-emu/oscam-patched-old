@@ -1536,6 +1536,7 @@ struct s_reader										// contains device info, reader info and card info
 	uint8_t			result[104];
 	uint8_t			stillencrypted[0x50];
 	uint8_t			resultrsa[0x50];
+	uint32_t		cak7_restart;
 	uint32_t		cak7_seq;
 	uint8_t			cak7_camstate;
 	uint8_t			cak7_aes_key[32];
