@@ -1229,6 +1229,7 @@ void request_cw_from_readers(ECM_REQUEST *er, uint8_t stop_stage)
 			default:
 			{
 				// only fallbacks
+				if (ea->reader->typ == R_GBOX) break;
 				if((ea->status & REQUEST_SENT) ||
 						(ea->status & (READER_ACTIVE | READER_FALLBACK)) != (READER_ACTIVE | READER_FALLBACK))
 					{ continue; }
