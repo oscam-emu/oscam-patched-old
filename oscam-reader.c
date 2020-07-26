@@ -1065,7 +1065,7 @@ int32_t casc_process_ecm(struct s_reader *reader, ECM_REQUEST *er)
 	cs_log_dump_dbg(D_ATR, er->ecm, er->ecmlen, "casc ecm (%s):", (reader) ? reader->label : "n/a");
 	rc = 0;
 
-	if(sflag)
+	if((sflag) || (reader->typ == R_GBOX))
 	{
 		rc = reader->ph.c_send_ecm(cl, &cl->ecmtask[n]);
 		if(rc != 0)
@@ -1103,53 +1103,55 @@ void reader_get_ecm(struct s_reader *reader, ECM_REQUEST *er)
 	struct ecm_request_t *ecm;
 	time_t timeout;
 
-	cs_readlock(__func__, &ecmcache_lock);
+	if (reader->typ != R_GBOX) {
+		cs_readlock(__func__, &ecmcache_lock);
 
-	for(ecm = ecmcwcache; ecm; ecm = ecm->next)
-	{
-		timeout = time(NULL) - ((cfg.ctimeout+500)/1000+1);
-		if(ecm->tps.time <= timeout)
-			{ break; }
-
-		if(!ecm->matching_rdr || ecm == er || ecm->rc == E_99) { continue; }
-
-		// match same ecm
-		if(er->caid == ecm->caid && !memcmp(er->ecmd5, ecm->ecmd5, CS_ECMSTORESIZE))
+		for(ecm = ecmcwcache; ecm; ecm = ecm->next)
 		{
-			//check if ask this reader
-			ea = get_ecm_answer(reader, ecm);
-			if(ea && !ea->is_pending && (ea->status & REQUEST_SENT) && ea->rc != E_TIMEOUT && ea->rcEx != E2_RATELIMIT) { break; }
-			ea = NULL;
+			timeout = time(NULL) - ((cfg.ctimeout+500)/1000+1);
+			if(ecm->tps.time <= timeout)
+				{ break; }
+
+			if(!ecm->matching_rdr || ecm == er || ecm->rc == E_99) { continue; }
+
+			// match same ecm
+			if(er->caid == ecm->caid && !memcmp(er->ecmd5, ecm->ecmd5, CS_ECMSTORESIZE))
+			{
+				//check if ask this reader
+				ea = get_ecm_answer(reader, ecm);
+				if(ea && !ea->is_pending && (ea->status & REQUEST_SENT) && ea->rc != E_TIMEOUT && ea->rcEx != E2_RATELIMIT) { break; }
+				ea = NULL;
+			}
 		}
-	}
 
-	cs_readunlock(__func__, &ecmcache_lock);
+		cs_readunlock(__func__, &ecmcache_lock);
 
-	if(ea) // found ea in cached ecm, asking for this reader
-	{
-		ea_er->is_pending = true;
-
-		cs_readlock(__func__, &ea->ecmanswer_lock);
-		if(ea->rc < E_99)
+		if(ea) // found ea in cached ecm, asking for this reader
 		{
-			cs_readunlock(__func__, &ea->ecmanswer_lock);
-			cs_log_dbg(D_LB, "{client %s, caid %04X, prid %06X, srvid %04X} [reader_get_ecm] ecm already sent to reader %s (%s)", (check_client(er->client) ? er->client->account->usr : "-"), er->caid, er->prid, er->srvid, reader ? reader->label : "-", ea->rc==E_FOUND?"OK":"NOK");
+			ea_er->is_pending = true;
 
-			//e.g. we cannot send timeout, because "ea_temp->er->client" could wait/ask other readers! Simply set not_found if different from E_FOUND!
-			write_ecm_answer(reader, er, (ea->rc==E_FOUND? E_FOUND : E_NOTFOUND), ea->rcEx, ea->cw, NULL, ea->tier, &ea->cw_ex);
+			cs_readlock(__func__, &ea->ecmanswer_lock);
+			if(ea->rc < E_99)
+			{
+				cs_readunlock(__func__, &ea->ecmanswer_lock);
+				cs_log_dbg(D_LB, "{client %s, caid %04X, prid %06X, srvid %04X} [reader_get_ecm] ecm already sent to reader %s (%s)", (check_client(er->client) ? er->client->account->usr : "-"), er->caid, er->prid, er->srvid, reader ? reader->label : "-", ea->rc==E_FOUND?"OK":"NOK");
+
+				//e.g. we cannot send timeout, because "ea_temp->er->client" could wait/ask other readers! Simply set not_found if different from E_FOUND!
+				write_ecm_answer(reader, er, (ea->rc==E_FOUND? E_FOUND : E_NOTFOUND), ea->rcEx, ea->cw, NULL, ea->tier, &ea->cw_ex);
+				return;
+			}
+			else
+			{
+				ea_prev = ea->pending;
+				ea->pending = ea_er;
+				ea->pending->pending_next = ea_prev;
+				cs_log_dbg(D_LB, "{client %s, caid %04X, prid %06X, srvid %04X} [reader_get_ecm] ecm already sent to reader %s... set as pending", (check_client(er->client) ? er->client->account->usr : "-"), er->caid, er->prid, er->srvid, reader ? reader->label : "-");
+			}
+			cs_readunlock(__func__, &ea->ecmanswer_lock);
 			return;
 		}
-		else
-		{
-			ea_prev = ea->pending;
-			ea->pending = ea_er;
-			ea->pending->pending_next = ea_prev;
-			cs_log_dbg(D_LB, "{client %s, caid %04X, prid %06X, srvid %04X} [reader_get_ecm] ecm already sent to reader %s... set as pending", (check_client(er->client) ? er->client->account->usr : "-"), er->caid, er->prid, er->srvid, reader ? reader->label : "-");
-		}
-		cs_readunlock(__func__, &ea->ecmanswer_lock);
-		return;
 	}
-
+	
 	lb_update_last(ea_er, reader);
 
 	if(ecm_ratelimit_check(reader, er, 1) != OK)
