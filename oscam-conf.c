@@ -511,7 +511,7 @@ FILE *create_config_file(const char *conf_filename)
 	}
 	fprintf(f, "# %s generated automatically by Streamboard OSCAM %s SVN r%s\n",
 			conf_filename, CS_VERSION, CS_SVN_VERSION);
-	fprintf(f, "# Read more: http://www.streamboard.tv/svn/oscam/trunk/Distribution/doc/txt/%s.txt\n\n",
+	fprintf(f, "# Read more: https://svn.streamboard.tv/oscam/trunk/Distribution/doc/txt/%s.txt\n\n",
 			conf_filename);
 	return f;
 }
