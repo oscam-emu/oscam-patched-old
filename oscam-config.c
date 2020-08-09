@@ -687,7 +687,7 @@ int32_t init_srvid(void)
 		if(nr > 2000)
 		{
 			cs_log("WARNING: You risk high CPU load and high ECM times with more than 2000 service-id's!");
-			cs_log("HINT: --> use optimized lists from http://www.streamboard.tv/wiki/Srvid");
+			cs_log("HINT: --> use optimized lists from https://wiki.streamboard.tv/wiki/Srvid");
 		}
 	}
 

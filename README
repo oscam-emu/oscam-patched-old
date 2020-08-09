@@ -6,7 +6,7 @@ License
 =======
 
 OSCam: Open Source CAM
-Copyright (C) 2009-2015 OSCam developers
+Copyright (C) 2009-2020 OSCam developers
 
 OSCam is based on the Streamboard mp-cardserver 0.9d by dukat and
 has been extended and worked on by many more since then.
@@ -32,21 +32,21 @@ Version history
 ===============
 
 OSCam history is accessible through Trac timeline at:
-   http://www.streamboard.tv/oscam/timeline/
+   https://trac.streamboard.tv/oscam/timeline
 
 
 Repositories
 ============
 
 SVN repository:
-   svn checkout http://www.streamboard.tv/svn/oscam/trunk oscam-svn
+   svn checkout https://svn.streamboard.tv/oscam/trunk oscam-svn
 
 
 Building OSCam from source
 ==========================
 
  - Get the lastest sources from SVN
-    svn checkout http://www.streamboard.tv/svn/oscam/trunk oscam-trunk
+    svn checkout https://svn.streamboard.tv/oscam/trunk oscam-trunk
 
  - Go to oscam-trunk directory.
 
@@ -64,7 +64,7 @@ Building OScam for different CPUs (cross-compilation)
 First you need to install the target CPU toolchain. Already built toolchains
 for various architectures can be downloaded from:
 
-    http://www.streamboard.tv/oscam/wiki/crosscompiling/
+    https://trac.streamboard.tv/oscam/wiki/crosscompiling
 
 In order to cross compile OSCam you need to set CROSS variable when
 running make. For example to compile for SH4 architecture you need
@@ -90,11 +90,11 @@ OSCam supports building with the following external dependencies:
 
 For STAPI support you need to download liboscam_stapi.a library and place
 it in stapi directory under oscam/ root dir. liboscam_stapi.a can be downloaded
-from: http://www.streamboard.tv/wbb2/thread.php?threadid=28854
+from: https://board.streamboard.tv
 
 For STAPI5 support you need to download liboscam_stapi5.a library and place
 it in stapi directory under oscam/ root dir. liboscam_stapi5.a can be downloaded
-from: http://www.streamboard.tv/wbb2/thread.php?postid=541107#post541107
+from: https://board.streamboard.tv
 
 For more information and examples on using the build system, run `make help`.
 
@@ -105,11 +105,11 @@ Help and Support
 man pages and configuration examples are in Distribution/doc directory.
 
 You may visit our Trac system for tracking and filling bug reports.
-   http://www.streamboard.tv/oscam/
+   https://trac.streamboard.tv/oscam/newticket
 
 If you experience any problems with OSCam, feel free to post in our support
 forum under (mainly German and English language) at:
-   http://www.streamboard.tv/wbb2/portal.php
+   https://board.streamboard.tv/forum/
 
 Configuration wiki:
-   http://www.streamboard.tv/wiki/index.php/OSCam/
+   https://wiki.streamboard.tv/wiki/OSCam
