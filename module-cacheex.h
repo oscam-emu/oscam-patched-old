@@ -15,9 +15,8 @@ uint8_t check_cacheex_filter(struct s_client *cl, ECM_REQUEST *er);
 void cacheex_add_to_cache(struct s_client *cl, ECM_REQUEST *er);
 void cacheex_add_to_cache_from_csp(struct s_client *cl, ECM_REQUEST *er);
 void cacheex_cache_push(ECM_REQUEST *er);
-int32_t cacheex_add_stats(struct s_client *cl, uint16_t caid, uint16_t srvid, uint32_t prid, uint8_t direction, uint8_t localgenerated);
+int32_t cacheex_add_stats(struct s_client *cl, uint16_t caid, uint16_t srvid, uint32_t prid, uint8_t direction);
 int8_t cacheex_maxhop(struct s_client *cl);
-int8_t cacheex_maxhop_lg(struct s_client *cl);
 
 #ifdef CS_CACHEEX
 extern void cacheex_init(void);
@@ -40,10 +39,6 @@ void cacheex_cleanup_hitcache(bool force);
 void cacheex_update_hash(ECM_REQUEST *er);
 void cacheex_mode1_delay(ECM_REQUEST *er);
 void cacheex_timeout(ECM_REQUEST *er);
-char* cxaio_ftab_to_buf(FTAB *lg_only_ftab);
-FTAB caidtab2ftab(CAIDTAB *ctab);
-void caidtab2ftab_add(CAIDTAB *lgonly_ctab, FTAB *lgonly_tab);
-#define CACHEEX_FEATURES 127
 #else
 static inline void cacheex_init(void) { }
 static inline void cacheex_clear_account_stats(struct s_auth *UNUSED(account)) { }
