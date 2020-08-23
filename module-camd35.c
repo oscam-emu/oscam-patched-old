@@ -639,7 +639,7 @@ static void camd35_send_dcw(struct s_client *client, ECM_REQUEST *er)
 			{
 				memmove(buf + 20 + 16, buf + 20 + buf[1], 0x34);
 			}
-
+#ifdef CS_CACHEEX
 			if(er->localgenerated && client->c35_extmode)
 			{
 				buf[0] += 0x51; // ecm response with lg-flag
@@ -648,7 +648,7 @@ static void camd35_send_dcw(struct s_client *client, ECM_REQUEST *er)
 			{
 				buf[0]++; // ecm response (CMD01 or CMD04)
 			}
-			
+#endif
 			buf[1] = 16;
 			camd35_cacheex_init_dcw(client, er);
 			memcpy(buf + 20, er->cw, buf[1]);
@@ -872,7 +872,9 @@ static int32_t camd35_client_init(struct s_client *cl)
 	if(cacheex_get_rdr_mode(cl->reader) == 2 || cacheex_get_rdr_mode(cl->reader) == 1)
 	{
 		camd35_cacheex_send_push_filter(cl, 2);
+#ifdef CS_CACHEEX
 		camd35_cacheex_feature_request(cl);
+#endif
 	}
 
 	return 0;

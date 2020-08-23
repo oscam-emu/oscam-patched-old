@@ -60,6 +60,7 @@ void free_ecm_cache(void)
 	pthread_rwlock_destroy(&ecm_cache_lock);
 }
 
+#ifdef CS_CACHEEX
 void init_ecm_cache(void)
 {
 	if(cfg.cw_cache_size > 0 || cfg.cw_cache_memory > 0)
@@ -71,18 +72,20 @@ void init_ecm_cache(void)
 			{ ecm_cache_init_done = 1; }
 	}
 }
+#endif
 
 static uint8_t time_sort(ECM_CACHE *a, ECM_CACHE *b)
 {
 	if (((int64_t)(a->upd_time.time) * 1000ull + (int64_t) a->upd_time.millitm) == ((int64_t)(b->upd_time.time) * 1000ull + (int64_t) b->upd_time.millitm)) return 0;
 	return (((int64_t)(a->upd_time.time) * 1000ull + (int64_t) a->upd_time.millitm) > ((int64_t)(b->upd_time.time) * 1000ull + (int64_t) b->upd_time.millitm)) ? -1 : 1;
 }
-
+#ifdef CS_CACHEEX
 static int compare_csp_hash_ecmcache(const void *arg, const void *obj)
 {
 	uint32_t h = ((const ECM_CACHE*)obj)->csp_hash;
 	return memcmp(arg, &h, 4);
 }
+#endif
 
 void ecm_cache_cleanup(bool force)
 {
@@ -766,8 +769,10 @@ void distribute_ea(struct s_ecm_answer *ea)
 	for(ea_temp = ea->pending; ea_temp; ea_temp = ea_temp->pending_next)
 	{
 		cs_log_dbg(D_LB, "{client %s, caid %04X, prid %06X, srvid %04X} [distribute_ea] send ea (%s) by reader %s answering for client %s", (check_client(ea_temp->er->client) ? ea_temp->er->client->account->usr : "-"), ea_temp->er->caid, ea_temp->er->prid, ea_temp->er->srvid, ea->rc==E_FOUND?"OK":"NOK", ea_temp->reader->label, (check_client(ea->er->client) ? ea->er->client->account->usr : "-"));
+#ifdef CS_CACHEEX
 		if(ea->rc==E_FOUND && ea->er->localgenerated)
 			ea_temp->er->localgenerated = 1;
+#endif
 		// e.g. we cannot send timeout, because "ea_temp->er->client" could wait/ask other readers! Simply set not_found if different from E_FOUND!
 		write_ecm_answer(ea_temp->reader, ea_temp->er, (ea->rc==E_FOUND? E_FOUND : E_NOTFOUND), ea->rcEx, ea->cw, NULL, ea->tier, &ea->cw_ex);
 	}
@@ -1397,7 +1402,11 @@ void request_cw_from_readers(ECM_REQUEST *er, uint8_t stop_stage)
 	}
 }
 
+#ifdef CS_CACHEEX
 void add_cache_from_reader(ECM_REQUEST *er, struct s_reader *rdr, uint32_t csp_hash, uint8_t *ecmd5, uint8_t *cw, int16_t caid, int32_t prid, int16_t srvid, int32_t ecm_time)
+#else
+void add_cache_from_reader(ECM_REQUEST *er, struct s_reader *rdr, uint32_t csp_hash, uint8_t *ecmd5, uint8_t *cw, int16_t caid, int32_t prid, int16_t srvid)
+#endif
 {
 	ECM_REQUEST *ecm;
 	if (cs_malloc(&ecm, sizeof(ECM_REQUEST)))
@@ -1416,9 +1425,9 @@ void add_cache_from_reader(ECM_REQUEST *er, struct s_reader *rdr, uint32_t csp_h
 		memcpy(ecm->cw, cw, sizeof(ecm->cw));
 		ecm->grp = rdr->grp;
 		ecm->selected_reader = rdr;
+#ifdef CS_CACHEEX
 		ecm->ecm_time = ecm_time;
 		ecm->localgenerated = er->localgenerated;
-#ifdef CS_CACHEEX
 		if(rdr && cacheex_reader(rdr))
 			{ ecm->cacheex_src = rdr->client; } //so adds hits to reader
 #endif
@@ -1732,8 +1741,9 @@ int32_t write_ecm_answer(struct s_reader *reader, ECM_REQUEST *er, int8_t rc, ui
 		er = er->parent; // Now er is "original" ecm, before it was the reader-copy
 		er_reader_cp->rc = rc;
 		er_reader_cp->idx = 0;
+#ifdef CS_CACHEEX
 		er->localgenerated = er_reader_cp->localgenerated;
-
+#endif
 		timeout = time(NULL) - ((cfg.ctimeout + 500) / 1000 + 1);
 		if(er->tps.time < timeout)
 			{ return 0; }
@@ -1866,11 +1876,19 @@ int32_t write_ecm_answer(struct s_reader *reader, ECM_REQUEST *er, int8_t rc, ui
 				{
 					rc = E_NOTFOUND;
 					rcEx = E2_WRONG_CHKSUM;
+#ifdef CS_CACHEEX
 					cs_log("Probably got bad CW from reader: %s, caid %04X, srvid %04X (%s) - dropping CW, lg: %i", reader->label, er->caid, er->srvid, ecmd5s, er->localgenerated);
+#else
+					cs_log("Probably got bad CW from reader: %s, caid %04X, srvid %04X (%s) - dropping CW", reader->label, er->caid, er->srvid, ecmd5s);
+#endif
 				}
 				else
 				{
+#ifdef CS_CACHEEX
 					cs_log("Probably got bad CW from reader: %s, caid %04X, srvid %04X (%s), lg: %i", reader->label, er->caid, er->srvid, ecmd5s, er->localgenerated);
+#else
+					cs_log("Probably got bad CW from reader: %s, caid %04X, srvid %04X (%s)", reader->label, er->caid, er->srvid, ecmd5s);
+#endif
 				}
 			}
 		}
@@ -1932,21 +1950,20 @@ int32_t write_ecm_answer(struct s_reader *reader, ECM_REQUEST *er, int8_t rc, ui
 	if(ea->pending) // has pending ea
 		{ distribute_ea(ea); }
 
-
 	if(!ea->is_pending) // not for pending ea - only once for ea
 	{
+#ifdef CS_CACHEEX
 		// cache update
 		// Skip check for BISS1 - cw could be indeed zero
 		// Skip check for BISS2 - we use the extended cw, so the "simple" cw is always zero
 		if(ea && (ea->rc < E_NOTFOUND) && (!chk_is_null_CW(ea->cw) && !caid_is_biss(er->caid)))
 		{	
 			int32_t ecmtime = ea->ecm_time;
-#ifdef CS_CACHEEX
 			if(er->cacheex_wait_time_expired && er->cacheex_wait_time)
 				ecmtime = ea->ecm_time + er->cacheex_wait_time;
-#endif
 			add_cache_from_reader(er, reader, er->csp_hash, er->ecmd5, ea->cw, er->caid, er->prid, er->srvid, ecmtime);
 		}
+#endif
 
 		// readers stats for LB
 		send_reader_stat(reader, er, ea, ea->rc);
@@ -2142,16 +2159,15 @@ void write_ecm_answer_fromcache(struct s_write_from_cache *wfc)
 	er = wfc->er_new;
 	ecm = wfc->er_cache;
 
+#ifdef CS_CACHEEX
 	if(ecm->localgenerated)
 		er->localgenerated = 1;
-
+#endif
 	int8_t rc_orig = er->rc;
-
-	er->grp |= ecm->grp; // update group
 #ifdef CS_CACHEEX
+	er->grp |= ecm->grp; // update group
 	if(ecm->from_csp) { er->csp_answered = 1; } // update er as answered by csp (csp have no group)
 #endif
-
 	if(er->rc >= E_NOTFOUND)
 	{
 #ifdef CS_CACHEEX
@@ -2160,8 +2176,8 @@ void write_ecm_answer_fromcache(struct s_write_from_cache *wfc)
 				er->rc = E_CACHEEX;
 			}
 		else
-#endif
 			{ er->rc=E_CACHE1; } // from normal readers
+#endif
 
 		memcpy(er->cw, ecm->cw, 16);
 		er->selected_reader = ecm->selected_reader;
@@ -2212,7 +2228,7 @@ void write_ecm_answer_fromcache(struct s_write_from_cache *wfc)
 		}
 	}
 }
-
+#ifdef CS_CACHEEX
 static bool ecm_cache_check(ECM_REQUEST *er)
 {
 	if(ecm_cache_init_done && cfg.ecm_cache_droptime > 0)
@@ -2275,10 +2291,12 @@ static bool ecm_cache_check(ECM_REQUEST *er)
 		return true;
 	}
 }
+#endif
 
 void get_cw(struct s_client *client, ECM_REQUEST *er)
 {
 	cacheex_update_hash(er);
+#ifdef CS_CACHEEX
 	if(!ecm_cache_check(er))
 	{
 		er->rc = E_INVALID;
@@ -2286,6 +2304,7 @@ void get_cw(struct s_client *client, ECM_REQUEST *er)
 		free_ecm(er);
 		return;
 	}
+#endif
 	cs_log_dump_dbg(D_ATR, er->ecm, er->ecmlen, "get cw for ecm:");
 	cs_log_dbg(D_LB, "{client %s, caid %04X, prid %06X, srvid %04X} [get_cw] NEW REQUEST!", (check_client(er->client) ? er->client->account->usr : "-"), er->caid, er->prid, er->srvid);
 	increment_n_request(client);
