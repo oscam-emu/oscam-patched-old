@@ -716,12 +716,6 @@ void casc_check_dcw(struct s_reader *reader, int32_t idx, int32_t rc, uint8_t *c
 			}
 			else if(rc)
 			{
-#ifdef CS_CACHEEX
-				if(rc == 0x86) // lg-flagged rc
-				{
-					ecm->localgenerated = 1;
-				}
-#endif
 				write_ecm_answer(reader, ecm, E_FOUND, 0, cw, NULL, 0, NULL);
 			}
 			else
@@ -1493,9 +1487,6 @@ void kill_all_readers(void)
 			{ continue; }
 		rdr_log(rdr, "Killing reader");
 		kill_thread(cl);
-#ifdef CS_CACHEEX
-			ll_destroy_data(&cl->ll_cacheex_stats);
-#endif
 	}
 	first_active_reader = NULL;
 }

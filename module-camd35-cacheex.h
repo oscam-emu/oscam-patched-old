@@ -9,7 +9,6 @@ void camd35_cacheex_send_push_filter(struct s_client *cl, uint8_t mode);
 bool camd35_cacheex_server(struct s_client *client, uint8_t *mbuf);
 bool camd35_cacheex_recv_chk(struct s_client *client, uint8_t *buf);
 void camd35_cacheex_module_init(struct s_module *ph);
-void camd35_cacheex_feature_request(struct s_client *cl);
 #else
 static inline void camd35_cacheex_init_dcw(struct s_client *UNUSED(client), ECM_REQUEST *UNUSED(er)) { }
 static inline void camd35_cacheex_recv_ce1_cwc_info(struct s_client *UNUSED(cl), uint8_t *UNUSED(buf), int32_t UNUSED(idx)) { }

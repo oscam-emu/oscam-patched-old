@@ -544,9 +544,7 @@ void cardreader_process_ecm(struct s_reader *reader, struct s_client *cl, ECM_RE
 		ea.rcEx = E2_WRONG_CHKSUM; // flag it as wrong checksum
 		memcpy(ea.msglog, "Invalid ecm type for card", 25);
 	}
-#ifdef CS_CACHEEX
-	er->localgenerated = 1;
-#endif
+
 	write_ecm_answer(reader, er, ea.rc, ea.rcEx, ea.cw, ea.msglog, ea.tier, &ea.cw_ex);
 
 	cl->lastecm = time((time_t *)0);
