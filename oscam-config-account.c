@@ -626,7 +626,9 @@ int32_t init_free_userdb(struct s_auth *ptr)
 		config_list_gc_values(account_opts, ptr);
 		ftab_clear(&ptr->ftab);
 		ftab_clear(&ptr->fchid);
+#ifdef CS_CACHEEX
 		ftab_clear(&ptr->disablecrccacheex_only_for);
+#endif
 		tuntab_clear(&ptr->ttab);
 		caidtab_clear(&ptr->ctab);
 		NULLFREE(ptr->cltab.aclass);

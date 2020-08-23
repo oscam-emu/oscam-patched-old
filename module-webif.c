@@ -4070,7 +4070,7 @@ static void webif_add_client_proto(struct templatevars *vars, struct s_client *c
 		return;
 	}
 #endif
-#if defined(MODULE_CAMD35) || defined(MODULE_CAMD35_TCP) && defined(CS_CACHEEX)
+#if defined(MODULE_CAMD35) && defined(CS_CACHEEX) || defined(MODULE_CAMD35_TCP) && defined(CS_CACHEEX)
 	if(strncmp(proto, "cs3", 3) == 0)
 	{
 		tpl_addVar(vars, TPLADDONCE, "CLIENTPROTO", (char *)proto);

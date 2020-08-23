@@ -716,10 +716,12 @@ void casc_check_dcw(struct s_reader *reader, int32_t idx, int32_t rc, uint8_t *c
 			}
 			else if(rc)
 			{
+#ifdef CS_CACHEEX
 				if(rc == 0x86) // lg-flagged rc
 				{
 					ecm->localgenerated = 1;
 				}
+#endif
 				write_ecm_answer(reader, ecm, E_FOUND, 0, cw, NULL, 0, NULL);
 			}
 			else

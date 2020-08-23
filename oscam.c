@@ -1793,8 +1793,10 @@ int32_t main(int32_t argc, char *argv[])
 	init_cache();
 	cacheex_init_hitcache();
 	init_config();
+#ifdef CS_CACHEEX
 	init_cw_cache();
 	init_ecm_cache();
+#endif
 	cs_init_log();
 	init_machine_info();
 	init_check();

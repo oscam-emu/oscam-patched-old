@@ -87,7 +87,7 @@ static list ll_cache;
 static list ll_cw_cache;
 static int8_t cache_init_done = 0;
 static int8_t cw_cache_init_done = 0;
-
+#ifdef CS_CACHEEX
 void init_cw_cache(void)
 {
 	if(cfg.cw_cache_size > 0 || cfg.cw_cache_memory > 0)
@@ -99,7 +99,7 @@ void init_cw_cache(void)
 			{ cw_cache_init_done = 1; }
 	}
 }
-
+#endif
 void init_cache(void)
 {
 	init_hash_table(&ht_cache, &ll_cache);
@@ -218,12 +218,12 @@ static int compare_cw(const void *arg, const void *obj)
 {
 	return memcmp(arg, ((const CW*)obj)->cw, 16);
 }
-
+#if defined CW_CYCLE_CHECK || defined CS_CACHEEX
 static int compare_cw_cache(const void *arg, const void *obj)
 {
 	return memcmp(arg, ((const CW_CACHE*)obj)->cw, 16);
 }
-
+#endif
 static bool cwcycle_check_cache(struct s_client *cl, ECM_REQUEST *er, CW *cw)
 {
 	(void)cl; (void)er; (void)cw;
@@ -326,7 +326,9 @@ struct ecm_request_t *check_cache(ECM_REQUEST *er, struct s_client *cl)
 			ecm->cwc_cycletime = cw->cwc_cycletime;
 			ecm->cwc_next_cw_cycle = cw->cwc_next_cw_cycle;
 			ecm->cacheex_src = cw->cacheex_src;
+#ifdef CS_CACHEEX
 			ecm->localgenerated = (cw->localgenerated) ? 1:0;
+#endif
 			ecm->cw_count = cw->count;
 		}
 	}
@@ -335,12 +337,12 @@ out_err:
 	SAFE_RWLOCK_UNLOCK(&cache_lock);
 	return ecm;
 }
-
+#ifdef CS_CACHEEX
 uint16_t get_cacheex_nopushafter(ECM_REQUEST *er)
 {
 	return caidvaluetab_get_value(&cfg.cacheex_nopushafter_tab, er->caid, 0);
 }
-
+#endif
 static void cacheex_cache_add(ECM_REQUEST *er, ECMHASH *result, CW *cw, bool add_new_cw)
 {
 	(void)er; (void)result; (void)cw; (void)add_new_cw;
@@ -433,7 +435,7 @@ static void cacheex_cache_add(ECM_REQUEST *er, ECMHASH *result, CW *cw, bool add
 	}
 #endif
 }
-
+#ifdef CS_CACHEEX
 CW_CACHE_SETTING get_cw_cache(ECM_REQUEST *er)
 {
 	int32_t i, timediff_old_cw = 0;
@@ -593,17 +595,18 @@ static bool cw_cache_check(ECM_REQUEST *er)
 	}
 	return true;
 }
+#endif
 
 void add_cache(ECM_REQUEST *er)
 {
 	if(!cache_init_done || !er->csp_hash) return;
-	
+#ifdef CS_CACHEEX
 	// cw_cache_check
 	if(!cw_cache_check(er))
 	{
 		return;
 	}
-
+#endif
 	ECMHASH *result = NULL;
 	CW *cw = NULL;
 	bool add_new_cw=false;
@@ -878,16 +881,18 @@ void cleanup_cache(bool force)
 	SAFE_RWLOCK_UNLOCK(&cache_lock);
 }
 
+#ifdef CS_CACHEEX
 void cacheex_get_srcnodeid(ECM_REQUEST *er, uint8_t *remotenodeid)
 {
 	uint8_t *data;
 	data = ll_last_element(er->csp_lastnodes);
 	if(data)
-	{ 
+	{
 		memcpy(remotenodeid, data, 8);
 	}
 	else
-	{ 
+	{
 		memset(remotenodeid, 0 , 8);
 	}
 }
+#endif
