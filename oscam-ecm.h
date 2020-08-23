@@ -33,6 +33,11 @@ void request_cw_from_readers(ECM_REQUEST *er, uint8_t stop_stage);
 void checkCW(ECM_REQUEST *er);
 uint8_t checkCWpart(uint8_t *cw, int8_t part);
 
+void init_ecm_cache(void);
+void free_ecm_cache(void);
+
+void ecm_cache_cleanup(bool force);
+
 #define debug_ecm(mask, args...) \
 	do { \
 		if (config_enabled(WITH_DEBUG) && ((mask) & cs_dblevel)) { \

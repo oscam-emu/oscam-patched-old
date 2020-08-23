@@ -268,7 +268,10 @@ void *work_thread(void *ptr)
 					if(rc < 0)
 					{
 						if(reader->ph.type == MOD_CONN_TCP)
-							{ network_tcp_connection_close(reader, "disconnect on receive"); }
+							{ 
+								network_tcp_connection_close(reader, "disconnect on receive"); 
+								cl->cacheex_aio_checked = 0;
+							}
 						break;
 					}
 					cl->last = time(NULL); // *********************************** TO BE REPLACE BY CS_FTIME() LATER ****************

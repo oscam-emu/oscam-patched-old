@@ -573,6 +573,9 @@ void kill_all_clients(void)
 				cs_log("killing client %s", cl->account->usr);
 			}
 			kill_thread(cl);
+#ifdef CS_CACHEEX
+			ll_destroy_data(&cl->ll_cacheex_stats);
+#endif
 		}
 	}
 	NULLFREE(processUsername);
@@ -601,6 +604,9 @@ void cs_reinit_clients(struct s_auth *new_accounts)
 			if(account && !account->disabled && cl->pcrc == crc32(0L, MD5((uint8_t *)ESTR(account->pwd), strlen(ESTR(account->pwd)), md5tmp), MD5_DIGEST_LENGTH))
 			{
 				cl->account = account;
+#ifdef CS_CACHEEX
+				cl->cacheex_aio_checked = 0;
+#endif
 				if(cl->typ == 'c')
 				{
 					cl->grp = account->grp;

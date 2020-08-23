@@ -1299,6 +1299,7 @@ static int32_t videoguard2_do_ecm(struct s_reader *reader, const ECM_REQUEST *er
 				{
 					rdr_log(reader, "classD3 ins54: no cw --> Bad/wrong ECM");
 					test_0F = 0;
+					return E_CORRUPT;
 				}
 
 				if(buff_0F[1] & 1) // case 0f_0x xx 01 xx xx xx xx
