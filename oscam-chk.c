@@ -154,6 +154,51 @@ int32_t chk_srvid_match(ECM_REQUEST *er, SIDTAB *sidtab)
 	return (rc == 7);
 }
 
+int32_t chk_srvid_disablecrccws_only_for_exception(ECM_REQUEST *er)
+{
+	int32_t nr;
+	SIDTAB *sidtab;
+
+	for(nr = 0, sidtab = cfg.sidtab; sidtab; sidtab = sidtab->next, nr++)
+	{
+		if(sidtab->disablecrccws_only_for_exception && (sidtab->num_caid | sidtab->num_provid | sidtab->num_srvid) && chk_srvid_match(er, sidtab))
+		{
+			return(1);
+		}
+	}
+	return(0);
+}
+
+int32_t chk_srvid_no_wait_time(ECM_REQUEST *er)
+{
+	int32_t nr;
+	SIDTAB *sidtab;
+
+	for(nr = 0, sidtab = cfg.sidtab; sidtab; sidtab = sidtab->next, nr++)
+	{
+		if(sidtab->no_wait_time && (sidtab->num_caid | sidtab->num_provid | sidtab->num_srvid) && chk_srvid_match(er, sidtab))
+		{
+			return(1);
+		}
+	}
+	return(0);
+}
+
+int32_t chk_srvid_localgenerated_only_exception(ECM_REQUEST *er)
+{
+	int32_t nr;
+	SIDTAB *sidtab;
+
+	for(nr = 0, sidtab = cfg.sidtab; sidtab; sidtab = sidtab->next, nr++)
+	{
+		if(sidtab->lg_only_exception && (sidtab->num_caid | sidtab->num_provid | sidtab->num_srvid) && chk_srvid_match(er, sidtab))
+		{
+			return(1);
+		}
+	}
+	return(0);
+}
+
 int32_t chk_srvid(struct s_client *cl, ECM_REQUEST *er)
 {
 	int32_t nr, rc = 0;
@@ -710,6 +755,66 @@ uint8_t chk_is_fixed_fallback(struct s_reader *rdr, ECM_REQUEST *er)
 	return 0;
 }
 
+uint8_t chk_lg_only(ECM_REQUEST *er, FTAB *lg_only_ftab)
+{
+	int32_t i, k;
+
+	if(!lg_only_ftab->nfilts)
+		return 0;
+
+	for(i = 0; i < lg_only_ftab->nfilts; i++)
+	{
+		uint16_t tcaid = lg_only_ftab->filts[i].caid;
+		if(tcaid && (tcaid == er->caid || (tcaid < 0x0100 && (er->caid >> 8) == tcaid))) // caid match
+		{
+			int32_t nprids = lg_only_ftab->filts[i].nprids;
+			if(!nprids) // No Provider ->Ok
+				{ return 1; }
+
+			for(k = 0; k < nprids; k++)
+			{
+				uint32_t prid = lg_only_ftab->filts[i].prids[k];
+				if(prid == NO_PROVID_VALUE || prid == er->prid) // Provider matches
+				{
+					return 1;
+				}
+			}
+		}
+	}
+
+	return 0;
+}
+
+uint8_t chk_lg_only_cp(uint16_t caid, uint32_t prid, FTAB *lg_only_ftab)
+{
+	int32_t i, k;
+
+	if(!lg_only_ftab->nfilts)
+		return 0;
+
+	for(i = 0; i < lg_only_ftab->nfilts; i++)
+	{
+		uint16_t tcaid = lg_only_ftab->filts[i].caid;
+		if(tcaid && (tcaid == caid || (tcaid < 0x0100 && (caid >> 8) == tcaid))) // caid match
+		{
+			int32_t nprids = lg_only_ftab->filts[i].nprids;
+			if(!nprids) // No Provider ->Ok
+				{ return 1; }
+
+			for(k = 0; k < nprids; k++)
+			{
+				uint32_t fprid = lg_only_ftab->filts[i].prids[k];
+				if(fprid == NO_PROVID_VALUE || fprid == prid) // Provider matches
+				{
+					return 1;
+				}
+			}
+		}
+	}
+
+	return 0;
+}
+
 uint8_t chk_has_fixed_fallback(ECM_REQUEST *er)
 {
 	struct s_ecm_answer *ea;
@@ -1192,4 +1297,16 @@ int32_t chk_is_fakecw(uint8_t *cw)
 	cs_readunlock(__func__, &config_lock);
 
 	return is_fakecw;
+}
+
+bool chk_nopushafter(uint16_t caid, CAIDVALUETAB *cv, int32_t ecm_time)
+{
+	uint16_t npa_time = caidvaluetab_get_value(cv, caid, 0);
+	if(npa_time && (ecm_time > npa_time))
+	{
+		cs_log_dbg(D_CACHEEX, "REJECTED push: nopushafter %u < ecm_time %i", npa_time, ecm_time);
+		return 0;
+	}
+	else
+		return 1;
 }

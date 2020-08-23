@@ -54,6 +54,12 @@ int32_t write_services(void)
 			ptr++;
 		}
 		fprintf(f, "[%s]\n", sidtab->label);
+		fprintf_conf(f, "disablecrccws_only_for_exception", "%u", sidtab->disablecrccws_only_for_exception); // it should not have \n at the end
+		fputc((int)'\n', f);
+		fprintf_conf(f, "no_wait_time", "%u", sidtab->no_wait_time); // it should not have \n at the end
+		fputc((int)'\n', f);
+		fprintf_conf(f, "lg_only_exception", "%u", sidtab->lg_only_exception); // it should not have \n at the end
+		fputc((int)'\n', f);
 		fprintf_conf(f, "caid", "%s", ""); // it should not have \n at the end
 		for(i = 0; i < sidtab->num_caid; i++)
 		{
@@ -97,9 +103,32 @@ static void chk_entry4sidtab(char *value, struct s_sidtab *sidtab, int32_t what)
 	uint16_t *slist = (uint16_t *) 0;
 	uint32_t *llist = (uint32_t *) 0;
 	uint32_t caid;
+	uint8_t disablecrccws_only_for_exception = 0;
+	uint8_t no_wait_time = 0;
+	uint8_t lg_only_exception = 0;
 	char buf[strlen(value) + 1];
 	cs_strncpy(buf, value, sizeof(buf));
+
+	if(what == 5) // lg_only_exception
+	{	
+		sidtab->lg_only_exception = a2i(buf, sizeof(lg_only_exception));
+		return;
+	}
+
+	if(what == 4) // no_wait_time
+	{	
+		sidtab->no_wait_time = a2i(buf, sizeof(no_wait_time));
+		return;
+	}
+
+	if(what == 3) // disablecrccws_only_for_exception
+	{	
+		sidtab->disablecrccws_only_for_exception = a2i(buf, sizeof(disablecrccws_only_for_exception));
+		return;
+	}
+
 	b = (what == 1) ? sizeof(uint32_t) : sizeof(uint16_t);
+
 	for(i = 0, ptr = strtok_r(value, ",", &saveptr1); ptr; ptr = strtok_r(NULL, ",", &saveptr1))
 	{
 		caid = a2i(ptr, b);
@@ -166,6 +195,21 @@ void chk_sidtab(char *token, char *value, struct s_sidtab *sidtab)
 		chk_entry4sidtab(value, sidtab, 2);
 		return;
 	}
+	if(!strcmp(token, "disablecrccws_only_for_exception"))
+	{
+		chk_entry4sidtab(value, sidtab, 3);
+		return;
+	}
+	if(!strcmp(token, "no_wait_time"))
+	{
+		chk_entry4sidtab(value, sidtab, 4);
+		return;
+	}
+	if(!strcmp(token, "lg_only_exception"))
+	{
+		chk_entry4sidtab(value, sidtab, 5);
+		return;
+	}
 	if(token[0] != '#')
 		{ fprintf(stderr, "Warning: keyword '%s' in sidtab section not recognized\n", token); }
 }
@@ -193,6 +237,9 @@ static void show_sidtab(struct s_sidtab *sidtab)
 		char buf[1024];
 		char *saveptr = buf;
 		cs_log("label=%s", sidtab->label);
+		cs_log("disablecrccws_only_for_exception=%u", sidtab->disablecrccws_only_for_exception);
+		cs_log("no_wait_time=%u", sidtab->no_wait_time);
+		cs_log("lg_only_exception=%u", sidtab->lg_only_exception);
 		snprintf(buf, sizeof(buf), "caid(%d)=", sidtab->num_caid);
 		for(i = 0; i < sidtab->num_caid; i++)
 			{ snprintf(buf + strlen(buf), 1024 - (buf - saveptr), "%04X ", sidtab->caid[i]); }

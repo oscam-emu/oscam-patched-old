@@ -13,6 +13,9 @@
 			<TR><TD><A>Caid: </A></TD><TD><input name="caid" type="text" maxlength="160" value="##CAIDS##"></TD></TR>
 			<TR><TD><A>Provid: </A></TD><TD><input name="provid" type="text" maxlength="60" value="##PROVIDS##"></TD></TR>
 			<TR><TD><A>Srvid: </A></TD><TD><textarea name="srvid" class="bt" ROWS="10">##SRVIDS##</textarea></TD></TR>
+			<TR><TD>Disable CRC-check</TD><TD><input name="disablecrccws_only_for_exception" value="0" type="hidden"><input name="disablecrccws_only_for_exception" value="1" type="checkbox" ##DCRCCHECKED##></TD></TR>
+			<TR><TD>No wait time</TD><TD><input name="no_wait_time" value="0" type="hidden"><input name="no_wait_time" value="1" type="checkbox" ##NWCHECKED##></TD></TR>
+			<TR><TD>Localgenerated only exception</TD><TD><input name="lg_only_exception" value="0" type="hidden"><input name="lg_only_exception" value="1" type="checkbox" ##LGOECHECKED##></TD></TR>
 			<TR><TD CLASS="configcolsave" COLSPAN="2"><input type="submit" name="action" value="Save" title="Save service and reload services" ##BTNDISABLED##></TD>
 			<TR CLASS="configfirstrow"><TD></TD><TD></TD></TR>
 		</TABLE>
