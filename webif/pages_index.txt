@@ -43,6 +43,7 @@ APIUSEREDIT                   api.xml/useredit.xml
 
 CACHEEXPAGE                   cacheex/cacheex.html                                        CS_CACHEEX
 CACHEEXTABLEROW               cacheex/cacheex_tablerow.html                               CS_CACHEEX
+CACHEEXTABLEROWSTATS          cacheex/cacheex_tablerow_stats.html                         CS_CACHEEX
 
 CONFIGANTICASC                config/anticasc.html                                        CS_ANTICASC
 CONFIGCACHE                   config/cache.html
@@ -168,6 +169,7 @@ POLL                          include/poll.html
 POLLINGSET                    include/pollingset.html
 PROTOCCCAMPIC                 include/protocccampic.html                                  MODULE_CCCAM
 PROTONEWCAMDPIC               include/protonewcamdpic.html                                MODULE_NEWCAMD
+PROTOCAMD3AIOPIC              include/protocamd3aiopic.html                               MODULE_CAMD35,MODULE_CAMD35_TCP
 PROTOOTHERPIC                 include/protootherpic.html
 REFRESH                       include/refresh.html
 

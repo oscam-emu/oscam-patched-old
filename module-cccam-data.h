@@ -58,6 +58,10 @@ typedef enum
 	MSG_SLEEPSEND = 0x80, // Sleepsend support
 	MSG_CACHE_PUSH = 0x81, // CacheEx Cache-Push In/Out
 	MSG_CACHE_FILTER = 0x82, // CacheEx Cache-Filter Request
+	MSG_CACHE_FEATURE_EXCHANGE = 0x83, // CacheEx feature-exchange
+	MSG_CACHE_FEATURE_EXCHANGE_REPLY = 0x84, // CacheEx feature-exchange-reply
+	MSG_CACHE_FEATURE_TRIGGER = 0x85, // CacheEx feature-trigger
+	MSG_CW_ECM_LGF = 0x86, // oscam lg-flagged CW
 	MSG_CW_NOK1 = 0xfe, // Node no more available
 	MSG_CW_NOK2 = 0xff, // No decoding
 	MSG_NO_HEADER = 0xffff
@@ -240,6 +244,8 @@ struct cc_data
 	int32_t num_resharex;
 
 	char *nok_message;
+
+	uint8_t extended_lg_flagged_cws;
 };
 
 #endif
