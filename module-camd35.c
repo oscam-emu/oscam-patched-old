@@ -640,7 +640,7 @@ static void camd35_send_dcw(struct s_client *client, ECM_REQUEST *er)
 				memmove(buf + 20 + 16, buf + 20 + buf[1], 0x34);
 			}
 
-			if(er->localgenerated && client->c35_extmode)
+			if(er->localgenerated && client->c35_extmode > 1)
 			{
 				buf[0] += 0x51; // ecm response with lg-flag
 			}
@@ -962,9 +962,11 @@ static void *camd35_server(struct s_client *client, uint8_t *mbuf, int32_t n)
 		case 0x43:
 			break;
 		case 0x50:
-			if(client && !client->c35_extmode)
+			if(client && client->c35_extmode < 1)
+			{
 				camd35_send_extmode(client);
-			client->c35_extmode = 1;
+				client->c35_extmode = 2;
+			}
 			break;
 		default:
 			if(!camd35_cacheex_server(client, mbuf))
@@ -1021,9 +1023,12 @@ static int32_t camd35_send_ecm(struct s_client *client, ECM_REQUEST *er)
 	buf[18] = 0xFF;
 	buf[19] = 0xFF;
 	memcpy(buf + 20, er->ecm, er->ecmlen);
-
-	camd35_send_extmode(client);
-
+	
+	if(client && !client->c35_extmode)
+	{
+		camd35_send_extmode(client);
+		client->c35_extmode = 1;
+	}
 	int32_t rc = (camd35_send(client, buf, 0) < 1) ? -1 : 0;
 
 	NULLFREE(buf);
@@ -1152,7 +1157,7 @@ static int32_t camd35_recv_chk(struct s_client *client, uint8_t *dcw, int32_t *r
 
 	// CMD44: old reject command introduced in mpcs
 	// keeping this for backward compatibility
-	if((buf[0] != 1) && (buf[0] != 0x44) && (buf[0] != 0x08) && (buf[0] != 0x51) && (buf[0] != 0x50))
+	if((buf[0] != 1) && (buf[0] != 0x44) && (buf[0] != 0x08) && (buf[0] != 0x51))
 	{
 		return -1;
 	}
@@ -1169,10 +1174,12 @@ static int32_t camd35_recv_chk(struct s_client *client, uint8_t *dcw, int32_t *r
 	if(buf[0] == 0x51 || buf[0] == 0x54)	// lg-flag
 	{
 		*rc = 0x86;
+		client->c35_extmode = 2;
 	}
 	if(buf[0] == 0x50)
-		client->c35_extmode = 1;
-
+	{
+		client->c35_extmode = 2;
+	}
 	memcpy(dcw, buf + 20, 16);
 
 	return idx;
