@@ -87,6 +87,7 @@ static list ll_cache;
 static list ll_cw_cache;
 static int8_t cache_init_done = 0;
 static int8_t cw_cache_init_done = 0;
+static uint32_t lg_cache_size = 0;
 
 void init_cw_cache(void)
 {
@@ -124,6 +125,14 @@ void free_cache(void)
 	cache_init_done = 0;
 	deinitialize_hash_table(&ht_cache);
 	pthread_rwlock_destroy(&cache_lock);
+}
+
+uint32_t cache_size_lg(void)
+{
+	if(!cache_init_done)
+		{ return 0; }
+
+	return lg_cache_size;
 }
 
 uint32_t cache_size(void)
@@ -709,7 +718,10 @@ void add_cache(ECM_REQUEST *er)
 		er->localgenerated = 1;
 		// to favorite CWs with this flag while sorting
 		if(cw->count < 0x0F000000)
+		{
 			cw->count |= 0x0F000000;
+			lg_cache_size++;
+		}
 	}
 	else
 	{
@@ -870,6 +882,10 @@ void cleanup_cache(bool force)
 						nxt = pc->next_push;
 						NULLFREE(pc);
 						pc = nxt;
+					}
+					if(cw->count >= 0x0F000000)
+					{
+						lg_cache_size--;
 					}
 					remove_elem_list(&ecmhash->ll_cw, &cw->ll_node);
 					remove_elem_hash_table(&ecmhash->ht_cw, &cw->ht_node);

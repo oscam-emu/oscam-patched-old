@@ -82,6 +82,7 @@
 		"total_cachexhit":"##TOTAL_CACHEXHIT##",
 		"rel_cachexhit":"##REL_CACHEXHIT##",
 		"total_cachesize":"##TOTAL_CACHESIZE##",
+		"total_cachesize_lg":"##TOTAL_CACHESIZE_LG##",
 		"total_elenr":"##TOTAL_ELENR##",
 		"total_eheadr":"##TOTAL_EHEADR##",
 		"total_emmerroruk_readers":"##TOTAL_EMMERRORUK_READERS##",

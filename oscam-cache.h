@@ -9,6 +9,7 @@ struct ecm_request_t *check_cache(ECM_REQUEST *er, struct s_client *cl);
 void cleanup_cache(bool force);
 void remove_client_from_cache(struct s_client *cl);
 uint32_t cache_size(void);
+uint32_t cache_size_lg(void);
 uint8_t get_odd_even(ECM_REQUEST *er);
 uint8_t check_is_pushed(void *cw, struct s_client *cl);
 void cw_cache_cleanup(bool force);
