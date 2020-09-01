@@ -1965,7 +1965,7 @@ static char *send_oscam_reader(struct templatevars *vars, struct uriparams *para
 #ifdef CS_CACHEEX
 			char *new_proto;
 #if defined(MODULE_CAMD35) || defined (MODULE_CAMD35_TCP)
-			if(rdr->cacheex.feature_bitfield || (cl && cl->c35_extmode))
+			if(rdr->cacheex.feature_bitfield || (cl && cl->c35_extmode > 1))
 #else
 			if(rdr->cacheex.feature_bitfield)
 #endif
@@ -4079,6 +4079,8 @@ static void webif_add_client_proto(struct templatevars *vars, struct s_client *c
 		tpl_addVar(vars, TPLADDONCE, "CLIENTPROTO", (char *)proto);
 
 		char aiover[32];
+		aiover[0] = '\0';
+
 		if(cl->account && cl->cacheex_aio_checked)
 		{
 			if(cl->account->cacheex.feature_bitfield & 32)
@@ -4126,7 +4128,11 @@ static void webif_add_client_proto(struct templatevars *vars, struct s_client *c
 				if (!apicall)
 				{
 					tpl_addVar(vars, TPLADD, "CAMD3A", (char *)proto);
-					tpl_printf(vars, TPLADD, "AIOVER", "[cx-aio %s]", aiover);
+					if(aiover[0] == '\0')
+						tpl_addVar(vars, TPLADD, "AIOVER", "");
+					else
+						tpl_printf(vars, TPLADD, "AIOVER", "[cx-aio %s]", aiover);
+					
 					tpl_addVar(vars, TPLADD, "CLIENTPROTO", tpl_getTpl(vars, "PROTOCAMD3AIOPIC"));
 				}
 				else
@@ -4617,7 +4623,7 @@ static char *send_oscam_user_config(struct templatevars *vars, struct uriparams 
 		}
 #ifdef CS_CACHEEX
 #if defined(MODULE_CAMD35) || defined (MODULE_CAMD35_TCP)
-		if(latestclient != NULL && (latestclient->account->cacheex.feature_bitfield || latestclient->c35_extmode))
+		if(latestclient != NULL && (latestclient->account->cacheex.feature_bitfield || latestclient->c35_extmode > 1))
 #else
 		if(latestclient != NULL && (latestclient->account->cacheex.feature_bitfield))
 #endif
@@ -5761,7 +5767,7 @@ static char *send_oscam_status(struct templatevars * vars, struct uriparams * pa
 					if(cl && 
 						(  (cl->typ == 'c' && cl->account && cl->account->cacheex.feature_bitfield)
 #if defined(MODULE_CAMD35) || defined (MODULE_CAMD35_TCP)
-						|| (cl->c35_extmode)
+						|| (cl->c35_extmode > 1)
 #endif
 #ifdef MODULE_CCCAM
 						|| (cc && cc->extended_lg_flagged_cws)
