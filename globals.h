@@ -1759,6 +1759,7 @@ struct s_reader										// contains device info, reader info and card info
 													// (everything below 60 ms is converted to ms by applying *1000)
 	struct timeb	lastdvbapirateoverride;
 	uint32_t		ecmsok;
+	uint32_t		ecmsoklg;
 	uint32_t		webif_ecmsok;
 	uint32_t		ecmsnok;
 	uint32_t		webif_ecmsnok;
@@ -1770,6 +1771,7 @@ struct s_reader										// contains device info, reader info and card info
 	int32_t			webif_ecmsfilteredhead;			// count filtered ECM's by ECM Headerwhitelist to readers ecminfo
 	int32_t			webif_ecmsfilteredlen;			// count filtered ECM's by ECM Whitelist to readers ecm info
 	float			ecmshealthok;
+	float			ecmshealthoklg;
 	float			ecmshealthnok;
 	float			ecmshealthtout;
 	int32_t			cooldown[2];

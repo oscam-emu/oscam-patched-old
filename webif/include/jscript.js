@@ -813,6 +813,10 @@ function updateReaderpage(data) {
 			$(uid + " td.readercol4").text(item.stats.ecmsok + item.stats.ecmsokrel)
 				.data('sort-value', item.stats.ecmsok);
 		}
+		if (!is_nopoll('readercol19')) {
+			$(uid + " td.readercol19").text(item.stats.ecmsoklg + item.stats.ecmsoklgrel)
+				.data('sort-value', item.stats.ecmsoklg);
+		}
 		if (!is_nopoll('readercol5')) {
 			$(uid + " td.readercol5").text(item.stats.ecmsnok + item.stats.ecmsnokrel)
 				.data('sort-value', item.stats.ecmsnok);
