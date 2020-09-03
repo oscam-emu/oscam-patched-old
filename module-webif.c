@@ -1803,6 +1803,7 @@ static void clear_rdr_stats(struct s_reader *rdr)
 		rdr->emmblocked[i] = 0;
 	}
 	rdr->ecmsok = 0;
+	rdr->ecmsoklg = 0;
 	rdr->ecmsnok = 0;
 	rdr->ecmstout = 0;
 	rdr->ecmshealthok = 0;
