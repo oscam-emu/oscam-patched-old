@@ -2149,7 +2149,7 @@ void write_ecm_answer_fromcache(struct s_write_from_cache *wfc)
 	er = wfc->er_new;
 	ecm = wfc->er_cache;
 
-	if(ecm->localgenerated)
+	if(ecm->localgenerated || (ecm->cw_count > 0x0F000000))
 		er->localgenerated = 1;
 
 	int8_t rc_orig = er->rc;
