@@ -356,7 +356,7 @@ static void monitor_process_info(void)
 
 static void monitor_send_details(char *txt, uint32_t tid)
 {
-	char buf[256];
+	char buf[272];
 	snprintf(buf, 255, "[D-----]%8X|%s\n", tid, txt);
 	monitor_send_info(buf, 0);
 }
