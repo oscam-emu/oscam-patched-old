@@ -391,7 +391,7 @@ static void monitor_process_details_master(char *buf, uint32_t pid)
 		{ snprintf(buf + 200, 56, "%d Kb", cfg.max_log_size); }
 	else
 		{ cs_strncpy(buf + 200, "unlimited", 56); }
-	snprintf(buf, 256, "MaxLogsize=%s", buf + 200);
+	snprintf(buf, 256, "MaxLogsize=%s", buf - 1);
 	monitor_send_details(buf, pid);
 	snprintf(buf, 256, "ClientTimeout=%u ms", cfg.ctimeout);
 	monitor_send_details(buf, pid);
