@@ -1783,7 +1783,7 @@ static void inactivate_reader(struct s_reader *rdr)
 
 static bool picon_exists(char *name)
 {
-	char picon_name[64], path[255];
+	char picon_name[255], path[255];
 	char *tpl_path;
 	tpl_path = cfg.http_piconpath ? cfg.http_piconpath : cfg.http_tpl;
 	if(!tpl_path)
