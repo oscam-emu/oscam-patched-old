@@ -204,7 +204,7 @@ static void monitor_send_info(char *txt, int32_t last)
 {
 	struct s_client *cur_cl = cur_client();
 	struct monitor_data *module_data = cur_cl->module_data;
-	char buf[8];
+	char buf[16];
 	if(txt)
 	{
 		if(!module_data->btxt[0])
