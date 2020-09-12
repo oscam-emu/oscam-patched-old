@@ -5272,7 +5272,8 @@ void event_handler(int32_t UNUSED(signal))
 	char dest[1024];
 	DIR *dirp;
 	struct dirent entry, *dp = NULL;
-	int32_t i, pmt_fd;
+	int32_t i;
+	int32_t pmt_fd = -1;
 	uint8_t mbuf[2048]; // dirty fix: larger buffer needed for CA PMT mode 6 with many parallel channels to decode
 
 	if(dvbapi_client != cur_client())
@@ -5389,8 +5390,32 @@ void event_handler(int32_t UNUSED(signal))
 			continue;
 		}
 #endif
-		snprintf(dest, sizeof(dest), "%s%s", TMPDIR, dp->d_name);
-		pmt_fd = open(dest, O_RDONLY);
+
+		if (!strlen(TMPDIR))
+		{
+			cs_log_dbg(D_DVBAPI, "BUG! strlen(TMPDIR)!!!\n");
+			continue;
+		}
+
+		if (!strlen(dp->d_name))
+		{
+			cs_log_dbg(D_DVBAPI, "BUG! strlen(dp->d_name)!!!\n");
+			continue;
+		}
+
+		if((strlen(dp->d_name) + strlen(TMPDIR) - 1) > sizeof(dest))
+		{
+			cs_log_dbg(D_DVBAPI, "BUG! Sum of the (d_name + TMPDIR) = %u > sizeof(dest) !!!\n", (unsigned int)(strlen(dp->d_name) + strlen(TMPDIR) - 1));
+			continue;
+		}
+		else
+		{
+			memcpy(dest, TMPDIR, strlen(TMPDIR));
+			memcpy(dest + strlen(TMPDIR), dp->d_name, strlen(dp->d_name));
+			dest[strlen(TMPDIR) + strlen(dp->d_name)] = '\0';
+			pmt_fd = open(dest, O_RDONLY);
+		}
+
 		if(pmt_fd < 0)
 		{
 			continue;

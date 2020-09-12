@@ -412,7 +412,9 @@ void send_file(FILE *f, char *filename, char *subdir, time_t modifiedheader, uin
 {
 	int8_t filen = 0;
 	int32_t size = 0;
-	char *mimetype = "", *result = " ", *allocated = NULL;
+	char *mimetype = "";
+	char *result = " ";
+	char *allocated = NULL;
 	time_t moddate;
 	char path[255];
 	char *CSS = NULL;
@@ -454,46 +456,49 @@ void send_file(FILE *f, char *filename, char *subdir, time_t modifiedheader, uin
 	if(strlen(filename) > 0 && file_exists(filename))
 	{
 		struct stat st;
+		FILE *fp = NULL;
+		int32_t readen = 0;
+		char separator[255];
+
 		stat(filename, &st);
 		moddate = st.st_mtime;
+		memset(separator, 0, sizeof(separator));
+
+		if(filen == 1 && cfg.http_prepend_embedded_css)    // Prepend Embedded CSS
+		{
+			CSS = tpl_getUnparsedTpl("CSS", 1, "");
+			snprintf(separator, sizeof(separator), "\n/* Beginn embedded CSS File: %s */\n", cfg.http_css);
+		}
+
 		// We need at least size 1 or keepalive gets problems on some browsers...
 		if(st.st_size > 0)
 		{
-			FILE *fp;
-			int32_t readen;
-			if((fp = fopen(filename, "r")) == NULL) { return; }
-			if(!cs_malloc(&allocated, st.st_size + 1))
+			if((fp = fopen(filename, "r")) == NULL)
+				return;
+
+			if(!cs_malloc(&allocated, st.st_size + strlen(CSS) + strlen(separator) + 1))
 			{
 				send_error500(f);
 				fclose(fp);
 				return;
 			}
-			if((readen = fread(allocated, 1, st.st_size, fp)) == st.st_size)
+
+			if((readen = fread(allocated + strlen(CSS) + strlen(separator), 1, st.st_size, fp)) == st.st_size)
 			{
-				allocated[readen] = '\0';
+				allocated[readen + strlen(CSS) + strlen(separator)] = '\0';
 			}
+
 			fclose(fp);
 		}
 
 		if(filen == 1 && cfg.http_prepend_embedded_css)    // Prepend Embedded CSS
 		{
-			char separator [255];
-			snprintf(separator, 255, "\n/* Beginn embedded CSS File: %s */\n", cfg.http_css);
-			char *oldallocated = allocated;
-			CSS = tpl_getUnparsedTpl("CSS", 1, "");
-			int32_t newsize = strlen(CSS) + strlen(separator) + 2;
-			if(oldallocated) { newsize += strlen(oldallocated) + 1; }
-			if(!cs_malloc(&allocated, newsize))
+			if (CSS)
 			{
-				if(oldallocated) { NULLFREE(oldallocated); }
-				NULLFREE(CSS);
-				send_error500(f);
-				return;
+				memcpy(allocated, CSS, strlen(CSS));
+				memcpy(allocated + strlen(CSS), separator, strlen(separator));
+				allocated[readen + strlen(CSS) + strlen(separator)] = '\0';
 			}
-			if (CSS){
-				snprintf(allocated, newsize, "%s\n%s\n%s", CSS, separator, (oldallocated != NULL ? oldallocated : ""));
-			}
-			if(oldallocated) { NULLFREE(oldallocated); }
 		}
 
 		if(allocated) { result = allocated; }
