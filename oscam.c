@@ -86,7 +86,7 @@ struct s_reader *first_active_reader = NULL; // list of active readers (enable=1
 LLIST *configured_readers = NULL; // list of all (configured) readers
 
 uint16_t len4caid[256]; // table for guessing caid (by len)
-char cs_confdir[128] = CS_CONFDIR;
+char cs_confdir[128];
 uint16_t cs_dblevel = 0; // Debug Level
 int32_t thread_pipe[2] = {0, 0};
 static int8_t cs_restart_mode = 1; // Restartmode: 0=off, no restart fork, 1=(default)restart fork, restart by webif, 2=like=1, but also restart on segfaults
@@ -98,7 +98,7 @@ uint8_t cs_http_use_utf8 = 0;
 static int8_t cs_capture_SEGV;
 static int8_t cs_dump_stack;
 static uint16_t cs_waittime = 60;
-char cs_tmpdir[200] = {0x00};
+char cs_tmpdir[200];
 CS_MUTEX_LOCK system_lock;
 CS_MUTEX_LOCK config_lock;
 CS_MUTEX_LOCK gethostbyname_lock;
@@ -250,6 +250,12 @@ static const struct option long_options[] =
 	{ "wait",               required_argument, NULL, 'w' },
 	{ 0, 0, 0, 0 }
 };
+
+static void set_default_dirs_first(void)
+{
+	snprintf(cs_confdir, sizeof(cs_confdir), "%s", CS_CONFDIR);
+	memset(cs_tmpdir, 0, sizeof(cs_tmpdir)); // will get further procesed trought oscam_files.c !!
+}
 
 static void write_versionfile(bool use_stdout);
 
@@ -1756,6 +1762,8 @@ int32_t main(int32_t argc, char *argv[])
 #endif
 		0
 	};
+
+	set_default_dirs_first();
 
 	find_conf_dir();
 
