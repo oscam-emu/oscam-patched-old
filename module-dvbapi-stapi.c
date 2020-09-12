@@ -123,7 +123,7 @@ int32_t stapi_open(void)
 	}
 
 	memset(dev_list, 0, sizeof(struct STDEVICE)*PTINUM);
-	memset(fpad, 0, sizeof(fpad));
+	memset(pfad, 0, sizeof(pfad));
 
 	if(dvbapi_priority)
 	{
