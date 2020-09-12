@@ -141,6 +141,7 @@ int32_t stapi_open(void)
 	struct dirent entry, *dp = NULL;
 	struct stat buf;
 	int32_t i;
+	char fpad[512];
 	stapi_on = 1;
 	int32_t stapi_priority = 0;
 
@@ -152,6 +153,7 @@ int32_t stapi_open(void)
 	}
 
 	memset(dev_list, 0, sizeof(struct STDEVICE)*PTINUM);
+	memset(fpad, 0, sizeof(fpad));
 
 	if(dvbapi_priority)
 	{
@@ -180,9 +182,7 @@ int32_t stapi_open(void)
 	{
 		if(!dp) { break; }
 
-		int n = snprintf(0, 0, "%s%s", PROCDIR, dp->d_name);
-		char *pfad = (char *)malloc(n + 1);
-		snprintf(pfad, n + 1, "%s%s", PROCDIR, dp->d_name);
+		snprintf(pfad, sizeof(pfad), "%s%s", PROCDIR, dp->d_name);
 		if(stat(pfad, &buf) != 0)
 			{ continue; }
 
