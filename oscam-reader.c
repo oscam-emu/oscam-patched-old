@@ -1390,17 +1390,28 @@ static int32_t restart_cardreader_int(struct s_reader *rdr, int32_t restart)
 	struct s_client *cl = rdr->client;
 	if(restart)
 	{
+		uint16_t wait = 1500;
 		remove_reader_from_active(rdr); // remove from list
 		kill_thread(cl); // kill old thread
-		cs_sleepms(1500); // we have to wait a bit so free_client is ended and socket closed too!
-	}
 
-	while(restart && is_valid_client(cl))
-	{
-		// If we quick disable+enable a reader (webif), remove_reader_from_active is called from
-		// cleanup. this could happen AFTER reader is restarted, so oscam crashes or reader is hidden
-		// rdr_log(rdr, "CHECK: WAITING FOR CLEANUP");
-		cs_sleepms(500);
+		// wait a bit if socket not closed and is_valid_client, othervise safe for reload?
+		do
+		{
+			if (!is_valid_client(cl))
+			{
+				// 100 mS I think is enought for freeing garbage
+				cs_sleepms(100);
+				break;
+			}
+			else
+			{
+				// If we quick disable+enable a reader (webif), remove_reader_from_active is called from
+				// cleanup. this could happen AFTER reader is restarted, so oscam crashes or reader is hidden
+				// rdr_log(rdr, "CHECK: WAITING FOR CLEANUP");
+				cs_sleepms(500); // we have to wait a bit so free_client is ended and socket closed too!
+				wait -= 500;
+			}
+		} while(wait || cl->pfd);
 	}
 
 	rdr->client = NULL;
