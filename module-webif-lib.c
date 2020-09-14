@@ -458,6 +458,7 @@ void send_file(FILE *f, char *filename, char *subdir, time_t modifiedheader, uin
 		struct stat st;
 		FILE *fp = NULL;
 		int32_t readen = 0;
+		uint32_t CSS_sz = 0;
 		char separator[255];
 
 		stat(filename, &st);
@@ -476,16 +477,19 @@ void send_file(FILE *f, char *filename, char *subdir, time_t modifiedheader, uin
 			if((fp = fopen(filename, "r")) == NULL)
 				return;
 
-			if(!cs_malloc(&allocated, st.st_size + strlen(CSS) + strlen(separator) + 1))
+			if (CSS)
+				CSS_sz += strlen(CSS);
+
+			if(!cs_malloc(&allocated, st.st_size + CSS_sz + strlen(separator) + 1))
 			{
 				send_error500(f);
 				fclose(fp);
 				return;
 			}
 
-			if((readen = fread(allocated + strlen(CSS) + strlen(separator), 1, st.st_size, fp)) == st.st_size)
+			if((readen = fread(allocated + CSS_sz + strlen(separator), 1, st.st_size, fp)) == st.st_size)
 			{
-				allocated[readen + strlen(CSS) + strlen(separator)] = '\0';
+				allocated[readen + CSS_sz + strlen(separator)] = '\0';
 			}
 
 			fclose(fp);
@@ -495,14 +499,13 @@ void send_file(FILE *f, char *filename, char *subdir, time_t modifiedheader, uin
 		{
 			if (CSS)
 			{
-				memcpy(allocated, CSS, strlen(CSS));
-				memcpy(allocated + strlen(CSS), separator, strlen(separator));
-				allocated[readen + strlen(CSS) + strlen(separator)] = '\0';
+				memcpy(allocated, CSS, CSS_sz);
+				memcpy(allocated + CSS_sz, separator, strlen(separator));
+				allocated[readen + CSS_sz + strlen(separator)] = '\0';
 			}
 		}
 
 		if(allocated) { result = allocated; }
-
 	}
 	else
 	{
