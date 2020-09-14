@@ -139,7 +139,7 @@ void cc_cw_crypt(struct s_client *cl, uint8_t *cws, uint32_t cardid)
 		unode_id = b2ll(8, cc->peer_node_id);
 	}
 	
-	if(unode_id > 0x7FFFFFFFFFFFFFFF)
+	if(unode_id > 0x7FFFFFFFFFFFFFFFLL)
 	{
 		for(i = 0; i < 16; i++)
 		{
