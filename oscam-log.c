@@ -383,7 +383,8 @@ static void write_to_log(char *txt, struct s_log *log, int8_t do_flush)
 		}
 	}
 
-	strcat(txt, "\n");
+	if (!cs_strncat(txt, "\n", LOG_BUF_SIZE))
+		cs_log("FIXME!");
 	cs_write_log(txt, do_flush, log->header_date_offset, log->header_time_offset);
 
 #if defined(WEBIF) || defined(MODULE_MONITOR)

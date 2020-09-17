@@ -116,7 +116,10 @@ bool cs_strncat(char *destination, char *source, size_t destination_size)
 	if ((dest_sz + source_sz) < destination_size)
 	{
 		if (dest_sz)
-			memcpy(destination, destination, dest_sz);
+		{
+			void *dest = (void *)destination;
+			memcpy(destination, dest, dest_sz);
+		}
 
 		if (source_sz)
 			memcpy(destination + dest_sz, source, source_sz);

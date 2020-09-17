@@ -41,9 +41,9 @@ char *get_tmp_dir(void)
 	p--;
 	if(*p != '/' && *p != '\\')
 	{
-		strcat(cs_tmpdir, "/");
+		cs_strncat(cs_tmpdir, "/", sizeof(cs_tmpdir));
 	}
-	strcat(cs_tmpdir, "_oscam");
+	cs_strncat(cs_tmpdir, "_oscam", sizeof(cs_tmpdir));
 #else
 	cs_strncpy(cs_tmpdir, "/tmp/.oscam", sizeof(cs_tmpdir));
 #endif
