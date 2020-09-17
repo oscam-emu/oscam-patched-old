@@ -2653,33 +2653,23 @@ void move_card_to_end(struct s_client *cl, struct cc_card *card_to_move)
 
 void addParam(char *param, size_t param_sz, char *value)
 {
-	if (!param_sz)
-	{
+	if (!param_sz) {
 		cs_log("ERROR! Sizeof param is zero!");
 		return;
 	}
 
-	if (param && value)
-	{
-		if ((strlen(param) + strlen(value) + 1) < param_sz)
-		{
-			if (strlen(param) < 4)
-			{
+	if (param && value) {
+		if ((strlen(param) + strlen(value) + 1) < param_sz) {
+			if (strlen(param) < 4) {
 				cs_strncat(param, value, param_sz);
-			}
-			else
-			{
+			} else {
 				cs_strncat(param, ",", param_sz);
 				cs_strncat(param, value, param_sz);
 			}
-		}
-		else
-		{
+		} else {
 			cs_log("ERROR! Buffer overflow in addParam!");
 		}
-	}
-	else
-	{
+	} else {
 		cs_log("ERROR! Booth param and value pointer NULL!");
 	}
 }
@@ -3123,8 +3113,9 @@ int32_t cc_parse_msg(struct s_client *cl, uint8_t *buf, int32_t l)
 								addParam(param, sizeof(param), "LGF");
 							}
 
-							if (!cs_strncat(param, "]", sizeof(param)))
+							if (!cs_strncat(param, "]", sizeof(param))) {
 								cs_log("BUG!!, Adding ']' didn't succed!");
+							}
 						}
 
 						uint8_t token[256];

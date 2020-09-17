@@ -1974,12 +1974,13 @@ static char *send_oscam_reader(struct templatevars *vars, struct uriparams *para
 			{
 				const char *aio_suffix = " (cx-aio)";
 
-				if(cs_malloc(&new_proto, strlen(proto)+strlen(aio_suffix)+1))
-				{
-					if (!cs_strncat(new_proto, proto, strlen(proto)+strlen(aio_suffix)+1))
+				if(cs_malloc(&new_proto, strlen(proto)+strlen(aio_suffix)+1)) {
+					if (!cs_strncat(new_proto, proto, strlen(proto)+strlen(aio_suffix)+1)) {
 						cs_log("FIXME!");
-					if (!cs_strncat(new_proto, aio_suffix, strlen(proto)+strlen(aio_suffix)+1))
+					}
+					if (!cs_strncat(new_proto, aio_suffix, strlen(proto)+strlen(aio_suffix)+1)) {
 						cs_log("FIXME!");
+					}
 				}
 			}
 #endif
@@ -4635,19 +4636,18 @@ static char *send_oscam_user_config(struct templatevars *vars, struct uriparams 
 		{
 			const char *aio_suffix = " (cx-aio)";
 			char *new_proto;
-			if(cs_malloc(&new_proto, strlen(proto)+strlen(aio_suffix)+1))
-			{
-				if (!cs_strncat(new_proto, proto, strlen(proto)+strlen(aio_suffix)+1))
+			if(cs_malloc(&new_proto, strlen(proto)+strlen(aio_suffix)+1)) {
+				if (!cs_strncat(new_proto, proto, strlen(proto)+strlen(aio_suffix)+1)) {
 					cs_log("FIXME!");
-				if (cs_strncat(new_proto, aio_suffix, strlen(proto)+strlen(aio_suffix)+1))
+				}
+				if (cs_strncat(new_proto, aio_suffix, strlen(proto)+strlen(aio_suffix)+1)) {
 					webif_add_client_proto(vars, latestclient, (const char *)new_proto, apicall);
-				else
+				} else {
 					cs_log("FIXME!");
+				}
 				free(new_proto);
 			}
-		}
-		else
-		{
+		} else {
 #endif
 		webif_add_client_proto(vars, latestclient, proto, apicall);
 #ifdef CS_CACHEEX
@@ -5784,20 +5784,19 @@ static char *send_oscam_status(struct templatevars * vars, struct uriparams * pa
 					{
 						const char *aio_suffix = " (cx-aio)";
 						char *new_proto;
-						if(cs_malloc(&new_proto, strlen(proto)+strlen(aio_suffix)+1))
-						{
+						if(cs_malloc(&new_proto, strlen(proto)+strlen(aio_suffix)+1)) {
 							new_proto[0] = '\0';
-							if (!cs_strncat(new_proto, proto, strlen(proto)+strlen(aio_suffix)+1))
+							if (!cs_strncat(new_proto, proto, strlen(proto)+strlen(aio_suffix)+1)) {
 								cs_log("FIXME!");
-							if (cs_strncat(new_proto, aio_suffix, strlen(proto)+strlen(aio_suffix)+1))
+							}
+							if (cs_strncat(new_proto, aio_suffix, strlen(proto)+strlen(aio_suffix)+1)) {
 								webif_add_client_proto(vars, cl, (const char*)new_proto, apicall);
-							else
+							} else {
 								cs_log("FIXME!");
+							}
 							free(new_proto);
 						}
-					}
-					else
-					{
+					} else {
 #endif
 					webif_add_client_proto(vars, cl, proto, apicall);
 #ifdef CS_CACHEEX

@@ -1374,37 +1374,43 @@ char* cxaio_ftab_to_buf(FTAB *lg_only_ftab)
 		}
 	}
 
-	if(!cs_malloc(&ret, l * sizeof(char) + sizeof(char)))
+	if(!cs_malloc(&ret, l * sizeof(char) + sizeof(char))) {
 		return "";
+		}
 
 	strncat_sz += l * sizeof(char) + sizeof(char);
 
 	for(i = 0; i < lg_only_ftab->nfilts; i++)
 	{
 		snprintf(caid, 5, "%04X", lg_only_ftab->filts[i].caid);
-		if (!cs_strncat(ret, caid, strncat_sz))
+		if (!cs_strncat(ret, caid, strncat_sz)) {
 			cs_log("FIXME!");
-		
+		}
+
 		if(!lg_only_ftab->filts[i].nprids)
 		{
-			if (!cs_strncat(ret, "01", strncat_sz))
+			if (!cs_strncat(ret, "01", strncat_sz)) {
 				cs_log("FIXME2!");
+			}
 			snprintf(provid, 7, "000000");
-			if (!cs_strncat(ret, provid, strncat_sz))
+			if (!cs_strncat(ret, provid, strncat_sz)) {
 				cs_log("FIXME3!");
+			}
 		}
 		else
 		{
 			snprintf(nprids, 3, "%02X", lg_only_ftab->filts[i].nprids);
-			if (!cs_strncat(ret, nprids, strncat_sz))
+			if (!cs_strncat(ret, nprids, strncat_sz)) {
 				cs_log("FIXME4!");
+			}
 		}
 
 		for(k = 0; k < lg_only_ftab->filts[i].nprids; k++)
 		{
 			snprintf(provid, 7, "%06X", lg_only_ftab->filts[i].prids[k]);
-			if (!cs_strncat(ret, provid, strncat_sz))
+			if (!cs_strncat(ret, provid, strncat_sz)) {
 				cs_log("FIXME5!");
+			}
 		}
 	}
 	return ret;
