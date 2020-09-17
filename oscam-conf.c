@@ -502,7 +502,9 @@ FILE *create_config_file(const char *conf_filename)
 {
 	char temp_file[256];
 	get_config_filename(temp_file, sizeof(temp_file), conf_filename);
-	strncat(temp_file, ".tmp", sizeof(temp_file) - strlen(temp_file) - 1);
+	if (!cs_strncat(temp_file, ".tmp", sizeof(temp_file))) {
+		return NULL;
+	}
 	FILE *f = fopen(temp_file, "w");
 	if(!f)
 	{

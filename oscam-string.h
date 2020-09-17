@@ -6,6 +6,7 @@ bool cs_realloc(void *result, size_t size) MUST_CHECK_RESULT;
 char *cs_strdup(const char *str);
 
 void cs_strncpy(char *destination, const char *source, size_t num);
+bool cs_strncat(char *destination, char *source, size_t destination_size);
 char *strtolower(char *txt);
 char *strtoupper(char *txt);
 char *trim(char *txt);

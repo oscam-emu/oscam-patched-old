@@ -76,6 +76,62 @@ void cs_strncpy(char *destination, const char *source, size_t num)
 	destination[l] = '\0';
 }
 
+bool cs_strncat(char *destination, char *source, size_t destination_size)
+{
+	uint32_t dest_sz = 0;
+	uint32_t source_sz = 0;
+
+	if (!destination_size)
+	{
+		cs_log("ERROR, destination_size 0!");
+		return false;
+	}
+
+	if (destination)
+	{
+		dest_sz += strlen(destination);
+	}
+	else
+	{
+		cs_log("ERROR, destination pointer NULL!");
+		return false;
+	}
+
+	if (source)
+	{
+		source_sz += strlen(source);
+	}
+	else
+	{
+		cs_log("ERROR, source pointer NULL!");
+		return false;
+	}
+
+	if ((dest_sz + source_sz) == 0)
+	{
+		cs_log("ERROR, booth destination and source with zero size!");
+		return false;
+	}
+
+	if ((dest_sz + source_sz) < destination_size)
+	{
+		if (dest_sz)
+			memcpy(destination, destination, dest_sz);
+
+		if (source_sz)
+			memcpy(destination + dest_sz, source, source_sz);
+
+		destination[dest_sz + source_sz] = '\0';
+	}
+	else
+	{
+		cs_log("ERROR, buffer overflow!");
+		return false;	
+	}
+
+	return true;
+}
+
 /* Converts the string txt to it's lower case representation. */
 char *strtolower(char *txt)
 {

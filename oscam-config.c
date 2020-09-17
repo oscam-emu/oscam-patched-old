@@ -965,8 +965,14 @@ static struct s_rlimit *ratelimit_read_int(void)
 		memset(str1, 0, sizeof(str1));
 
 		ret = sscanf(token, "%4x:%6x:%4x:%4x:%d:%d:%d:%1023s", &caid, &provid, &srvid, &chid, &ratelimitecm, &ratelimittime, &srvidholdtime, str1);
-		if(ret < 1) { continue; }
-		strncat(str1, ",", sizeof(str1) - strlen(str1) - 1);
+		if(ret < 1) {
+			continue;
+		}
+
+		if (!cs_strncat(str1, ",", sizeof(str1))) {
+			return new_rlimit;
+		}
+
 		if(!cs_malloc(&entry, sizeof(struct s_rlimit)))
 		{
 			fclose(fp);
@@ -1278,8 +1284,13 @@ static struct s_global_whitelist *global_whitelist_read_int(void)
 			str1[0] = 0;
 			cfg.global_whitelist_use_m = 1;
 		}
-		strncat(str1, ",", sizeof(str1) - strlen(str1) - 1);
+
+		if (!cs_strncat(str1, ",", sizeof(str1))) {
+			return new_whitelist;
+		}
+
 		char *p = str1, *p2 = str1;
+
 		while(*p)
 		{
 			if(*p == ',')
@@ -1440,7 +1451,9 @@ static struct s_twin *twin_read_int(void)
 		//sscanf(hfreq, "%4x", &freq);
 		//snprintf(hsrvid, 4, "%x", srvid);
 		//sscanf(hsrvid, "%4x", &srvid);
-		strncat(str1, ",", sizeof(str1) - strlen(str1) - 1);
+		if (!cs_strncat(str1, ",", sizeof(str1))) {
+			return new_twin;
+		}
 
 		if(!cs_malloc(&entry, sizeof(struct s_twin)))
 		{

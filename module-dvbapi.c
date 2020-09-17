@@ -1109,7 +1109,9 @@ static int32_t dvbapi_get_descrambler_info(void)
 	// Ask device for exact number of ca descramblers
 	snprintf(device_path2, sizeof(device_path2), devices[selected_box].ca_device, ca_offset);
 	snprintf(device_path, sizeof(device_path), devices[selected_box].path, 0);
-	strncat(device_path, device_path2, sizeof(device_path) - strlen(device_path));
+
+	if (!cs_strncat(device_path, device_path2, sizeof(device_path)))
+		return 0;
 
 	if((fd = open(device_path, O_RDWR | O_NONBLOCK)) < 0)
 	{
@@ -1196,19 +1198,22 @@ static int32_t dvbapi_detect_api(void)
 		{
 			snprintf(device_path2, sizeof(device_path2), devices[i].demux_device, 0);
 			snprintf(device_path, sizeof(device_path), devices[i].path, n);
-			strncat(device_path, device_path2, sizeof(device_path) - strlen(device_path));
 
 			filtercount = 0;
-			while((dmx_fd = open(device_path, O_RDWR | O_NONBLOCK)) > 0 && filtercount < MAX_FILTER)
+
+			if (cs_strncat(device_path, device_path2, sizeof(device_path)))
 			{
-				filtercount++;
-				if(!cs_malloc(&open_fd, sizeof(struct s_open_fd)))
+				while((dmx_fd = open(device_path, O_RDWR | O_NONBLOCK)) > 0 && filtercount < MAX_FILTER)
 				{
-					close(dmx_fd);
-					break;
+					filtercount++;
+					if(!cs_malloc(&open_fd, sizeof(struct s_open_fd)))
+					{
+						close(dmx_fd);
+						break;
+					}
+					open_fd->fd = dmx_fd;
+					ll_append(ll_max_fd, open_fd);
 				}
-				open_fd->fd = dmx_fd;
-				ll_append(ll_max_fd, open_fd);
 			}
 
 			if(filtercount > 0)
@@ -1339,7 +1344,10 @@ int32_t dvbapi_open_device(int32_t type, int32_t num, int32_t adapter)
 	{
 		snprintf(device_path2, sizeof(device_path2), devices[selected_box].demux_device, num);
 		snprintf(device_path, sizeof(device_path), devices[selected_box].path, adapter);
-		strncat(device_path, device_path2, sizeof(device_path) - strlen(device_path));
+
+		if (!cs_strncat(device_path, device_path2, sizeof(device_path)))
+			return -1;
+
 	}
 	else
 	{
@@ -1359,7 +1367,10 @@ int32_t dvbapi_open_device(int32_t type, int32_t num, int32_t adapter)
 
 		snprintf(device_path2, sizeof(device_path2), devices[selected_box].ca_device, num + ca_offset);
 		snprintf(device_path, sizeof(device_path), devices[selected_box].path, adapter);
-		strncat(device_path, device_path2, sizeof(device_path) - strlen(device_path));
+
+		if (!cs_strncat(device_path, device_path2, sizeof(device_path)))
+			return -1;
+
 	}
 
 	if(cfg.dvbapi_boxtype == BOXTYPE_SAMYGO)

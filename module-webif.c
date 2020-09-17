@@ -8862,8 +8862,12 @@ static int32_t process_request(FILE * f, IN_ADDR_T in)
 
 		if(cfg.http_user && cfg.http_pwd)
 		{
-			if(!authok || strlen(opaque) != MD5_DIGEST_LENGTH * 2) { calculate_opaque(addr, opaque); }
-			if(authok != 2)
+			if (!authok || strlen(opaque) != MD5_DIGEST_LENGTH * 2)
+			{
+				calculate_opaque(addr, opaque);
+			}
+
+			if (authok != 2)
 			{
 				if(!authok)
 				{
@@ -8877,26 +8881,42 @@ static int32_t process_request(FILE * f, IN_ADDR_T in)
 				}
 				calculate_nonce(NULL, expectednonce, opaque);
 			}
-			if(authok != 1)
+
+			if (authok != 1)
 			{
 				snprintf(authheadertmp, sizeof(authheadertmp), "WWW-Authenticate: Digest algorithm=\"MD5\", realm=\"%s\", qop=\"auth\", opaque=\"%s\", nonce=\"%s\"", AUTHREALM, opaque, expectednonce);
-				if(authok == 2) { strncat(authheadertmp, ", stale=true", sizeof(authheadertmp) - strlen(authheadertmp) - 1); }
+				if (authok == 2)
+				{
+					if (!cs_strncat(authheadertmp, ", stale=true", sizeof(authheadertmp))) {
+						cs_log("WARNING, bug here!");
+					}
+				}
 			}
 			else
-				{ snprintf(authheadertmp, sizeof(authheadertmp), "Authentication-Info: nextnonce=\"%s\"", expectednonce); }
+			{
+				snprintf(authheadertmp, sizeof(authheadertmp), "Authentication-Info: nextnonce=\"%s\"", expectednonce);
+			}
+
 			extraheader = authheadertmp;
-			if(authok != 1)
+
+			if (authok != 1)
 			{
 				char *msg = "Access denied.\n";
 				send_headers(f, 401, "Unauthorized", extraheader, "text/html", 0, strlen(msg), msg, 0);
 				webif_write(msg, f);
 				NULLFREE(authheader);
 				NULLFREE(filebuf);
-				if(*keepalive) { continue; }
-				else { return 0; }
+				if (*keepalive) {
+					continue;
+				} else {
+					return 0;
+				}
 			}
 		}
-		else { NULLFREE(authheader); }
+		else
+		{
+			NULLFREE(authheader);
+		}
 
 		/*build page*/
 		if(pgidx == 8)
