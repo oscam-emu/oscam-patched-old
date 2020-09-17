@@ -1056,9 +1056,9 @@ char *mk_t_allowedtimeframe(struct s_auth *account)
 					{
 						if(value_in_day == 0)
 						{
-							strcat(result, &sepday[0]);
-							strcat(result, shortDay[day]);
-							strcat(result, "@");
+							cs_strncat(result, &sepday[0], MAXALLOWEDTF);
+							cs_strncat(result, shortDay[day], MAXALLOWEDTF);
+							cs_strncat(result, "@", MAXALLOWEDTF);
 							value_in_day = 1;
 							intime = 0;
 							sepday[0] = ';';
@@ -1067,10 +1067,10 @@ char *mk_t_allowedtimeframe(struct s_auth *account)
 
 						if(!intime)
 						{
-							strcat(result, &septime[0]);
+							cs_strncat(result, &septime[0], MAXALLOWEDTF);
 							snprintf(mytime, 6, "%02d:%02d", hours, minutes);
-							strcat(result, mytime);
-							strcat(result, "-");
+							cs_strncat(result, mytime, MAXALLOWEDTF);
+							cs_strncat(result, "-", MAXALLOWEDTF);
 							septime[0] = ',';
 							intime = 1;
 						}
@@ -1078,7 +1078,7 @@ char *mk_t_allowedtimeframe(struct s_auth *account)
 						// Special case 23H59 is enabled we close the day at 24H00
 						if(((hours * 60) + minutes) == 1439)
 						{
-							strcat(result, "24:00");
+							cs_strncat(result, "24:00", MAXALLOWEDTF);
 							intime = 0;
 							septime[0] = '\0';
 							value_in_day = 0;
@@ -1087,7 +1087,7 @@ char *mk_t_allowedtimeframe(struct s_auth *account)
 					else if(intime)
 					{
 						snprintf(mytime, 6, "%02d:%02d", hours, minutes);
-						strcat(result, mytime);
+						cs_strncat(result, mytime, MAXALLOWEDTF);
 						septime[0] = ',';
 						intime = 0;
 					}

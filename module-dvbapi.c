@@ -656,7 +656,8 @@ int32_t dvbapi_net_send(uint32_t request, int32_t socket_fd, uint32_t msgid, int
 		case DVBAPI_SERVER_INFO:
 		{
 			int16_t proto_version = htons(DVBAPI_PROTOCOL_VERSION); // our protocol version
-			char capabilities[128] = "\x00"; // two zero characters
+			char capabilities[128];
+			memset(capabilities, 0, sizeof(capabilities));
 			memcpy(&packet[size], &proto_version, 2);
 			size += 2;
 			uint8_t *info_len = &packet[size]; // info string length
@@ -664,12 +665,12 @@ int32_t dvbapi_net_send(uint32_t request, int32_t socket_fd, uint32_t msgid, int
 
 			if(cfg.dvbapi_extended_cw_api == 1)
 			{
-				strcat(capabilities, ",e1mk"); // extended cw, key follows mode - supports CSA, DES, AES128
+				cs_strncat(capabilities, ",e1mk", sizeof(capabilities)); // extended cw, key follows mode - supports CSA, DES, AES128
 			}
 
 			if(cfg.dvbapi_extended_cw_api == 2)
 			{
-				strcat(capabilities, ",e2"); // usage of DES algo signalled through PID index - CSA and DES only
+				cs_strncat(capabilities, ",e2", sizeof(capabilities)); // usage of DES algo signalled through PID index - CSA and DES only
 			}
 
 			*info_len = snprintf((char *) &packet[size], sizeof(packet) - size, "OSCam v%s, build r%s (%s); %s",
@@ -2067,10 +2068,10 @@ void dvbapi_add_emmpid(int32_t demux_id, uint16_t caid, uint16_t emmpid, uint32_
 	char cadatatext[40];
 	cs_strncpy(typetext, ":", sizeof(typetext));
 
-	if(type & 0x01) { strcat(typetext, "UNIQUE:"); }
-	if(type & 0x02) { strcat(typetext, "SHARED:"); }
-	if(type & 0x04) { strcat(typetext, "GLOBAL:"); }
-	if(type & 0xF8) { strcat(typetext, "UNKNOWN:"); }
+	if(type & 0x01) { cs_strncat(typetext, "UNIQUE:", sizeof(typetext)); }
+	if(type & 0x02) { cs_strncat(typetext, "SHARED:", sizeof(typetext)); }
+	if(type & 0x04) { cs_strncat(typetext, "GLOBAL:", sizeof(typetext)); }
+	if(type & 0xF8) { cs_strncat(typetext, "UNKNOWN:", sizeof(typetext)); }
 
 	if(cadata > 0)
 	{

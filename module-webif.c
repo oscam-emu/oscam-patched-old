@@ -1976,9 +1976,10 @@ static char *send_oscam_reader(struct templatevars *vars, struct uriparams *para
 
 				if(cs_malloc(&new_proto, strlen(proto)+strlen(aio_suffix)+1))
 				{
-					new_proto[0] = '\0';
-					strcat(new_proto, proto);
-					strcat(new_proto, aio_suffix);
+					if (!cs_strncat(new_proto, proto, strlen(proto)+strlen(aio_suffix)+1))
+						cs_log("FIXME!");
+					if (!cs_strncat(new_proto, aio_suffix, strlen(proto)+strlen(aio_suffix)+1))
+						cs_log("FIXME!");
 				}
 			}
 #endif
@@ -4636,10 +4637,12 @@ static char *send_oscam_user_config(struct templatevars *vars, struct uriparams 
 			char *new_proto;
 			if(cs_malloc(&new_proto, strlen(proto)+strlen(aio_suffix)+1))
 			{
-				new_proto[0] = '\0';
-				strcat(new_proto,proto);
-				strcat(new_proto,aio_suffix);
-				webif_add_client_proto(vars, latestclient, (const char*)new_proto, apicall);
+				if (!cs_strncat(new_proto, proto, strlen(proto)+strlen(aio_suffix)+1))
+					cs_log("FIXME!");
+				if (cs_strncat(new_proto, aio_suffix, strlen(proto)+strlen(aio_suffix)+1))
+					webif_add_client_proto(vars, latestclient, (const char *)new_proto, apicall);
+				else
+					cs_log("FIXME!");
 				free(new_proto);
 			}
 		}
@@ -5784,9 +5787,12 @@ static char *send_oscam_status(struct templatevars * vars, struct uriparams * pa
 						if(cs_malloc(&new_proto, strlen(proto)+strlen(aio_suffix)+1))
 						{
 							new_proto[0] = '\0';
-							strcat(new_proto,proto);
-							strcat(new_proto,aio_suffix);
-							webif_add_client_proto(vars, cl, (const char*)new_proto, apicall);
+							if (!cs_strncat(new_proto, proto, strlen(proto)+strlen(aio_suffix)+1))
+								cs_log("FIXME!");
+							if (cs_strncat(new_proto, aio_suffix, strlen(proto)+strlen(aio_suffix)+1))
+								webif_add_client_proto(vars, cl, (const char*)new_proto, apicall);
+							else
+								cs_log("FIXME!");
 							free(new_proto);
 						}
 					}
@@ -6877,11 +6883,11 @@ static char *send_oscam_script(struct templatevars * vars, struct uriparams * pa
 
 					if((scriptparam != NULL) && (sizeof(scriptparam) > 0))
 					{
-						strcat(system_str, " ");
-						strcat(system_str, scriptparam);
+						cs_strncat(system_str, " ", sizeof(system_str));
+						cs_strncat(system_str, scriptparam, sizeof(system_str));
 					}
 
-					fp = popen(system_str,"r");
+					fp = popen(system_str, "r");
 
 					while (fgets(buf, sizeof(buf), fp) != NULL)
 					{
