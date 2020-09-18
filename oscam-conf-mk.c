@@ -1057,7 +1057,7 @@ char *mk_t_allowedtimeframe(struct s_auth *account)
 						if(value_in_day == 0)
 						{
 							cs_strncat(result, &sepday[0], MAXALLOWEDTF);
-							cs_strncat(result, shortDay[day], MAXALLOWEDTF);
+							cs_strncat(result, (char *)shortDay[day], MAXALLOWEDTF);
 							cs_strncat(result, "@", MAXALLOWEDTF);
 							value_in_day = 1;
 							intime = 0;
