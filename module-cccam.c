@@ -2662,15 +2662,18 @@ void addParam(char *param, size_t param_sz, char *value)
 		if ((strlen(param) + strlen(value) + 1) < param_sz) {
 			if (strlen(param) < 4) {
 				cs_strncat(param, value, param_sz);
-			} else {
+			}
+			else {
 				cs_strncat(param, ",", param_sz);
 				cs_strncat(param, value, param_sz);
 			}
-		} else {
+		}
+		else {
 			cs_log("ERROR! Buffer overflow in addParam!");
 		}
-	} else {
-		cs_log("ERROR! Booth param and value pointer NULL!");
+	}
+	else {
+	cs_log("ERROR! Booth param and value pointer NULL!");
 	}
 }
 
