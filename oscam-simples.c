@@ -383,7 +383,6 @@ char *__get_providername(uint32_t provid, uint16_t caid, char *buf, uint32_t buf
 	if(!found && zero_match != NULL)
 	{
 		cs_strncpy(buf, zero_match->prov, buflen);
-		found = 1;
 	}
 
 	if(!buf[0] && return_unknown)

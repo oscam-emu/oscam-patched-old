@@ -38,15 +38,16 @@ extern struct ecm_request_t	*ecm_pushed_deleted;
 static pthread_mutex_t cw_process_sleep_cond_mutex;
 static pthread_cond_t cw_process_sleep_cond;
 static int cw_process_wakeups;
+int64_t ecmc_next, cache_next, msec_wait = 3000;
 
 // ecm-cache
 typedef struct ecm_cache
 {
-	struct timeb        first_recv_time;     // time of first cw received
-	struct timeb        upd_time;            // updated time. Update time at each cw got
-	uint32_t            csp_hash;
-	node				ht_node;
-	node				ll_node;
+	struct timeb	first_recv_time;// time of first cw received
+	struct timeb	upd_time;	// updated time. Update time at each cw got
+	uint32_t	csp_hash;
+	node		ht_node;
+	node		ll_node;
 } ECM_CACHE;
 
 static pthread_rwlock_t ecm_cache_lock;
@@ -232,7 +233,7 @@ void update_n_request(void)
 static void *cw_process(void)
 {
 	set_thread_name(__func__);
-	int64_t time_to_check_fbtimeout, time_to_check_ctimeout, next_check, ecmc_next, cache_next, n_request_next, msec_wait = 3000;
+	int64_t time_to_check_fbtimeout, time_to_check_ctimeout, next_check, n_request_next;
 	struct timeb t_now, tbc, ecmc_time, cache_time, n_request_time;
 	ECM_REQUEST *er = NULL;
 	time_t ecm_maxcachetime;

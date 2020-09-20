@@ -305,7 +305,6 @@ static void vg2_read_tiers(struct s_reader *reader)
 						{
 							if((cta_res[word + 2] >> bitnum) & 1)
 							{
-								tier_id = 0;
 								tier_id = ((TierClass << 8) + (word << 3) + bitnum);
 								cs_add_entitlement(reader, reader->caid, b2ll(4, reader->prid[0]), tier_id, TierClass, start_t, end_t, 4, 1);
 								rdr_log(reader, "|-- %02x ---|-- %04x --| %04d/%02d/%02d-%02d:%02d:%02d | %s",
@@ -322,7 +321,6 @@ static void vg2_read_tiers(struct s_reader *reader)
 
 							if((cta_res[word + 1 + 2] >> bitnum) & 1)
 							{
-								tier_id = 0;
 								tier_id = ((TierClass << 8) + (word << 3) + bitnum + 8);
 								cs_add_entitlement(reader, reader->caid, b2ll(4, reader->prid[0]), tier_id, TierClass, start_t, end_t, 4, 1);
 								rdr_log(reader, "|-- %02x ---|-- %04x --| %04d/%02d/%02d-%02d:%02d:%02d | %s",
@@ -1298,7 +1296,6 @@ static int32_t videoguard2_do_ecm(struct s_reader *reader, const ECM_REQUEST *er
 				if(buff_0F[0] & 1) // case 0f_0x 01 xx xx xx xx xx
 				{
 					rdr_log(reader, "classD3 ins54: no cw --> Bad/wrong ECM");
-					test_0F = 0;
 					return E_CORRUPT;
 				}
 

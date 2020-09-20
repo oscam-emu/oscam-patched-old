@@ -20,6 +20,7 @@
 #include "oscam-time.h"
 
 const int32_t CWS_NETMSGSIZE = 1024; // csp 0.8.9 (default: 400). This is CWS_NETMSGSIZE. The old default was 240
+int32_t portion_sid_num = 0;
 
 #define NCD_CLIENT_ID 0x8888
 #define CWS_FIRSTCMDNO 0xE0
@@ -184,7 +185,7 @@ static int32_t send_sid_list(void)
 	}
 
 	uint8_t mbuf[CWS_NETMSGSIZE];
-	int32_t n = 0, nr = 0, portion_sid_num = 0, i = 0, sid_num = 0, portion_num = 0;
+	int32_t n = 0, nr = 0, i = 0, sid_num = 0, portion_num = 0;
 	SIDTAB *sidtab = 0;
 	custom_data_t cd;
 

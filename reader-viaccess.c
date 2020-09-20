@@ -1903,7 +1903,6 @@ static int32_t viaccess_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 		if((cta_res[cta_lr - 2] == 0x90 || cta_res[cta_lr - 2] == 0x91) && (cta_res[cta_lr - 1] == 0x00 || cta_res[cta_lr - 1] == 0x08))
 		{
 			rdr_log(reader, "update successfully written");
-			rc = 1; // written
 		}
 		rc = 1;
 	}
