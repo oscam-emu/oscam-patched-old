@@ -124,7 +124,8 @@ void SHAPrintContext(SHA_CTX *context, char *msg)
 /* Hash a single 512-bit block. This is the core of the algorithm. */
 void SHA1_Transform(uint32_t state[5], const uint8_t buffer[64])
 {
-	uint32_t a, b, c, d, e;
+	uint32_t a = 0, b = 0, c = 0, d = 0, e = 0;
+
 	typedef union
 	{
 		uint8_t c[64];
@@ -236,8 +237,6 @@ void SHA1_Transform(uint32_t state[5], const uint8_t buffer[64])
 	state[3] += d;
 	state[4] += e;
 
-	/* Wipe variables */
-	a = b = c = d = e = 0;
 }
 
 
@@ -309,7 +308,6 @@ void SHA1_Final(uint8_t digest[SHA_DIGEST_LENGTH], SHA_CTX *context)
 	}
 
 	/* Wipe variables */
-	i = 0;
 	memset(context->buffer, 0, 64);
 	memset(context->state, 0, 20);
 	memset(context->count, 0, 8);

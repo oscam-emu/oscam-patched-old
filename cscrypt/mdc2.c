@@ -499,7 +499,9 @@ void DES_set_odd_parity(DES_cblock *key)
 
 void DES_encrypt1(DES_LONG *data, DES_key_schedule *ks, int enc)
 {
-	register DES_LONG l, r, t, u;
+	register DES_LONG l=0, r=0, t=0, u=0;
+	//l = r = t = u = 0;
+
 	register DES_LONG *s;
 
 	r = data[0];
@@ -569,7 +571,6 @@ void DES_encrypt1(DES_LONG *data, DES_key_schedule *ks, int enc)
 	FP(r, l);
 	data[0] = l;
 	data[1] = r;
-	l = r = t = u = 0;
 }
 
 
