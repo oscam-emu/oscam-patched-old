@@ -590,7 +590,7 @@ static uint32_t _lrotr(uint32_t i)
 
 static void des_encrypt_int(uint32_t* data, const uint32_t* ks, int8_t do_encrypt)
 {
-	uint32_t l,r,t,u;
+	uint32_t l=0,r=0,t=0,u=0;
 	int32_t i;
 
 	u=data[0];
@@ -708,7 +708,6 @@ static void des_encrypt_int(uint32_t* data, const uint32_t* ks, int8_t do_encryp
 
 	data[0]=l;
 	data[1]=r;
-	l=r=t=u=0;
 }
 
 void des(uint8_t* data, const uint32_t* schedule, int8_t do_encrypt)

@@ -140,12 +140,10 @@ int BN_uadd(BIGNUM *r, const BIGNUM *a, const BIGNUM *b)
 	ap = a->d;
 	bp = b->d;
 	rp = r->d;
-	carry = 0;
 
 	carry = bn_add_words(rp, ap, bp, min);
 	rp += min;
 	ap += min;
-	bp += min;
 	i = min;
 
 	if(carry)
