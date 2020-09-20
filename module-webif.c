@@ -46,7 +46,7 @@ extern uint8_t cacheex_peer_id[8];
 
 extern char *entitlement_type[];
 extern char *RDR_CD_TXT[];
-
+int8_t isactive;
 int32_t ssl_active = 0;
 char noncekey[33];
 pthread_key_t getkeepalive;
@@ -354,9 +354,6 @@ static void set_ecm_info(struct templatevars * vars)
 	double twruk = 0, twrg = 0, twrs = 0, twruq = 0;
 	double tskuk = 0, tskg = 0, tsks = 0, tskuq = 0;
 	double tbluk = 0, tblg = 0, tbls = 0, tbluq = 0;
-
-	ecmsum = 0;
-	emmsum = 0;
 
 	cs_readlock(__func__, &readerlist_lock);
 	LL_ITER itr = ll_iter_create(configured_readers);
@@ -4345,7 +4342,6 @@ static char *send_oscam_user_config(struct templatevars *vars, struct uriparams 
 	int32_t expired_or_disabled_users = 0;
 	int32_t connected_users = 0;
 	int32_t online_users = 0;
-	int8_t isactive;
 	int32_t casc_users = 0;
 	int32_t casc_users2 = 0;
 	int32_t n_request = 0;
@@ -4373,7 +4369,6 @@ static char *send_oscam_user_config(struct templatevars *vars, struct uriparams 
 		isactive = 1;
 
 		status = "offline";
-		expired = "";
 		classname = "offline";
 		isec = 0;
 		chsec = 0;
@@ -6243,7 +6238,6 @@ static char *send_oscam_status(struct templatevars * vars, struct uriparams * pa
 						if(shown || cl->wihidden)
 						{
 							tpl_addVar(vars, TPLADD, "SERVERHEADLINE", tpl_getTpl(vars, "STATUSHEADLINE"));
-							usr = username(cl);
 						}
 					}
 					else

@@ -316,6 +316,7 @@ static void sort_ecmrl(struct s_reader *reader)
 
 // If reader_mode is 1, ECM_REQUEST need to be assigned to reader and slot.
 // Else just report if a free slot is available.
+int32_t maxslots = MAXECMRATELIMIT;
 int32_t ecm_ratelimit_check(struct s_reader *reader, ECM_REQUEST *er, int32_t reader_mode)
 {
 	// No rate limit set
@@ -324,7 +325,7 @@ int32_t ecm_ratelimit_check(struct s_reader *reader, ECM_REQUEST *er, int32_t re
 		return OK;
 	}
 
-	int32_t foundspace = -1, h, maxslots = MAXECMRATELIMIT; // init slots to oscam global maximums
+	int32_t foundspace = -1, h; // init slots to oscam global maximums
 	struct ecmrl rl;
 	struct timeb now;
 	rl = get_ratelimit(er);
@@ -405,8 +406,7 @@ int32_t ecm_ratelimit_check(struct s_reader *reader, ECM_REQUEST *er, int32_t re
 			reader->cooldownstate = 0; // set cooldown setup phase
 			reader->cooldowntime.time = -1; // reset cooldowntime
 			maxslots = MAXECMRATELIMIT; //use oscam defined max slots
-			cs_log("Reader: %s ratelimiter returning to setup phase cooling down period of %d seconds is done!",
-					reader->label, reader->cooldown[1]);
+			cs_log("Reader: %s ratelimiter returning to setup phase cooling down period of %d seconds is done!", reader->label, reader->cooldown[1]);
 		}
 	} // if cooldownstate == 1
 
@@ -434,22 +434,18 @@ int32_t ecm_ratelimit_check(struct s_reader *reader, ECM_REQUEST *er, int32_t re
 			reader->cooldownstate = 0; // set cooldown setup phase
 			reader->cooldowntime.time = -1; // reset cooldowntime
 			maxslots = MAXECMRATELIMIT; // maxslots is maxslots again
-			cs_log("Reader: %s ratelimiter returning to setup phase after %d seconds cooldowndelay!",
-					reader->label, reader->cooldown[0]);
-		}
-		else
+			cs_log("Reader: %s ratelimiter returning to setup phase after %d seconds cooldowndelay!", reader->label, reader->cooldown[0]);
+		} else
 		{
 			reader->cooldownstate = 1; // Entering ratelimit for cooldown ratelimitseconds
 			cs_ftime(&reader->cooldowntime); // set time to enforce ecmratelimit for defined cooldowntime
 			maxslots = reader->ratelimitecm; // maxslots is maxslots again
 			sort_ecmrl(reader); // keep youngest ecm requests in list + housekeeping
-			cs_log("Reader: %s ratelimiter starting cooling down period of %d seconds!",
-					reader->label, reader->cooldown[1]);
+			cs_log("Reader: %s ratelimiter starting cooling down period of %d seconds!", reader->label, reader->cooldown[1]);
 		}
 	} // if cooldownstate == 2
 
-	cs_log_dbg(D_CLIENT, "ratelimiter cooldownphase %d find a slot for srvid %04X on reader %s",
-				reader->cooldownstate, er->srvid, reader->label);
+	cs_log_dbg(D_CLIENT, "ratelimiter cooldownphase %d find a slot for srvid %04X on reader %s", reader->cooldownstate, er->srvid, reader->label);
 
 	foundspace = ecm_ratelimit_findspace(reader, er, rl, reader_mode);
 
@@ -459,8 +455,7 @@ int32_t ecm_ratelimit_check(struct s_reader *reader, ECM_REQUEST *er, int32_t re
 		{
 			if(foundspace != -2)
 			{
-				cs_log_dbg(D_CLIENT, "ratelimiter cooldownphase %d no free slot for srvid %04X on reader %s -> dropping!",
-							reader->cooldownstate, er->srvid, reader->label);
+				cs_log_dbg(D_CLIENT, "ratelimiter cooldownphase %d no free slot for srvid %04X on reader %s -> dropping!", reader->cooldownstate, er->srvid, reader->label);
 				write_ecm_answer(reader, er, E_NOTFOUND, E2_RATELIMIT, NULL, "Ratelimiter: cooldown no slots free!", 0, NULL);
 			}
 		}
