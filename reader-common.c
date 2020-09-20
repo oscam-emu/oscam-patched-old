@@ -486,7 +486,6 @@ int32_t cardreader_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 	}
 	else
 	{
-		rc = -1;
 		rc = cardreader_do_checkhealth(reader);
 	}
 

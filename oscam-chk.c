@@ -496,12 +496,11 @@ int32_t chk_ident_filter(uint16_t rcaid, uint32_t rprid, FTAB *ftab)
 
 int32_t chk_ufilters(ECM_REQUEST *er)
 {
-	int32_t i, j, rc;
+	int32_t i, j, rc = 1;
 	uint16_t ucaid;
 	uint32_t uprid;
 	struct s_client *cur_cl = cur_client();
 
-	rc = 1;
 	if(cur_cl->ftab.nfilts)
 	{
 		FTAB *f = &cur_cl->ftab;
@@ -1062,7 +1061,6 @@ int32_t matching_reader(ECM_REQUEST *er, struct s_reader *rdr)
 			skip = 0;
 			byteok = 0;
 			entryok = 0;
-			len = 0;
 
 			if(tmp->caid == 0 || tmp->caid == er->caid)
 			{

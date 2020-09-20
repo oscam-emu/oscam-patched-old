@@ -26,6 +26,7 @@ extern uint16_t len4caid[256];
 #define cs_twin      "oscam.twin"
 
 uint32_t cfg_sidtab_generation = 1;
+uint32_t caid;
 
 extern char cs_confdir[];
 
@@ -102,7 +103,6 @@ static void chk_entry4sidtab(char *value, struct s_sidtab *sidtab, int32_t what)
 	char *ptr, *saveptr1 = NULL;
 	uint16_t *slist = (uint16_t *) 0;
 	uint32_t *llist = (uint32_t *) 0;
-	uint32_t caid;
 	uint8_t disablecrccws_only_for_exception = 0;
 	uint8_t no_wait_time = 0;
 	uint8_t lg_only_exception = 0;
@@ -961,7 +961,8 @@ static struct s_rlimit *ratelimit_read_int(void)
 			}
 		}
 
-		uint32_t caid = 0, provid = 0, srvid = 0, chid = 0, ratelimitecm = 0, ratelimittime = 0, srvidholdtime = 0;
+		caid = 0;
+		uint32_t provid = 0, srvid = 0, chid = 0, ratelimitecm = 0, ratelimittime = 0, srvidholdtime = 0;
 		memset(str1, 0, sizeof(str1));
 
 		ret = sscanf(token, "%4x:%6x:%4x:%4x:%d:%d:%d:%1023s", &caid, &provid, &srvid, &chid, &ratelimitecm, &ratelimittime, &srvidholdtime, str1);
@@ -1259,7 +1260,8 @@ static struct s_global_whitelist *global_whitelist_read_int(void)
 		}
 
 		type = 'w';
-		uint32_t caid = 0, provid = 0, srvid = 0, pid = 0, chid = 0, ecmlen = 0, mapcaid = 0, mapprovid = 0;
+		caid = 0;
+		uint32_t provid = 0, srvid = 0, pid = 0, chid = 0, ecmlen = 0, mapcaid = 0, mapprovid = 0;
 		memset(str1, 0, sizeof(str1));
 
 		ret = sscanf(token, "%c:%4x:%6x:%4x:%4x:%4x:%1023s", &type, &caid, &provid, &srvid, &pid, &chid, str1);
@@ -1438,7 +1440,8 @@ static struct s_twin *twin_read_int(void)
 			}
 		}
 
-		uint32_t caid = 0, provid = 0, srvid = 0, deg = 0, freq = 0;
+		caid = 0;
+		uint32_t provid = 0, srvid = 0, deg = 0, freq = 0;
 		//char hdeg[4], hfreq[4], hsrvid[4];
 		memset(str1, 0, sizeof(str1));
 
