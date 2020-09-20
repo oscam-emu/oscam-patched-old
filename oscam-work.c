@@ -260,15 +260,15 @@ void *work_thread(void *ptr)
 						{ break; }
 					if(s < 0)
 					{
-						if(reader->ph.type == MOD_CONN_TCP)
+						if(cl->reader->ph.type == MOD_CONN_TCP)
 							{ network_tcp_connection_close(reader, "disconnect"); }
 						break;
 					}
-					rc = reader->ph.recv(cl, mbuf, bufsize);
+					rc = cl->reader->ph.recv(cl, mbuf, bufsize);
 					if(rc < 0)
 					{
-						if(reader->ph.type == MOD_CONN_TCP)
-							{ 
+						if(cl->reader->ph.type == MOD_CONN_TCP)
+							{
 								network_tcp_connection_close(reader, "disconnect on receive"); 
 #ifdef CS_CACHEEX
 								cl->cacheex_aio_checked = 0;
@@ -277,10 +277,10 @@ void *work_thread(void *ptr)
 						break;
 					}
 					cl->last = time(NULL); // *********************************** TO BE REPLACE BY CS_FTIME() LATER ****************
-					idx = reader->ph.c_recv_chk(cl, dcw, &rc, mbuf, rc);
+					idx = cl->reader->ph.c_recv_chk(cl, dcw, &rc, mbuf, rc);
 					if(idx < 0) { break; }  // no dcw received
 					if(!idx) { idx = cl->last_idx; }
-					reader->last_g = time(NULL); // *********************************** TO BE REPLACE BY CS_FTIME() LATER **************** // for reconnect timeout
+					cl->reader->last_g = time(NULL); // *********************************** TO BE REPLACE BY CS_FTIME() LATER **************** // for reconnect timeout
 					for(i = 0, n = 0; i < cfg.max_pending && n == 0; i++)
 					{
 						if(cl->ecmtask[i].idx == idx)
@@ -329,7 +329,7 @@ void *work_thread(void *ptr)
 					break;
 
 				case ACTION_READER_RESET_FAST:
-					reader->card_status = CARD_NEED_INIT;
+					cl->reader->card_status = CARD_NEED_INIT;
 					cardreader_do_reset(reader);
 					break;
 
@@ -338,7 +338,7 @@ void *work_thread(void *ptr)
 					break;
 
 				case ACTION_READER_CAPMT_NOTIFY:
-					if(reader->ph.c_capmt) { reader->ph.c_capmt(cl, data->ptr); }
+					if(cl->reader->ph.c_capmt) { cl->reader->ph.c_capmt(cl, data->ptr); }
 					break;
 
 				case ACTION_CLIENT_UDP:
