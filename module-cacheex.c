@@ -486,24 +486,35 @@ int8_t cacheex_maxhop_lg(struct s_client *cl)
 	if(cl->reader && cl->reader->cacheex.maxhop_lg)
 	{
 		if(cl->reader->cacheex.maxhop_lg > max)
+		{
 			maxhop_lg = max;
-		
-		if(cl->reader->cacheex.maxhop_lg < maxhop)
+		}
+		else if(cl->reader->cacheex.maxhop_lg < maxhop)
+		{
 			maxhop_lg = maxhop;
+		}
 		else
+		{
 			maxhop_lg = cl->reader->cacheex.maxhop_lg;
+		}
 
 		cl->reader->cacheex.maxhop_lg = maxhop_lg;
 	}
 	else if(cl->account && cl->account->cacheex.maxhop_lg)
 	{
 		if(cl->account->cacheex.maxhop_lg > max)
+		{
 			cl->account->cacheex.maxhop_lg = max;
+		}
 
 		if(cl->account->cacheex.maxhop_lg < maxhop)
+		{
 			maxhop_lg = maxhop;
+		}
 		else
+		{
 			maxhop_lg = cl->account->cacheex.maxhop_lg;
+		}
 
 		cl->account->cacheex.maxhop_lg = maxhop_lg;
 	}
