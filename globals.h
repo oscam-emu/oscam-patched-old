@@ -362,7 +362,9 @@
  * =========================== */
 #define CS_VERSION				"1.20_svn"
 #ifdef CS_CACHEEX
+#ifdef CS_CACHEEX_AIO
 #define CS_AIO_VERSION			"9.2.6"
+#endif
 #endif
 #ifndef CS_SVN_VERSION
 # define CS_SVN_VERSION			"test"
@@ -421,10 +423,16 @@
 #define D_CLIENTECM				0x0400	// Debug Client ECMs
 #define D_CSP					0x0800	// Debug CSP
 #define D_CWC					0x1000	// Debug CWC
+#ifdef CS_CACHEEX_AIO
 #define D_CW_CACHE				0x2000	// Debug CW Cache
+#endif
 #define D_ALL_DUMP				0xFFFF	// dumps all
 
+#ifdef CS_CACHEEX_AIO
 #define MAX_DEBUG_LEVELS		14
+#else
+#define MAX_DEBUG_LEVELS		13
+#endif
 
 /////// phoenix readers which need baudrate setting and timings need to be guarded by OSCam: BEFORE R_MOUSE
 #define R_DB2COM1				0x1		// Reader Dbox2 @ com1
@@ -735,8 +743,10 @@ typedef struct s_sidtab
 {
 	char			label[64];
 	uint8_t			disablecrccws_only_for_exception;
+#ifdef CS_CACHEEX_AIO
 	uint8_t			no_wait_time;
 	uint8_t			lg_only_exception;
+#endif
 	uint16_t		num_caid;
 	uint16_t		num_provid;
 	uint16_t		num_srvid;
@@ -858,7 +868,9 @@ typedef struct s_cacheex_stat_entry					// Cacheex stats listmember
 	uint16_t		cache_srvid;
 	uint32_t		cache_prid;
 	int8_t			cache_direction;				// 0 = push / 1 = got
+#ifdef CS_CACHEEX_AIO
 	int32_t			cache_count_lg;
+#endif
 } S_CACHEEX_STAT_ENTRY;
 
 typedef struct s_entitlement						// contains entitlement Info
@@ -1080,8 +1092,10 @@ typedef struct ecm_request_t
 	uint8_t			cacheex_hitcache;				// =1 if wait_time due hitcache
 	void			*cw_cache;						// pointer to cw stored in cache
 #endif
+#ifdef CS_CACHEEX_AIO
 	int32_t			ecm_time;						// ecm-time in ms
 	uint8_t			localgenerated;					// flag for local generated CW
+#endif
 	uint32_t		cw_count;
 	uint8_t			from_csp;						// =1 if er from csp cache
 	uint8_t			from_cacheex;					// =1 if er from cacheex client pushing cache
@@ -1257,10 +1271,14 @@ struct s_client
 	int32_t			cwcacheexerrcw;					// same Hex, different CW
 	int16_t			cwcacheexping;					// peer ping in ms, only used by csp
 	int32_t			cwc_info;						// count of in/out comming cacheex ecms with CWCinfo
+#ifdef CS_CACHEEX_AIO
 	int32_t			cwcacheexgotlg;					// count got localgenerated-flagged CWs
 	int32_t			cwcacheexpushlg;				// count pushed localgenerated-flagged CWs
+#endif
 	uint8_t			cacheex_needfilter;				// flag for cachex mode 3 used with camd35
+#ifdef CS_CACHEEX_AIO
 	uint8_t			cacheex_aio_checked;			// flag for cacheex aio detection done
+#endif
 #endif
 #ifdef CS_ANTICASC
 	struct s_zap_list client_zap_list[15];			// 15 last zappings from client used for ACoSC
@@ -1283,8 +1301,10 @@ struct s_client
 	void			*cc;
 #endif
 
+#ifdef CS_CACHEEX_AIO
 #if defined(MODULE_CAMD35) || defined(MODULE_CAMD35_TCP)
 	uint8_t 		c35_extmode;
+#endif
 #endif
 
 #ifdef MODULE_GBOX
@@ -1463,14 +1483,19 @@ typedef struct ce_csp_t
 {
 	int8_t			mode;
 	int8_t			maxhop;
+#ifdef CS_CACHEEX_AIO
 	int8_t			maxhop_lg;
+#endif
 	CECSPVALUETAB	filter_caidtab;
 	uint8_t			allow_request;
 	uint8_t			allow_reforward;
 	uint8_t			drop_csp;
 	uint8_t			allow_filter;
+#ifdef CS_CACHEEX_AIO
 	uint8_t			allow_maxhop;
+#endif
 	uint8_t			block_fakecws;
+#ifdef CS_CACHEEX_AIO
 	uint8_t			cw_check_for_push;
 	uint8_t			localgenerated_only;
 	CAIDTAB			localgenerated_only_caidtab;
@@ -1483,6 +1508,7 @@ typedef struct ce_csp_t
 	int32_t			feature_bitfield;
 	CAIDVALUETAB	cacheex_nopushafter_tab;
 	char			aio_version[12];
+#endif
 } CECSP;
 
 struct s_emmlen_range
@@ -1759,7 +1785,9 @@ struct s_reader										// contains device info, reader info and card info
 													// (everything below 60 ms is converted to ms by applying *1000)
 	struct timeb	lastdvbapirateoverride;
 	uint32_t		ecmsok;
+#ifdef CS_CACHEEX_AIO
 	uint32_t		ecmsoklg;
+#endif
 	uint32_t		webif_ecmsok;
 	uint32_t		ecmsnok;
 	uint32_t		webif_ecmsnok;
@@ -1771,7 +1799,9 @@ struct s_reader										// contains device info, reader info and card info
 	int32_t			webif_ecmsfilteredhead;			// count filtered ECM's by ECM Headerwhitelist to readers ecminfo
 	int32_t			webif_ecmsfilteredlen;			// count filtered ECM's by ECM Whitelist to readers ecm info
 	float			ecmshealthok;
+#ifdef CS_CACHEEX_AIO
 	float			ecmshealthoklg;
+#endif
 	float			ecmshealthnok;
 	float			ecmshealthtout;
 	int32_t			cooldown[2];
@@ -1934,8 +1964,10 @@ struct s_auth
 	int32_t			cwcacheexerr;					// cw=00 or chksum wrong
 	int32_t			cwcacheexerrcw;					// Same Hex, different CW
 	int32_t			cwc_info;						// count of in/out comming cacheex ecms with CWCinfo
+#ifdef CS_CACHEEX_AIO
 	int32_t			cwcacheexgotlg;					// count got localgenerated-flagged CWs
 	int32_t			cwcacheexpushlg;				// count pushed localgenerated-flagged CWs
+#endif
 #endif
 	struct s_auth	*next;
 };
@@ -2358,6 +2390,7 @@ struct s_config
 	int8_t			block_same_name;				// 0=allow all, 1=block client requests to reader with same name (default=1)
 
 #ifdef CS_CACHEEX
+#ifdef CS_CACHEEX_AIO
 	uint32_t		cw_cache_size;
 	uint32_t		cw_cache_memory;
 	CWCHECKTAB		cw_cache_settings;
@@ -2365,19 +2398,22 @@ struct s_config
 	uint32_t		ecm_cache_size;
 	uint32_t		ecm_cache_memory;
 	int32_t			ecm_cache_droptime;
-
+#endif
 	uint8_t			wait_until_ctimeout;
 	CWCHECKTAB		cacheex_cwcheck_tab;
 	IN_ADDR_T		csp_srvip;
 	int32_t			csp_port;
 	CECSPVALUETAB	cacheex_wait_timetab;
 	CAIDVALUETAB	cacheex_mode1_delay_tab;
+#ifdef CS_CACHEEX_AIO
 	CAIDVALUETAB	cacheex_nopushafter_tab;
 	uint8_t			waittime_block_start;
 	uint16_t		waittime_block_time;
+#endif
 	CECSP			csp;							// CSP Settings
 	uint8_t			cacheex_enable_stats;			// enable stats
 	struct s_cacheex_matcher *cacheex_matcher;
+#ifdef CS_CACHEEX_AIO
 	uint8_t			cacheex_dropdiffs;
 	uint8_t			cacheex_lg_only_remote_settings;
 	uint8_t			cacheex_localgenerated_only;
@@ -2390,6 +2426,7 @@ struct s_config
 	CECSPVALUETAB	cacheex_filter_caidtab;
 	CECSPVALUETAB	cacheex_filter_caidtab_aio;
 	uint64_t		cacheex_push_lg_groups;
+#endif
 #endif
 
 #ifdef CW_CYCLE_CHECK

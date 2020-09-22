@@ -18,7 +18,9 @@
 #include "oscam-string.h"
 #include "oscam-time.h"
 #include "oscam-work.h"
+#ifdef CS_CACHEEX_AIO
 #include "oscam-array.h"
+#endif
 
 #define cs_cacheex_matcher "oscam.cacheex"
 
@@ -46,7 +48,9 @@ typedef struct cache_hit_t {
 	struct timeb	max_hitcache_time;
 	uint64_t		grp;
 	uint64_t		grp_last_max_hitcache_time;
+#ifdef CS_CACHEEX_AIO
 	int32_t			waittime_block;
+#endif
 	node			ht_node;
 	node			ll_node;
 } CACHE_HIT;
@@ -103,8 +107,10 @@ static int32_t cacheex_check_hitcache(ECM_REQUEST *er, struct s_client *cl)
 			gone <= (cfg.max_hitcache_time*1000)
 			&&
 			(!grp || !result->grp || (grp & result->grp))
+#ifdef CS_CACHEEX_AIO
 			&&
 			result->waittime_block <= cfg.waittime_block_start
+#endif
 		)
 		{
 			SAFE_RWLOCK_UNLOCK(&hitcache_lock);
@@ -145,7 +151,9 @@ static void cacheex_add_hitcache(struct s_client *cl, ECM_REQUEST *er)
 			result->key.prid = er->prid;
 			result->key.srvid = er->srvid;
 			cs_ftime(&result->max_hitcache_time);
+#ifdef CS_CACHEEX_AIO
 			result->waittime_block = 0;
+#endif
 			add_hash_table(&ht_hitcache, &result->ht_node, &ll_hitcache, &result->ll_node, result, &result->key, sizeof(HIT_KEY));
 		}
 	}
@@ -215,7 +223,11 @@ void cacheex_cleanup_hitcache(bool force)
 		gone = comp_timeb(&now, &cachehit->time);
 		gone_max_hitcache_time = comp_timeb(&now, &cachehit->max_hitcache_time);
 
-		if(force || gone>timeout || (cachehit->waittime_block > (cfg.waittime_block_time / 3 + 1)))
+		if(force || gone>timeout
+#ifdef CS_CACHEEX_AIO
+			 || (cachehit->waittime_block > (cfg.waittime_block_time / 3 + 1))
+#endif
+		)
 		{
 			remove_elem_list(&ll_hitcache, &cachehit->ll_node);
 			remove_elem_hash_table(&ht_hitcache, &cachehit->ht_node);
@@ -227,11 +239,12 @@ void cacheex_cleanup_hitcache(bool force)
 			cs_ftime(&cachehit->max_hitcache_time);
 		}
 
+#ifdef CS_CACHEEX_AIO
 		if(cfg.waittime_block_start && (cachehit && cachehit->waittime_block >= cfg.waittime_block_start))
 		{
 			cachehit->waittime_block++;
 		}
-
+#endif
 		i = i_next;
 	}
 	SAFE_RWLOCK_UNLOCK(&hitcache_lock);
@@ -407,8 +420,10 @@ void cacheex_clear_account_stats(struct s_auth *account)
 	account->cwcacheexgot = 0;
 	account->cwcacheexpush = 0;
 	account->cwcacheexhit = 0;
+#ifdef CS_CACHEEX_AIO
 	account->cwcacheexgotlg = 0;
 	account->cwcacheexpushlg = 0;
+#endif
 }
 
 void cacheex_clear_client_stats(struct s_client *client)
@@ -416,11 +431,17 @@ void cacheex_clear_client_stats(struct s_client *client)
 	client->cwcacheexgot = 0;
 	client->cwcacheexpush = 0;
 	client->cwcacheexhit = 0;
+#ifdef CS_CACHEEX_AIO
 	client->cwcacheexgotlg = 0;
 	client->cwcacheexpushlg = 0;
+#endif
 }
 
-int32_t cacheex_add_stats(struct s_client *cl, uint16_t caid, uint16_t srvid, uint32_t prid, uint8_t direction, uint8_t localgenerated)
+int32_t cacheex_add_stats(struct s_client *cl, uint16_t caid, uint16_t srvid, uint32_t prid, uint8_t direction
+#ifdef CS_CACHEEX_AIO
+				, uint8_t localgenerated
+#endif
+)
 {
 	if(!cfg.cacheex_enable_stats)
 		{ return -1; }
@@ -443,8 +464,10 @@ int32_t cacheex_add_stats(struct s_client *cl, uint16_t caid, uint16_t srvid, ui
 		{
 			// we already have this entry - just add count and time
 			cacheex_stats_entry->cache_count++;
+#ifdef CS_CACHEEX_AIO
 			if(localgenerated)
 				cacheex_stats_entry->cache_count_lg++;
+#endif
 			cacheex_stats_entry->cache_last = now;
 			return cacheex_stats_entry->cache_count;
 		}
@@ -457,8 +480,10 @@ int32_t cacheex_add_stats(struct s_client *cl, uint16_t caid, uint16_t srvid, ui
 		cacheex_stats_entry->cache_srvid = srvid;
 		cacheex_stats_entry->cache_prid = prid;
 		cacheex_stats_entry->cache_count = 1;
+#ifdef CS_CACHEEX_AIO
 		if(localgenerated)
 				cacheex_stats_entry->cache_count_lg = 1;
+#endif
 		cacheex_stats_entry->cache_last = now;
 		cacheex_stats_entry->cache_direction = direction;
 		ll_iter_insert(&itr, cacheex_stats_entry);
@@ -477,6 +502,7 @@ int8_t cacheex_maxhop(struct s_client *cl)
 	return maxhop;
 }
 
+#ifdef CS_CACHEEX_AIO
 int8_t cacheex_maxhop_lg(struct s_client *cl)
 {
 	int max = 10;
@@ -520,6 +546,7 @@ int8_t cacheex_maxhop_lg(struct s_client *cl)
 	}
 	return maxhop_lg;
 }
+#endif
 
 static void cacheex_cache_push_to_client(struct s_client *cl, ECM_REQUEST *er)
 {
@@ -537,6 +564,7 @@ static uint8_t checkECMD5(ECM_REQUEST *er)
 	return 0;
 }
 
+#ifdef CS_CACHEEX_AIO
 static uint8_t chk_cwcheck(ECM_REQUEST *er, uint8_t cw_check_for_push)
 {
 	if(!cw_check_for_push)
@@ -562,6 +590,7 @@ static uint8_t chk_cwcheck(ECM_REQUEST *er, uint8_t cw_check_for_push)
 		return 1;
 	}
 }
+#endif
 
 /**
  * cacheex modes:
@@ -605,7 +634,11 @@ void cacheex_cache_push(ECM_REQUEST *er)
 			else if(cl->typ == 'c' && !cl->dup && cl->account && cl->account->cacheex.mode == 2) // send cache over user
 			{
 				if(get_module(cl)->c_cache_push // cache-push able
-						&& (!er->grp || (cl->grp & er->grp) || (er->localgenerated && ((cl->grp & cfg.cacheex_push_lg_groups) && strcmp(username(cl), username(er->cacheex_src))))) // Group-check
+						&& (!er->grp || (cl->grp & er->grp)
+#ifdef CS_CACHEEX_AIO
+							 || (er->localgenerated && ((cl->grp & cfg.cacheex_push_lg_groups) && strcmp(username(cl), username(er->cacheex_src))))
+#endif
+						) // Group-check
 						/**** OUTGOING FILTER CHECK ***/
 						&& (!er->selected_reader || !cacheex_reader(er->selected_reader) || !cfg.block_same_name || strcmp(username(cl), er->selected_reader->label)) // check reader mode-1 loopback by same name
 						&& (!er->selected_reader || !cacheex_reader(er->selected_reader) || !cfg.block_same_ip || (check_client(er->selected_reader->client) && !IP_EQUAL(cl->ip, er->selected_reader->client->ip))) // check reader mode-1 loopback by same ip
@@ -614,6 +647,7 @@ void cacheex_cache_push(ECM_REQUEST *er)
 						&& (!checkECMD5(er) || chk_ident_filter(er->caid, er->prid, &cl->ftab)) // Ident-check (not for csp: prid=0 always!)
 						&& chk_srvid(cl, er)                                                    // Service-check
 						&& chk_csp_ctab(er, &cl->account->cacheex.filter_caidtab)               // cacheex_ecm_filter
+#ifdef CS_CACHEEX_AIO
 						&& (er->localgenerated 													//  lg-flag-check
 						|| chk_srvid_localgenerated_only_exception(er)	 						//		lg-only-service-exception
 						|| !(cl->account->cacheex.localgenerated_only						 	//		usr-lg-only
@@ -625,7 +659,9 @@ void cacheex_cache_push(ECM_REQUEST *er)
 						)
 					)
 						&& (chk_cwcheck(er, cl->account->cacheex.cw_check_for_push))			// check cw_check-counter if enabled
-						&& chk_nopushafter(er->caid, &cl->account->cacheex.cacheex_nopushafter_tab, er->ecm_time)) // no push after check
+						&& chk_nopushafter(er->caid, &cl->account->cacheex.cacheex_nopushafter_tab, er->ecm_time) // no push after check
+#endif
+				)
 				{
 					cacheex_cache_push_to_client(cl, er);
 				}
@@ -644,7 +680,11 @@ void cacheex_cache_push(ECM_REQUEST *er)
 		if(check_client(cl) && er->cacheex_src != cl && rdr->cacheex.mode == 3) // send cache over reader
 		{
 			if(rdr->ph.c_cache_push // cache-push able
-					&& (!er->grp || (rdr->grp & er->grp) || (er->localgenerated && ((rdr->grp & cfg.cacheex_push_lg_groups) && strcmp(username(cl), username(er->cacheex_src))))) // Group-check
+					&& (!er->grp || (rdr->grp & er->grp)
+#ifdef CS_CACHEEX_AIO
+						 || (er->localgenerated && ((rdr->grp & cfg.cacheex_push_lg_groups) && strcmp(username(cl), username(er->cacheex_src))))
+#endif
+					) // Group-check
 					/**** OUTGOING FILTER CHECK ***/
 					&& (!er->selected_reader || !cacheex_reader(er->selected_reader) || !cfg.block_same_name || strcmp(username(cl), er->selected_reader->label)) // check reader mode-1 loopback by same name
 					&& (!er->selected_reader || !cacheex_reader(er->selected_reader) || !cfg.block_same_ip || (check_client(er->selected_reader->client) && !IP_EQUAL(cl->ip, er->selected_reader->client->ip))) // check reader mode-1 loopback by same ip
@@ -652,6 +692,7 @@ void cacheex_cache_push(ECM_REQUEST *er)
 					&& chk_ctab(er->caid, &rdr->ctab)                                        // Caid-check
 					&& (!checkECMD5(er) || chk_ident_filter(er->caid, er->prid, &rdr->ftab)) // Ident-check (not for csp: prid=0 always!)
 					&& chk_srvid(cl, er)                                                     // Service-check
+#ifdef CS_CACHEEX_AIO
 					&& chk_csp_ctab(er, &rdr->cacheex.filter_caidtab)                        // cacheex_ecm_filter
 					&& (er->localgenerated 													//  lg-only-check
 						|| chk_srvid_localgenerated_only_exception(er)	 					//		service-exception
@@ -664,7 +705,9 @@ void cacheex_cache_push(ECM_REQUEST *er)
 						)
 					)
 					&& (chk_cwcheck(er, rdr->cacheex.cw_check_for_push))                     // check cw_check-counter if enabled
-					&& chk_nopushafter(er->caid, &rdr->cacheex.cacheex_nopushafter_tab, er->ecm_time)) // no push after check
+					&& chk_nopushafter(er->caid, &rdr->cacheex.cacheex_nopushafter_tab, er->ecm_time)
+#endif
+			) // no push after check
 			{
 				cacheex_cache_push_to_client(cl, er);
 			}
@@ -828,6 +871,7 @@ static int32_t cacheex_add_to_cache_int(struct s_client *cl, ECM_REQUEST *er, in
 		}
 	}
 
+#ifdef CS_CACHEEX_AIO
 	if(caid_is_videoguard(er->caid))
 	{
 		if(cl->typ == 'p' && chk_if_ignore_checksum(er, &cl->reader->disablecrccws_only_for) && !chk_srvid_disablecrccws_only_for_exception(er))
@@ -872,6 +916,7 @@ static int32_t cacheex_add_to_cache_int(struct s_client *cl, ECM_REQUEST *er, in
 			}
 		}
 	}
+#endif
 
 	// Skip check for BISS1 - cw could be indeed zero
 	// Skip check for BISS2 - we use the extended cw, so the "simple" cw is always zero
@@ -929,7 +974,7 @@ static int32_t cacheex_add_to_cache_int(struct s_client *cl, ECM_REQUEST *er, in
 		if(cl->account)
 			{ cl->account->cwcacheexgot++; }
 		first_client->cwcacheexgot++;
-
+#ifdef CS_CACHEEX_AIO
 		if(er->localgenerated)
 		{
 			cl->cwcacheexgotlg++;
@@ -937,12 +982,16 @@ static int32_t cacheex_add_to_cache_int(struct s_client *cl, ECM_REQUEST *er, in
 				cl->account->cwcacheexgotlg++;
 			first_client->cwcacheexgotlg++;
 		}
-
+#endif
 	}
 
 	cacheex_add_hitcache(cl, er); // we have to call it before add_cache, because in chk_process we could remove it!
 	add_cache(er);
+#ifdef CS_CACHEEX_AIO
 	cacheex_add_stats(cl, er->caid, er->srvid, er->prid, 1, er->localgenerated);
+#else
+	cacheex_add_stats(cl, er->caid, er->srvid, er->prid, 1);
+#endif
 
 	cs_writelock(__func__, &ecm_pushed_deleted_lock);
 	er->next = ecm_pushed_deleted;
@@ -1220,7 +1269,11 @@ void cacheex_push_out(struct s_client *cl, ECM_REQUEST *er)
 		if(reader->ph.c_cache_push_chk && !reader->ph.c_cache_push_chk(cl, er))
 			return;
 		res = reader->ph.c_cache_push(cl, er);
+#ifdef CS_CACHEEX_AIO
 		stats = cacheex_add_stats(cl, er->caid, er->srvid, er->prid, 0, er->localgenerated);
+#else
+		stats = cacheex_add_stats(cl, er->caid, er->srvid, er->prid, 0);
+#endif
 	}
 	else
 	{
@@ -1234,6 +1287,7 @@ void cacheex_push_out(struct s_client *cl, ECM_REQUEST *er)
 		{ cl->account->cwcacheexpush++; }
 	first_client->cwcacheexpush++;
 
+#ifdef CS_CACHEEX_AIO
 	if(er->localgenerated)
 	{
 		cl->cwcacheexpushlg++;
@@ -1241,6 +1295,7 @@ void cacheex_push_out(struct s_client *cl, ECM_REQUEST *er)
 			cl->account->cwcacheexpushlg++;
 		first_client->cwcacheexpushlg++;
 	}
+#endif
 }
 
 bool cacheex_check_queue_length(struct s_client *cl)
@@ -1290,6 +1345,7 @@ void cacheex_timeout(ECM_REQUEST *er)
 		cs_log_dbg(D_LB, "{client %s, caid %04X, prid %06X, srvid %04X} cacheex timeout! ",
 					(check_client(er->client) ? er->client->account->usr : "-"), er->caid, er->prid, er->srvid);
 
+#ifdef CS_CACHEEX_AIO
 		CACHE_HIT *result;
 		HIT_KEY search;
 
@@ -1312,7 +1368,7 @@ void cacheex_timeout(ECM_REQUEST *er)
 		}
 
 		SAFE_RWLOCK_UNLOCK(&hitcache_lock);
-
+#endif
 		// if check_cw mode=0, first try to get cw from cache without check counter!
 		CWCHECK check_cw = get_cwcheck(er);
 		if(!check_cw.mode)
@@ -1364,6 +1420,7 @@ void cacheex_timeout(ECM_REQUEST *er)
 	}
 }
 
+#ifdef CS_CACHEEX_AIO
 char* cxaio_ftab_to_buf(FTAB *lg_only_ftab)
 {
 	int32_t i, k, l = 0, strncat_sz = 0;
@@ -1490,4 +1547,5 @@ void caidtab2ftab_add(CAIDTAB *lgonly_ctab, FTAB *lgonly_tab)
 		}
 	}
 }
+#endif
 #endif
