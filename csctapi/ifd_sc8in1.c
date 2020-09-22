@@ -328,7 +328,7 @@ static int32_t sc8in1_command(struct s_reader *reader, unsigned char *buff,
 
 static int32_t mcrReadStatus(struct s_reader *reader, unsigned char *status)
 {
-	unsigned char buff[2];
+	unsigned char buff[2] = "";
 	buff[0] = 0x3f;
 	if(sc8in1_command(reader, buff, 1, 2, 0, 1, 0) < 0)
 		{ return ERROR; }
