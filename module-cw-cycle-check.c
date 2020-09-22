@@ -751,20 +751,16 @@ uint8_t checkcwcycle(struct s_client *client, ECM_REQUEST *er, struct s_reader *
 		snprintf(er->cwc_msg_log, sizeof(er->cwc_msg_log), "cwc NOK");
 		if(cfg.onbadcycle > 0)    // ignore ECM Request
 		{
-#ifdef CS_CACHEEX_AIO
 			if(!er->localgenerated)
 			{
-#endif
 				cs_log("cyclecheck [Bad CW Cycle] for: %s %s from: %s -> drop cw (ECM Answer)", user, er_ecmf, c_reader); //D_CWC| D_TRACE
 				return 0;
-#ifdef CS_CACHEEX_AIO
 			}
 			else
 			{
 				cs_log("cyclecheck [Bad CW Cycle] for: %s %s from: %s -> lg-flagged CW -> do nothing", user, er_ecmf, c_reader); //D_CWC| D_TRACE
 				break;
 			}
-#endif
 			
 		}
 		else      // only logging
@@ -774,22 +770,18 @@ uint8_t checkcwcycle(struct s_client *client, ECM_REQUEST *er, struct s_reader *
 		}
 
 	case 2: // ER to OLD
-#ifdef CS_CACHEEX_AIO
 		if(!er->localgenerated)
 		{
-#endif
 			count_nok(client);
 			snprintf(er->cwc_msg_log, sizeof(er->cwc_msg_log), "cwc NOK(old)");
 			cs_log("cyclecheck [Bad CW Cycle] for: %s %s from: %s -> ECM Answer is too OLD -> drop cw (ECM Answer)", user, er_ecmf, c_reader);//D_CWC| D_TRACE
 			return 0;
-#ifdef CS_CACHEEX_AIO
 		}
 		else
 		{
 			cs_log("cyclecheck [Bad CW Cycle] for: %s %s from: %s -> ECM Answer is too OLD -> lg-flagged CW -> do nothing", user, er_ecmf, c_reader); //D_CWC| D_TRACE
 			break;
 		}
-#endif
 
 	case 3: // CycleCheck ignored (stage 3 to stage 4)
 		count_ign(client);
@@ -820,20 +812,16 @@ uint8_t checkcwcycle(struct s_client *client, ECM_REQUEST *er, struct s_reader *
 		snprintf(er->cwc_msg_log, sizeof(er->cwc_msg_log), "cwc NOK");
 		if(cfg.onbadcycle > 0)    // ignore ECM Request
 		{
-#ifdef CS_CACHEEX_AIO
 			if(!er->localgenerated)
 			{
-#endif
 				cs_log("cyclecheck [Bad CW Cycle already Counted] for: %s %s from: %s -> drop cw (ECM Answer)", user, er_ecmf, c_reader);
 				return 0;
-#ifdef CS_CACHEEX_AIO
 			}
 			else
 			{
 				cs_log("cyclecheck [Bad CW Cycle already Counted] for: %s %s from: %s -> lg-flagged CW -> do nothing", user, er_ecmf, c_reader); //D_CWC| D_TRACE
 				break;
 			}
-#endif
 		}
 		else      // only logging
 		{

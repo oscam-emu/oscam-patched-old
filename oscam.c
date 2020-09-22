@@ -196,9 +196,7 @@ static void show_usage(void)
 	printf("                         .  1024 - Client ECM logging.\n");
 	printf("                         .  2048 - CSP logging.\n");
 	printf("                         .  4096 - CWC logging.\n");
-#ifdef CS_CACHEEX_AIO
 	printf("                         .  8192 - CW Cache logging.\n");
-#endif
 	printf("                         . 65535 - Debug all.\n");
 	printf("\n Settings:\n");
 	printf(" -p, --pending-ecm <num> | Set the maximum number of pending ECM packets.\n");
@@ -1803,7 +1801,7 @@ int32_t main(int32_t argc, char *argv[])
 	init_cache();
 	cacheex_init_hitcache();
 	init_config();
-#ifdef CS_CACHEEX_AIO
+#ifdef CS_CACHEEX
 	init_cw_cache();
 	init_ecm_cache();
 #endif	
@@ -1967,9 +1965,7 @@ if(!cfg.gsms_dis)
 	cs_sleepms(200);
 
 	free_cache();
-#ifdef CS_CACHEEX_AIO
 	free_ecm_cache();
-#endif
 	cacheex_free_hitcache();
 	webif_tpls_free();
 	init_free_userdb(cfg.account);

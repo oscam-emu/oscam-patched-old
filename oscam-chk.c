@@ -169,7 +169,6 @@ int32_t chk_srvid_disablecrccws_only_for_exception(ECM_REQUEST *er)
 	return(0);
 }
 
-#ifdef CS_CACHEEX_AIO
 int32_t chk_srvid_no_wait_time(ECM_REQUEST *er)
 {
 	int32_t nr;
@@ -199,7 +198,6 @@ int32_t chk_srvid_localgenerated_only_exception(ECM_REQUEST *er)
 	}
 	return(0);
 }
-#endif
 
 int32_t chk_srvid(struct s_client *cl, ECM_REQUEST *er)
 {
@@ -756,7 +754,6 @@ uint8_t chk_is_fixed_fallback(struct s_reader *rdr, ECM_REQUEST *er)
 	return 0;
 }
 
-#ifdef CS_CACHEEX_AIO
 uint8_t chk_lg_only(ECM_REQUEST *er, FTAB *lg_only_ftab)
 {
 	int32_t i, k;
@@ -816,7 +813,6 @@ uint8_t chk_lg_only_cp(uint16_t caid, uint32_t prid, FTAB *lg_only_ftab)
 
 	return 0;
 }
-#endif
 
 uint8_t chk_has_fixed_fallback(ECM_REQUEST *er)
 {
@@ -1301,7 +1297,6 @@ int32_t chk_is_fakecw(uint8_t *cw)
 	return is_fakecw;
 }
 
-#ifdef CS_CACHEEX_AIO
 bool chk_nopushafter(uint16_t caid, CAIDVALUETAB *cv, int32_t ecm_time)
 {
 	uint16_t npa_time = caidvaluetab_get_value(cv, caid, 0);
@@ -1313,4 +1308,3 @@ bool chk_nopushafter(uint16_t caid, CAIDVALUETAB *cv, int32_t ecm_time)
 	else
 		return 1;
 }
-#endif
