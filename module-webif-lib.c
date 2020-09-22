@@ -497,7 +497,7 @@ void send_file(FILE *f, char *filename, char *subdir, time_t modifiedheader, uin
 
 		if(filen == 1 && cfg.http_prepend_embedded_css)    // Prepend Embedded CSS
 		{
-			if (CSS)
+			if (CSS && allocated)
 			{
 				memcpy(allocated, CSS, CSS_sz);
 				memcpy(allocated + CSS_sz, separator, strlen(separator));
