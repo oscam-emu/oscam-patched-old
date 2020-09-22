@@ -16,6 +16,8 @@
 
 #define ERR_ILL_OP -1
 #define ERR_CNT    -2
+#define FLA_ERR    -3
+#define RAM_ERR    -4
 
 // ----------------------------------------------------------------
 
@@ -33,8 +35,8 @@ typedef struct
 	int verbose;
 } st20_context_t;
 
-static void st20_set_flash(st20_context_t *ctx, uint8_t *m, int len);
-static void st20_set_ram(st20_context_t *ctx, uint8_t *m, int len);
+static bool st20_set_flash(st20_context_t *ctx, uint8_t *m, uint32_t len);
+static bool st20_set_ram(st20_context_t *ctx, uint8_t *m, uint32_t len);
 static void st20_init(st20_context_t *ctx, uint32_t IPtr, uint32_t WPtr, int verbose);
 static void st20_free(st20_context_t *ctx);
 
@@ -296,42 +298,74 @@ static int32_t st20_decode(st20_context_t *ctx, int32_t count)
 	return 0;
 }
 
-static void st20_set_flash(st20_context_t *ctx, uint8_t *m, int32_t len)
+static bool st20_set_flash(st20_context_t *ctx, uint8_t *m, uint32_t len)
 {
-	if(ctx->flash)
+	if (len)
 	{
-		free(ctx->flash);
-	}
-	ctx->flash = malloc(len);
-
-	if(ctx->flash && m)
-	{
-		memcpy(ctx->flash, m, len);
+		ctx->flash = (uint8_t *)malloc(len);
+		ctx->flashSize = len;
 	}
 	else
 	{
-		memset(ctx->flash, 0, len);
+		cs_log("ERROR len!");
+		ctx->flashSize = 0;
+		return false;
 	}
-	ctx->flashSize = len;
+
+	if (ctx->flash == NULL)
+	{
+		cs_log("ERROR, malloc!");
+		ctx->flashSize = 0;
+		return false;
+	}
+	else
+	{
+		if(m == NULL)
+		{
+			memset(ctx->flash, 0, len);
+		}
+		else
+		{
+			memcpy(ctx->flash, m, len);
+		}
+	}
+
+	return true;
 }
 
-static void st20_set_ram(st20_context_t *ctx, uint8_t *m, int32_t len)
+static bool st20_set_ram(st20_context_t *ctx, uint8_t *m, uint32_t len)
 {
-	if(ctx->ram)
+	if (len)
 	{
-		free(ctx->ram);
-	}
-	ctx->ram = malloc(len);
-
-	if(ctx->ram && m)
-	{
-		memcpy(ctx->ram, m, len);
+		ctx->ram = (uint8_t *)malloc(len);
+		ctx->ramSize = len;
 	}
 	else
 	{
-		memset(ctx->ram, 0, len);
+		cs_log("ERROR len!");
+		ctx->ramSize = 0;
+		return false;
 	}
-	ctx->ramSize = len;
+
+	if (ctx->ram == NULL)
+	{
+		cs_log("ERROR, malloc!");
+		ctx->ramSize = 0;
+		return false;
+	}
+	else
+	{
+		if(m == NULL)
+		{
+			memset(ctx->ram, 0, len);
+		}
+		else
+		{
+			memcpy(ctx->ram, m, len);
+		}
+	}
+
+	return true;
 }
 
 static void st20_init(st20_context_t *ctx, uint32_t IPtr, uint32_t WPtr, int32_t verbose)
@@ -346,15 +380,17 @@ static void st20_init(st20_context_t *ctx, uint32_t IPtr, uint32_t WPtr, int32_t
 
 static void st20_free(st20_context_t *ctx)
 {
-	if(ctx->flash)
+	if(ctx->flashSize)
 	{
 		free(ctx->flash);
+		ctx->flashSize = 0;
 	}
 	ctx->flash = NULL;
 
-	if(ctx->ram)
+	if(ctx->ramSize)
 	{
 		free(ctx->ram);
+		ctx->ramSize = 0;
 	}
 	ctx->ram = NULL;
 }
@@ -385,8 +421,16 @@ int st20_run(uint8_t* snip, uint32_t snip_len, int addr, uint8_t *data, uint16_t
 	for(n = 0; n < 2; n++)
 	{
 		memset(&ctx, 0, sizeof(st20_context_t));
-		st20_set_ram(&ctx, NULL, 0x1000);
-		st20_set_flash(&ctx, snip + 0x48, (int) (snip_len - 0x48));
+		if (!st20_set_ram(&ctx, 0, 0x1000))
+		{
+			error = RAM_ERR;
+			break;
+		}
+		if (!st20_set_flash(&ctx, snip + 0x48, (int) (snip_len - 0x48)))
+		{
+			error = FLA_ERR;
+			break;
+		}
 		st20_init(&ctx, FLASHS + addr, RAMS + 0x100, 1);
 		st20_set_call_frame(&ctx, 0, RAMS, RAMS, RAMS);
 
@@ -411,6 +455,9 @@ int st20_run(uint8_t* snip, uint32_t snip_len, int addr, uint8_t *data, uint16_t
 
 	if(error < 0)
 	{
+		//in error case ensure free ctx!
+		st20_free(&ctx);
+
 		cs_log("[icg] st20 processing failed with error %d", error);
 		return 0;
 	}

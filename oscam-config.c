@@ -607,11 +607,23 @@ int32_t init_srvid(void)
 			{
 				*ptrs[i] = tmpptr + offset[i];
 				// store string in stringcache
-				tmp = *ptrs[i];
-				len2 = strlen(tmp);
+				if (*ptrs[i])
+				{
+					tmp = *ptrs[i];
+					len2 = strlen(tmp);
+				}
+				else
+				{
+					cs_log("FIXME! len2!");
+					len2 = 0;
+				}
+
 				pos = 0;
 				for(j = 0; j < len2; ++j) { pos += (uint8_t)tmp[j]; }
-				pos = pos % 1024;
+				if (pos > 0)
+				{
+					pos = pos % 1024;
+				}
 				if(used[pos] >= allocated[pos])
 				{
 					if(allocated[pos] == 0)
@@ -626,7 +638,14 @@ int32_t init_srvid(void)
 					}
 					allocated[pos] += 16;
 				}
-				stringcache[pos][used[pos]] = tmp;
+				if (tmp[0])
+				{
+					stringcache[pos][used[pos]] = tmp;
+				}
+				else
+				{
+					cs_log("FIXME! tmp!");
+				}
 				used[pos] += 1;
 			}
 		}
