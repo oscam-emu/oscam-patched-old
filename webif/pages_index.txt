@@ -8,6 +8,7 @@
 
 JSONCACHEEX                   api.json/cacheex.json                                       CS_CACHEEX
 JSONCACHEEXBIT                api.json/cacheexbit.json                                    CS_CACHEEX
+JSONCACHEEXAIOBIT             api.json/cacheexaiobit.json                                 CS_CACHEEX_AIO
 JSONENTITLEMENTS              api.json/entitlements.json
 JSONENTITLEMENTBIT            api.json/entitlementbit.json
 JSONFOOTER                    api.json/footer.json
@@ -43,11 +44,15 @@ APIUSEREDIT                   api.xml/useredit.xml
 
 CACHEEXPAGE                   cacheex/cacheex.html                                        CS_CACHEEX
 CACHEEXTABLEROW               cacheex/cacheex_tablerow.html                               CS_CACHEEX
-CACHEEXTABLEROWSTATS          cacheex/cacheex_tablerow_stats.html                         CS_CACHEEX
+
+CACHEEXAIOPAGE                cacheexaio/cacheex.html                                     CS_CACHEEX_AIO
+CACHEEXAIOTABLEROWSTATS       cacheexaio/cacheex_tablerow_stats.html                      CS_CACHEEX_AIO
 
 CONFIGANTICASC                config/anticasc.html                                        CS_ANTICASC
 CONFIGCACHE                   config/cache.html
+CONFIGCACHEAIO                config/cacheaio.html                                        CS_CACHE_AIO
 CONFIGCACHEEXCSP              config/cache_cacheexcsp.html                                CS_CACHEEX
+CONFIGCACHEEXAIOCSP           config/cache_cacheexaiocsp.html                             CS_CACHEEX_AIO
 CONFIGCWCYCLE                 config/cache_cwcycle.html                                   CW_CYCLE_CHECK
 CONFIGCAMD33                  config/camd33.html                                          MODULE_CAMD33
 CONFIGCAMD35                  config/camd35.html                                          MODULE_CAMD35
@@ -185,7 +190,9 @@ LOGDEBUGMENU                  logpage/logpage_debugmenu.html                    
 LOGSIZEMENU                   logpage/logpage_sizemenu.html                               WEBIF_LIVELOG
 
 READERCONFIG                  readerconfig/readerconfig.html
+READERCONFIGAIO               readerconfig/readerconfigaio.html                           CS_CACHEEX_AIO
 READEREDITCACHEEXBIT          readerconfig/readerconfig_cacheexbit.html                   CS_CACHEEX
+READEREDITCACHEEXAIOBIT       readerconfig/readerconfig_cacheexaiobit.html                CS_CACHEEX_AIO
 READERCONFIGCAMD35BIT         readerconfig/readerconfig_camd35bit.html                    MODULE_CAMD35
 READERCONFIGCCCAMBIT          readerconfig/readerconfig_cccambit.html                     MODULE_CCCAM
 READERCONFIGEMUBIT            readerconfig/readerconfig_emubit.html                       WITH_EMU
@@ -221,6 +228,7 @@ READERCONFIGSIDNOBIT          readerconfig/readerconfig_sidnobit.html
 READERCONFIGSIDOKBIT          readerconfig/readerconfig_sidokbit.html
 
 READERS                       readers/readers.html
+READERSAIO                    readers/readersaio.html                                     CS_CACHEEX_AIO
 READERCTYPBIT                 readers/readerctypbit.html
 READERCTYPNOICON              readers/readerctypnoicon.html
 READERLABEL                   readers/readerlabel.html
@@ -230,6 +238,7 @@ READERLBBIT                   readers/readers_lblweightbit.html                 
 READERLBWD                    readers/readers_lblweightd.html                             WITH_LB
 READERLBWU                    readers/readers_lblweightu.html                             WITH_LB
 READERSBIT                    readers/readers_readerlist.html
+READERSBITAIO                 readers/readersaio_readerlist.html                          CS_CACHEEX_AIO
 READERENTITLEBIT              readers/readers_readerlist_entitlement.html
 READERLBSTAT                  readers/readers_readerlist_lbstat.html                      WITH_LB
 READERREFRESHBIT              readers/readers_readerlist_refresh.html
@@ -255,6 +264,7 @@ SERVICECONFIGLISTBIT          services/services_servicetabs.html
 SERVICECONFIGSIDBIT           services/services_servicetabs_sidlist.html
 
 SERVICEEDIT                   services_edit/services_edit.html
+SERVICEEDITAIO                services_edit/services_editaio.html                         CS_CACHEEX_AIO
 
 PRESHUTDOWN                   shutdown/pre_shutdown.html
 SHUTDOWN                      shutdown/shutdown.html
@@ -283,6 +293,7 @@ STATUSRBUTTON                 status/status_restartbutton.html
 CLIENTRHEADLINE               status/status_rheadline.html
 CLIENTRHEADLINEADD            status/status_rheadlineadd.html
 DEBUGSELECT                   status/status_sdebug.html                                   WITH_DEBUG
+DEBUGSELECTAIO                status/status_sdebugaio.html                                WITH_DEBUG
 CLIENTSHEADLINE               status/status_sheadline.html
 SYSTEMINFOBIT                 status/status_systeminfo.html
 SUSER                         status/status_user.html
@@ -295,8 +306,10 @@ TOUCH_JSCRIPT                 touch/jscript.js                                  
 TOUCH_STATUS                  touch/status.html                                           TOUCH
 
 USEREDIT                      user_edit/user_edit.html
+USEREDITAIO                   user_edit/user_editaio.html                                 CS_CACHEEX_AIO
 USEREDITANTICASC              user_edit/user_edit_anticasc.html                           CS_ANTICASC
 USEREDITCACHEEXBIT            user_edit/user_edit_cacheexbit.html                         CS_CACHEEX
+USEREDITCACHEEXAIOBIT         user_edit/user_edit_cacheexaiobit.html                      CS_CACHEEX_AIO
 USEREDITCWCYCLE               user_edit/user_edit_cwcycle.html                            CW_CYCLE_CHECK
 USEREDITCCCAM                 user_edit/user_edit_cccam.html                              MODULE_CCCAM
 USEREDITMONLEVEL              user_edit/user_edit_monlevel.html                           MODULE_MONITOR

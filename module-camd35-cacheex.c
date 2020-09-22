@@ -13,8 +13,10 @@
 #include "oscam-ecm.h"
 #include "oscam-string.h"
 #include "oscam-reader.h"
+#ifdef CS_CACHEEX_AIO
 #include "oscam-chk.h"
 #include "oscam-config.h"
+#endif
 
 uint8_t camd35_node_id[8];
 
@@ -23,6 +25,7 @@ uint8_t camd35_node_id[8];
                   ((((uint32_t)(n) & 0xFF0000)) >> 8) | \
                   ((((uint32_t)(n) & 0xFF000000)) >> 24))
 
+#ifdef CS_CACHEEX_AIO
 void camd35_cacheex_feature_trigger_in(struct s_client *cl, uint8_t *buf)
 {
 	int32_t feature = 0;
@@ -874,7 +877,7 @@ void camd35_cacheex_feature_request_reply(struct s_client *cl, uint8_t *buf)
 
 	camd35_send_without_timeout(cl, rbuf, 12); //send adds +20
 }
-
+#endif
 
 
 /**
@@ -895,17 +898,21 @@ void camd35_cacheex_send_push_filter(struct s_client *cl, uint8_t mode)
 	if(mode == 2 && rdr)
 	{
 		filter = &rdr->cacheex.filter_caidtab;
+#ifdef CS_CACHEEX_AIO
 		// if not set, use global settings
 		if(rdr->cacheex.filter_caidtab.cevnum == 0 && cfg.cacheex_filter_caidtab.cevnum > 0)
 			filter = &cfg.cacheex_filter_caidtab;
+#endif
 	}
 	//mode==3 send filters from acc
 	else if(mode == 3 && cl->typ == 'c' && cl->account)
 	{
 		filter = &cl->account->cacheex.filter_caidtab;
+#ifdef CS_CACHEEX_AIO
 		// if not set, use global settings
 		if(cl->account->cacheex.filter_caidtab.cevnum == 0 && cfg.cacheex_filter_caidtab.cevnum > 0)
 			filter = &cfg.cacheex_filter_caidtab;
+#endif
 	}
 	else {
 		return;
@@ -1032,11 +1039,17 @@ static void camd35_cacheex_push_filter(struct s_client *cl, uint8_t *buf, uint8_
 static int32_t camd35_cacheex_push_chk(struct s_client *cl, ECM_REQUEST *er)
 {
 	if(
-			ll_count(er->csp_lastnodes) >= cacheex_maxhop(cl)	    												// check max 10 nodes to push
+			ll_count(er->csp_lastnodes) >= cacheex_maxhop(cl)	// check max 10 nodes to push
+#ifdef CS_CACHEEX_AIO
 		&& (!er->localgenerated || (er->localgenerated && (ll_count(er->csp_lastnodes) >= cacheex_maxhop_lg(cl))))	// check maxhop_lg if cw is lg-flagged
+#endif
 	)
 	{
+#ifdef CS_CACHEEX_AIO
 		cs_log_dbg(D_CACHEEX, "cacheex: nodelist reached %d nodes(non-lg) or reached %d nodes(lg), no push", cacheex_maxhop(cl), cacheex_maxhop_lg(cl));
+#else
+		cs_log_dbg(D_CACHEEX, "cacheex: nodelist reached %d nodes, no push", cacheex_maxhop(cl));
+#endif
 		return 0;
 	}
 
@@ -1106,7 +1119,11 @@ static int32_t camd35_cacheex_push_out(struct s_client *cl, struct ecm_request_t
 	}
 
 	uint32_t size = sizeof(er->ecmd5) + sizeof(er->csp_hash) + sizeof(er->cw) + sizeof(uint8_t) +
+#ifdef CS_CACHEEX_AIO
 					(ll_count(er->csp_lastnodes) + 1) * 8 + sizeof(uint8_t);
+#else
+					(ll_count(er->csp_lastnodes) + 1) * 8;
+#endif
 	uint8_t *buf;
 	if(!cs_malloc(&buf, size + 20))  //camd35_send() adds +20
 		{ return -1; }
@@ -1169,6 +1186,7 @@ static int32_t camd35_cacheex_push_out(struct s_client *cl, struct ecm_request_t
 	}
 	ll_li_destroy(li);
 
+#ifdef CS_CACHEEX_AIO
 	// add localgenerated cw-flag
 	if(er->localgenerated)
 	{
@@ -1179,7 +1197,7 @@ static int32_t camd35_cacheex_push_out(struct s_client *cl, struct ecm_request_t
 		*ofs = 0xFF;
 	}
 	ofs += 1;
-
+#endif
 	int32_t res = camd35_send(cl, buf, size);
 	NULLFREE(buf);
 	return res;
@@ -1236,6 +1254,7 @@ static void camd35_cacheex_push_in(struct s_client *cl, uint8_t *buf)
 		return; 
 	}
 
+#ifdef CS_CACHEEX_AIO
 	// check incoming cache
 	if(check_client(cl) && cl->typ == 'p' && cl->reader && cl->reader->cacheex.mode == 2
 		&& 	(		(cl->reader->cacheex.filter_caidtab.cevnum > 0 && !chk_csp_ctab(er, &cl->reader->cacheex.filter_caidtab)) // reader cacheex_ecm_filter not matching if set
@@ -1266,6 +1285,7 @@ static void camd35_cacheex_push_in(struct s_client *cl, uint8_t *buf)
 		free_push_in_ecm(er);
 		return;
 	}
+#endif
 
 	//Read csp_hash:
 	er->csp_hash = CSP_HASH_SWAP(b2i(4, ofs));
@@ -1284,6 +1304,15 @@ static void camd35_cacheex_push_in(struct s_client *cl, uint8_t *buf)
 		uint8_t count = *ofs;
 		ofs++;
 
+#ifndef CS_CACHEEX_AIO
+		//check max nodes:
+		if(count > cacheex_maxhop(cl))
+		{
+			cs_log_dbg(D_CACHEEX, "cacheex: received %d nodes (max=%d), ignored! %s", (int32_t)count, cacheex_maxhop(cl), username(cl));
+			NULLFREE(er);
+			return;
+		}
+#endif
 		cs_log_dbg(D_CACHEEX, "cacheex: received %d nodes %s", (int32_t)count, username(cl));
 		if (er){
 			er->csp_lastnodes = ll_create("csp_lastnodes");
@@ -1299,6 +1328,7 @@ static void camd35_cacheex_push_in(struct s_client *cl, uint8_t *buf)
 			cs_log_dbg(D_CACHEEX, "cacheex: received node %" PRIu64 "X %s", cacheex_node_id(data), username(cl));
 		}
 
+#ifdef CS_CACHEEX_AIO
 		// check byte after nodelist for "localgenerated CW"-flag
 		if(b2i(1, ofs) == 1)
 		{
@@ -1369,6 +1399,7 @@ static void camd35_cacheex_push_in(struct s_client *cl, uint8_t *buf)
 				return;
 			}
 		}
+#endif
 	}
 	else
 	{
@@ -1390,7 +1421,9 @@ static void camd35_cacheex_push_in(struct s_client *cl, uint8_t *buf)
 	{
 		if(!cs_malloc(&data, 8))
 		{ 
+#ifdef CS_CACHEEX_AIO
 			free_push_in_ecm(er);
+#endif
 			return;
 		}
 		memcpy(data, cl->ncd_skey, 8);
@@ -1398,6 +1431,7 @@ static void camd35_cacheex_push_in(struct s_client *cl, uint8_t *buf)
 		cs_log_dbg(D_CACHEEX, "cacheex: added missing remote node id %" PRIu64 "X", cacheex_node_id(data));
 	}
 
+#ifdef CS_CACHEEX_AIO
 	if (er->cwc_cycletime && er->cwc_next_cw_cycle < 2)
 	{
 		if(cl->typ == 'c' && cl->account && cl->account->cacheex.mode)
@@ -1406,7 +1440,7 @@ static void camd35_cacheex_push_in(struct s_client *cl, uint8_t *buf)
 			{ cl->cwc_info++; }
 		cs_log_dbg(D_CWC, "CWC (CE) received from %s cycletime: %isek - nextcwcycle: CW%i for %04X@%06X:%04X", username(cl), er->cwc_cycletime, er->cwc_next_cw_cycle, er->caid, er->prid, er->srvid);
 	}
-
+#endif
 	cacheex_add_to_cache(cl, er);
 }
 
@@ -1538,11 +1572,13 @@ bool camd35_cacheex_server(struct s_client *client, uint8_t *mbuf)
 			camd35_cacheex_send_push_filter(client, 3);
 			client->cacheex_needfilter = 0;
 		}
+#ifdef CS_CACHEEX_AIO
 		if(!client->cacheex_aio_checked && ((client->account && client->account->cacheex.mode > 0) || (client->reader && client->reader->cacheex.mode > 0)))
 		{
 			camd35_cacheex_feature_request(client);
 			client->cacheex_aio_checked = 1;
 		}
+#endif
 		break;
 	case 0x3e:  // Cache-push id answer
 		camd35_cacheex_push_receive_remote_id(client, mbuf);
@@ -1550,6 +1586,7 @@ bool camd35_cacheex_server(struct s_client *client, uint8_t *mbuf)
 	case 0x3f:  // Cache-push
 		camd35_cacheex_push_in(client, mbuf);
 		break;
+#ifdef CS_CACHEEX_AIO
 	case 0x40:	// cacheex-features request
 		camd35_cacheex_feature_request_reply(client, mbuf);
 		break;
@@ -1559,6 +1596,7 @@ bool camd35_cacheex_server(struct s_client *client, uint8_t *mbuf)
 	case 0x42:	// cacheex-feature trigger in
 		camd35_cacheex_feature_trigger_in(client, mbuf);
 		break;
+#endif
 	default:
 		return 0; // Not processed by cacheex
 	}
@@ -1581,15 +1619,18 @@ bool camd35_cacheex_recv_chk(struct s_client *client, uint8_t *buf)
 		break;
 	case 0x3e:     // Cache-push id answer
 		camd35_cacheex_push_receive_remote_id(client, buf);
+#ifdef CS_CACHEEX_AIO
 		if(!client->cacheex_aio_checked && ((client->account && client->account->cacheex.mode > 0) || (client->reader && client->reader->cacheex.mode > 0)))
 		{
 			camd35_cacheex_feature_request(client);
 			client->cacheex_aio_checked = 1;
 		}
+#endif
 		break;
 	case 0x3f:    //cache-push
 		camd35_cacheex_push_in(client, buf);
 		break;
+#ifdef CS_CACHEEX_AIO
 	case 0x40:	  // cacheex-features request
 		camd35_cacheex_feature_request_reply(client, buf);
 		break;		
@@ -1599,6 +1640,7 @@ bool camd35_cacheex_recv_chk(struct s_client *client, uint8_t *buf)
 	case 0x42:	// cacheex-feature trigger in
 		camd35_cacheex_feature_trigger_in(client, buf);
 		break;
+#endif
 	default:
 		return 0; // Not processed by cacheex
 	}

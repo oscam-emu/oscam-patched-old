@@ -1,0 +1,13 @@
+		<input name="part" type="hidden" value="cache">
+		<TABLE CLASS="config">
+			<TR><TH COLSPAN="2">Global Cache Settings</TH></TR>
+			<TR><TD><A>Delay:</A></TD><TD><input name="delay" class="withunit short" type="text" maxlength="5" value="##CACHEDELAY##"> ms delaying answers from cache</TD></TR>
+			<TR><TD><A>Max time:</A></TD><TD><input name="max_time" class="withunit short" type="text" maxlength="5" value="##MAXCACHETIME##"> s keep ECMs in cache</TD></TR>
+			<TR><TD><A>CW Cache Settings:</A></TD><TD><input name="cw_cache_settings" type="text" maxlength="1400" value="##CWCACHESETTINGS##"><br />Format: caid[&amp;mask][@provid][$servid]:mode:timediff_old_cw[,n]</TD></TR>
+			<TR><TD><A>CW Cache Size:</A></TD><TD><input name="cw_cache_size" class="withunit short" type="text" maxlength="20" value="##CWCACHESIZE##"> count of max. CWs for CW cache </TD></TR>
+			<TR><TD><A>CW Cache Memory:</A></TD><TD><input name="cw_cache_memory" class="withunit short" type="text" maxlength="5" value="##CWCACHEMEMORY##"> MB of max. memory used for CW cache size</TD></TR>
+			<TR><TD><A>ECM droptime:</A></TD><TD><input name="ecm_cache_droptime" class="withunit" type="text" maxlength="2" value="##ECMDROPTIME##"><br /> s after known ECM requests are dropped</TD></TR>
+			<TR><TD><A>ECM Cache Size:</A></TD><TD><input name="ecm_cache_size" class="withunit short" type="text" maxlength="20" value="##ECMCACHESIZE##"> count of max. ECMs for ECM cache </TD></TR>
+			<TR><TD><A>ECM Cache Memory:</A></TD><TD><input name="ecm_cache_memory" class="withunit short" type="text" maxlength="5" value="##ECMCACHEMEMORY##"> MB of max. memory used for ECM cache size</TD></TR>
+##TPLCONFIGCACHEEXAIOCSP##
+##TPLCONFIGCWCYCLE##

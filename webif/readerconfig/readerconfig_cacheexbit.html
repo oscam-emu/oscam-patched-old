@@ -9,8 +9,7 @@
 					</TD>
 				</TR>
 				<TR><TD><A>Cache-EX Maxhop:</A></TD><TD><input name="cacheex_maxhop" type="text" class="short" maxlength="4" value="##CACHEEX_MAXHOP##"></TD></TR>
-				<TR><TD><A>Cache-EX Maxhop LG:</A></TD><TD><input name="cacheex_maxhop_lg" type="text" class="short" maxlength="4" value="##CACHEEX_MAXHOP_LG##"></TD></TR>
-				<TR><TD><A>Cache-EX 2 ECM filter:</A></TD><TD><input name="cacheex_ecm_filter" type="text" maxlength="1385" value="##CACHEEX_ECM_FILTER##"></TD></TR>
+				<TR><TD><A>Cache-EX 2 ECM filter:</A></TD><TD><input name="cacheex_ecm_filter" type="text" maxlength="320" value="##CACHEEX_ECM_FILTER##"></TD></TR>
 				<TR><TD><A>Cache-EX 2 filter adv.:</A></TD>
 					<TD CLASS="invisible">
 						<TABLE>
@@ -18,7 +17,6 @@
 								<TD><input name="cacheex_drop_csp" value="0" type="hidden"><input name="cacheex_drop_csp" value="1" type="checkbox" ##DCCHECKED##><label>drop csp cache</label></TD>
 								<TD><input name="cacheex_allow_request" value="0" type="hidden"><input name="cacheex_allow_request" value="1" type="checkbox" ##ARCHECKED##><label>allow request</label></TD>
 								<TD><input name="cacheex_allow_filter" value="0" type="hidden"><input name="cacheex_allow_filter" value="1" type="checkbox" ##AFCHECKED##><label>allow filter</label></TD>
-								<TD><input name="cacheex_allow_maxhop" value="0" type="hidden"><input name="cacheex_allow_maxhop" value="1" type="checkbox" ##AMCHECKED##><label>allow maxhop</label></TD>
 							</TR>
 						</TABLE>
 					</TD>
@@ -32,51 +30,3 @@
 						</TABLE>
 					</TD>
 				</TR>
-				<TR><TD><A>Use CacheEx CW Check for push:</A></TD>
-					<TD CLASS="invisible">
-						<TABLE>
-							<TR>
-								<TD><input name="cacheex_cw_check_for_push" value="0" type="hidden"><input name="cacheex_cw_check_for_push" value="1" type="checkbox" ##USECWCHECKFORPUSHCHECKED##><label>push only when cacheex_cw_check counter reached</label></TD>
-							</TR>
-						</TABLE>
-					</TD>
-				</TR>
-				<TR><TD><A>Allow client to overwrite 'Forward lg-only settings':</A></TD>
-					<TD CLASS="invisible">
-						<TABLE>
-							<TR>
-								<TD><input name="cacheex_lg_only_remote_settings" value="0" type="hidden"><input name="cacheex_lg_only_remote_settings" value="1" type="checkbox" ##LGONLYREMOTESETTINGSCHECKED##><label>(if disabled, only more restrictive settings are added)</label></TD>
-							</TR>
-						</TABLE>
-					</TD>
-				</TR>
-				<TR><TD><A>Forward localgenerated flagged CWs only:</A></TD>
-					<TD CLASS="invisible">
-						<TABLE>
-							<TR>
-								<TD><input name="cacheex_localgenerated_only" value="0" type="hidden"><input name="cacheex_localgenerated_only" value="1" type="checkbox" ##LOCALGENERATEDONLYCHECKED##><label>forward only when flag is set</label></TD>
-							</TR>
-						</TABLE>
-					</TD>
-				</TR>
-				<TR><TD><A>Forward localgenerated flagged CWs only(caid:provid[,N];):</A></TD><TD><textarea name="cacheex_lg_only_tab" rows="3" class="bt">##LGONLYTAB##</textarea></TD></TR>
-				<TR><TD><A>Drop incoming not localgenerated flagged CWs:</A></TD>
-					<TD CLASS="invisible">
-						<TABLE>
-							<TR>
-								<TD><input name="cacheex_localgenerated_only_in" value="0" type="hidden"><input name="cacheex_localgenerated_only_in" value="1" type="checkbox" ##LOCALGENERATEDONLYINCHECKED##><label>drop when no flag is set</label></TD>
-							</TR>
-						</TABLE>
-					</TD>
-				</TR>
-				<TR><TD><A>Drop incoming not localgenerated flagged CWs(caid:provid,N;):</A></TD><TD><textarea name="cacheex_lg_only_in_tab" rows="3" class="bt">##LGONLYINTAB##</textarea></TD></TR>
-				<TR><TD><A>Drop incoming settings only for CX-AIO peers:</A></TD>
-					<TD CLASS="invisible">
-						<TABLE>
-							<TR>
-								<TD><input name="cacheex_lg_only_in_aio_only" value="0" type="hidden"><input name="cacheex_lg_only_in_aio_only" value="1" type="checkbox" ##LGONLYINAIOONLYCHECKED##><label>use settings only for CX-AIO peers</label></TD>
-							</TR>
-						</TABLE>
-					</TD>
-				</TR>
-				<TR><TD><A>No CW push after (from local/proxy-reader):</A></TD><TD><input name="cacheex_nopushafter" type="text" maxlength="320" value="##CACHEEXNOPUSHAFTER##"> ms<br />Format: caid:time[,n]</TD></TR>
