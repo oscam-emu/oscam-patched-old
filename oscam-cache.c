@@ -13,9 +13,7 @@
 #include "oscam-string.h"
 #include "oscam-time.h"
 #include "oscam-hashtable.h"
-#ifdef CS_CACHEEX_AIO
 #include "oscam-log.h"
-#endif
 
 
 // CACHE functions **************************************************************+
@@ -43,9 +41,7 @@ typedef struct cw_t
 	uint8_t             localcards;          // updated if answer from local cards (or proxy using localcards option)
 	uint8_t             proxy;               // updated if answer from local reader
 	uint32_t            count;               // count of same cws receved
-#ifdef CS_CACHEEX_AIO
 	uint8_t				localgenerated;      // flag for local generated CWs
-#endif
 	// for push out
 	pthread_rwlock_t    pushout_client_lock;
 	struct s_pushclient *pushout_client;     // list of clients that pushing cw
@@ -65,7 +61,6 @@ typedef struct cache_t
 	node                ll_node;             // node for linked list
 } ECMHASH;
 
-#ifdef CS_CACHEEX_AIO
 typedef struct cw_cache_t
 {
 	uint8_t             cw[16];
@@ -83,23 +78,14 @@ typedef struct cw_cache_setting_t
 	int8_t			mode;
 	uint16_t		timediff_old_cw;
 } CW_CACHE_SETTING;
-#endif
 
 static pthread_rwlock_t cache_lock;
-#ifdef CS_CACHEEX_AIO
 static pthread_rwlock_t cw_cache_lock;
-#endif
 static hash_table ht_cache;
-#ifdef CS_CACHEEX_AIO
 static hash_table ht_cw_cache;
-#endif
 static list ll_cache;
-#ifdef CS_CACHEEX_AIO
 static list ll_cw_cache;
-#endif
 static int8_t cache_init_done = 0;
-
-#ifdef CS_CACHEEX_AIO
 static int8_t cw_cache_init_done = 0;
 static uint32_t lg_cache_size = 0;
 
@@ -116,7 +102,6 @@ void init_cw_cache(void)
 	}
 #endif
 }
-#endif
 
 void init_cache(void)
 {
@@ -130,7 +115,7 @@ void init_cache(void)
 void free_cache(void)
 {
 	cleanup_cache(true);
-#ifdef CS_CACHEEX_AIO
+#ifdef CS_CACHEEX
 	cw_cache_cleanup(true);
 	ecm_cache_cleanup(true);
 	cw_cache_init_done = 0;
@@ -142,7 +127,6 @@ void free_cache(void)
 	pthread_rwlock_destroy(&cache_lock);
 }
 
-#ifdef CS_CACHEEX_AIO
 uint32_t cache_size_lg(void)
 {
 	if(!cache_init_done)
@@ -150,7 +134,6 @@ uint32_t cache_size_lg(void)
 
 	return lg_cache_size;
 }
-#endif
 
 uint32_t cache_size(void)
 {
@@ -166,13 +149,11 @@ static uint8_t count_sort(CW *a, CW *b)
 	return (a->count > b->count) ? -1 : 1; // DESC order by count
 }
 
-#ifdef CS_CACHEEX_AIO
 static uint8_t time_sort(CW_CACHE *a, CW_CACHE *b)
 {
 	if (((int64_t)(a->upd_time.time) * 1000ull + (int64_t) a->upd_time.millitm) == ((int64_t)(b->upd_time.time) * 1000ull + (int64_t) b->upd_time.millitm)) return 0;
 	return (((int64_t)(a->upd_time.time) * 1000ull + (int64_t) a->upd_time.millitm) > ((int64_t)(b->upd_time.time) * 1000ull + (int64_t) b->upd_time.millitm)) ? -1 : 1;
 }
-#endif
 
 uint8_t check_is_pushed(void *cwp, struct s_client *cl)
 {
@@ -251,7 +232,7 @@ static int compare_cw(const void *arg, const void *obj)
 	return memcmp(arg, ((const CW*)obj)->cw, 16);
 }
 
-#ifdef CS_CACHEEX_AIO
+#ifdef CS_CACHEEX
 static int compare_cw_cache(const void *arg, const void *obj)
 {
 	return memcmp(arg, ((const CW_CACHE*)obj)->cw, 16);
@@ -274,20 +255,16 @@ static bool cwcycle_check_cache(struct s_client *cl, ECM_REQUEST *er, CW *cw)
 	}
 	else
 	{
-#ifdef CS_CACHEEX_AIO
 		if(!er->localgenerated)
 		{
-#endif
 			cs_log_dbg(D_CWC, "cyclecheck [BAD CW Cycle] from Int. Cache detected.. {client %s, caid %04X, srvid %04X} [check_cache] -> skip cache answer", (cl ? cl->account->usr : "-"), er->caid, er->srvid);
 			cw->got_bad_cwc = 1; // no need to check it again
 			return 0;
-#ifdef CS_CACHEEX_AIO
 		}
 		else
 		{
 			cs_log_dbg(D_CWC, "cyclecheck [BAD CW Cycle] from Int. Cache detected.. {client %s, caid %04X, srvid %04X} [check_cache] -> lg-flagged CW -> do nothing", (cl ? cl->account->usr : "-"), er->caid, er->srvid);
 		}
-#endif
 	}
 #endif
 	return 1;
@@ -339,7 +316,6 @@ struct ecm_request_t *check_cache(ECM_REQUEST *er, struct s_client *cl)
 			goto out_err;
 		}
 
-#ifdef CS_CACHEEX_AIO
 		// client
 		if( cl && !cw->localgenerated 
 			&& !(chk_srvid_localgenerated_only_exception(er)) // service-based exception
@@ -350,7 +326,6 @@ struct ecm_request_t *check_cache(ECM_REQUEST *er, struct s_client *cl)
 		{
 			goto out_err;
 		}
-#endif
 #endif
 
 		if (!cwcycle_check_cache(cl, er, cw))
@@ -366,9 +341,7 @@ struct ecm_request_t *check_cache(ECM_REQUEST *er, struct s_client *cl)
 			ecm->cwc_cycletime = cw->cwc_cycletime;
 			ecm->cwc_next_cw_cycle = cw->cwc_next_cw_cycle;
 			ecm->cacheex_src = cw->cacheex_src;
-#ifdef CS_CACHEEX_AIO
 			ecm->localgenerated = (cw->localgenerated) ? 1:0;
-#endif
 			ecm->cw_count = cw->count;
 		}
 	}
@@ -378,7 +351,7 @@ out_err:
 	return ecm;
 }
 
-#ifdef CS_CACHEEX_AIO
+#ifdef CS_CACHEEX
 uint16_t get_cacheex_nopushafter(ECM_REQUEST *er)
 {
 	return caidvaluetab_get_value(&cfg.cacheex_nopushafter_tab, er->caid, 0);
@@ -396,7 +369,6 @@ static void cacheex_cache_add(ECM_REQUEST *er, ECMHASH *result, CW *cw, bool add
 	if(!check_client(er->cacheex_src))
 		return;
 
-#ifdef CS_CACHEEX_AIO
 	if (D_CACHEEX & cs_dblevel)
 	{
 		uint8_t remotenodeid[8];
@@ -412,26 +384,13 @@ static void cacheex_cache_add(ECM_REQUEST *er, ECMHASH *result, CW *cw, bool add
 	}
 	else
 	{
-#endif
 		if(!add_new_cw)
 		{
-#ifdef CS_CACHEEX_AIO
 			debug_ecm(D_CACHEEX| D_CSP, "got duplicate pushed ECM %s from %s - hop %i %s", buf, er->from_csp ? "csp" : username(er->cacheex_src), ll_count(er->csp_lastnodes), er->localgenerated ? "(lg)" : "");
-#else
-			debug_ecm(D_CACHEEX| D_CSP, "got duplicate pushed ECM %s from %s", buf, er->from_csp ? "csp" : username(er->cacheex_src));
-#endif
 			return;
 		}
-
-#ifdef CS_CACHEEX_AIO
-		debug_ecm(D_CACHEEX|D_CSP, "got pushed ECM %s from %s - hop %i %s", buf, er->from_csp ? "csp" : username(er->cacheex_src), ll_count(er->csp_lastnodes), er->localgenerated ? "(lg)" : "");
-#else
-		debug_ecm(D_CACHEEX|D_CSP, "got pushed ECM %s from %s", buf, er->from_csp ? "csp" : username(er->cacheex_src));
-#endif
-
-#ifdef CS_CACHEEX_AIO
+			debug_ecm(D_CACHEEX|D_CSP, "got pushed ECM %s from %s - hop %i %s", buf, er->from_csp ? "csp" : username(er->cacheex_src), ll_count(er->csp_lastnodes), er->localgenerated ? "(lg)" : "");
 	}
-#endif
 
 	CW *cw_first = get_first_cw(result, er);
 	if(!cw_first)
@@ -458,7 +417,6 @@ static void cacheex_cache_add(ECM_REQUEST *er, ECMHASH *result, CW *cw, bool add
 			else if (cw_first->selected_reader && check_client(cw_first->selected_reader->client))
 				cs_strncpy(ip2, cs_inet_ntoa(cw_first->selected_reader->client->ip), sizeof(ip2));
 
-#ifdef CS_CACHEEX_AIO
 			uint8_t remotenodeid[8];
 			cacheex_get_srcnodeid(er, remotenodeid);
 			
@@ -476,16 +434,9 @@ static void cacheex_cache_add(ECM_REQUEST *er, ECMHASH *result, CW *cw, bool add
 			}
 
 			debug_ecm(D_CACHEEX| D_CSP, "WARNING: Different CWs %s from %s(%s)<>%s(%s): %s<>%s lg: %i<>%i, hop:%02i, src-nodeid: %" PRIu64 "X%s", buf,
-#else
-			debug_ecm(D_CACHEEX| D_CSP, "WARNING: Different CWs %s from %s(%s)<>%s(%s): %s<>%s ", buf,
-#endif
 				er->from_csp ? "csp" : username(er->cacheex_src), ip1,
 				check_client(cw_first->cacheex_src)?username(cw_first->cacheex_src):(cw_first->selected_reader?cw_first->selected_reader->label:"unknown/csp"), ip2,
-#ifdef CS_CACHEEX_AIO
 				cw1, cw2, er->localgenerated, cw_first->localgenerated, er->csp_lastnodes ? ll_count(er->csp_lastnodes) : 0, er->csp_lastnodes ? cacheex_node_id(remotenodeid): 0, fakeF0 ? " [last byte xor 0xF0]" : "");
-#else
-				cw1, cw2);
-#endif
 
 			LL_LOCKITER *li = ll_li_create(er->csp_lastnodes, 0);
 			uint8_t *nodeid;
@@ -500,7 +451,7 @@ static void cacheex_cache_add(ECM_REQUEST *er, ECMHASH *result, CW *cw, bool add
 #endif
 }
 
-#ifdef CS_CACHEEX_AIO
+#ifdef CS_CACHEEX
 CW_CACHE_SETTING get_cw_cache(ECM_REQUEST *er)
 {
 	int32_t i, timediff_old_cw = 0;
@@ -665,7 +616,7 @@ static bool cw_cache_check(ECM_REQUEST *er)
 void add_cache(ECM_REQUEST *er)
 {
 	if(!cache_init_done || !er->csp_hash) return;
-#ifdef CS_CACHEEX_AIO
+#ifdef CS_CACHEEX
 	// cw_cache_check
 	if(!cw_cache_check(er))
 	{
@@ -759,7 +710,7 @@ void add_cache(ECM_REQUEST *er)
 		else cw->proxy = 1;
 	}
 
-#ifdef CS_CACHEEX_AIO
+#ifdef CS_CACHEEX
 	// copy flag for local generated CW
 	if(er->localgenerated || (er->selected_reader && !is_network_reader(er->selected_reader)))
 	{
@@ -782,15 +733,13 @@ void add_cache(ECM_REQUEST *er)
 	cw->grp |= er->grp;
 	cw->count++;
 
-#ifdef CS_CACHEEX_AIO
 	// add count to er for checking @ cacheex_push
 	er->cw_count += cw->count;
-#endif
 	// sort cw_list by counter (DESC order)
 	if(cw->count>1)
 		sort_list(&result->ll_cw, count_sort);
 
-#ifdef CS_CACHEEX_AIO
+#ifdef CS_CACHEEX
 	// dont push not flagged CWs - global
 	if(!er->localgenerated && 
 		(
@@ -825,7 +774,6 @@ void add_cache(ECM_REQUEST *er)
 	cacheex_cache_add(er, result, cw, add_new_cw);
 }
 
-#ifdef CS_CACHEEX_AIO
 void cw_cache_cleanup(bool force)
 {
 	if(!cw_cache_init_done)
@@ -880,7 +828,6 @@ void cw_cache_cleanup(bool force)
 	
 	SAFE_RWLOCK_UNLOCK(&cw_cache_lock);
 }
-#endif
 
 void cleanup_cache(bool force)
 {
@@ -936,12 +883,10 @@ void cleanup_cache(bool force)
 						NULLFREE(pc);
 						pc = nxt;
 					}
-#ifdef CS_CACHEEX_AIO
 					if(cw->count >= 0x0F000000)
 					{
 						lg_cache_size--;
 					}
-#endif
 					remove_elem_list(&ecmhash->ll_cw, &cw->ll_node);
 					remove_elem_hash_table(&ecmhash->ht_cw, &cw->ht_node);
 					NULLFREE(cw);
@@ -959,7 +904,7 @@ void cleanup_cache(bool force)
 	SAFE_RWLOCK_UNLOCK(&cache_lock);
 }
 
-#ifdef CS_CACHEEX_AIO
+#ifdef CS_CACHEEX
 void cacheex_get_srcnodeid(ECM_REQUEST *er, uint8_t *remotenodeid)
 {
 	uint8_t *data;
