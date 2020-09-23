@@ -6518,7 +6518,7 @@ static char *send_oscam_status(struct templatevars * vars, struct uriparams * pa
 #endif
 	set_status_info(vars, p_stat_cur);
 
-	if(cfg.http_showmeminfo || cfg.http_showuserinfo || cfg.http_showreaderinfo || cfg.http_showloadinfo || cfg.http_showecminfo || (cfg.http_showcacheexinfo  && config_enabled(CS_CACHEEX))){
+	if(cfg.http_showmeminfo || cfg.http_showuserinfo || cfg.http_showreaderinfo || cfg.http_showloadinfo || cfg.http_showecminfo || (cfg.http_showcacheexinfo  && config_enabled(CS_CACHEEX)) || (cfg.http_showcacheexinfo  && config_enabled(CS_CACHEEX_AIO))){
 		tpl_addVar(vars, TPLADD, "DISPLAYINFO", "visible");
 	}
 	else{
@@ -6532,9 +6532,18 @@ static char *send_oscam_status(struct templatevars * vars, struct uriparams * pa
 	tpl_addVar(vars, TPLADD, "DISPLAYECMINFO", cfg.http_showecminfo ? "visible" : "hidden");
 	tpl_addVar(vars, TPLADD, "DISPLAYECMINFO_READERS", cfg.http_showecminfo ? "visible" : "hidden");
 
-	if(cfg.http_showcacheexinfo == 1 && config_enabled(CS_CACHEEX)){
-		tpl_addVar(vars, TPLADD, "DISPLAYCACHEEXINFO", "visible");
-		tpl_addVar(vars, TPLADD, "DISPLAYCACHEEXAIOINFO", "visible");
+	if(cfg.http_showcacheexinfo == 1 && config_enabled(CS_CACHEEX))
+	{
+		if (config_enabled(CS_CACHEEX_AIO))
+		{
+			tpl_addVar(vars, TPLADD, "DISPLAYCACHEEXINFO", "hidden");
+			tpl_addVar(vars, TPLADD, "DISPLAYCACHEEXAIOINFO", "visible");
+		}
+		else
+		{
+			tpl_addVar(vars, TPLADD, "DISPLAYCACHEEXINFO", "visible");
+			tpl_addVar(vars, TPLADD, "DISPLAYCACHEEXAIOINFO", "hidden");
+		}
 	}
 	else{
 		tpl_addVar(vars, TPLADD, "DISPLAYCACHEEXINFO", "hidden");
