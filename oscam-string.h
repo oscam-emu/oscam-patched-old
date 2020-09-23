@@ -15,6 +15,7 @@ char *remove_white_chars(char *txt);
 bool streq(const char *s1, const char *s2);
 
 char *cs_hexdump(int32_t m, const uint8_t *buf, int32_t n, char *target, int32_t len);
+bool gethexval_within_range(char c);
 int32_t gethexval(char c);
 int32_t cs_atob(uint8_t *buf, char *asc, int32_t n);
 uint32_t cs_atoi(char *asc, int32_t l, int32_t val_on_err);
