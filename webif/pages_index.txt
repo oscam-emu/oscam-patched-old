@@ -271,6 +271,7 @@ SHUTDOWN                      shutdown/shutdown.html
 
 STATUS                        status/status.html
 CACHEEXINFOBIT                status/status_cacheexinfo.html                              CS_CACHEEX
+CACHEEXAIOINFOBIT             status/status_cacheexaioinfo.html                           CS_CACHEEX_AIO
 CLIENTHEADLINE                status/status_cheadline.html
 CLIENTHEADLINEADD             status/status_cheadlineadd.html
 CLIENTHEADLINEBIT             status/status_clientheadlinebit.html
