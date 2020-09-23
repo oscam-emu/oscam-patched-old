@@ -6534,9 +6534,11 @@ static char *send_oscam_status(struct templatevars * vars, struct uriparams * pa
 
 	if(cfg.http_showcacheexinfo == 1 && config_enabled(CS_CACHEEX)){
 		tpl_addVar(vars, TPLADD, "DISPLAYCACHEEXINFO", "visible");
+		tpl_addVar(vars, TPLADD, "DISPLAYCACHEEXAIOINFO", "visible");
 	}
 	else{
 		tpl_addVar(vars, TPLADD, "DISPLAYCACHEEXINFO", "hidden");
+		tpl_addVar(vars, TPLADD, "DISPLAYCACHEEXAIOINFO", "hidden");
 	}
 
 #ifdef WITH_DEBUG
