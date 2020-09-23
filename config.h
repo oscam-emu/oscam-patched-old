@@ -17,6 +17,7 @@
 #define WITH_DEBUG 1
 #define WITH_LB 1
 //#define CS_CACHEEX 1
+//#define CS_CACHEEX_AIO 1
 //#define CW_CYCLE_CHECK 1
 //#define LCDSUPPORT 1
 //#define LEDSUPPORT 1

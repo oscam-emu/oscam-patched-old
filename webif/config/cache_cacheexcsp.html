@@ -7,22 +7,10 @@
 			<TR><TD><A>ECM Cache Memory:</A></TD><TD><input name="ecm_cache_memory" class="withunit short" type="text" maxlength="5" value="##ECMCACHEMEMORY##"> MB of max. memory used for ECM cache size</TD></TR>
 			<TR><TD><A>CacheEx CW Check:</A></TD><TD><input name="cacheex_cw_check" type="text" maxlength="320" value="##CACHEEXCWCHECK##"><br />Format: caid[&amp;mask][@provid][$servid]:mode:counter[,n]</TD></TR>
 			<TR><TD><A>Wait time:</A></TD><TD><input name="wait_time" type="text" value="##WAIT_TIME##"> ms</TD></TR>
-			<TR><TD><A>Wait time block start count:</A></TD><TD><input name="waittime_block_start" class="withunit short" type="text" maxlength="2" value="##WAITTIME_BLOCK_START##">count of wait time timeouts to start blocking</TD></TR>
-			<TR><TD><A>Wait time block time:</A></TD><TD><input name="waittime_block_time" class="withunit short" type="text" maxlength="4" value="##WAITTIME_BLOCK_TIME##">s block wait time</TD></TR>
 			<TR><TD><A>Mode1 delay time:</A></TD><TD><input name="cacheex_mode1_delay" type="text" maxlength="320" value="##CACHEEXMODE1DELAY##"> ms</TD></TR>
 			<TR><TD><A>Max hit time:</A></TD><TD><input name="max_hit_time" class="withunit short" type="text" maxlength="5" value="##MAX_HIT_TIME##"> s keep hit for dynamic wait time</TD></TR>
 			<TR><TD><A data-p="cacheexenablestats_2">Write statistic:</A></TD><TD><input name="cacheexenablestats" value="0" type="hidden"><input name="cacheexenablestats" value="1" type="checkbox" ##CACHEEXSTATSSELECTED##><label></label></TD></TR>			<TR><TD><A>Wait until ctimeout:</A></TD><TD><input name="wait_until_ctimeout" value="0" type="hidden"><input name="wait_until_ctimeout" value="1" type="checkbox" ##WTTCHECKED##><label></label></TD></TR>
-			<TR><TD><A>Drop diff CWs:</A></TD><TD><input name="cacheex_dropdiffs" value="0" type="hidden"><input name="cacheex_dropdiffs" value="1" type="checkbox" ##CACHEEXDROPDIFFS##></TD></TR>
-			<TR><TD><A>No CW push after (from local/proxy-reader):</A></TD><TD><input name="cacheex_nopushafter" type="text" maxlength="320" value="##CACHEEXNOPUSHAFTER##"> ms<br />Format: caid:time[,n]</TD></TR>
-			<TR><TD><A>Allow client to overwrite 'Forward lg-only settings':</A></TD><TD><input name="cacheex_lg_only_remote_settings" value="0" type="hidden"><input name="cacheex_lg_only_remote_settings" value="1" type="checkbox" ##LGONLYREMOTESETTINGSCHECKED##>(if disabled, only more restrictive settings are added)</TD></TR>
-			<TR><TD><A>Forward localgenerated flagged CWs only:</A></TD><TD><input name="cacheex_localgenerated_only" value="0" type="hidden"><input name="cacheex_localgenerated_only" value="1" type="checkbox" ##LOCALGENERATEDONLYCHECKED##></TD></TR>
-			<TR><TD><A>Forward localgenerated flagged CWs only(caid:provid[,N];):</A></TD><TD><textarea name="cacheex_lg_only_tab" rows="3" class="bt">##LGONLYTAB##</textarea></TD></TR>
-			<TR><TD><A>Drop incoming not localgenerated flagged CWs:</A></TD><TD><input name="cacheex_localgenerated_only_in" value="0" type="hidden"><input name="cacheex_localgenerated_only_in" value="1" type="checkbox" ##LOCALGENERATEDONLYINCHECKED##></TD></TR>
-			<TR><TD><A>Drop incoming not localgenerated flagged CWs(caid:provid[,N];):</A></TD><TD><textarea name="cacheex_lg_only_in_tab" rows="3" class="bt">##LGONLYINTAB##</textarea></TD></TR>
-			<TR><TD><A>Drop incoming settings only for CX-AIO peers:</A></TD><TD><input name="cacheex_lg_only_in_aio_only" value="0" type="hidden"><input name="cacheex_lg_only_in_aio_only" value="1" type="checkbox" ##LGONLYINAIOONLYCHECKED##></TD></TR>
-			<TR><TD><A>Cache-EX ECM filter:</A></TD><TD><input name="cacheex_ecm_filter" type="text" maxlength="1385" value="##CACHEEXECMFILTER##"></TD></TR>
-			<TR><TD><A>Cache-EX ECM filter(aio only):</A></TD><TD><input name="cacheex_ecm_filter_aio" type="text" maxlength="1385" value="##CACHEEXECMFILTERAIO##"></TD></TR>
-			<TR><TD><A>Push localgenerated flagged CWs always to these groups:</A></TD><TD><input name="cacheex_push_lg_groups" class="longer" type="text" maxlength="155" value="##CACHEEXPUSHLGGRPS##"> Valid values 1-64</TD></TR>
+
 			<TR><TH COLSPAN="2">CSP</TH></TR>
 			<TR><TD><A>Port:</A></TD><TD><input name="csp_port" type="text" class="short" maxlength="5" value="##PORT##"></TD></TR>
 			<TR><TD><A>Serverip:</A></TD><TD><input name="csp_serverip" type="text" class="medium" maxlength="15" value="##SERVERIP##"></TD></TR>

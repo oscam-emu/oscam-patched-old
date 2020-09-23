@@ -55,12 +55,14 @@ int32_t write_services(void)
 			ptr++;
 		}
 		fprintf(f, "[%s]\n", sidtab->label);
+#ifdef CS_CACHEEX_AIO
 		fprintf_conf(f, "disablecrccws_only_for_exception", "%u", sidtab->disablecrccws_only_for_exception); // it should not have \n at the end
 		fputc((int)'\n', f);
 		fprintf_conf(f, "no_wait_time", "%u", sidtab->no_wait_time); // it should not have \n at the end
 		fputc((int)'\n', f);
 		fprintf_conf(f, "lg_only_exception", "%u", sidtab->lg_only_exception); // it should not have \n at the end
 		fputc((int)'\n', f);
+#endif
 		fprintf_conf(f, "caid", "%s", ""); // it should not have \n at the end
 		for(i = 0; i < sidtab->num_caid; i++)
 		{
@@ -103,12 +105,15 @@ static void chk_entry4sidtab(char *value, struct s_sidtab *sidtab, int32_t what)
 	char *ptr, *saveptr1 = NULL;
 	uint16_t *slist = (uint16_t *) 0;
 	uint32_t *llist = (uint32_t *) 0;
+#ifdef CS_CACHEEX_AIO
 	uint8_t disablecrccws_only_for_exception = 0;
 	uint8_t no_wait_time = 0;
 	uint8_t lg_only_exception = 0;
+#endif
 	char buf[strlen(value) + 1];
 	cs_strncpy(buf, value, sizeof(buf));
 
+#ifdef CS_CACHEEX_AIO
 	if(what == 5) // lg_only_exception
 	{	
 		sidtab->lg_only_exception = a2i(buf, sizeof(lg_only_exception));
@@ -126,6 +131,7 @@ static void chk_entry4sidtab(char *value, struct s_sidtab *sidtab, int32_t what)
 		sidtab->disablecrccws_only_for_exception = a2i(buf, sizeof(disablecrccws_only_for_exception));
 		return;
 	}
+#endif
 
 	b = (what == 1) ? sizeof(uint32_t) : sizeof(uint16_t);
 
@@ -195,6 +201,7 @@ void chk_sidtab(char *token, char *value, struct s_sidtab *sidtab)
 		chk_entry4sidtab(value, sidtab, 2);
 		return;
 	}
+#ifdef CS_CACHEEX_AIO
 	if(!strcmp(token, "disablecrccws_only_for_exception"))
 	{
 		chk_entry4sidtab(value, sidtab, 3);
@@ -210,6 +217,7 @@ void chk_sidtab(char *token, char *value, struct s_sidtab *sidtab)
 		chk_entry4sidtab(value, sidtab, 5);
 		return;
 	}
+#endif
 	if(token[0] != '#')
 		{ fprintf(stderr, "Warning: keyword '%s' in sidtab section not recognized\n", token); }
 }
@@ -237,9 +245,11 @@ static void show_sidtab(struct s_sidtab *sidtab)
 		char buf[1024];
 		char *saveptr = buf;
 		cs_log("label=%s", sidtab->label);
+#ifdef CS_CACHEEX_AIO
 		cs_log("disablecrccws_only_for_exception=%u", sidtab->disablecrccws_only_for_exception);
 		cs_log("no_wait_time=%u", sidtab->no_wait_time);
 		cs_log("lg_only_exception=%u", sidtab->lg_only_exception);
+#endif
 		snprintf(buf, sizeof(buf), "caid(%d)=", sidtab->num_caid);
 		for(i = 0; i < sidtab->num_caid; i++)
 			{ snprintf(buf + strlen(buf), 1024 - (buf - saveptr), "%04X ", sidtab->caid[i]); }
