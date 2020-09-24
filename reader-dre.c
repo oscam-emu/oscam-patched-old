@@ -598,7 +598,7 @@ static int32_t dre_card_init(struct s_reader *reader, ATR *newatr)
 
 				if(fgets(tempbuf, 2048, pFile) == NULL) continue;
 
-				if(strlen(tempbuf) < 10) continue;
+				if(cs_strlen(tempbuf) < 10) continue;
 
 				trim2(tempbuf);
 
@@ -621,7 +621,7 @@ static int32_t dre_card_init(struct s_reader *reader, ATR *newatr)
 
 				strtoupper(tempbuf);
 
-				cmd_len = strlen(tempbuf) / 2 - 3 + ignoreProvid - (crypted * 2);
+				cmd_len = cs_strlen(tempbuf) / 2 - 3 + ignoreProvid - (crypted * 2);
 				usercmd = malloc(cmd_len);
 
 				for(i = 0, n = 4 + (crypted * 4); i < cmd_len; i++, n += 2)

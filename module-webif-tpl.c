@@ -48,7 +48,7 @@ static void tpl_init_base64(struct tpl *tpl)
 	int hdr_len = snprintf(b64_buf, b64_buf_len, "data:%s;base64,", template_get_mimetype(tpl->tpl_type));
 	base64_encode(tpl->tpl_data, tpl->tpl_data_len, b64_buf + hdr_len, b64_buf_len - hdr_len);
 	tpl->tpl_data = tpl->extra_data = b64_buf;
-	tpl->tpl_data_len = strlen(b64_buf);
+	tpl->tpl_data_len = cs_strlen(b64_buf);
 }
 
 void webif_tpls_prepare(void)
@@ -92,13 +92,13 @@ void webif_tpls_prepare(void)
 		tpls[i].tpl_deps      = tpls_data + templates[i].tpl_deps_ofs;
 		tpls[i].tpl_data_len  = templates[i].tpl_data_len;
 		tpls[i].tpl_type      = templates[i].tpl_type;
-		tpls[i].tpl_name_hash = jhash(tpls[i].tpl_name, strlen(tpls[i].tpl_name));
+		tpls[i].tpl_name_hash = jhash(tpls[i].tpl_name, cs_strlen(tpls[i].tpl_name));
 		tpl_init_base64(&tpls[i]);
 	}
 #else
 	for(i = 0; i < tpls_count; ++i)
 	{
-		tpls[i].tpl_name_hash = jhash(templates[i].tpl_name, strlen(templates[i].tpl_name));
+		tpls[i].tpl_name_hash = jhash(templates[i].tpl_name, cs_strlen(templates[i].tpl_name));
 		tpls[i].tpl_name      = templates[i].tpl_name;
 		tpls[i].tpl_data      = templates[i].tpl_data;
 		tpls[i].tpl_deps      = templates[i].tpl_deps;
@@ -149,11 +149,11 @@ void tpl_addVar(struct templatevars *vars, uint8_t addmode, const char *name, co
 			if(!cs_realloc(&(*vars).vartypes, (*vars).varsalloc * 2 * sizeof(uint8_t *))) { return; }
 			(*vars).varsalloc = (*vars).varscnt * 2;
 		}
-		int32_t len = strlen(name) + 1;
+		int32_t len = cs_strlen(name) + 1;
 		if(!cs_malloc(&tmp, len)) { return; }
 		memcpy(tmp, name, len);
 		(*vars).names[(*vars).varscnt] = tmp;
-		len = strlen(value) + 1;
+		len = cs_strlen(value) + 1;
 		if(!cs_malloc(&tmp, len))
 		{
 			NULLFREE((*vars).names[(*vars).varscnt]);
@@ -166,8 +166,8 @@ void tpl_addVar(struct templatevars *vars, uint8_t addmode, const char *name, co
 	}
 	else
 	{
-		int32_t oldlen = 0, newlen = strlen(value);
-		if(addmode == TPLAPPEND || addmode == TPLAPPENDONCE) { oldlen = strlen((*vars).values[i]); }
+		int32_t oldlen = 0, newlen = cs_strlen(value);
+		if(addmode == TPLAPPEND || addmode == TPLAPPENDONCE) { oldlen = cs_strlen((*vars).values[i]); }
 		if(!cs_realloc(&((*vars).values[i]), oldlen + newlen + 1)) { return; }
 		memcpy((*vars).values[i] + oldlen, value, newlen + 1);
 		(*vars).vartypes[i] = addmode;
@@ -325,11 +325,11 @@ void tpl_clear(struct templatevars *vars)
 /* Creates a path to a template file. You need to set the resultsize to the correct size of result. */
 char *tpl_getFilePathInSubdir(const char *path, const char *subdir, const char *name, const char *ext, char *result, uint32_t resultsize)
 {
-	int path_len = strlen(path);
+	int path_len = cs_strlen(path);
 	const char *path_fixup = "";
 	if(path_len && path[path_len - 1] != '/')
 		{ path_fixup = "/"; }
-	if(path_len + strlen(path_fixup) + strlen(name) + strlen(subdir) + strlen(ext) < resultsize)
+	if(path_len + cs_strlen(path_fixup) + cs_strlen(name) + cs_strlen(subdir) + cs_strlen(ext) < resultsize)
 	{
 		snprintf(result, resultsize, "%s%s%s%s%s", path, path_fixup, subdir, name, ext);
 	}
@@ -353,17 +353,17 @@ char *tpl_getUnparsedTpl(const char *name, int8_t removeHeader, const char *subd
 	char *result;
 	char *tpl_path;
 
-	tpl_path = (cfg.http_piconpath && strlen(name) > 3 && name[0] == 'I' && name[1] == 'C' && name[2] == '_') ? cfg.http_piconpath : cfg.http_tpl;
+	tpl_path = (cfg.http_piconpath && cs_strlen(name) > 3 && name[0] == 'I' && name[1] == 'C' && name[2] == '_') ? cfg.http_piconpath : cfg.http_tpl;
 
 	if(tpl_path)
 	{
 		char path[255];
-		if((strlen(tpl_getFilePathInSubdir(tpl_path, subdir, name, ".tpl", path, 255)) > 0 && file_exists(path))
-				|| (strlen(subdir) > 0
+		if((cs_strlen(tpl_getFilePathInSubdir(tpl_path, subdir, name, ".tpl", path, 255)) > 0 && file_exists(path))
+				|| (cs_strlen(subdir) > 0
 #ifdef TOUCH
 					&& strcmp(subdir, TOUCH_SUBDIR)
 #endif
-					&& strlen(tpl_getFilePathInSubdir(tpl_path, ""    , name, ".tpl", path, 255)) > 0 && file_exists(path)))
+					&& cs_strlen(tpl_getFilePathInSubdir(tpl_path, ""    , name, ".tpl", path, 255)) > 0 && file_exists(path)))
 		{
 			FILE *fp;
 			char buffer[1025];
@@ -392,12 +392,12 @@ char *tpl_getUnparsedTpl(const char *name, int8_t removeHeader, const char *subd
 								char *ptr1, *ptr2, *saveptr1 = NULL, *saveptr2 = NULL;
 								for(i = 0, ptr1 = strtok_r(pch1 + 10, ";", &saveptr1); (ptr1) && i < 4 ; ptr1 = strtok_r(NULL, ";", &saveptr1), i++)
 								{
-									if(i == 3 && strlen(ptr1) > 2)
+									if(i == 3 && cs_strlen(ptr1) > 2)
 									{
 										int8_t ok = 0;
 										for(ptr2 = strtok_r(ptr1, ",", &saveptr2); (ptr2) && ok == 0 ; ptr2 = strtok_r(NULL, ",", &saveptr2))
 										{
-											size_t len = strlen(ptr2);
+											size_t len = cs_strlen(ptr2);
 											check_conf(WITH_CARDREADER, ptr2);
 											check_conf(CARDREADER_PHOENIX, ptr2);
 											check_conf(CARDREADER_DRECAS, ptr2);
@@ -492,7 +492,7 @@ char *tpl_getUnparsedTpl(const char *name, int8_t removeHeader, const char *subd
 	} // if
 
 	bool found = 0;
-	uint32_t name_hash = jhash(name, strlen(name));
+	uint32_t name_hash = jhash(name, cs_strlen(name));
 	for(i = 0; i < tpls_count; i++)
 	{
 		if(tpls[i].tpl_name_hash == name_hash)
@@ -522,12 +522,12 @@ char *tpl_getTpl(struct templatevars *vars, const char *name)
 {
 	char *tplorg = tpl_getUnparsedTpl(name, 1, tpl_getVar(vars, "SUBDIR"));
 	if(!tplorg) { return ""; }
-	char *tplend = tplorg + strlen(tplorg);
+	char *tplend = tplorg + cs_strlen(tplorg);
 	char *pch, *pch2, *tpl = tplorg;
 	char varname[33];
 
 	int32_t tmp, respos = 0;
-	int32_t allocated = 2 * strlen(tpl) + 1;
+	int32_t allocated = 2 * cs_strlen(tpl) + 1;
 	char *result;
 	if(!cs_malloc(&result, allocated)) { return ""; }
 
@@ -552,7 +552,7 @@ char *tpl_getTpl(struct templatevars *vars, const char *name)
 				{
 					pch2 = tpl_getVar(vars, varname);
 				}
-				tmp = strlen(pch2);
+				tmp = cs_strlen(pch2);
 				if(tmp + respos + 2 >= allocated)
 				{
 					allocated = tmp + respos + 256;
@@ -590,7 +590,7 @@ int32_t tpl_saveIncludedTpls(const char *path)
 	for(i = 0; i < tpls_count; ++i)
 	{
 		const struct tpl *tpl = &tpls[i];
-		if(strlen(tpl_getTplPath(tpl->tpl_name, path, tmp, 256)) > 0 && (fp = fopen(tmp, "w")) != NULL)
+		if(cs_strlen(tpl_getTplPath(tpl->tpl_name, path, tmp, 256)) > 0 && (fp = fopen(tmp, "w")) != NULL)
 		{
 			if(strncmp(tpl->tpl_name, "IC", 2) != 0)
 			{
@@ -614,7 +614,7 @@ void tpl_checkOneDirDiskRevisions(const char *subdir)
 	for(i = 0; i < tpls_count; ++i)
 	{
 		const struct tpl *tpl = &tpls[i];
-		if(strncmp(tpl->tpl_name, "IC", 2) != 0 && strlen(tpl_getTplPath(tpl->tpl_name, dirpath, path, 255)) > 0 && file_exists(path))
+		if(strncmp(tpl->tpl_name, "IC", 2) != 0 && cs_strlen(tpl_getTplPath(tpl->tpl_name, dirpath, path, 255)) > 0 && file_exists(path))
 		{
 			int8_t error = 1;
 			char *tplorg = tpl_getUnparsedTpl(tpl->tpl_name, 0, subdir);
@@ -706,7 +706,7 @@ void urldecode(char *s)
 	int32_t c, c1, n;
 	char *t;
 	t = s;
-	n = strlen(s);
+	n = cs_strlen(s);
 	while(n > 0)
 	{
 		c = *s++;
@@ -729,7 +729,7 @@ void urldecode(char *s)
 char *urlencode(struct templatevars *vars, const char *str)
 {
 	char *buf;
-	if(!cs_malloc(&buf, strlen(str) * 3 + 1)) { return ""; }
+	if(!cs_malloc(&buf, cs_strlen(str) * 3 + 1)) { return ""; }
 	const char *pstr = str;
 	char *pbuf = buf;
 
@@ -747,7 +747,7 @@ char *urlencode(struct templatevars *vars, const char *str)
 	}
 	*pbuf = '\0';
 	/* Allocate the needed memory size and store it in the templatevars */
-	if(!cs_realloc(&buf, strlen(buf) + 1)) { return ""; }
+	if(!cs_realloc(&buf, cs_strlen(buf) + 1)) { return ""; }
 	return tpl_addTmp(vars, buf);
 }
 
@@ -756,7 +756,7 @@ char *urlencode(struct templatevars *vars, const char *str)
 char *xml_encode(struct templatevars *vars, const char *chartoencode)
 {
 	if(!chartoencode) { return ""; }
-	int32_t i, pos = 0, len = strlen(chartoencode);
+	int32_t i, pos = 0, len = cs_strlen(chartoencode);
 	char *encoded;
 	char buffer[7];
 	/* In worst case, every character could get converted to 6 chars (we only support ASCII, for Unicode it would be 7)*/
@@ -794,8 +794,8 @@ char *xml_encode(struct templatevars *vars, const char *chartoencode)
 			if(tmp < 32 || (cs_http_use_utf8 != 1 && tmp > 127))
 			{
 				snprintf(buffer, 7, "&#%d;", tmp);
-				memcpy(encoded + pos, buffer, strlen(buffer));
-				pos += strlen(buffer);
+				memcpy(encoded + pos, buffer, cs_strlen(buffer));
+				pos += cs_strlen(buffer);
 			}
 			else
 			{

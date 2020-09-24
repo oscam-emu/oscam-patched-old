@@ -669,19 +669,19 @@ void cc_cacheex_feature_trigger(struct s_client *cl, int32_t feature, uint8_t mo
 			
 			char *cx_aio_ftab;
 			cx_aio_ftab = cxaio_ftab_to_buf(lgonly_tab);
-			if(strlen(cx_aio_ftab) > 0 && cx_aio_ftab[0] != '\0')
+			if(cs_strlen(cx_aio_ftab) > 0 && cx_aio_ftab[0] != '\0')
 			{
-				size += strlen(cx_aio_ftab) * sizeof(char);
+				size += cs_strlen(cx_aio_ftab) * sizeof(char);
 				
 				// payload-size
-				i2b_buf(2, strlen(cx_aio_ftab), payload + i);
+				i2b_buf(2, cs_strlen(cx_aio_ftab), payload + i);
 				i += 2;
 
 				// filter counter
 				payload[i] = lgonly_tab->nfilts;
 				i += 1;
 
-				for(j=0; j<strlen(cx_aio_ftab); j+=2)
+				for(j=0; j<cs_strlen(cx_aio_ftab); j+=2)
 				{
 					payload[i] = (gethexval(cx_aio_ftab[j]) << 4) | gethexval(cx_aio_ftab[j + 1]);
 					i++;

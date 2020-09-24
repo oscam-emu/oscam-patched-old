@@ -95,10 +95,10 @@ static int32_t secmon_auth_client(uint8_t *ucrc)
 	for(account = cfg.account; (account) && (!module_data->auth); account = account->next)
 	{
 			if((account->monlvl) &&
-				(crc == crc32(0L, MD5((uint8_t *)account->usr, strlen(account->usr), md5tmp), MD5_DIGEST_LENGTH)))
+				(crc == crc32(0L, MD5((uint8_t *)account->usr, cs_strlen(account->usr), md5tmp), MD5_DIGEST_LENGTH)))
 		{
 			memcpy(module_data->ucrc, ucrc, 4);
-			aes_set_key(&module_data->aes_keys, (char *)MD5((uint8_t *)ESTR(account->pwd), strlen(ESTR(account->pwd)), md5tmp));
+			aes_set_key(&module_data->aes_keys, (char *)MD5((uint8_t *)ESTR(account->pwd), cs_strlen(ESTR(account->pwd)), md5tmp));
 			if(cs_auth_client(cur_cl, account, NULL))
 				{ return -1; }
 			module_data->auth = 1;
@@ -125,8 +125,8 @@ int32_t monitor_send_idx(struct s_client *cl, char *txt)
 	req_ts.tv_nsec = 500000;
 	nanosleep(&req_ts, NULL); // avoid lost udp-pakkets
 	if(!cl->crypted)
-		{ return sendto(cl->udp_fd, txt, strlen(txt), 0, (struct sockaddr *)&cl->udp_sa, cl->udp_sa_len); }
-	l = strlen(txt);
+		{ return sendto(cl->udp_fd, txt, cs_strlen(txt), 0, (struct sockaddr *)&cl->udp_sa, cl->udp_sa_len); }
+	l = cs_strlen(txt);
 	if(l > 255)
 		{ l = 255; }
 	buf[0] = '&';
@@ -195,7 +195,7 @@ static int32_t monitor_recv(struct s_client *client, uint8_t *buf, int32_t UNUSE
 		}
 	}
 	buf[n] = '\0';
-	n = strlen(trim((char *)buf));
+	n = cs_strlen(trim((char *)buf));
 	if(n) { client->last = time((time_t *) 0); }
 	return n;
 }

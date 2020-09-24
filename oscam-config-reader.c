@@ -30,9 +30,9 @@ static void reader_label_fn(const char *token, char *value, void *setting, FILE 
 	if(value)
 	{
 		int i, found = 0;
-		if(!strlen(value))
+		if(!cs_strlen(value))
 			{ return; }
-		for(i = 0; i < (int)strlen(value); i++)
+		for(i = 0; i < (int)cs_strlen(value); i++)
 		{
 			if(value[i] == ' ')
 			{
@@ -53,7 +53,7 @@ static void ecmwhitelist_fn(const char *token, char *value, void *setting, FILE 
 	struct s_reader *rdr = setting;
 	if(value)
 	{
-		if(strlen(value))
+		if(cs_strlen(value))
 			chk_ecm_whitelist(value, &rdr->ecm_whitelist);
 		else
 			ecm_whitelist_clear(&rdr->ecm_whitelist);
@@ -61,7 +61,7 @@ static void ecmwhitelist_fn(const char *token, char *value, void *setting, FILE 
 	}
 
 	value = mk_t_ecm_whitelist(&rdr->ecm_whitelist);
-	if(strlen(value) > 0 || cfg.http_full_cfg)
+	if(cs_strlen(value) > 0 || cfg.http_full_cfg)
 		{ fprintf_conf(f, token, "%s\n", value); }
 	free_mk_t(value);
 }
@@ -71,7 +71,7 @@ static void ecmheaderwhitelist_fn(const char *token, char *value, void *setting,
 	struct s_reader *rdr = setting;
 	if(value)
 	{
-		if(strlen(value))
+		if(cs_strlen(value))
 			chk_ecm_hdr_whitelist(value, &rdr->ecm_hdr_whitelist);
 		else
 			ecm_hdr_whitelist_clear(&rdr->ecm_hdr_whitelist);
@@ -79,7 +79,7 @@ static void ecmheaderwhitelist_fn(const char *token, char *value, void *setting,
 	}
 
 	value = mk_t_ecm_hdr_whitelist(&rdr->ecm_hdr_whitelist);
-	if(strlen(value) > 0 || cfg.http_full_cfg)
+	if(cs_strlen(value) > 0 || cfg.http_full_cfg)
 		{ fprintf_conf(f, token, "%s\n", value); }
 	free_mk_t(value);
 }
@@ -89,7 +89,7 @@ static void protocol_fn(const char *token, char *value, void *setting, FILE *f)
 	struct s_reader *rdr = setting;
 	if(value)
 	{
-		if(strlen(value) == 0)
+		if(cs_strlen(value) == 0)
 			{ return; }
 		struct protocol_map
 		{
@@ -221,7 +221,7 @@ static void boxid_fn(const char *token, char *value, void *setting, FILE *f)
 	struct s_reader *rdr = setting;
 	if(value)
 	{
-		rdr->boxid = strlen(value) ? a2i(value, 4) : 0;
+		rdr->boxid = cs_strlen(value) ? a2i(value, 4) : 0;
 		return;
 	}
 	if(rdr->boxid)
@@ -235,7 +235,7 @@ static void rsakey_fn(const char *token, char *value, void *setting, FILE *f)
 	struct s_reader *rdr = setting;
 	if(value)
 	{
-		int32_t len = strlen(value);
+		int32_t len = cs_strlen(value);
 		if(len != 128 && len != 240)
 		{
 			rdr->rsa_mod_length = 0;
@@ -271,7 +271,7 @@ static void deskey_fn(const char *token, char *value, void *setting, FILE *f)
 	struct s_reader *rdr = setting;
 	if(value)
 	{
-		int32_t len = strlen(value);
+		int32_t len = cs_strlen(value);
 		if(((len % 16) != 0) || len == 0 || len > 128*2)
 		{
 			rdr->des_key_length = 0;
@@ -307,7 +307,7 @@ static void boxkey_fn(const char *token, char *value, void *setting, FILE *f)
 	struct s_reader *rdr = setting;
 	if(value)
 	{
-		int32_t len = strlen(value);
+		int32_t len = cs_strlen(value);
 		if(((len % 8) != 0) || len == 0 || len > 32)
 		{
 			rdr->boxkey_length = 0;
@@ -344,7 +344,7 @@ static void mod1_fn(const char *token, char *value, void *setting, FILE *f)
 	struct s_reader *rdr = setting;
 	if(value)
 	{
-		int32_t len = strlen(value);
+		int32_t len = cs_strlen(value);
 		if(len != 224)
 		{
 			rdr->mod1_length = 0;
@@ -380,7 +380,7 @@ static void data50_fn(const char *token, char *value, void *setting, FILE *f)
 	struct s_reader *rdr = setting;
 	if(value)
 	{
-		int32_t len = strlen(value);
+		int32_t len = cs_strlen(value);
 		if(len != 160)
 		{
 			rdr->data50_length = 0;
@@ -416,7 +416,7 @@ static void mod50_fn(const char *token, char *value, void *setting, FILE *f)
 	struct s_reader *rdr = setting;
 	if(value)
 	{
-		int32_t len = strlen(value);
+		int32_t len = cs_strlen(value);
 		if(len != 160)
 		{
 			rdr->mod50_length = 0;
@@ -452,7 +452,7 @@ static void key60_fn(const char *token, char *value, void *setting, FILE *f)
 	struct s_reader *rdr = setting;
 	if(value)
 	{
-		int32_t len = strlen(value);
+		int32_t len = cs_strlen(value);
 		if(len != 192)
 		{
 			rdr->key60_length = 0;
@@ -488,7 +488,7 @@ static void exp60_fn(const char *token, char *value, void *setting, FILE *f)
 	struct s_reader *rdr = setting;
 	if(value)
 	{
-		int32_t len = strlen(value);
+		int32_t len = cs_strlen(value);
 		if(len != 192)
 		{
 			rdr->exp60_length = 0;
@@ -524,7 +524,7 @@ static void nuid_fn(const char *token, char *value, void *setting, FILE *f)
 	struct s_reader *rdr = setting;
 	if(value)
 	{
-		int32_t len = strlen(value);
+		int32_t len = cs_strlen(value);
 		if(len != 8)
 		{
 			rdr->nuid_length = 0;
@@ -560,7 +560,7 @@ static void cwekey_fn(const char *token, char *value, void *setting, FILE *f)
 	struct s_reader *rdr = setting;
 	if(value)
 	{
-		int32_t len = strlen(value);
+		int32_t len = cs_strlen(value);
 		if(len != 32)
 		{
 			rdr->cwekey_length = 0;
@@ -614,7 +614,7 @@ static void ins7E_fn(const char *token, char *value, void *setting, long var_siz
 	var_size -= 1; // var_size contains sizeof(var) which is [X + 1]
 	if(value)
 	{
-		int32_t len = strlen(value);
+		int32_t len = cs_strlen(value);
 		if(len != var_size * 2 || key_atob_l(value, var, len))
 		{
 			if(len > 0)
@@ -641,7 +641,7 @@ static void des_and_3des_key_fn(const char *token, char *value, void *setting, F
 	uint8_t *var = setting;
 	if(value)
 	{
-		int32_t len = strlen(value);
+		int32_t len = cs_strlen(value);
 		if(((len != 16) && (len != 32)) || (key_atob_l(value, var, len)))
 		{
 			if(len > 0)
@@ -669,7 +669,7 @@ static void atr_fn(const char *token, char *value, void *setting, FILE *f)
 	if(value)
 	{
 		memset(rdr->atr, 0, sizeof(rdr->atr));
-		rdr->atrlen = strlen(value);
+		rdr->atrlen = cs_strlen(value);
 		if(rdr->atrlen)
 		{
 			if(rdr->atrlen > (int32_t)sizeof(rdr->atr) * 2)
@@ -721,7 +721,7 @@ void ftab_fn(const char *token, char *value, void *setting, long ftab_type, FILE
 	FTAB *ftab = setting;
 	if(value)
 	{
-		if(strlen(value))
+		if(cs_strlen(value))
 			chk_ftab(value, ftab);
 		else
 			ftab_clear(ftab);
@@ -742,7 +742,7 @@ void ftab_fn(const char *token, char *value, void *setting, long ftab_type, FILE
 			{ rdr->changes_since_shareupdate = 1; }
 	}
 	value = mk_t_ftab(ftab);
-	if(strlen(value) > 0 || cfg.http_full_cfg)
+	if(cs_strlen(value) > 0 || cfg.http_full_cfg)
 		{ fprintf_conf(f, token, "%s\n", value); }
 	free_mk_t(value);
 }
@@ -756,7 +756,7 @@ static void aeskeys_fn(const char *token, char *value, void *setting, FILE *f)
 		return;
 	}
 	value = mk_t_aeskeys(rdr);
-	if(strlen(value) > 0 || cfg.http_full_cfg)
+	if(cs_strlen(value) > 0 || cfg.http_full_cfg)
 		{ fprintf_conf(f, token, "%s\n", value); }
 	free_mk_t(value);
 }
@@ -770,7 +770,7 @@ static void emmcache_fn(const char *token, char *value, void *setting, FILE *f)
 		rdr->rewritemm = 0;
 		rdr->logemm    = 0;
 		rdr->deviceemm = 0;
-		if(strlen(value))
+		if(cs_strlen(value))
 		{
 			int i;
 			char *ptr, *saveptr1 = NULL;
@@ -815,7 +815,7 @@ static void blockemm_bylen_fn(const char *token, char *value, void *setting, FIL
 		struct s_emmlen_range *blocklen;
 		uint32_t num;
 
-		if(!strlen(value))
+		if(!cs_strlen(value))
 		{
 			ll_destroy_data(&rdr->blockemmbylen);
 			return;
@@ -847,7 +847,7 @@ static void blockemm_bylen_fn(const char *token, char *value, void *setting, FIL
 		return;
 	}
 	value = mk_t_emmbylen(rdr);
-	if(strlen(value) > 0 || cfg.http_full_cfg)
+	if(cs_strlen(value) > 0 || cfg.http_full_cfg)
 		{ fprintf_conf(f, token, "%s\n", value); }
 	free_mk_t(value);
 }
@@ -858,7 +858,7 @@ static void nano_fn(const char *token, char *value, void *setting, FILE *f)
 	if(value)
 	{
 		*nano = 0;
-		if(strlen(value) > 0)
+		if(cs_strlen(value) > 0)
 		{
 			if(streq(value, "all"))
 			{
@@ -879,7 +879,7 @@ static void nano_fn(const char *token, char *value, void *setting, FILE *f)
 		return;
 	}
 	value = mk_t_nano(*nano);
-	if(strlen(value) > 0 || cfg.http_full_cfg)
+	if(cs_strlen(value) > 0 || cfg.http_full_cfg)
 		{ fprintf_conf(f, token, "%s\n", value); }
 	free_mk_t(value);
 }
@@ -890,7 +890,7 @@ static void auprovid_fn(const char *token, char *value, void *setting, FILE *f)
 	if(value)
 	{
 		rdr->auprovid = 0;
-		if(strlen(value))
+		if(cs_strlen(value))
 			{ rdr->auprovid = a2i(value, 3); }
 		return;
 	}
@@ -906,7 +906,7 @@ static void ratelimitecm_fn(const char *token, char *value, void *setting, FILE 
 	if(value)
 	{
 		rdr->ratelimitecm = 0;
-		if(strlen(value))
+		if(cs_strlen(value))
 		{
 			int i;
 			rdr->ratelimitecm = atoi(value);
@@ -927,7 +927,7 @@ static void ecmunique_fn(const char *token, char *value, void *setting, FILE *f)
 	struct s_reader *rdr = setting;
 	if(value)
 	{
-		if(strlen(value) == 0)
+		if(cs_strlen(value) == 0)
 		{
 			rdr->ecmunique = 0; // default
 		}
@@ -950,7 +950,7 @@ static void ratelimittime_fn(const char *token, char *value, void *setting, FILE
 	struct s_reader *rdr = setting;
 	if(value)
 	{
-		if(strlen(value) == 0)
+		if(cs_strlen(value) == 0)
 		{
 			if(rdr->ratelimitecm > 0)
 			{
@@ -980,7 +980,7 @@ static void srvidholdtime_fn(const char *token, char *value, void *setting, FILE
 	struct s_reader *rdr = setting;
 	if(value)
 	{
-		if(strlen(value) == 0)
+		if(cs_strlen(value) == 0)
 		{
 			if(rdr->ratelimitecm > 0)
 			{
@@ -1008,7 +1008,7 @@ static void cooldown_fn(const char *token, char *value, void *setting, FILE *f)
 	struct s_reader *rdr = setting;
 	if(value)
 	{
-		if(strlen(value) == 0)
+		if(cs_strlen(value) == 0)
 		{
 			rdr->cooldown[0] = 0;
 			rdr->cooldown[1] = 0;
@@ -1042,7 +1042,7 @@ static void cooldowndelay_fn(const char *UNUSED(token), char *value, void *setti
 	struct s_reader *rdr = setting;
 	if(value)
 	{
-		rdr->cooldown[0] = strlen(value) ? atoi(value) : 0;
+		rdr->cooldown[0] = cs_strlen(value) ? atoi(value) : 0;
 	}
 	// This option is *not* written in the config file.
 	// It is only set by WebIf as convenience
@@ -1053,7 +1053,7 @@ static void cooldowntime_fn(const char *UNUSED(token), char *value, void *settin
 	struct s_reader *rdr = setting;
 	if(value)
 	{
-		if(strlen(value) == 0)
+		if(cs_strlen(value) == 0)
 		{
 			rdr->cooldown[0] = 0; // no cooling down time means no cooling set
 			rdr->cooldown[1] = 0;
@@ -1417,7 +1417,7 @@ int32_t init_readerdb(void)
 	while(fgets(token, MAXLINESIZE, fp))
 	{
 		int32_t l;
-		if((l = strlen(trim(token))) < 3)
+		if((l = cs_strlen(trim(token))) < 3)
 			{ continue; }
 		if((token[0] == '[') && (token[l - 1] == ']'))
 		{

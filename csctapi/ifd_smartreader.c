@@ -1274,9 +1274,9 @@ static int32_t SR_Init(struct s_reader *reader)
 	}
 
 	int32_t ret;
-	char device[strlen(reader->device) + 1];
+	char device[cs_strlen(reader->device) + 1];
 	char *rdrtype, *busname, *dev, *search = ":", *saveptr1 = NULL;
-	memcpy(device, reader->device, strlen(reader->device) + 1);
+	memcpy(device, reader->device, cs_strlen(reader->device) + 1);
 	// split the device name from the reader conf into devname and busname. rdrtype is optional
 	rdrtype = strtok_r(device, ";", &saveptr1);
 	busname = strtok_r(NULL, ":", &saveptr1);
@@ -1284,7 +1284,7 @@ static int32_t SR_Init(struct s_reader *reader)
 	if(!busname)
 	{
 		rdrtype = "SR";
-		memcpy(device, reader->device, strlen(reader->device) + 1);
+		memcpy(device, reader->device, cs_strlen(reader->device) + 1);
 		busname = strtok_r(device, ":", &saveptr1);
 		dev = strtok_r(NULL, search, &saveptr1);
 	}

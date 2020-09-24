@@ -322,7 +322,7 @@ static int32_t irdeto_card_init_provider(struct s_reader *reader)
 				reader->prid[i][3] = 0xFF;
 			}
 
-			snprintf((char *) buf + strlen((char *)buf), sizeof(buf) - strlen((char *)buf), ",%06x", b2i(3, &reader->prid[i][1]));
+			snprintf((char *) buf + cs_strlen((char *)buf), sizeof(buf) - cs_strlen((char *)buf), ",%06x", b2i(3, &reader->prid[i][1]));
 		}
 		else
 		{

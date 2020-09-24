@@ -1034,15 +1034,15 @@ static struct s_cacheex_matcher *cacheex_matcher_read_int(void)
 	while(fgets(token, sizeof(token), fp))
 	{
 		line++;
-		if(strlen(token) <= 1) { continue; }
+		if(cs_strlen(token) <= 1) { continue; }
 		if(token[0] == '#' || token[0] == '/') { continue; }
-		if(strlen(token) > 100) { continue; }
+		if(cs_strlen(token) > 100) { continue; }
 
-		for(i = 0; i < (int)strlen(token); i++)
+		for(i = 0; i < (int)cs_strlen(token); i++)
 		{
 			if((token[i] == ':' || token[i] == ' ') && token[i + 1] == ':')
 			{
-				memmove(token + i + 2, token + i + 1, strlen(token) - i + 1);
+				memmove(token + i + 2, token + i + 1, cs_strlen(token) - i + 1);
 				token[i + 1] = '0';
 			}
 			if(token[i] == '#' || token[i] == '/')

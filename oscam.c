@@ -815,7 +815,7 @@ static char *read_line_from_file(char *fname, char *buf, int bufsz)
 	{
 		if (strstr(buf,"\n")) // we need only the first line
 		{
-			buf[strlen(buf)-1] = '\0';
+			buf[cs_strlen(buf)-1] = '\0';
 			break;
 		}
 	}
@@ -959,7 +959,7 @@ bool boxname_is(const char *boxname)
 static void init_check(void)
 {
 	char *ptr = __DATE__;
-	int32_t month, year = atoi(ptr + strlen(ptr) - 4), day = atoi(ptr + 4);
+	int32_t month, year = atoi(ptr + cs_strlen(ptr) - 4), day = atoi(ptr + 4);
 	if(day > 0 && day < 32 && year > 2010 && year < 9999)
 	{
 		struct tm timeinfo;
@@ -1678,7 +1678,7 @@ static void find_conf_dir(void)
 	char conf_file[128+16];
 	int32_t i;
 
-	if(cs_confdir[strlen(cs_confdir) - 1] != '/')
+	if(cs_confdir[cs_strlen(cs_confdir) - 1] != '/')
 		{ cs_strncat(cs_confdir, "/", sizeof(cs_confdir)); }
 
 	if(snprintf(conf_file, sizeof(conf_file), "%soscam.conf", cs_confdir) < 0)
@@ -1788,7 +1788,7 @@ int32_t main(int32_t argc, char *argv[])
 	memset(&cfg, 0, sizeof(struct s_config));
 	cfg.max_pending = max_pending;
 
-	if(cs_confdir[strlen(cs_confdir) - 1] != '/') { cs_strncat(cs_confdir, "/", sizeof(cs_confdir)); }
+	if(cs_confdir[cs_strlen(cs_confdir) - 1] != '/') { cs_strncat(cs_confdir, "/", sizeof(cs_confdir)); }
 	init_signal_pre(); // because log could cause SIGPIPE errors, init a signal handler first
 	init_first_client();
 	cs_lock_create(__func__, &system_lock, "system_lock", 5000);

@@ -228,7 +228,7 @@ char *get_picon_servicename_or_null(struct s_client *cl, uint16_t srvid, uint32_
 
 int32_t picon_servicename_remve_hd(char *buf, uint32_t UNUSED(buflen))
 {
-	int32_t l = strlen(buf);
+	int32_t l = cs_strlen(buf);
 
 	if(l < 3)
 	{

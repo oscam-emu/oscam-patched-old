@@ -5,6 +5,7 @@
 #include "oscam-log.h"
 #include "oscam-log-reader.h"
 #include "oscam-reader.h"
+#include "oscam-string.h"
 
 extern int log_remove_sensitive;
 
@@ -44,7 +45,7 @@ static const char *reader_desc_txt(struct s_reader *reader)
 static char *format_sensitive(char *result, int remove_sensitive)
 {
 	// Filter sensitive information
-	int i, n = strlen(result), p = 0;
+	int i, n = cs_strlen(result), p = 0;
 	if(remove_sensitive)
 	{
 		int in_sens = 0;

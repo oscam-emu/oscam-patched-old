@@ -615,27 +615,27 @@ static bool cw_cache_check(ECM_REQUEST *er)
 					{
 						uint8_t remotenodeid[8];
 						cacheex_get_srcnodeid(er, remotenodeid);
-						cs_log_dbg(D_CW_CACHE,"[dupe CW] cache: %04X:%06X:%04X:%s | in: %04X:%06X:%04X:%s | diff(now): %"PRIi64" ms > %"PRIu16" - %s - hop %i%s, src-nodeid %" PRIu64 "X", cw_cache->caid, cw_cache->prid, cw_cache->srvid, cw1, er->caid, er->prid, er->srvid, cw2, gone_diff, cw_cache_setting.timediff_old_cw, (er->selected_reader && strlen(er->selected_reader->label)) ? er->selected_reader->label : username(er->cacheex_src), ll_count(er->csp_lastnodes), (er->localgenerated) ? " (lg)" : "", er->csp_lastnodes ? cacheex_node_id(remotenodeid): 0);
+						cs_log_dbg(D_CW_CACHE,"[dupe CW] cache: %04X:%06X:%04X:%s | in: %04X:%06X:%04X:%s | diff(now): %"PRIi64" ms > %"PRIu16" - %s - hop %i%s, src-nodeid %" PRIu64 "X", cw_cache->caid, cw_cache->prid, cw_cache->srvid, cw1, er->caid, er->prid, er->srvid, cw2, gone_diff, cw_cache_setting.timediff_old_cw, (er->selected_reader && cs_strlen(er->selected_reader->label)) ? er->selected_reader->label : username(er->cacheex_src), ll_count(er->csp_lastnodes), (er->localgenerated) ? " (lg)" : "", er->csp_lastnodes ? cacheex_node_id(remotenodeid): 0);
 					}
 
 					if(cw_cache->srvid == er->srvid && cw_cache->caid == er->caid) // same cw for same caid&srvid
 					{
 						cs_ftime(&cw_cache->upd_time);
-						cs_log_dbg(D_CW_CACHE,"[late CW] cache: %04X:%06X:%04X:%s | in: %04X:%06X:%04X:%s | diff(now): %"PRIi64" ms > %"PRIu16" - %s - hop %i%s", cw_cache->caid, cw_cache->prid, cw_cache->srvid, cw1, er->caid, er->prid, er->srvid, cw2, gone_diff, cw_cache_setting.timediff_old_cw, (er->selected_reader && strlen(er->selected_reader->label)) ? er->selected_reader->label : username(er->cacheex_src), ll_count(er->csp_lastnodes), (er->localgenerated) ? " (lg)" : "");
+						cs_log_dbg(D_CW_CACHE,"[late CW] cache: %04X:%06X:%04X:%s | in: %04X:%06X:%04X:%s | diff(now): %"PRIi64" ms > %"PRIu16" - %s - hop %i%s", cw_cache->caid, cw_cache->prid, cw_cache->srvid, cw1, er->caid, er->prid, er->srvid, cw2, gone_diff, cw_cache_setting.timediff_old_cw, (er->selected_reader && cs_strlen(er->selected_reader->label)) ? er->selected_reader->label : username(er->cacheex_src), ll_count(er->csp_lastnodes), (er->localgenerated) ? " (lg)" : "");
 						drop_cw=1;
 
 					}
 					else if(cw_cache->srvid != er->srvid) // same cw for different srvid & late
 					{
 						cs_ftime(&cw_cache->upd_time);
-						cs_log_dbg(D_CW_CACHE,"[dupe&late CW] cache: %04X:%06X:%04X:%s | in: %04X:%06X:%04X:%s| diff(now): %"PRIi64" ms - %s - hop %i%s", cw_cache->caid, cw_cache->prid, cw_cache->srvid, cw1, er->caid, er->prid, er->srvid, cw2, gone_diff, (er->selected_reader && strlen(er->selected_reader->label)) ? er->selected_reader->label : username(er->cacheex_src), ll_count(er->csp_lastnodes), (er->localgenerated) ? " (lg)" : "");
+						cs_log_dbg(D_CW_CACHE,"[dupe&late CW] cache: %04X:%06X:%04X:%s | in: %04X:%06X:%04X:%s| diff(now): %"PRIi64" ms - %s - hop %i%s", cw_cache->caid, cw_cache->prid, cw_cache->srvid, cw1, er->caid, er->prid, er->srvid, cw2, gone_diff, (er->selected_reader && cs_strlen(er->selected_reader->label)) ? er->selected_reader->label : username(er->cacheex_src), ll_count(er->csp_lastnodes), (er->localgenerated) ? " (lg)" : "");
 						drop_cw = 1;
 					}
 					else if(gone_diff > 15000) // same cw later as 15 secs
 					{
 						uint8_t remotenodeid[8];
 						cacheex_get_srcnodeid(er, remotenodeid);
-						cs_log_dbg(D_CW_CACHE,"[late-15sec+ CW] cache: %04X:%06X:%04X:%s | in: %04X:%06X:%04X:%s | diff(now): %"PRIi64" ms > %"PRIu16" - %s - hop %i%s, src-nodeid %" PRIu64 "X", cw_cache->caid, cw_cache->prid, cw_cache->srvid, cw1, er->caid, er->prid, er->srvid, cw2, gone_diff, cw_cache_setting.timediff_old_cw, (er->selected_reader && strlen(er->selected_reader->label)) ? er->selected_reader->label : username(er->cacheex_src), ll_count(er->csp_lastnodes), (er->localgenerated) ? " (lg)" : "", er->csp_lastnodes ? cacheex_node_id(remotenodeid): 0);
+						cs_log_dbg(D_CW_CACHE,"[late-15sec+ CW] cache: %04X:%06X:%04X:%s | in: %04X:%06X:%04X:%s | diff(now): %"PRIi64" ms > %"PRIu16" - %s - hop %i%s, src-nodeid %" PRIu64 "X", cw_cache->caid, cw_cache->prid, cw_cache->srvid, cw1, er->caid, er->prid, er->srvid, cw2, gone_diff, cw_cache_setting.timediff_old_cw, (er->selected_reader && cs_strlen(er->selected_reader->label)) ? er->selected_reader->label : username(er->cacheex_src), ll_count(er->csp_lastnodes), (er->localgenerated) ? " (lg)" : "", er->csp_lastnodes ? cacheex_node_id(remotenodeid): 0);
 						drop_cw = 1;
 					}
 

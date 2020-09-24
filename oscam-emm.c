@@ -275,7 +275,7 @@ static char *get_emmlog_filename(char *dest, size_t destlen, const char *basefil
 	else
 	{
 		const char *slash = "/";
-		if(cfg.emmlogdir[strlen(cfg.emmlogdir) - 1] == '/') { slash = ""; }
+		if(cfg.emmlogdir[cs_strlen(cfg.emmlogdir) - 1] == '/') { slash = ""; }
 		snprintf(dest, destlen, "%s%s%s", cfg.emmlogdir, slash, filename);
 	}
 	return dest;
