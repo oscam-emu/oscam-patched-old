@@ -28,7 +28,7 @@ static int32_t Cool_Init(struct s_reader *reader)
 	char *device = reader->device;
 	int32_t reader_nb = 0;
 	// this is to stay compatible with older config.
-	if(strlen(device))
+	if(cs_strlen(device))
 		{ reader_nb = atoi((const char *)device); }
 	if(reader_nb > 1)
 	{

@@ -107,18 +107,18 @@ void parse_aes_entry(AES_ENTRY **list, char *label, char *value)
 	tmp = strtok_r(value, "@", &save);
 
 	//if we got error caid
-	len = strlen(tmp);
+	len = cs_strlen(tmp);
 	if(len == 0 || len > 4) { return; }
 
 	//if there is not value after @
-	len = strlen(save);
+	len = cs_strlen(save);
 	if(len == 0) { return; }
 
 	caid = a2i(tmp, 2);
 	tmp = strtok_r(NULL, ":", &save);
 
 	//if we got error ident
-	len = strlen(tmp);
+	len = cs_strlen(tmp);
 	if(len == 0 || len > 6) { return; }
 
 	ident = a2i(tmp, 3);
@@ -129,7 +129,7 @@ void parse_aes_entry(AES_ENTRY **list, char *label, char *value)
 	while((tmp = strtok_r(NULL, ",", &save)))
 	{
 		dummy = 0;
-		len = strlen(tmp);
+		len = cs_strlen(tmp);
 		if(len != 32)
 		{
 			dummy = a2i(tmp, 1);

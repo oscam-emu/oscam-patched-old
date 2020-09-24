@@ -240,7 +240,7 @@ static void ac_load_config(void)
 		uint32_t  provid;
 		char *ptr, *ptr1;
 
-		if(strlen(token) < 4) { continue; }
+		if(cs_strlen(token) < 4) { continue; }
 
 		caid = sid = chid = dwtime = 0;
 		provid = 0;

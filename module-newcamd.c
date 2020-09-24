@@ -520,10 +520,10 @@ static int32_t connect_newcamd_server(void)
 
 	cs_strncpy((char *)buf + idx, cl->reader->r_usr, sizeof(buf) - idx);
 	__md5_crypt(cl->reader->r_pwd, "$1$abcdefgh$", (char *)passwdcrypt);
-	idx += strlen(cl->reader->r_usr) + 1;
+	idx += cs_strlen(cl->reader->r_usr) + 1;
 	cs_strncpy((char *)buf + idx, (const char *)passwdcrypt, sizeof(buf) - idx);
 
-	network_message_send(handle, 0, buf, idx + strlen((char *)passwdcrypt) + 1, key,
+	network_message_send(handle, 0, buf, idx + cs_strlen((char *)passwdcrypt) + 1, key,
 						COMMTYPE_CLIENT, NCD_CLIENT_ID, NULL);
 
 	// 3.1 Get login answer
@@ -549,7 +549,7 @@ static int32_t connect_newcamd_server(void)
 	cl->crypted = 1;
 
 	// 4. Send MSG_CARD_DATE_REQ
-	nc_des_login_key_get(cl->reader->ncd_key, passwdcrypt, strlen((char *)passwdcrypt), key);
+	nc_des_login_key_get(cl->reader->ncd_key, passwdcrypt, cs_strlen((char *)passwdcrypt), key);
 	network_cmd_no_data_send(handle, &cl->ncd_msgid, MSG_CARD_DATA_REQ, key, COMMTYPE_CLIENT);
 
 	bytes_received = network_message_receive(handle, &cl->ncd_msgid, buf, key, COMMTYPE_CLIENT);
@@ -945,7 +945,7 @@ static int8_t newcamd_auth_client(IN_ADDR_T ip, uint8_t *deskey)
 		}
 
 		usr = mbuf + 5;
-		pwd = usr + strlen((char *)usr) + 1;
+		pwd = usr + cs_strlen((char *)usr) + 1;
 	}
 	else
 	{
@@ -1098,7 +1098,7 @@ static int8_t newcamd_auth_client(IN_ADDR_T ip, uint8_t *deskey)
 		FILTER usr_filter;
 		FILTER *pufilt = &usr_filter;
 
-		nc_des_login_key_get(deskey, passwdcrypt, strlen((char *)passwdcrypt), key);
+		nc_des_login_key_get(deskey, passwdcrypt, cs_strlen((char *)passwdcrypt), key);
 		memcpy(cl->ncd_skey, key, 16);
 
 		i = process_input(mbuf, sizeof(mbuf), cfg.cmaxidle);

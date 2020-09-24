@@ -41,7 +41,7 @@ static int search_boxkey(struct s_reader *rdr, uint16_t caid, char *key)
 			*c_key++ = '\0';
 			if(word_atob(trim(c_caid)) != caid)
 				{ continue; }
-			if((i = (strlen(trim(c_key)) >> 1)) > 256)
+			if((i = (cs_strlen(trim(c_key)) >> 1)) > 256)
 				{ continue; }
 			if(cs_atob((uint8_t *)key, c_key, i) < 0)
 			{
@@ -258,7 +258,7 @@ static int32_t cryptoworks_card_init(struct s_reader *reader, ATR *newatr)
 		if(cta_res[0] != 0xdf) { break; }
 		if(((cta_res[4] & 0x1f) == 0x1f) && (reader->nprov < CS_MAXPROV))
 		{
-			snprintf(ptxt + strlen(ptxt), sizeof(ptxt) - strlen(ptxt), ",%02X", cta_res[5]);
+			snprintf(ptxt + cs_strlen(ptxt), sizeof(ptxt) - cs_strlen(ptxt), ",%02X", cta_res[5]);
 			reader->prid[reader->nprov++][3] = cta_res[5];
 		}
 		insB8[2] = insB8[3] = 0xff; // next

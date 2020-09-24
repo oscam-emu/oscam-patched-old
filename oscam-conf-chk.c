@@ -357,10 +357,10 @@ void chk_cltab(char *classasc, CLASSTAB *clstab)
 	memset(&newclstab, 0, sizeof(newclstab));
 	newclstab.an = newclstab.bn = 0;
 
-	if(!cs_malloc(&classasc_org, sizeof(char)*strlen(classasc)+1))
+	if(!cs_malloc(&classasc_org, sizeof(char)*cs_strlen(classasc)+1))
 		{ return; }
 
-	cs_strncpy(classasc_org, classasc, sizeof(char)*strlen(classasc)+1);
+	cs_strncpy(classasc_org, classasc, sizeof(char)*cs_strlen(classasc)+1);
 
 	for(ptr1 = strtok_r(classasc, ",", &saveptr1); ptr1; ptr1 = strtok_r(NULL, ",", &saveptr1))
 	{
@@ -437,7 +437,7 @@ void chk_port_tab(char *portasc, PTAB *ptab)
 		nfilts++;
 	}
 
-	if(nfilts == 1 && strlen(portasc) < 6 && newptab->ports[0].s_port == 0)
+	if(nfilts == 1 && cs_strlen(portasc) < 6 && newptab->ports[0].s_port == 0)
 	{
 		newptab->ports[0].s_port = atoi(portasc);
 		newptab->nports = 1;
@@ -580,7 +580,7 @@ void chk_ecm_hdr_whitelist(char *value, ECM_HDR_WHITELIST *ecm_hdr_whitelist)
 		for(hdr_ptr = strtok_r(headers, ",", &savehdr_ptr); hdr_ptr; hdr_ptr = strtok_r(NULL, ",", &savehdr_ptr))
 		{
 			hdr_ptr = trim(hdr_ptr);
-			d.len = strlen(hdr_ptr);
+			d.len = cs_strlen(hdr_ptr);
 			if (d.len / 2 > sizeof(d.header))
 				d.len = sizeof(d.header) * 2;
 			if (d.len > 1)

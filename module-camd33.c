@@ -121,7 +121,7 @@ static void camd33_auth_client(uint8_t *camdbug)
 		if((i > 0) && (!mbuf[0]))
 		{
 			usr = mbuf + 1;
-			pwd = usr + strlen((char *)usr) + 2;
+			pwd = usr + cs_strlen((char *)usr) + 2;
 		}
 		else
 		{

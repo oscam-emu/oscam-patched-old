@@ -77,7 +77,7 @@ static void write_gsms_to_osd_file(struct s_client *cli, uint8_t *gsms)
 		uint8_t i;
 
 		// allow only alphanumerical characters in osd gsms due to safety reasons
-		for(i = 0; i < strlen((char *)gsms); i++)
+		for(i = 0; i < cs_strlen((char *)gsms); i++)
 		{
 			if(!isalnum(gsms[i]) && gsms[i] != ' ')
 			{
@@ -236,7 +236,7 @@ int gbox_direct_send_gsms(uint16_t boxid, uint8_t num, char *gsms)
 		return 0;
 	}
 
-	gsms_len = strlen(gsms);
+	gsms_len = cs_strlen(gsms);
 	if(gsms_len < 6)
 	{
 		cs_log("GBOX: message to send to peer is too short 6 chars expected and %d received text[%s]", gsms_len, gsms);
@@ -373,7 +373,7 @@ void gbox_init_send_gsms(void)
 		return;
 	}
 
-	int8_t gsms_len = strlen(text);
+	int8_t gsms_len = cs_strlen(text);
 	cs_log_dbg(D_READER,"got from %s: box_ID = %04X num = %d gsms_length = %d txt = %s", fname, boxid, num, gsms_len, text);
 
 	switch(num)

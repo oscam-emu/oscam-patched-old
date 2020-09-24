@@ -983,7 +983,7 @@ static int32_t viaccess_card_init(struct s_reader *reader, ATR *newatr)
 		reader->prid[i][0] = 0;
 		memcpy(&reader->prid[i][1], cta_res, 3);
 		memcpy(&csystem_data->availkeys[i][0], cta_res + 10, 16);
-		snprintf((char *)buf + strlen((char *)buf), sizeof(buf) - strlen((char *)buf), ",%06X", b2i(3, &reader->prid[i][1]));
+		snprintf((char *)buf + cs_strlen((char *)buf), sizeof(buf) - cs_strlen((char *)buf), ",%06X", b2i(3, &reader->prid[i][1]));
 		// rdr_log(reader, "[viaccess-reader] buf: %s", buf);
 
 		insac[2] = 0xa5;

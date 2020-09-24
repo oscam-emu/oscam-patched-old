@@ -363,7 +363,7 @@ static char *_get_header_substr(uint8_t *buf, const char *start, const char *end
 		return NULL;
 	}
 
-	data += strlen(start);
+	data += cs_strlen(start);
 	int len = strstr(data, end) - data;
 	if(len <= 0)
 	{
@@ -381,7 +381,7 @@ static int _get_int_header(uint8_t *buf, const char *start)
 {
 	char *data = strstr((char *)buf, start);
 	if(!data) { return -1; }
-	data += strlen(start);
+	data += cs_strlen(start);
 	return atoi(data);
 }
 
@@ -610,7 +610,7 @@ static char *_ghttp_basic_auth(struct s_client *client)
 	int32_t ret;
 	s_ghttp *context = (s_ghttp *)client->ghttp;
 
-	if(!context->session_id && strlen(client->reader->r_usr) > 0)
+	if(!context->session_id && cs_strlen(client->reader->r_usr) > 0)
 	{
 		cs_log_dbg(D_CLIENT, "%s: username specified and no existing session, adding basic auth", client->reader->label);
 		ret = snprintf((char *)auth, sizeof(auth), "%s:%s", client->reader->r_usr, client->reader->r_pwd);

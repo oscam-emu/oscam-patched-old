@@ -55,7 +55,7 @@ char *get_tmp_dir_filename(char *dest, size_t destlen, const char *filename)
 {
 	char *tmp_dir = get_tmp_dir();
 	const char *slash = "/";
-	if(tmp_dir[strlen(tmp_dir) - 1] == '/')
+	if(tmp_dir[cs_strlen(tmp_dir) - 1] == '/')
 	{
 		slash = "";
 	}
@@ -191,7 +191,7 @@ char *get_gbox_filename(char *dest, size_t destlen, const char *filename)
 
 	if(cfg.gbox_tmp_dir != NULL)
 	{
-		if(cfg.gbox_tmp_dir[strlen(cfg.gbox_tmp_dir) - 1] == '/')
+		if(cfg.gbox_tmp_dir[cs_strlen(cfg.gbox_tmp_dir) - 1] == '/')
 		{
 			slash = "";
 		}
@@ -199,7 +199,7 @@ char *get_gbox_filename(char *dest, size_t destlen, const char *filename)
 	}
 	else
 	{
-		if(tmp_dir[strlen(tmp_dir) - 1] == '/') { slash = ""; }
+		if(tmp_dir[cs_strlen(tmp_dir) - 1] == '/') { slash = ""; }
 		snprintf(dest, destlen, "%s%s%s", tmp_dir, slash, filename);
 	}
 	return dest;

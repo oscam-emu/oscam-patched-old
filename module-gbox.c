@@ -40,7 +40,7 @@ char *get_gbox_tmp_fname(char *fext)
 	}
 	else
 	{
-		if(cfg.gbox_tmp_dir[strlen(cfg.gbox_tmp_dir) - 1] == '/') { slash = ""; }
+		if(cfg.gbox_tmp_dir[cs_strlen(cfg.gbox_tmp_dir) - 1] == '/') { slash = ""; }
 		snprintf(gbox_tmpfile_buf, sizeof(gbox_tmpfile_buf), "%s%s%s", cfg.gbox_tmp_dir, slash, fext);
 	}
 	return gbox_tmpfile_buf;
@@ -352,7 +352,7 @@ void gbox_send(struct s_client *cli, uint8_t *buf, int32_t l)
 void gbox_send_hello_packet(struct s_client *cli, int8_t number, uint8_t *outbuf, uint8_t *ptr, int32_t nbcards, uint8_t hello_stat)
 {
 	struct gbox_peer *peer = cli->gbox;
-	int32_t hostname_len = strlen(cfg.gbox_hostname);
+	int32_t hostname_len = cs_strlen(cfg.gbox_hostname);
 	int32_t len;
 
 	gbox_message_header(outbuf, MSG_HELLO, peer->gbox.password, local_gbox.password);
@@ -1979,7 +1979,7 @@ static int8_t init_local_gbox(void)
 		return -1;
 	}
 
-	if(!cfg.gbox_hostname || strlen(cfg.gbox_hostname) > 128)
+	if(!cfg.gbox_hostname || cs_strlen(cfg.gbox_hostname) > 128)
 	{
 		cs_log("error, no/invalid hostname '%s' configured in oscam.conf!",
 			cfg.gbox_hostname ? cfg.gbox_hostname : "");
@@ -2146,7 +2146,7 @@ static void gbox_send_HERE(struct s_client *cli)
 {
 	struct gbox_peer *peer = cli->gbox;
 	uint8_t outbuf[32];
-	int32_t hostname_len = strlen(cfg.gbox_hostname);
+	int32_t hostname_len = cs_strlen(cfg.gbox_hostname);
 	gbox_message_header(outbuf, MSG_HERE, peer->gbox.password, local_gbox.password);
 	outbuf[0xA] = cfg.gbox_my_vers;
 	outbuf[0xB] = gbox_get_my_cpu_api();
@@ -2235,7 +2235,7 @@ static int8_t gbox_send_peer_good_night(struct s_client *proxy)
 
 	if (cfg.gbox_hostname)
 	{
-		hostname_len = strlen(cfg.gbox_hostname);
+		hostname_len = cs_strlen(cfg.gbox_hostname);
 	}
 
 	int32_t len = hostname_len + 22;

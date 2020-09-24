@@ -67,7 +67,7 @@ static void scam_generate_deskey(char *keyString, uint8_t *desKey)
 	memset(iv, 0, 8);
 	memset(desKey, 0, 8);
 
-	passLen = keyString == NULL ? 0 : strlen(keyString);
+	passLen = keyString == NULL ? 0 : cs_strlen(keyString);
 	if(passLen > 1024) {
 		passLen = 1024;
 	}
@@ -539,7 +539,7 @@ static void scam_client_send_hello(struct s_client *cl)
 	if(scam == NULL) { return; }
 	if(!rdr) { return; }
 
-	usernameLen = strlen(rdr->r_usr);
+	usernameLen = cs_strlen(rdr->r_usr);
 	if(usernameLen > 63) // because rdr->r_usr is max. 63+1 chars
 	{
 		usernameLen = 63;
@@ -926,7 +926,7 @@ static void scam_server_send_serverversion(struct s_client *cl)
 	uint8_t mbuf[64];
 	uint32_t i = 0;
 	char *version = "scam/3.60 oscam";
-	uint8_t vlen = strlen(version);
+	uint8_t vlen = cs_strlen(version);
 
 	mbuf[i++] = 0x45; // server version data type
 	mbuf[i++] = 2 + vlen + 4; // will never exceed 127 bytes

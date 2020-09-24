@@ -56,7 +56,7 @@ static void switch_log(char *file, FILE **f, int32_t (*pfinit)(void))
 		if(*f != NULL && ftell(*f) >= cfg.max_log_size * 1024)
 		{
 			int32_t rc;
-			char prev_log[strlen(file) + 6];
+			char prev_log[cs_strlen(file) + 6];
 			snprintf(prev_log, sizeof(prev_log), "%s-prev", file);
 			fprintf(*f, "switch log file\n");
 			fflush(*f);
@@ -379,7 +379,7 @@ static void write_to_log(char *txt, struct s_log *log, int8_t do_flush)
 			}
 
 			snprintf(tmp, sizeof(tmp), "%s %s oscam[%u]: %s", timebuf, hostname, getpid(), txt + log->header_info_offset);
-			sendto(syslog_socket, tmp, strlen(tmp), 0, (struct sockaddr*) &syslog_addr, sizeof(syslog_addr));
+			sendto(syslog_socket, tmp, cs_strlen(tmp), 0, (struct sockaddr*) &syslog_addr, sizeof(syslog_addr));
 		}
 	}
 
@@ -406,7 +406,7 @@ static void write_to_log(char *txt, struct s_log *log, int8_t do_flush)
 
 		if(cs_malloc(&hist, sizeof(struct s_log_history)))
 		{
-			int32_t target_len = strlen(log->cl_text) + strlen(txt+log->header_date_offset) + 1;
+			int32_t target_len = cs_strlen(log->cl_text) + cs_strlen(txt+log->header_date_offset) + 1;
 
 			if(cs_malloc(&hist->txt, sizeof(char) * (target_len + 1)))
 			{

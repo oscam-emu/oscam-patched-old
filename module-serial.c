@@ -1023,7 +1023,7 @@ static int32_t oscam_ser_check_ecm(ECM_REQUEST *er, uint8_t *buf, int32_t l)
 		case P_DSR95:
 			buf[l] = '\0'; // prepare for trim
 			trim((char *)buf + 13); // strip spc, nl, cr ...
-			er->ecmlen = strlen((char *)buf + 13) >> 1;
+			er->ecmlen = cs_strlen((char *)buf + 13) >> 1;
 			if(er->ecmlen < 0 || er->ecmlen > MAX_ECM_SIZE)
 				{ return (3); }
 			er->prid = cs_atoi((char *)buf + 3, 3, 0); // ignore errors
