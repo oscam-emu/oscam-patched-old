@@ -20,10 +20,12 @@
  */
 
 #include "../globals.h"
+#include "../oscam-string.h"
 
+#ifdef WITH_LIBCRYPTO
+#include <openssl/md5.h>
+#else
 #include "md5.h"
-
-#if !defined(WITH_SSL) && !defined(WITH_LIBCRYPTO)
 
 #ifdef __i386__
 #define byteReverse(a, b)
@@ -306,7 +308,7 @@ char *__md5_crypt(const char *pw, const char *salt, char *passwd)
 	sp = salt;
 
 	/* If it starts with the magic string, then skip that */
-	__md5__magic_len = strlen(__md5__magic);
+	__md5__magic_len = cs_strlen(__md5__magic);
 	if(!strncmp(sp, __md5__magic, __md5__magic_len))
 		{ sp += __md5__magic_len; }
 
@@ -320,7 +322,7 @@ char *__md5_crypt(const char *pw, const char *salt, char *passwd)
 	MD5_Init(&ctx);
 
 	/* The password first, since that is what is most unknown */
-	pw_len = strlen(pw);
+	pw_len = cs_strlen(pw);
 	MD5_Update(&ctx, (const unsigned char *)pw, pw_len);
 
 	/* Then our magic string */
@@ -380,7 +382,7 @@ char *__md5_crypt(const char *pw, const char *salt, char *passwd)
 		MD5_Final(final, &ctx1);
 	}
 
-	p = passwd + strlen(passwd);
+	p = passwd + cs_strlen(passwd);
 
 	final[16] = final[5];
 	for(i = 0 ; i < 5 ; i++)
