@@ -651,12 +651,8 @@ int32_t init_srvid(void)
 				if (tmp[0])
 				{
 					stringcache[pos][used[pos]] = tmp;
+					used[pos] += 1;
 				}
-				else
-				{
-					cs_log("FIXME! tmp!");
-				}
-				used[pos] += 1;
 			}
 		}
 
