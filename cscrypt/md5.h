@@ -2,7 +2,7 @@
 #define _CSCRYPT_MD5_H
 
 #if defined(WITH_SSL) || defined(WITH_LIBCRYPTO)
-#  include <openssl/md5.h>
+#include <openssl/md5.h>
 #else
 #define MD5_DIGEST_LENGTH 16
 
