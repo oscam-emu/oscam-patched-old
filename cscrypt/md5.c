@@ -22,10 +22,9 @@
 #include "../globals.h"
 #include "../oscam-string.h"
 
-#ifdef WITH_LIBCRYPTO
-#include <openssl/md5.h>
-#else
 #include "md5.h"
+
+#if !defined(WITH_SSL) && !defined(WITH_LIBCRYPTO)
 
 #ifdef __i386__
 #define byteReverse(a, b)

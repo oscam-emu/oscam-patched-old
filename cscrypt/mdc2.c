@@ -1,9 +1,7 @@
 #include "../globals.h"
-
-#ifdef WITH_LIBCRYPTO
-#include <openssl/mdc2.h>
-#else
 #include "mdc2.h"
+
+#if !defined(WITH_LIBCRYPTO) || defined(OPENSSL_NO_MDC2) || defined(OPENSSL_NO_DEPRECATED_3_0)
 
 #undef c2l
 #define c2l(c,l)        (l =((DES_LONG)(*((c)++)))    , \

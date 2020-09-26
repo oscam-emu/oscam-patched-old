@@ -56,6 +56,9 @@
  * [including the GNU Public Licence.]
  */
 
+#if defined(WITH_LIBCRYPTO) && !defined(OPENSSL_NO_MDC2) && !defined(OPENSSL_NO_DEPRECATED_3_0)
+#include <openssl/mdc2.h>
+#else
 #ifndef HEADER_MDC2_H
 #define HEADER_MDC2_H
 
@@ -89,4 +92,4 @@ unsigned char *MDC2(const unsigned char *d, size_t n, unsigned char *md);
 #endif
 
 #endif
-
+#endif
