@@ -39,13 +39,11 @@ static void smartreader_check_endpoint(libusb_device *usb_dev, libusb_device_han
 	int32_t j, k, l;
 	uint32_t m;
 	uint8_t tmpEndpointAddress;
-	int32_t nb_endpoint_ok;
+	int32_t nb_endpoint_ok = 0;
 	int32_t busid, devid;
 	unsigned char iserialbuffer[128], iproductbuffer[128];
 	char *productptr = (char *)iproductbuffer;
 	static const char *const typename_str[6] = {"SR", "Infinity", "SRv2", "TripleP1", "TripleP2", "TripleP3"};
-
-	nb_endpoint_ok = 0;
 
 	ret = libusb_get_device_descriptor(usb_dev, &usbdesc);
 	if(ret < 0)

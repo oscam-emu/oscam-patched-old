@@ -20,6 +20,7 @@
 #include "oscam-time.h"
 
 const int32_t CWS_NETMSGSIZE = 1024; // csp 0.8.9 (default: 400). This is CWS_NETMSGSIZE. The old default was 240
+int32_t portion_sid_num = 0;
 
 #define NCD_CLIENT_ID 0x8888
 #define CWS_FIRSTCMDNO 0xE0
@@ -184,7 +185,7 @@ static int32_t send_sid_list(void)
 	}
 
 	uint8_t mbuf[CWS_NETMSGSIZE];
-	int32_t n = 0, nr = 0, portion_sid_num = 0, i = 0, sid_num = 0, portion_num = 0;
+	int32_t n = 0, nr = 0, i = 0, sid_num = 0, portion_num = 0;
 	SIDTAB *sidtab = 0;
 	custom_data_t cd;
 
@@ -519,10 +520,10 @@ static int32_t connect_newcamd_server(void)
 
 	cs_strncpy((char *)buf + idx, cl->reader->r_usr, sizeof(buf) - idx);
 	__md5_crypt(cl->reader->r_pwd, "$1$abcdefgh$", (char *)passwdcrypt);
-	idx += strlen(cl->reader->r_usr) + 1;
+	idx += cs_strlen(cl->reader->r_usr) + 1;
 	cs_strncpy((char *)buf + idx, (const char *)passwdcrypt, sizeof(buf) - idx);
 
-	network_message_send(handle, 0, buf, idx + strlen((char *)passwdcrypt) + 1, key,
+	network_message_send(handle, 0, buf, idx + cs_strlen((char *)passwdcrypt) + 1, key,
 						COMMTYPE_CLIENT, NCD_CLIENT_ID, NULL);
 
 	// 3.1 Get login answer
@@ -548,7 +549,7 @@ static int32_t connect_newcamd_server(void)
 	cl->crypted = 1;
 
 	// 4. Send MSG_CARD_DATE_REQ
-	nc_des_login_key_get(cl->reader->ncd_key, passwdcrypt, strlen((char *)passwdcrypt), key);
+	nc_des_login_key_get(cl->reader->ncd_key, passwdcrypt, cs_strlen((char *)passwdcrypt), key);
 	network_cmd_no_data_send(handle, &cl->ncd_msgid, MSG_CARD_DATA_REQ, key, COMMTYPE_CLIENT);
 
 	bytes_received = network_message_receive(handle, &cl->ncd_msgid, buf, key, COMMTYPE_CLIENT);
@@ -944,7 +945,7 @@ static int8_t newcamd_auth_client(IN_ADDR_T ip, uint8_t *deskey)
 		}
 
 		usr = mbuf + 5;
-		pwd = usr + strlen((char *)usr) + 1;
+		pwd = usr + cs_strlen((char *)usr) + 1;
 	}
 	else
 	{
@@ -1097,7 +1098,7 @@ static int8_t newcamd_auth_client(IN_ADDR_T ip, uint8_t *deskey)
 		FILTER usr_filter;
 		FILTER *pufilt = &usr_filter;
 
-		nc_des_login_key_get(deskey, passwdcrypt, strlen((char *)passwdcrypt), key);
+		nc_des_login_key_get(deskey, passwdcrypt, cs_strlen((char *)passwdcrypt), key);
 		memcpy(cl->ncd_skey, key, 16);
 
 		i = process_input(mbuf, sizeof(mbuf), cfg.cmaxidle);

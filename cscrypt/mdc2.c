@@ -1,13 +1,10 @@
 #include "../globals.h"
-#include "../oscam-string.h"
 #include "mdc2.h"
 
-//#include <stdio.h>
-//#include <stdlib.h>
-//#include <string.h>
-//#include <openssl/crypto.h>
-//#include <openssl/des.h>
-//#include <openssl/mdc2.h>
+/* To everybody who want to fix this external openssl dependency bug
+ * read this starting at page 5 https://board.streamboard.tv/forum/thread/47678-oscam-bug-report/?pageNo=5
+ * Don't touch this if you have no real fix. Right now resolution is can't fix
+ */
 
 #undef c2l
 #define c2l(c,l)        (l =((DES_LONG)(*((c)++)))    , \
@@ -32,7 +29,7 @@
         }
 
 //OPENSSL_GLOBAL const DES_LONG DES_SPtrans[8][64] =
-const DES_LONG DES_SPtrans[8][64] =
+const DES_LONG DES_SPtrans_Oscam[8][64] =
 {
 	{
 		/* nibble 0 */
@@ -199,14 +196,14 @@ const DES_LONG DES_SPtrans[8][64] =
         LOAD_DATA_tmp(R,S,u,t,E0,E1); \
         t=ROTATE(t,4); \
         LL^= \
-            DES_SPtrans[0][(u>> 2L)&0x3f]^ \
-            DES_SPtrans[2][(u>>10L)&0x3f]^ \
-            DES_SPtrans[4][(u>>18L)&0x3f]^ \
-            DES_SPtrans[6][(u>>26L)&0x3f]^ \
-            DES_SPtrans[1][(t>> 2L)&0x3f]^ \
-            DES_SPtrans[3][(t>>10L)&0x3f]^ \
-            DES_SPtrans[5][(t>>18L)&0x3f]^ \
-            DES_SPtrans[7][(t>>26L)&0x3f]; }
+            DES_SPtrans_Oscam[0][(u>> 2L)&0x3f]^ \
+            DES_SPtrans_Oscam[2][(u>>10L)&0x3f]^ \
+            DES_SPtrans_Oscam[4][(u>>18L)&0x3f]^ \
+            DES_SPtrans_Oscam[6][(u>>26L)&0x3f]^ \
+            DES_SPtrans_Oscam[1][(t>> 2L)&0x3f]^ \
+            DES_SPtrans_Oscam[3][(t>>10L)&0x3f]^ \
+            DES_SPtrans_Oscam[5][(t>>18L)&0x3f]^ \
+            DES_SPtrans_Oscam[7][(t>>26L)&0x3f]; }
 
 #define IP(l,r) \
         { \
@@ -497,9 +494,11 @@ void DES_set_odd_parity(DES_cblock *key)
 }
 
 
-void DES_encrypt1(DES_LONG *data, DES_key_schedule *ks, int enc)
+void DES_encrypt1_Oscam(DES_LONG *data, DES_key_schedule *ks, int enc)
 {
-	register DES_LONG l, r, t, u;
+	register DES_LONG l=0, r=0, t=0, u=0;
+	//l = r = t = u = 0;
+
 	register DES_LONG *s;
 
 	r = data[0];
@@ -569,7 +568,6 @@ void DES_encrypt1(DES_LONG *data, DES_key_schedule *ks, int enc)
 	FP(r, l);
 	data[0] = l;
 	data[1] = r;
-	l = r = t = u = 0;
 }
 
 
@@ -641,11 +639,11 @@ static void mdc2_body(MDC2_CTX *c, const unsigned char *in, size_t len)
 
 		DES_set_odd_parity(&c->h);
 		DES_set_key_unchecked(&c->h, &k);
-		DES_encrypt1(d, &k, 1);
+		DES_encrypt1_Oscam(d, &k, 1);
 
 		DES_set_odd_parity(&c->hh);
 		DES_set_key_unchecked(&c->hh, &k);
-		DES_encrypt1(dd, &k, 1);
+		DES_encrypt1_Oscam(dd, &k, 1);
 
 		ttin0 = tin0 ^ dd[0];
 		ttin1 = tin1 ^ dd[1];

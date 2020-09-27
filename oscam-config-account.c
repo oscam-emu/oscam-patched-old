@@ -11,7 +11,9 @@
 #include "oscam-garbage.h"
 #include "oscam-lock.h"
 #include "oscam-string.h"
-
+#ifdef CS_CACHEEX_AIO
+#include "module-cacheex.h"
+#endif
 #define cs_user "oscam.user"
 
 static void account_tosleep_fn(const char *token, char *value, void *setting, FILE *f)
@@ -73,7 +75,7 @@ static void account_allowedprotocols_fn(const char *token, char *value, void *se
 	if(value)
 	{
 		account->allowedprotocols = 0;
-		if(strlen(value) > 3)
+		if(cs_strlen(value) > 3)
 		{
 			int i;
 			char *ptr, *saveptr1 = NULL;
@@ -140,7 +142,7 @@ static void account_au_fn(const char *token, char *value, void *setting, FILE *f
 	else if(account->aureader_list)
 	{
 		value = mk_t_aureader(account);
-		if(strlen(value) > 0)
+		if(cs_strlen(value) > 0)
 			{ fprintf_conf(f, token, "%s\n", value); }
 		free_mk_t(value);
 	}
@@ -322,7 +324,7 @@ static void account_tuntab_fn(const char *token, char *value, void *setting, FIL
 	TUNTAB *ttab = setting;
 	if(value)
 	{
-		if(strlen(value) == 0)
+		if(cs_strlen(value) == 0)
 		{
 			tuntab_clear(ttab);
 		}
@@ -374,7 +376,7 @@ void services_fn(const char *token, char *value, void *setting, FILE *f)
 		return;
 	}
 	value = mk_t_service(sidtabs);
-	if(strlen(value) > 0 || cfg.http_full_cfg)
+	if(cs_strlen(value) > 0 || cfg.http_full_cfg)
 		{ fprintf_conf(f, token, "%s\n", value); }
 	free_mk_t(value);
 }
@@ -389,17 +391,19 @@ void class_fn(const char *token, char *value, void *setting, FILE *f)
 		return;
 	}
 	value = mk_t_cltab(cltab);
-	if(strlen(value) > 0 || cfg.http_full_cfg)
+	if(cs_strlen(value) > 0 || cfg.http_full_cfg)
 	{
 		fprintf_conf(f, token, "%s\n", value);
 		free_mk_t(value);
 	}
 }
 
-#ifdef CS_ANTICASC
+#if defined(CS_ANTICASC) || defined(CS_CACHEEX_AIO)
 static void account_fixups_fn(void *var)
 {
 	struct s_auth *account = var;
+#endif
+#if defined(CS_ANTICASC)
 	if(account->ac_users < -1) { account->ac_users = DEFAULT_AC_USERS; }
 	if(account->ac_penalty < -1) { account->ac_penalty = DEFAULT_AC_PENALTY; }
 	if(account->acosc_max_ecms_per_minute < -1) { account->acosc_max_ecms_per_minute = -1; }
@@ -421,6 +425,15 @@ static void account_fixups_fn(void *var)
 			account->acosc_penalty_duration = (60 / account->acosc_max_ecms_per_minute);
 		}
 	}
+#endif
+#if defined(CS_CACHEEX_AIO)
+	// lgo-ctab -> lgo-ftab port
+	caidtab2ftab_add(&account->cacheex.localgenerated_only_in_caidtab, &account->cacheex.lg_only_in_tab);
+	caidtab_clear(&account->cacheex.localgenerated_only_in_caidtab);
+	caidtab2ftab_add(&account->cacheex.localgenerated_only_caidtab, &account->cacheex.lg_only_tab);
+	caidtab_clear(&account->cacheex.localgenerated_only_caidtab);
+#endif
+#if defined(CS_ANTICASC) || defined(CS_CACHEEX_AIO)
 }
 #endif
 
@@ -429,7 +442,7 @@ static void account_fixups_fn(void *var)
 
 static const struct config_list account_opts[] =
 {
-#ifdef CS_ANTICASC
+#if defined(CS_ANTICASC) || defined(CS_CACHEEX_AIO)
 	DEF_OPT_FIXUP_FUNC(account_fixups_fn),
 #endif
 	DEF_OPT_INT8("disabled"                    , OFS(disabled),                0),
@@ -464,14 +477,32 @@ static const struct config_list account_opts[] =
 #ifdef CS_CACHEEX
 	DEF_OPT_INT8("cacheex"                     , OFS(cacheex.mode),            0),
 	DEF_OPT_INT8("cacheex_maxhop"              , OFS(cacheex.maxhop),          0),
+#ifdef CS_CACHEEX_AIO
+	DEF_OPT_INT8("cacheex_maxhop_lg"           , OFS(cacheex.maxhop_lg),       0),
+#endif
 	DEF_OPT_FUNC("cacheex_ecm_filter"          , OFS(cacheex.filter_caidtab),  cacheex_hitvaluetab_fn),
 	DEF_OPT_UINT8("cacheex_drop_csp"           , OFS(cacheex.drop_csp),        0),
 	DEF_OPT_UINT8("cacheex_allow_request"      , OFS(cacheex.allow_request),   0),
 	DEF_OPT_UINT8("no_wait_time"               , OFS(no_wait_time),            0),
 	DEF_OPT_UINT8("cacheex_allow_filter"       , OFS(cacheex.allow_filter),    1),
+#ifdef CS_CACHEEX_AIO
+	DEF_OPT_UINT8("cacheex_allow_maxhop"       , OFS(cacheex.allow_maxhop),    0),
+#endif
 	DEF_OPT_UINT8("cacheex_block_fakecws"      , OFS(cacheex.block_fakecws),   0),
 	DEF_OPT_UINT8("disablecrccacheex"          , OFS(disablecrccacheex),       0),
 	DEF_OPT_FUNC_X("disablecrccacheex_only_for", OFS(disablecrccacheex_only_for), ftab_fn, FTAB_ACCOUNT | FTAB_IGNCRCCEX4USERONLYFOR),
+#ifdef CS_CACHEEX_AIO
+	DEF_OPT_UINT8("cacheex_cw_check_for_push"  , OFS(cacheex.cw_check_for_push), 0),
+	DEF_OPT_UINT8("cacheex_lg_only_remote_settings", OFS(cacheex.lg_only_remote_settings), 1),
+	DEF_OPT_UINT8("cacheex_localgenerated_only", OFS(cacheex.localgenerated_only), 0),
+	DEF_OPT_FUNC("cacheex_localgenerated_only_caid", OFS(cacheex.localgenerated_only_caidtab), check_caidtab_fn),
+	DEF_OPT_FUNC_X("cacheex_lg_only_tab"       , OFS(cacheex.lg_only_tab),     ftab_fn, 0),
+	DEF_OPT_UINT8("cacheex_lg_only_in_aio_only", OFS(cacheex.lg_only_in_aio_only), 0),
+	DEF_OPT_UINT8("cacheex_localgenerated_only_in", OFS(cacheex.localgenerated_only_in), 0),
+	DEF_OPT_FUNC("cacheex_localgenerated_only_in_caid", OFS(cacheex.localgenerated_only_in_caidtab), check_caidtab_fn),
+	DEF_OPT_FUNC_X("cacheex_lg_only_in_tab"    , OFS(cacheex.lg_only_in_tab),   ftab_fn, 0),
+	DEF_OPT_FUNC("cacheex_nopushafter"         , OFS(cacheex.cacheex_nopushafter_tab), caidvaluetab_fn),
+#endif
 #endif
 #ifdef MODULE_CCCAM
 	DEF_OPT_INT32("cccmaxhops"                 , OFS(cccmaxhops),              DEFAULT_CC_MAXHOPS),
@@ -533,7 +564,7 @@ struct s_auth *init_userdb(void)
 		int32_t l;
 		void *ptr;
 
-		if((l = strlen(trim(token))) < 3)
+		if((l = cs_strlen(trim(token))) < 3)
 			{ continue; }
 		if(token[0] == '[' && token[l - 1] == ']')
 		{
@@ -569,7 +600,9 @@ struct s_auth *init_userdb(void)
 				if(!strcmp(probe->usr, trim(value)))
 				{
 					fprintf(stderr, "Warning: duplicate account '%s'\n", value);
-					strncat(value, "_x", sizeof(probe->usr) - strlen(value) - 1);
+					if (!cs_strncat(value, "_x", sizeof(probe->usr))) {
+						cs_log("WARNING, bug here!");
+					}
 				}
 			}
 		}
@@ -601,12 +634,22 @@ int32_t init_free_userdb(struct s_auth *ptr)
 		config_list_gc_values(account_opts, ptr);
 		ftab_clear(&ptr->ftab);
 		ftab_clear(&ptr->fchid);
+#ifdef CS_CACHEEX_AIO		
+		ftab_clear(&ptr->disablecrccacheex_only_for);
+#endif
 		tuntab_clear(&ptr->ttab);
 		caidtab_clear(&ptr->ctab);
 		NULLFREE(ptr->cltab.aclass);
 		NULLFREE(ptr->cltab.bclass);
 #ifdef CS_CACHEEX
 		cecspvaluetab_clear(&ptr->cacheex.filter_caidtab);
+#ifdef CS_CACHEEX_AIO
+		caidtab_clear(&ptr->cacheex.localgenerated_only_caidtab);
+		caidtab_clear(&ptr->cacheex.localgenerated_only_in_caidtab);
+		ftab_clear(&ptr->cacheex.lg_only_tab);
+		ftab_clear(&ptr->cacheex.lg_only_in_tab);
+		caidvaluetab_clear(&ptr->cacheex.cacheex_nopushafter_tab);
+#endif
 #endif
 #ifdef WITH_LB
 		caidvaluetab_clear(&ptr->lb_nbest_readers_tab);

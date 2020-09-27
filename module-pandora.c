@@ -161,7 +161,7 @@ static void *pandora_server(struct s_client *cl, uint8_t *UNUSED(mbuf), int32_t 
 		if(cfg.pand_pass)
 		{
 			cl->pand_autodelay = 150000;
-			memcpy(cl->pand_md5_key, MD5((uint8_t *)cfg.pand_pass, strlen(cfg.pand_pass), md5tmp), 16);
+			memcpy(cl->pand_md5_key, MD5((uint8_t *)cfg.pand_pass, cs_strlen(cfg.pand_pass), md5tmp), 16);
 			cl->pand_ignore_ecm = (cfg.pand_ecm) ? 0 : 1;
 			cl->crypted = 1;
 			pandora_auth_client(cl, cl->ip);
@@ -230,7 +230,7 @@ int pandora_client_init(struct s_client *cl)
 	else
 		{ ptxt[0] = '\0'; }
 
-	memcpy(cl->pand_md5_key, MD5((uint8_t *)rdr->r_pwd, strlen(rdr->r_pwd), md5tmp), 16);
+	memcpy(cl->pand_md5_key, MD5((uint8_t *)rdr->r_pwd, cs_strlen(rdr->r_pwd), md5tmp), 16);
 	cl->crypted = 1;
 
 	//cl->grp = 0xFFFFFFFF;

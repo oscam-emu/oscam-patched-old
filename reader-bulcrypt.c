@@ -225,7 +225,7 @@ static int32_t bulcrypt_card_init(struct s_reader *reader, ATR *newatr)
 		return ERROR;
 	}
 	memcpy(card_serial, cta_res + 2, 13);
-	cta_lr = strlen(card_serial);
+	cta_lr = cs_strlen(card_serial);
 
 	for(i = 0; i < cta_lr; i++)
 	{

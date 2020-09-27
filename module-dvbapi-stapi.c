@@ -111,7 +111,7 @@ int32_t stapi_open(void)
 	struct dirent entry, *dp = NULL;
 	struct stat buf;
 	int32_t i;
-	char pfad[80];
+	char pfad[512];
 	stapi_on = 1;
 	int32_t stapi_priority = 0;
 
@@ -123,6 +123,7 @@ int32_t stapi_open(void)
 	}
 
 	memset(dev_list, 0, sizeof(struct STDEVICE)*PTINUM);
+	memset(pfad, 0, sizeof(pfad));
 
 	if(dvbapi_priority)
 	{
@@ -148,7 +149,8 @@ int32_t stapi_open(void)
 	i = 0;
 	while(!cs_readdir_r(dirp, &entry, &dp))
 	{
-		if(!dp) { break; }
+		if(!dp)
+			break;
 
 		snprintf(pfad, sizeof(pfad), "%s%s", PROCDIR, dp->d_name);
 		if(stat(pfad, &buf) != 0)

@@ -169,7 +169,7 @@ int BN_mod_exp(BIGNUM *r, BIGNUM *a, const BIGNUM *p, const BIGNUM *m,
 int BN_mod_exp_simple(BIGNUM *r, BIGNUM *a, const BIGNUM *p, const BIGNUM *m,
 					  BN_CTX *ctx)
 {
-	int i, j, bits, ret = 0, wstart, wend, window, wvalue, ts = 0;
+	int i, j = 0, bits, ret = 0, wstart = 0, wend = 0, window, wvalue = 0, ts = 0;
 	int start = 1;
 	BIGNUM *d;
 	BIGNUM val[TABLE_SIZE];
@@ -207,9 +207,7 @@ int BN_mod_exp_simple(BIGNUM *r, BIGNUM *a, const BIGNUM *p, const BIGNUM *m,
 	start = 1;    /* This is used to avoid multiplication etc
              * when there is only the value '1' in the
              * buffer. */
-	wvalue = 0; /* The 'value' of the window */
 	wstart = bits - 1; /* The top bit of the window */
-	wend = 0;   /* The bottom bit of the window */
 
 	if(!BN_one(r)) { goto err; }
 

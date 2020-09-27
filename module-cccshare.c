@@ -28,6 +28,7 @@ static bool share_updater_thread_active;
 static bool share_updater_refresh;
 
 int32_t card_valid_for_client(struct s_client *cl, struct cc_card *card);
+int32_t flt = 0;
 
 LLIST *get_cardlist(uint16_t caid, LLIST **list)
 {
@@ -1163,7 +1164,7 @@ void report_card(struct cc_card *card, LLIST *new_reported_carddatas, LLIST *new
  */
 void update_card_list(void)
 {
-	int32_t i, j, k, l, flt, card_count = 0;
+	int32_t i, j, k, l, card_count = 0;
 
 	LLIST *server_cards[CAID_KEY];
 	LLIST *new_reported_carddatas[CAID_KEY];

@@ -39,6 +39,29 @@ bool cs_realloc(void *result, size_t size)
 	return !!*tmp;
 }
 
+/* strlen is wrongly used in oscam. Calling strlen directly
+ * e.g. strlen(somechar) can cause segmentation fault if pointer to somechar is NULL!
+ * This one looks better?
+ */
+size_t cs_strlen(const char *c)
+{
+	if (c == NULL)
+	{
+		return 0;
+	}
+	else
+	{
+		if (c[0] == '\0')
+		{
+			return 0;
+		}
+		else
+		{
+			return strlen(c);
+		}
+	}
+} 
+
 /* Allocates a new empty string and copies str into it. You need to free() the result. */
 char *cs_strdup(const char *str)
 {
@@ -46,9 +69,9 @@ char *cs_strdup(const char *str)
 	if(!str)
 		{ return NULL; }
 
-	if(cs_malloc(&newstr, strlen(str) + 1))
+	if(cs_malloc(&newstr, cs_strlen(str) + 1))
 	{
-		cs_strncpy(newstr, str, strlen(str) + 1);
+		cs_strncpy(newstr, str, cs_strlen(str) + 1);
 		return newstr;
 	}
 	return NULL;
@@ -66,7 +89,7 @@ void cs_strncpy(char *destination, const char *source, size_t num)
 		return;
 	}
 
-	uint32_t l, size = strlen(source);
+	uint32_t l, size = cs_strlen(source);
 	if(size > num - 1)
 		{ l = num - 1; }
 	else
@@ -74,6 +97,65 @@ void cs_strncpy(char *destination, const char *source, size_t num)
 
 	memcpy(destination, source, l);
 	destination[l] = '\0';
+}
+
+bool cs_strncat(char *destination, char *source, size_t destination_size)
+{
+	uint32_t dest_sz = 0;
+	uint32_t source_sz = 0;
+
+	if (!destination_size)
+	{
+		cs_log("ERROR, destination_size 0!");
+		return false;
+	}
+
+	if (destination)
+	{
+		dest_sz += cs_strlen(destination);
+	}
+	else
+	{
+		cs_log("ERROR, destination pointer NULL!");
+		return false;
+	}
+
+	if (source)
+	{
+		source_sz += cs_strlen(source);
+	}
+	else
+	{
+		cs_log("ERROR, source pointer NULL!");
+		return false;
+	}
+
+	if ((dest_sz + source_sz) == 0)
+	{
+		cs_log("ERROR, booth destination and source with zero size!");
+		return false;
+	}
+
+	if ((dest_sz + source_sz) < destination_size)
+	{
+		if (dest_sz)
+		{
+			void *dest = (void *)destination;
+			memcpy(destination, dest, dest_sz);
+		}
+
+		if (source_sz)
+			memcpy(destination + dest_sz, source, source_sz);
+
+		destination[dest_sz + source_sz] = '\0';
+	}
+	else
+	{
+		cs_log("ERROR, buffer overflow!");
+		return false;	
+	}
+
+	return true;
 }
 
 /* Converts the string txt to it's lower case representation. */
@@ -116,7 +198,7 @@ char *trim(char *txt)
 		*p2 = '\0';
 	}
 
-	l = strlen(txt);
+	l = cs_strlen(txt);
 	if(l > 0)
 	{
 		for(p1 = txt + l - 1; l > 0 && ((*p1 == ' ') || (*p1 == '\t') || (*p1 == '\n') || (*p1 == '\r')); *p1-- = '\0', l--)
@@ -129,7 +211,7 @@ char *trim2(char *txt)
 {
 	int32_t i, n;
 
-	for(i = n = 0; i < (int32_t)strlen(txt); i++)
+	for(i = n = 0; i < (int32_t)cs_strlen(txt); i++)
 	{
 		if(txt[i] == ' ' || txt[i] == '\t') continue;
 		if(txt[i] == '#') {break;}
@@ -171,11 +253,17 @@ bool streq(const char *s1, const char *s2)
 char *cs_hexdump(int32_t m, const uint8_t *buf, int32_t n, char *target, int32_t len)
 {
 	int32_t i = 0;
+	if(target == NULL || buf == NULL)
+	{
+		return NULL;
+	}
 	target[0] = '\0';
 	m = m ? 3 : 2;
 
 	if(m * n >= len)
-		{ n = (len / m) - 1; }
+	{
+		n = (len / m) - 1;
+	}
 
 	while(i < n)
 	{
@@ -183,6 +271,21 @@ char *cs_hexdump(int32_t m, const uint8_t *buf, int32_t n, char *target, int32_t
 		i++;
 	}
 	return target;
+}
+
+/*
+ * For using gethexval we must check if char c is within range othervise gethexval return
+ * negative value so we must ensure we not shift left those negative value! So before
+ * using gethexval function you need to check char c with function gethexval_within_range to
+ * ensure char c is within accepted range!
+ */
+bool gethexval_within_range(char c)
+{
+	if((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'))
+	{
+		return true;
+	}
+	return false;
 }
 
 int32_t gethexval(char c)
@@ -196,11 +299,21 @@ int32_t gethexval(char c)
 int32_t cs_atob(uint8_t *buf, char *asc, int32_t n)
 {
 	int32_t i, rc;
+	if(buf == NULL || asc == NULL)
+	{
+		return -1;
+	}
 	for(i = 0; i < n; i++)
 	{
+		if(!gethexval_within_range(asc[i << 1]) || !gethexval_within_range(asc[(i << 1) + 1]))
+		{
+			return -1;
+		}
 		rc = (gethexval(asc[i << 1]) << 4) | gethexval(asc[(i << 1) + 1]);
 		if(rc & 0x100)
-			{ return -1; }
+		{
+			return -1;
+		}
 		buf[i] = rc;
 	}
 	return n;
@@ -210,8 +323,20 @@ uint32_t cs_atoi(char *asc, int32_t l, int32_t val_on_err)
 {
 	int32_t i, n = 0;
 	uint32_t rc = 0;
+	if(asc == NULL)
+	{
+			errno = EINVAL;
+			rc = val_on_err ? 0xFFFFFFFF : 0;
+			return rc;
+	}
 	for(i = ((l - 1) << 1), errno = 0; i >= 0 && n < 4; i -= 2)
 	{
+		if(!gethexval_within_range(asc[i]) || !gethexval_within_range(asc[i + 1]))
+		{
+			errno = EINVAL;
+			rc = val_on_err ? 0xFFFFFFFF : 0;
+			break;
+		}
 		int32_t b = (gethexval(asc[i]) << 4) | gethexval(asc[i + 1]);
 		if(b < 0)
 		{
@@ -227,33 +352,60 @@ uint32_t cs_atoi(char *asc, int32_t l, int32_t val_on_err)
 
 int32_t byte_atob(char *asc)
 {
-	int32_t rc;
-	if(strlen(trim(asc)) != 2)
+	int32_t rc = (-1);
+	if(asc == NULL)
+	{
+		return rc;
+	}
+	if(cs_strlen(trim(asc)) != 2)
 	{
 		rc = -1;
 	}
 	else
 	{
-		rc = (gethexval(asc[0]) << 4) | gethexval(asc[1]);
-		if(rc & 0x100)
-			{ rc = -1; }
+		if(!gethexval_within_range(asc[0]) || !gethexval_within_range(asc[1]))
+		{
+			return rc;
+		}
+		else
+		{
+			rc = (gethexval(asc[0]) << 4) | gethexval(asc[1]);
+			if(rc & 0x100)
+			{
+				rc = -1;
+			}
+		}
 	}
 	return rc;
 }
 
 int32_t word_atob(char *asc)
 {
-	int32_t rc;
-	if(strlen(trim(asc)) != 4)
+	int32_t rc = (-1);
+
+	if(asc == NULL)
+	{
+		return rc;
+	}
+
+	if(cs_strlen(trim(asc)) != 4)
 	{
 		rc = -1;
 	}
 	else
 	{
-		rc = gethexval(asc[0]) << 12 | gethexval(asc[1]) << 8 |
-			 gethexval(asc[2]) << 4  | gethexval(asc[3]);
-		if(rc & 0x10000)
-			{ rc = -1; }
+		if(!gethexval_within_range(asc[0]) || !gethexval_within_range(asc[1]) || !gethexval_within_range(asc[2]) || !gethexval_within_range(asc[3]))
+		{
+			return rc;
+		}
+		else
+		{
+			rc = gethexval(asc[0]) << 12 | gethexval(asc[1]) << 8 | gethexval(asc[2]) << 4  | gethexval(asc[3]);
+			if(rc & 0x10000)
+			{
+				rc = -1;
+			}
+		}
 	}
 	return rc;
 }
@@ -265,17 +417,27 @@ int32_t word_atob(char *asc)
 int32_t dyn_word_atob(char *asc)
 {
 	int32_t rc = (-1);
-	int32_t i, len = strlen(trim(asc));
+	int32_t i, len;
 
+	if(asc == NULL)
+	{
+		return rc;
+	}
+	len = cs_strlen(trim(asc));
 	if(len <= 6 && len > 0)
 	{
 		for(i = 0, rc = 0; i < len; i++)
 		{
+			if(!gethexval_within_range(asc[0]) || !gethexval_within_range(asc[1]) || !gethexval_within_range(asc[2]) || !gethexval_within_range(asc[3]))
+			{
+				return -1;
+			}
 			rc = rc << 4 | gethexval(asc[i]);
 		}
-
 		if(rc & 0x1000000)
-			{ rc = -1; }
+		{
+			rc = -1;
+		}
 	}
 	return rc;
 }
@@ -284,17 +446,32 @@ int32_t key_atob_l(char *asc, uint8_t *bin, int32_t l)
 {
 	int32_t i, n1, n2, rc;
 
+	if(asc == NULL || bin == NULL)
+	{
+		return -1;
+	}
 	for(i = rc = 0; i < l; i += 2)
 	{
-		if((n1 = gethexval(asc[i])) < 0) { rc = -1; }
-		if((n2 = gethexval(asc[i + 1])) < 0) { rc = -1; }
-		bin[i >> 1] = (n1 << 4) + (n2 & 0xff);
+		if(!gethexval_within_range(asc[i]) || !gethexval_within_range(asc[i + 1]))
+		{
+			rc = -1;
+		}
+		else
+		{
+			n1 = gethexval(asc[i]);
+			n2 = gethexval(asc[i + 1]);
+			bin[i >> 1] = (n1 << 4) + (n2 & 0xff);
+		}
 	}
 	return rc;
 }
 
 uint32_t b2i(int32_t n, const uint8_t *b)
 {
+	if(b == NULL)
+	{
+		return 0;
+	}
 	switch(n)
 	{
 		case 1:
@@ -318,8 +495,14 @@ uint64_t b2ll(int32_t n, const uint8_t *b)
 {
 	int32_t i;
 	uint64_t k = 0;
+	if(b == NULL)
+	{
+		return k;
+	}
 	for(i = 0; i < n; k += b[i++])
-		{ k <<= 8; }
+	{
+		k <<= 8;
+	}
 	return k;
 }
 
@@ -365,23 +548,33 @@ uint32_t a2i(char *asc, int32_t bytes)
 {
 	int32_t i, n;
 	uint32_t rc;
-
-	for(rc = i = 0, n = strlen(trim(asc)) - 1; i < abs(bytes) << 1; n--, i++)
+	if(asc == NULL)
+	{
+		errno = EINVAL;
+		return 0x1f1f1f;
+	}
+	for(rc = i = 0, n = cs_strlen(trim(asc)) - 1; i < abs(bytes) << 1; n--, i++)
 	{
 		if(n >= 0)
 		{
 			int32_t rcl;
-			if((rcl = gethexval(asc[n])) < 0)
+			if(!gethexval_within_range(asc[n]))
 			{
 				errno = EINVAL;
 				return 0x1f1f1f;
 			}
-			rc |= rcl << (i << 2);
+			else
+			{
+				rcl = gethexval(asc[n]);
+				rc |= rcl << (i << 2);
+			}
 		}
 		else
 		{
 			if(bytes < 0)
-				{ rc |= 0xf << (i << 2); }
+			{
+				rc |= 0xf << (i << 2);
+			}
 		}
 	}
 	errno = 0;
@@ -398,7 +591,9 @@ int32_t boundary(int32_t exp, int32_t n)
 int32_t array_has_nonzero_byte(uint8_t *value, int32_t length)
 {
 	if(!value)
-		{ return 0; }
+	{
+		return 0;
+	}
 
 	int32_t i;
 	for(i = 0; i < length; i++)
@@ -425,7 +620,9 @@ void get_random_bytes_init(void)
 	{
 		fd = open("/dev/random", O_RDONLY);
 		if(fd < 0)
-			{ return; }
+		{
+			return;
+		}
 	}
 
 	if(read(fd, rand_pool, RAND_POOL_SIZE + sizeof(uint32_t)) > -1)
@@ -517,7 +714,9 @@ static uint32_t crc_table[256] =
 uint32_t crc32(uint32_t crc, const uint8_t *buf, uint32_t len)
 {
 	if(!buf)
-		{ return 0L; }
+	{
+		return 0L;
+	}
 	crc = crc ^ 0xffffffffL;
 	while(len >= 8)
 	{
@@ -714,7 +913,9 @@ size_t b64encode(const char *in, size_t inlen, char **out)
 		return 0;
 	}
 	if(!cs_malloc(out, outlen))
-		{ return -1; }
+	{
+		return -1;
+	}
 	base64_encode(in, inlen, *out, outlen);
 	return outlen - 1;
 }
@@ -741,9 +942,12 @@ void b64prepare(void)
 /* Decodes a base64-encoded string. The given array will be used directly for output and is thus modified! */
 int32_t b64decode(uint8_t *result)
 {
-	int32_t i, len = strlen((char *)result), j = 0, bits = 0, char_count = 0;
+	int32_t i, len = cs_strlen((char *)result), j = 0, bits = 0, char_count = 0;
 
-	if(!b64decoder[0]) { b64prepare(); }
+	if(!b64decoder[0])
+	{
+		b64prepare();
+	}
 
 	for(i = 0; i < len; ++i)
 	{
@@ -777,18 +981,18 @@ int32_t b64decode(uint8_t *result)
 	{
 		switch(char_count)
 		{
-		case 1:
-			result[j] = '\0';
-			return 0;
-		case 2:
-			result[j++] = bits >> 10;
-			result[j] = '\0';
-			break;
-		case 3:
-			result[j++] = bits >> 16;
-			result[j++] = (bits >> 8) & 0xff;
-			result[j] = '\0';
-			break;
+			case 1:
+				result[j] = '\0';
+				return 0;
+			case 2:
+				result[j++] = bits >> 10;
+				result[j] = '\0';
+				break;
+			case 3:
+				result[j++] = bits >> 16;
+				result[j++] = (bits >> 8) & 0xff;
+				result[j] = '\0';
+				break;
 		}
 	}
 	return j;
@@ -1060,7 +1264,7 @@ size_t ISO6937toUTF8(const uint8_t **inbuf, size_t *inbytesleft, uint8_t **outbu
 	*outbuf = optr;
 	*inbytesleft = iend - iptr;
 	*outbytesleft = oend - optr;
-	if( err )
+	if(err)
 	{
 		errno = err;
 		return (size_t)(-1);

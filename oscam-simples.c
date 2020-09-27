@@ -228,7 +228,7 @@ char *get_picon_servicename_or_null(struct s_client *cl, uint16_t srvid, uint32_
 
 int32_t picon_servicename_remve_hd(char *buf, uint32_t UNUSED(buflen))
 {
-	int32_t l = strlen(buf);
+	int32_t l = cs_strlen(buf);
 
 	if(l < 3)
 	{
@@ -383,7 +383,6 @@ char *__get_providername(uint32_t provid, uint16_t caid, char *buf, uint32_t buf
 	if(!found && zero_match != NULL)
 	{
 		cs_strncpy(buf, zero_match->prov, buflen);
-		found = 1;
 	}
 
 	if(!buf[0] && return_unknown)

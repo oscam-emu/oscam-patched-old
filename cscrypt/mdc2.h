@@ -59,6 +59,11 @@
 #ifndef HEADER_MDC2_H
 #define HEADER_MDC2_H
 
+/* To everybody who want to fix this external openssl dependency bug
+ * read this starting at page 5 https://board.streamboard.tv/forum/thread/47678-oscam-bug-report/?pageNo=5
+ * Don't touch this if you have no real fix. Right now resolution is can't fix
+ */
+
 #include <openssl/des.h>
 
 #ifdef  __cplusplus
@@ -89,4 +94,3 @@ unsigned char *MDC2(const unsigned char *d, size_t n, unsigned char *md);
 #endif
 
 #endif
-

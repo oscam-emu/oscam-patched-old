@@ -91,7 +91,7 @@ struct s_reader *first_active_reader = NULL; // list of active readers (enable=1
 LLIST *configured_readers = NULL; // list of all (configured) readers
 
 uint16_t len4caid[256]; // table for guessing caid (by len)
-char cs_confdir[128] = CS_CONFDIR;
+char cs_confdir[128];
 uint16_t cs_dblevel = 0; // Debug Level
 int32_t thread_pipe[2] = {0, 0};
 static int8_t cs_restart_mode = 1; // Restartmode: 0=off, no restart fork, 1=(default)restart fork, restart by webif, 2=like=1, but also restart on segfaults
@@ -103,7 +103,7 @@ uint8_t cs_http_use_utf8 = 0;
 static int8_t cs_capture_SEGV;
 static int8_t cs_dump_stack;
 static uint16_t cs_waittime = 60;
-char cs_tmpdir[200] = {0x00};
+char cs_tmpdir[200];
 CS_MUTEX_LOCK system_lock;
 CS_MUTEX_LOCK config_lock;
 CS_MUTEX_LOCK gethostbyname_lock;
@@ -148,11 +148,11 @@ static void show_usage(void)
 		   "| | | \\___ \\| |  / _` | '_ ` _ \\\n"
 		   "| |_| |___) | |_| (_| | | | | | |\n"
 		   " \\___/|____/ \\___\\__,_|_| |_| |_|\n\n");
-	printf("OSCam cardserver v%s, build r%s (%s)\n", CS_VERSION, CS_SVN_VERSION, CS_TARGET);
-	printf("Copyright (C) 2009-2019 OSCam developers.\n");
+	printf("OSCam Cardserver v%s, build r%s (%s)\n", CS_VERSION, CS_SVN_VERSION, CS_TARGET);
+	printf("Copyright (C) 2009-2020 OSCam developers.\n");
 	printf("This program is distributed under GPLv3.\n");
 	printf("OSCam is based on Streamboard mp-cardserver v0.9d written by dukat\n");
-	printf("Visit http://www.streamboard.tv/oscam/ for more details.\n\n");
+	printf("Visit https://board.streamboard.tv/ for more details.\n\n");
 
 	printf(" ConfigDir  : %s\n", CS_CONFDIR);
 	printf("\n");
@@ -201,6 +201,9 @@ static void show_usage(void)
 	printf("                         .  1024 - Client ECM logging.\n");
 	printf("                         .  2048 - CSP logging.\n");
 	printf("                         .  4096 - CWC logging.\n");
+#ifdef CS_CACHEEX_AIO
+	printf("                         .  8192 - CW Cache logging.\n");
+#endif
 	printf("                         . 65535 - Debug all.\n");
 	printf("\n Settings:\n");
 	printf(" -p, --pending-ecm <num> | Set the maximum number of pending ECM packets.\n");
@@ -254,6 +257,12 @@ static const struct option long_options[] =
 	{ "wait",               required_argument, NULL, 'w' },
 	{ 0, 0, 0, 0 }
 };
+
+static void set_default_dirs_first(void)
+{
+	snprintf(cs_confdir, sizeof(cs_confdir), "%s", CS_CONFDIR);
+	memset(cs_tmpdir, 0, sizeof(cs_tmpdir)); // will get further procesed trought oscam_files.c !!
+}
 
 static void write_versionfile(bool use_stdout);
 
@@ -422,6 +431,7 @@ static void write_versionfile(bool use_stdout)
 	write_conf(MODULE_MONITOR, "Monitor");
 	write_conf(WITH_LB, "Loadbalancing support");
 	write_conf(CS_CACHEEX, "Cache exchange support");
+	write_conf(CS_CACHEEX_AIO, "Cache exchange AIO support");
 	write_conf(CW_CYCLE_CHECK, "CW Cycle Check support");
 	write_conf(LCDSUPPORT, "LCD support");
 	write_conf(LEDSUPPORT, "LED support");
@@ -812,7 +822,7 @@ static char *read_line_from_file(char *fname, char *buf, int bufsz)
 	{
 		if (strstr(buf,"\n")) // we need only the first line
 		{
-			buf[strlen(buf)-1] = '\0';
+			buf[cs_strlen(buf)-1] = '\0';
 			break;
 		}
 	}
@@ -956,7 +966,7 @@ bool boxname_is(const char *boxname)
 static void init_check(void)
 {
 	char *ptr = __DATE__;
-	int32_t month, year = atoi(ptr + strlen(ptr) - 4), day = atoi(ptr + 4);
+	int32_t month, year = atoi(ptr + cs_strlen(ptr) - 4), day = atoi(ptr + 4);
 	if(day > 0 && day < 32 && year > 2010 && year < 9999)
 	{
 		struct tm timeinfo;
@@ -1675,8 +1685,8 @@ static void find_conf_dir(void)
 	char conf_file[128+16];
 	int32_t i;
 
-	if(cs_confdir[strlen(cs_confdir) - 1] != '/')
-		{ strcat(cs_confdir, "/"); }
+	if(cs_confdir[cs_strlen(cs_confdir) - 1] != '/')
+		{ cs_strncat(cs_confdir, "/", sizeof(cs_confdir)); }
 
 	if(snprintf(conf_file, sizeof(conf_file), "%soscam.conf", cs_confdir) < 0)
 		{ return; }
@@ -1763,6 +1773,8 @@ int32_t main(int32_t argc, char *argv[])
 		0
 	};
 
+	set_default_dirs_first();
+
 	find_conf_dir();
 
 	parse_cmdline_params(argc, argv);
@@ -1783,7 +1795,7 @@ int32_t main(int32_t argc, char *argv[])
 	memset(&cfg, 0, sizeof(struct s_config));
 	cfg.max_pending = max_pending;
 
-	if(cs_confdir[strlen(cs_confdir) - 1] != '/') { strcat(cs_confdir, "/"); }
+	if(cs_confdir[cs_strlen(cs_confdir) - 1] != '/') { cs_strncat(cs_confdir, "/", sizeof(cs_confdir)); }
 	init_signal_pre(); // because log could cause SIGPIPE errors, init a signal handler first
 	init_first_client();
 	cs_lock_create(__func__, &system_lock, "system_lock", 5000);
@@ -1799,6 +1811,10 @@ int32_t main(int32_t argc, char *argv[])
 	init_cache();
 	cacheex_init_hitcache();
 	init_config();
+#ifdef CS_CACHEEX_AIO
+	init_cw_cache();
+	init_ecm_cache();
+#endif	
 	cs_init_log();
 	init_machine_info();
 	init_check();
@@ -1965,6 +1981,9 @@ if(!cfg.gsms_dis)
 	cs_sleepms(200);
 
 	free_cache();
+#ifdef CS_CACHEEX_AIO
+	free_ecm_cache();
+#endif
 	cacheex_free_hitcache();
 	webif_tpls_free();
 	init_free_userdb(cfg.account);

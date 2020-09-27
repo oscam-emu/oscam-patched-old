@@ -451,6 +451,10 @@ static int32_t nagra3_card_info(struct s_reader *reader)
 	{
 		rdr_log(reader, "Prv.ID: %s", cs_hexdump(1, reader->prid[i], 4, tmp, sizeof(tmp)));
 	}
+ 
+	struct timeb now;
+	cs_ftime(&now);
+	reader->last_refresh=now;
 
 	return OK;
 }
@@ -578,6 +582,16 @@ static int32_t nagra3_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 		reader->card_status = CARD_NEED_INIT;
 		add_job(reader->client, ACTION_READER_RESTART, NULL, 0);
 	}
+
+	struct timeb now;
+	cs_ftime(&now);
+	int64_t gone_now = comp_timeb(&now, &reader->emm_last);
+	int64_t gone_refresh = comp_timeb(&reader->emm_last, &reader->last_refresh);
+	if((gone_now > 3600*1000) || (gone_refresh > 12*3600*1000))
+	{
+		add_job(reader->client, ACTION_READER_CARDINFO, NULL, 0); // refresh entitlement since it might have been changed!
+	}
+
 	return OK;
 }
 

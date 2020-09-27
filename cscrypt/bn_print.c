@@ -131,7 +131,6 @@ char *BN_bn2dec(const BIGNUM *a)
 	}
 	else
 	{
-		i = 0;
 		while(!BN_is_zero(t))
 		{
 			*lp = BN_div_word(t, BN_DEC_CONV);
@@ -160,7 +159,8 @@ int BN_hex2bn(BIGNUM **bn, const char *a)
 {
 	BIGNUM *ret = NULL;
 	BN_ULONG l = 0;
-	int neg = 0, h, m, i, j, k, c;
+	int neg = 0, h, i, j, k, c;
+	int m = 0;
 	int num;
 
 	if((a == NULL) || (*a == '\0')) { return (0); }
@@ -192,7 +192,6 @@ int BN_hex2bn(BIGNUM **bn, const char *a)
 	if(bn_expand(ret, i * 4) == NULL) { goto err; }
 
 	j = i; /* least significant 'hex' */
-	m = 0;
 	h = 0;
 	while(j > 0)
 	{

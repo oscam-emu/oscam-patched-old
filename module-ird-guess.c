@@ -39,7 +39,7 @@ int32_t init_irdeto_guess_tab(void)
 
 	while(fgets(token, sizeof(token), fp))
 	{
-		if(strlen(token) < 20) { continue; }
+		if(cs_strlen(token) < 20) { continue; }
 		for(i = b3 = b47 = caid = sid = skip = 0, ptr = strtok_r(token, ":", &saveptr1); (i < 4) && (ptr); ptr = strtok_r(NULL, ":", &saveptr1), i++)
 		{
 			trim(ptr);
