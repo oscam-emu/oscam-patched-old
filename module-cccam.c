@@ -125,49 +125,58 @@ void cc_xor(uint8_t *buf)
 void cc_cw_crypt(struct s_client *cl, uint8_t *cws, uint32_t cardid)
 {
 	struct cc_data *cc = cl->cc;
-	uint64_t unode_id;
-	int64_t snode_id;
+	uint8_t n = 0;
+	uint8_t i;
 	uint8_t tmp;
-	int32_t i;
+	uint8_t *nod = NULL;
 
-	if(cl->typ != 'c')
+	if (!cs_malloc(&nod, 8))
 	{
-		unode_id = b2ll(8, cc->node_id);
+		return;
 	}
-	else
+
+	for (i=0; i<8; i++)
 	{
-		unode_id = b2ll(8, cc->peer_node_id);
-	}
-	
-	if(unode_id > 0x7FFFFFFFFFFFFFFFLL)
-	{
-		for(i = 0; i < 16; i++)
+		if (cl->typ != 'c')
 		{
-			tmp = cws[i] ^(unode_id >> (4 * i));
-
-			if(i & 1)
-			{
-				tmp = ~tmp;
-			}
-
-			cws[i] = (cardid >> (2 * i)) ^ tmp;
+			nod[i] = cc->node_id[7-i];
+		}
+		else
+		{
+			nod[i] = cc->peer_node_id[7-i];
 		}
 	}
-	else
+
+	for (i=0; i<16; i++)
 	{
-		snode_id = unode_id;
-		for(i = 0; i < 16; i++)
+		if (i & 1)
 		{
-			tmp = cws[i] ^(snode_id >> (4 * i));
-
-			if(i & 1)
+			if (i != 15)
 			{
-				tmp = ~tmp;
+				n = (nod[i>>1]>>4) | (nod[(i>>1)+1]<<4);
 			}
-
-			cws[i] = (cardid >> (2 * i)) ^ tmp;
+			else
+			{
+				n = nod[i>>1]>>4;
+			}
 		}
+		else
+		{
+			n = nod[i>>1];
+		}
+
+		n = n & 0xff;
+		tmp = cws[i] ^ n;
+
+		if (i & 1)
+		{
+			tmp = ~tmp;
+		}
+
+		cws[i] = ((cardid >> (2 * i)) ^ tmp) & 0xff;
 	}
+
+	free(nod);
 }
 
 /** swap endianness (int) */
