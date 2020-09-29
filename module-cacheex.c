@@ -513,9 +513,10 @@ int8_t cacheex_maxhop_lg(struct s_client *cl)
 	{
 		if(cl->reader->cacheex.maxhop_lg > max)
 		{
-			maxhop_lg = max;
+			cl->reader->cacheex.maxhop_lg = max;
 		}
-		else if(cl->reader->cacheex.maxhop_lg < maxhop)
+		
+		if(cl->reader->cacheex.maxhop_lg < maxhop)
 		{
 			maxhop_lg = maxhop;
 		}
