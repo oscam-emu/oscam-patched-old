@@ -1213,7 +1213,7 @@ static void camd35_cacheex_push_in(struct s_client *cl, uint8_t *buf)
 	uint16_t size = buf[1] | (buf[2] << 8);
 	if(size < sizeof(er->ecmd5) + sizeof(er->csp_hash) + sizeof(er->cw))
 	{
-		cs_log_dbg(D_CACHEEX, "cacheex: %s received old cash-push format! data ignored!", username(cl));
+		cs_log_dbg(D_CACHEEX, "cacheex: %s received old cache-push format! data ignored!", username(cl));
 		return;
 	}
 

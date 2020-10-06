@@ -90,8 +90,18 @@ static uint8_t countCWpart(ECM_REQUEST *er, struct s_cw_cycle_check *cwc)
 {
 	uint8_t eo = cwc->nextcyclecw ? 0 : 8;
 	int8_t i, ret = 0;
-	char cwc_cw[9 * 3];
-	char er_cw[9 * 3];
+
+#ifdef WITH_DEBUG
+	if(cs_dblevel & D_CWC)
+	{
+		char cwc_cw[9 * 3];
+		char er_cw[9 * 3];
+		cs_hexdump(0, cwc->cw + eo, 8, cwc_cw, sizeof(cwc_cw));
+		cs_hexdump(0, er->cw + eo, 8, er_cw, sizeof(er_cw));
+		cs_log_dbg(D_CWC, "cyclecheck [countCWpart] er-cw %s", er_cw);
+		cs_log_dbg(D_CWC, "cyclecheck [countCWpart] cw-cw %s", cwc_cw);
+	}
+#endif
 
 	for(i = 0; i < 8; i++)
 	{
@@ -101,10 +111,7 @@ static uint8_t countCWpart(ECM_REQUEST *er, struct s_cw_cycle_check *cwc)
 		}
 	}
 
-	cs_hexdump(0, cwc->cw + eo, 8, cwc_cw, sizeof(cwc_cw));
-	cs_hexdump(0, er->cw + eo, 8, er_cw, sizeof(er_cw));
-	cs_log_dbg(D_CWC, "cyclecheck [countCWpart] er-cw %s", er_cw);
-	cs_log_dbg(D_CWC, "cyclecheck [countCWpart] cw-cw %s", cwc_cw);
+
 	if(ret > cfg.cwcycle_sensitive)
 	{
 		cs_log("cyclecheck [countCWpart] new cw is to like old one (unused part), sensitive %d, same bytes %d", cfg.cwcycle_sensitive, ret);
@@ -225,14 +232,15 @@ static int32_t checkcwcycle_int(ECM_REQUEST *er, char *er_ecmf , char *user, uin
 		}
 		need_new_entry = 0; // we got a entry for caid/prov/sid so we dont need new one
 
-		cs_hexdump(0, cw, 16, cwstr, sizeof(cwstr)); //checked cw for log
-
+#ifdef WITH_DEBUG
+		if(cs_dblevel & D_CWC)
+		{
+			cs_hexdump(0, cw, 16, cwstr, sizeof(cwstr)); //checked cw for log
+		}
+#endif
 		if(cs_malloc(&cwc, sizeof(struct s_cw_cycle_check)))
 		{
-
 			memcpy(cwc, currentnode, sizeof(struct s_cw_cycle_check)); //copy current to new
-
-
 
 			if(!currentnode->old)
 			{
@@ -241,11 +249,15 @@ static int32_t checkcwcycle_int(ECM_REQUEST *er, char *er_ecmf , char *user, uin
 			}
 			//now we have all data and can leave read lock
 			cs_readunlock(__func__, &cwcycle_lock);
-
-			cs_hexdump(0, cwc->ecm_md5[cwc->cwc_hist_entry].md5, 16, cwc_md5, sizeof(cwc_md5));
-			cs_hexdump(0, (void *)&cwc->ecm_md5[cwc->cwc_hist_entry].csp_hash, 4, cwc_csp, sizeof(cwc_csp));
-			cs_hexdump(0, cwc->cw, 16, cwc_cw, sizeof(cwc_cw));
-			ecmfmt(cwc_ecmf, ECM_FMT_LEN, cwc->caid, 0, cwc->provid, cwc->chid, 0, cwc->sid, cwc->ecmlen, cwc_md5, cwc_csp, cwc_cw, 0, 0, NULL, NULL);
+#ifdef WITH_DEBUG
+			if(cs_dblevel & D_CWC)
+			{
+				cs_hexdump(0, cwc->ecm_md5[cwc->cwc_hist_entry].md5, 16, cwc_md5, sizeof(cwc_md5));
+				cs_hexdump(0, (void *)&cwc->ecm_md5[cwc->cwc_hist_entry].csp_hash, 4, cwc_csp, sizeof(cwc_csp));
+				cs_hexdump(0, cwc->cw, 16, cwc_cw, sizeof(cwc_cw));
+				ecmfmt(cwc_ecmf, ECM_FMT_LEN, cwc->caid, 0, cwc->provid, cwc->chid, 0, cwc->sid, cwc->ecmlen, cwc_md5, cwc_csp, cwc_cw, 0, 0, NULL, NULL);
+			}
+#endif
 
 // Cycletime over Cacheex
 			if (cfg.cwcycle_usecwcfromce)
@@ -370,9 +382,14 @@ static int32_t checkcwcycle_int(ECM_REQUEST *er, char *er_ecmf , char *user, uin
 #endif
 						{
 							cs_log_dbg(D_CWC, "cyclecheck [OLD] [CheckedECM] Client: %s EA: %s", user, er_ecmf);
-							cs_hexdump(0, cwc->ecm_md5[k].md5, 16, cwc_md5, sizeof(cwc_md5));
-							cs_hexdump(0, (void *)&cwc->ecm_md5[k].csp_hash, 4, cwc_csp, sizeof(cwc_csp));
-							cs_log_dbg(D_CWC, "cyclecheck [OLD] [Stored ECM] Client: %s EA: %s.%s", user, cwc_md5, cwc_csp);
+#ifdef WITH_DEBUG
+							if(cs_dblevel & D_CWC)
+							{
+								cs_hexdump(0, cwc->ecm_md5[k].md5, 16, cwc_md5, sizeof(cwc_md5));
+								cs_hexdump(0, (void *)&cwc->ecm_md5[k].csp_hash, 4, cwc_csp, sizeof(cwc_csp));
+								cs_log_dbg(D_CWC, "cyclecheck [OLD] [Stored ECM] Client: %s EA: %s.%s", user, cwc_md5, cwc_csp);
+							}
+#endif
 							if(!cfg.cwcycle_dropold && !memcmp(cwc->ecm_md5[k].cw, cw, 16))
 								{ ret = 4; }
 							else

@@ -943,7 +943,12 @@ static int32_t cacheex_add_to_cache_int(struct s_client *cl, ECM_REQUEST *er, in
 
 	if(!chk_halfCW(er, er->cw))
 	{
-		log_cacheex_cw(er, "bad half cw");
+#ifdef WITH_DEBUG
+		if(cs_dblevel & D_CACHEEX)
+		{
+			log_cacheex_cw(er, "bad half cw");
+		}
+#endif
 		cl->cwcacheexerr++;
 		if(cl->account)
 			{ cl->account->cwcacheexerr++; }

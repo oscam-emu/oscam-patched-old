@@ -7319,8 +7319,13 @@ void dvbapi_write_cw(int32_t demux_id, int32_t pid, int32_t stream_id, uint8_t *
 
 			char lastcw[2 * cw_length + 1];
 			char newcw[2 * cw_length + 1];
-			cs_hexdump(0, demux[demux_id].last_cw[stream_id][n], cw_length, lastcw, sizeof(lastcw));
-			cs_hexdump(0, cw + (n * cw_length), cw_length, newcw, sizeof(newcw));
+#ifdef WITH_DEBUG
+			if(cs_dblevel & D_DVBAPI)
+			{
+				cs_hexdump(0, demux[demux_id].last_cw[stream_id][n], cw_length, lastcw, sizeof(lastcw));
+				cs_hexdump(0, cw + (n * cw_length), cw_length, newcw, sizeof(newcw));
+			}
+#endif
 
 			for(i = 0; i < CA_MAX; i++)
 			{
@@ -7539,8 +7544,12 @@ void dvbapi_send_dcw(struct s_client *client, ECM_REQUEST *er)
 		uint32_t status = dvbapi_check_ecm_delayed_delivery(i, er);
 		uint32_t comparecw0 = 0, comparecw1 = 0;
 		char ecmd5[17 * 3];
-		cs_hexdump(0, er->ecmd5, 16, ecmd5, sizeof(ecmd5));
-
+#ifdef WITH_DEBUG
+		if(cs_dblevel & D_DVBAPI)
+		{
+			cs_hexdump(0, er->ecmd5, 16, ecmd5, sizeof(ecmd5));
+		}
+#endif
 		if(status == 1 && er->rc) // wrong ecmhash
 		{
 			cs_log_dbg(D_DVBAPI, "Demuxer %d not interested in response ecmhash %s (requested different one)", i, ecmd5);
@@ -8516,8 +8525,12 @@ int32_t dvbapi_check_ecm_delayed_delivery(int32_t demux_id, ECM_REQUEST *er)
 	{
 		demux[demux_id].demux_fd[filternum].lastresult = er->rc; // save last result
 		char ecmd5[17 * 3];
-		cs_hexdump(0, er->ecmd5, 16, ecmd5, sizeof(ecmd5));
-
+#ifdef WITH_DEBUG
+		if(cs_dblevel & D_DVBAPI)
+		{
+			cs_hexdump(0, er->ecmd5, 16, ecmd5, sizeof(ecmd5));
+		}
+#endif
 		cs_log_dbg(D_DVBAPI, "Demuxer %d requested controlword for ecm %s on fd %d",
 			demux_id, ecmd5, demux[demux_id].demux_fd[filternum].fd);
 

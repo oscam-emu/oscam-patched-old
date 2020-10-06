@@ -486,15 +486,19 @@ static void cacheex_cache_add(ECM_REQUEST *er, ECMHASH *result, CW *cw, bool add
 #else
 				cw1, cw2);
 #endif
-
-			LL_LOCKITER *li = ll_li_create(er->csp_lastnodes, 0);
-			uint8_t *nodeid;
-			uint8_t hops = 0;
-			while((nodeid = ll_li_next(li)))
+#ifdef WITH_DEBUG
+			if(cs_dblevel & D_CACHEEX)
 			{
-				cs_log_dbg(D_CACHEEX, "Different CW-nodelist hop%02u: %" PRIu64 "X", ++hops, cacheex_node_id(nodeid));
+				LL_LOCKITER *li = ll_li_create(er->csp_lastnodes, 0);
+				uint8_t *nodeid;
+				uint8_t hops = 0;
+				while((nodeid = ll_li_next(li)))
+				{
+					cs_log_dbg(D_CACHEEX, "Different CW-nodelist hop%02u: %" PRIu64 "X", ++hops, cacheex_node_id(nodeid));
+				}
+				ll_li_destroy(li);
 			}
-			ll_li_destroy(li);
+#endif
 		}
 	}
 #endif
@@ -611,7 +615,7 @@ static bool cw_cache_check(ECM_REQUEST *er)
 				if(cw_cache_setting.timediff_old_cw > 0 && gone_diff > cw_cache_setting.timediff_old_cw) // late (>cw_cache_setting.timediff_old_cw) cw incoming
 				{
 					// log every dupe cw 
-					if(D_CW_CACHE & cs_dblevel)
+					if(cs_dblevel & D_CW_CACHE)
 					{
 						uint8_t remotenodeid[8];
 						cacheex_get_srcnodeid(er, remotenodeid);
@@ -633,9 +637,14 @@ static bool cw_cache_check(ECM_REQUEST *er)
 					}
 					else if(gone_diff > 15000) // same cw later as 15 secs
 					{
-						uint8_t remotenodeid[8];
-						cacheex_get_srcnodeid(er, remotenodeid);
-						cs_log_dbg(D_CW_CACHE,"[late-15sec+ CW] cache: %04X:%06X:%04X:%s | in: %04X:%06X:%04X:%s | diff(now): %"PRIi64" ms > %"PRIu16" - %s - hop %i%s, src-nodeid %" PRIu64 "X", cw_cache->caid, cw_cache->prid, cw_cache->srvid, cw1, er->caid, er->prid, er->srvid, cw2, gone_diff, cw_cache_setting.timediff_old_cw, (er->selected_reader && cs_strlen(er->selected_reader->label)) ? er->selected_reader->label : username(er->cacheex_src), ll_count(er->csp_lastnodes), (er->localgenerated) ? " (lg)" : "", er->csp_lastnodes ? cacheex_node_id(remotenodeid): 0);
+#ifdef WITH_DEBUG
+						if(cs_dblevel & D_CW_CACHE)
+						{						
+							uint8_t remotenodeid[8];
+							cacheex_get_srcnodeid(er, remotenodeid);
+							cs_log_dbg(D_CW_CACHE,"[late-15sec+ CW] cache: %04X:%06X:%04X:%s | in: %04X:%06X:%04X:%s | diff(now): %"PRIi64" ms > %"PRIu16" - %s - hop %i%s, src-nodeid %" PRIu64 "X", cw_cache->caid, cw_cache->prid, cw_cache->srvid, cw1, er->caid, er->prid, er->srvid, cw2, gone_diff, cw_cache_setting.timediff_old_cw, (er->selected_reader && cs_strlen(er->selected_reader->label)) ? er->selected_reader->label : username(er->cacheex_src), ll_count(er->csp_lastnodes), (er->localgenerated) ? " (lg)" : "", er->csp_lastnodes ? cacheex_node_id(remotenodeid): 0);
+						}
+#endif
 						drop_cw = 1;
 					}
 
