@@ -1386,10 +1386,14 @@ void request_cw_from_readers(ECM_REQUEST *er, uint8_t stop_stage)
 			}
 
 			struct s_reader *rdr = ea->reader;
-			char ecmd5[17 * 3];
-			cs_hexdump(0, er->ecmd5, 16, ecmd5, sizeof(ecmd5));
-			cs_log_dbg(D_TRACE | D_CSP, "request_cw stage=%d to reader %s ecm hash=%s", er->stage, rdr ? rdr->label : "", ecmd5);
-
+#ifdef WITH_DEBUG
+			if (cs_dblevel & (D_TRACE | D_CSP))
+			{
+				char ecmd5[17 * 3];
+				cs_hexdump(0, er->ecmd5, 16, ecmd5, sizeof(ecmd5));
+				cs_log_dbg(D_TRACE | D_CSP, "request_cw stage=%d to reader %s ecm hash=%s", er->stage, rdr ? rdr->label : "", ecmd5);
+			}
+#endif
 			ea->status |= REQUEST_SENT;
 			cs_ftime(&ea->time_request_sent);
 
@@ -1481,9 +1485,13 @@ void chk_dcw(struct s_ecm_answer *ea)
 		if(ea && ert->rc < E_NOTFOUND && ea->rc < E_NOTFOUND && memcmp(ea->cw, ert->cw, sizeof(ert->cw)) != 0)
 		{
 			char cw1[16 * 3 + 2], cw2[16 * 3 + 2];
-			cs_hexdump(0, ea->cw, 16, cw1, sizeof(cw1));
-			cs_hexdump(0, ert->cw, 16, cw2, sizeof(cw2));
-
+#ifdef WITH_DEBUG
+			if(cs_dblevel & D_TRACE)
+			{
+				cs_hexdump(0, ea->cw, 16, cw1, sizeof(cw1));
+				cs_hexdump(0, ert->cw, 16, cw2, sizeof(cw2));
+			}
+#endif
 			char ip1[20] = "", ip2[20] = "";
 			if(ea->reader && check_client(ea->reader->client)) { cs_strncpy(ip1, cs_inet_ntoa(ea->reader->client->ip), sizeof(ip1)); }
 			if(ert->cacheex_src) { cs_strncpy(ip2, cs_inet_ntoa(ert->cacheex_src->ip), sizeof(ip2)); }
@@ -2003,10 +2011,14 @@ int32_t write_ecm_answer(struct s_reader *reader, ECM_REQUEST *er, int8_t rc, ui
 		send_reader_stat(reader, er, ea, ea->rc);
 
 		// reader checks
+#ifdef WITH_DEBUG
+	if(cs_dblevel & D_TRACE)
+	{
 		char ecmd5[17 * 3];
 		cs_hexdump(0, er->ecmd5, 16, ecmd5, sizeof(ecmd5));
 		rdr_log_dbg(reader, D_TRACE, "ecm answer for ecm hash %s rc=%d", ecmd5, ea->rc);
-
+	}
+#endif
 		// Update reader stats:
 		if(ea->rc == E_FOUND)
 		{
