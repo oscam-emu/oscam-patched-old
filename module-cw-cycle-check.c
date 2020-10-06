@@ -198,9 +198,11 @@ static int32_t checkcwcycle_int(ECM_REQUEST *er, char *er_ecmf , char *user, uin
 	char cwstr[17 * 3]; // cw to check
 
 	char cwc_ecmf[ECM_FMT_LEN];
-	char cwc_md5[17 * 3];
 	char cwc_cw[17 * 3];
+#ifdef WITH_DEBUG
+	char cwc_md5[17 * 3];
 	char cwc_csp[5 * 3];
+#endif
 	int8_t n = 1, m = 1, k;
 	int32_t mcl = cfg.maxcyclelist;
 	struct s_cw_cycle_check *currentnode = NULL, *cwc = NULL;
