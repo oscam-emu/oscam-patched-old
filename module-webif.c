@@ -8097,7 +8097,7 @@ static char *send_oscam_cacheex(struct templatevars * vars, struct uriparams * p
 					else
 					{
 #ifdef CS_CACHEEX_AIO
-						tpl_addVar(vars, TPLAPPEND, rowvariable, tpl_getTpl(vars, "CACHEEXAIOTABLEROW"));
+						tpl_addVar(vars, TPLAPPEND, rowvariable, tpl_getTpl(vars, "CACHEEXAIOTABLEROWSTATS"));
 #else
 						tpl_addVar(vars, TPLAPPEND, rowvariable, tpl_getTpl(vars, "CACHEEXTABLEROW"));
 #endif

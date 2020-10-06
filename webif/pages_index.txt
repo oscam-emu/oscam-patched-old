@@ -46,7 +46,8 @@ CACHEEXPAGE                   cacheex/cacheex.html                              
 CACHEEXTABLEROW               cacheex/cacheex_tablerow.html                               CS_CACHEEX
 
 CACHEEXAIOPAGE                cacheexaio/cacheex.html                                     CS_CACHEEX_AIO
-CACHEEXAIOTABLEROW            cacheexaio/cacheex_tablerow_stats.html                      CS_CACHEEX_AIO
+CACHEEXAIOTABLEROW            cacheexaio/cacheex_tablerow.html                            CS_CACHEEX_AIO
+CACHEEXAIOTABLEROWSTATS       cacheexaio/cacheex_tablerow_stats.html                      CS_CACHEEX_AIO
 
 CONFIGANTICASC                config/anticasc.html                                        CS_ANTICASC
 CONFIGCACHE                   config/cache.html
