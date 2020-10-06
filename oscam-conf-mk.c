@@ -1037,12 +1037,12 @@ char *mk_t_allowedtimeframe(struct s_auth *account)
 
 	if(account->allowedtimeframe_set)
 	{
-		char mytime[6];
+		char mytime[8];
 		uint8_t day;
 		uint8_t value_in_day = 0;
 		uint8_t intime = 0;
-		uint16_t minutes =0;
-		uint16_t hours;
+		uint8_t minutes =0;
+		uint8_t hours;
 		char septime[2] = {'\0'};
 		char sepday[2] = {'\0'};
 
@@ -1068,7 +1068,7 @@ char *mk_t_allowedtimeframe(struct s_auth *account)
 						if(!intime)
 						{
 							cs_strncat(result, &septime[0], MAXALLOWEDTF);
-							snprintf(mytime, 6, "%02d:%02d", hours, minutes);
+							snprintf(mytime, sizeof(mytime), "%02d:%02d", hours, minutes);
 							cs_strncat(result, mytime, MAXALLOWEDTF);
 							cs_strncat(result, "-", MAXALLOWEDTF);
 							septime[0] = ',';
@@ -1086,7 +1086,7 @@ char *mk_t_allowedtimeframe(struct s_auth *account)
 					}
 					else if(intime)
 					{
-						snprintf(mytime, 6, "%02d:%02d", hours, minutes);
+						snprintf(mytime, sizeof(mytime), "%02d:%02d", hours, minutes);
 						cs_strncat(result, mytime, MAXALLOWEDTF);
 						septime[0] = ',';
 						intime = 0;
