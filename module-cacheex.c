@@ -783,6 +783,7 @@ bool cacheex_is_match_alias(struct s_client *cl, ECM_REQUEST *er)
 	return check_client(cl) && cl->account && cl->account->cacheex.mode == 1 && is_cacheex_matcher_matching(NULL, er);
 }
 
+#ifdef WITH_DEBUG
 static void log_cacheex_cw(ECM_REQUEST *er, char *reason)
 {
 	uint8_t *data;
@@ -798,6 +799,7 @@ static void log_cacheex_cw(ECM_REQUEST *er, char *reason)
 	cs_log_dbg(D_CACHEEX,"got pushed ecm [%s]: %s - odd/even 0x%x - CSP cw: %s - pushed from %s, at hop %d, origin node-id %" PRIu64 "X",
 			reason, buf_ecm, er->ecm[0], (checkECMD5(er)?"NO":"YES"), er->from_csp ? "csp" : username((er->cacheex_src?er->cacheex_src:er->client)), ll_count(er->csp_lastnodes), er->csp_lastnodes ? cacheex_node_id(remotenodeid): 0);
 }
+#endif
 
 // check if sky_ger 64 bit CW has valid checksum bytes and therefore is probably invalid
 uint8_t check_nds_cwex(ECM_REQUEST *er)
