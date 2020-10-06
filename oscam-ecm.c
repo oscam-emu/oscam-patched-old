@@ -950,8 +950,7 @@ int32_t send_dcw(struct s_client *client, ECM_REQUEST *er)
 #ifdef CS_CACHEEX_AIO
 		if(er->cw_count > 0x0F000000 || er->localgenerated)
 		{
-			uint32_t cw_count_cleaned = 0;
-			cw_count_cleaned = er->cw_count ^ 0x0F000000;
+			uint32_t cw_count_cleaned = er->cw_count ^ 0x0F000000;
 			if(cw_count_cleaned > 1)
 				snprintf(sreason+cx, (sizeof sreason)-cx, " (cw count %d) (lg)", cw_count_cleaned);
 			else
