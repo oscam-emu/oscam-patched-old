@@ -35,6 +35,18 @@ void camd35_cacheex_feature_trigger_in(struct s_client *cl, uint8_t *buf)
 	feature = buf[21] | (buf[20] << 8);
 	FTAB *lgonly_tab;
 
+	// check client & cacheex-mode
+	if(
+		!check_client(cl) || 
+		!(
+			(cl->typ == 'c' && (cl->account->cacheex.mode == 2 || cl->account->cacheex.mode == 1)) ||
+			(cl->typ == 'p' && cl->reader->cacheex.mode == 3)
+		)
+	)
+	{
+		return;
+	}
+
 	switch(feature)
 	{
 		// set localgenerated only
@@ -365,6 +377,12 @@ void camd35_cacheex_feature_trigger(struct s_client *cl, int32_t feature, uint8_
 	uint8_t payload[MAX_ECM_SIZE-size]; 
 	memset(payload, 0, sizeof(payload));
 
+	// check client & cacheex-mode
+	if(!check_client(cl))
+	{
+		return;
+	}
+	
 	switch(feature)
 	{
 		FTAB *lgonly_tab;
