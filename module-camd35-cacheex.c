@@ -39,8 +39,8 @@ void camd35_cacheex_feature_trigger_in(struct s_client *cl, uint8_t *buf)
 	if(
 		!check_client(cl) || 
 		!(
-			(cl->typ == 'c' && (cl->account->cacheex.mode == 2 || cl->account->cacheex.mode == 1)) ||
-			(cl->typ == 'p' && cl->reader->cacheex.mode == 3)
+			(cl->typ == 'c' && cl->account->cacheex.mode > 0) ||
+			(cl->typ == 'p' && cl->reader->cacheex.mode > 0)
 		)
 	)
 	{
@@ -73,7 +73,7 @@ void camd35_cacheex_feature_trigger_in(struct s_client *cl, uint8_t *buf)
 
 			memset(&lgonly_tab, 0, sizeof(lgonly_tab));
 
-			if(cl->typ == 'c' && (cl->account->cacheex.mode == 2 ||cl->account->cacheex.mode == 1))
+			if(cl->typ == 'c' && (cl->account->cacheex.mode == 2 || cl->account->cacheex.mode == 1))
 			{
 				lgonly_tab = &cl->account->cacheex.lg_only_tab;
 			}
@@ -81,11 +81,15 @@ void camd35_cacheex_feature_trigger_in(struct s_client *cl, uint8_t *buf)
 			{
 				lgonly_tab = &cl->reader->cacheex.lg_only_tab;
 			}
+			else
+			{
+				return;
+			}
 
 			// remotesettings enabled - replace local settings
 			if(cfg.cacheex_lg_only_remote_settings ||
 				(
-						(cl->typ == 'c' && (cl->account->cacheex.mode == 2 ||cl->account->cacheex.mode == 1) && cl->account->cacheex.lg_only_remote_settings)
+						(cl->typ == 'c' && (cl->account->cacheex.mode == 2 || cl->account->cacheex.mode == 1) && cl->account->cacheex.lg_only_remote_settings)
 					|| 	(cl->typ == 'p' && cl->reader->cacheex.mode == 3 && cl->reader->cacheex.lg_only_remote_settings)
 				)
 			)
@@ -157,13 +161,17 @@ void camd35_cacheex_feature_trigger_in(struct s_client *cl, uint8_t *buf)
 			CECSPVALUETAB *filter;
 			memset(&filter, 0, sizeof(filter));
 			
-			if(cl->typ == 'c' && (cl->account->cacheex.mode == 2 ||cl->account->cacheex.mode == 1) && cl->account->cacheex.allow_filter)
+			if(cl->typ == 'c' && (cl->account->cacheex.mode == 2 || cl->account->cacheex.mode == 1) && cl->account->cacheex.allow_filter)
 			{
 				filter = &cl->account->cacheex.filter_caidtab;
 			}
 			else if(cl->typ == 'p' && cl->reader->cacheex.mode == 3 && cl->reader->cacheex.allow_filter)
 			{
 				filter = &cl->reader->cacheex.filter_caidtab;
+			}
+			else
+			{
+				return;
 			}
 
 			cecspvaluetab_clear(filter);
@@ -205,14 +213,18 @@ void camd35_cacheex_feature_trigger_in(struct s_client *cl, uint8_t *buf)
 			CAIDVALUETAB *ctab;
 			memset(&ctab, 0, sizeof(ctab));
 
-			if(cl->typ == 'c' && (cl->account->cacheex.mode == 2 ||cl->account->cacheex.mode == 1))
-				{
-					ctab = &cl->account->cacheex.cacheex_nopushafter_tab;
-				}
-				else if(cl->typ == 'p' && cl->reader->cacheex.mode == 3)
-				{
-					ctab = &cl->reader->cacheex.cacheex_nopushafter_tab;
-				}
+			if(cl->typ == 'c' && (cl->account->cacheex.mode == 2 || cl->account->cacheex.mode == 1))
+			{
+				ctab = &cl->account->cacheex.cacheex_nopushafter_tab;
+			}
+			else if(cl->typ == 'p' && cl->reader->cacheex.mode == 3)
+			{
+				ctab = &cl->reader->cacheex.cacheex_nopushafter_tab;
+			}
+			else
+			{
+				return;
+			}
 
 			filter_count = buf[i+4];
 			i += 5;
@@ -243,7 +255,7 @@ void camd35_cacheex_feature_trigger_in(struct s_client *cl, uint8_t *buf)
 			break;
 		// max hop
 		case 16:
-			if(cl->typ == 'c' && (cl->account->cacheex.mode == 2 ||cl->account->cacheex.mode == 1) && cl->account->cacheex.allow_maxhop)
+			if(cl->typ == 'c' && (cl->account->cacheex.mode == 2 || cl->account->cacheex.mode == 1) && cl->account->cacheex.allow_maxhop)
 			{
 				cl->account->cacheex.maxhop = buf[24];
 				cl->account->cacheex.maxhop_lg = buf[25];
@@ -271,13 +283,17 @@ void camd35_cacheex_feature_trigger_in(struct s_client *cl, uint8_t *buf)
 		case 64: ;
 			memset(&lgonly_tab, 0, sizeof(lgonly_tab));
 
-			if(cl->typ == 'c' && (cl->account->cacheex.mode == 2 ||cl->account->cacheex.mode == 1))
+			if(cl->typ == 'c' && (cl->account->cacheex.mode == 2 || cl->account->cacheex.mode == 1))
 			{
 				lgonly_tab = &cl->account->cacheex.lg_only_tab;
 			}
 			else if(cl->typ == 'p' && cl->reader->cacheex.mode == 3)
 			{
 				lgonly_tab = &cl->reader->cacheex.lg_only_tab;
+			}
+			else
+			{
+				return;
 			}
 
 			filter_count = buf[i+4];
@@ -286,7 +302,7 @@ void camd35_cacheex_feature_trigger_in(struct s_client *cl, uint8_t *buf)
 			// remotesettings enabled - replace local settings
 			if(cfg.cacheex_lg_only_remote_settings ||
 				(
-						(cl->typ == 'c' && (cl->account->cacheex.mode == 2 ||cl->account->cacheex.mode == 1) && cl->account->cacheex.lg_only_remote_settings)
+						(cl->typ == 'c' && (cl->account->cacheex.mode == 2 || cl->account->cacheex.mode == 1) && cl->account->cacheex.lg_only_remote_settings)
 					|| 	(cl->typ == 'p' && cl->reader->cacheex.mode == 3 && cl->reader->cacheex.lg_only_remote_settings)
 					||  !lgonly_tab->nfilts
 				)
@@ -1609,7 +1625,7 @@ bool camd35_cacheex_server(struct s_client *client, uint8_t *mbuf)
 		camd35_cacheex_feature_request_reply(client, mbuf);
 		break;
 	case 0x41:	// cacheex-features answer
-		camd35_cacheex_feature_request_save(client, mbuf);		
+		// camd35_cacheex_feature_request_save(client, mbuf);		
 		break;
 	case 0x42:	// cacheex-feature trigger in
 		camd35_cacheex_feature_trigger_in(client, mbuf);
@@ -1653,7 +1669,7 @@ bool camd35_cacheex_recv_chk(struct s_client *client, uint8_t *buf)
 		camd35_cacheex_feature_request_reply(client, buf);
 		break;		
 	case 0x41:	// cacheex-features answer
-		camd35_cacheex_feature_request_save(client, buf);
+		// camd35_cacheex_feature_request_save(client, buf);
 		break;
 	case 0x42:	// cacheex-feature trigger in
 		camd35_cacheex_feature_trigger_in(client, buf);

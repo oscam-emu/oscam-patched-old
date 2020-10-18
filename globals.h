@@ -361,13 +361,13 @@
  *			constants
  * =========================== */
 #define CS_VERSION				"1.20_svn"
-#ifdef CS_CACHEEX
-#ifdef CS_CACHEEX_AIO
-#define CS_AIO_VERSION			"9.2.6"
-#endif
-#endif
 #ifndef CS_SVN_VERSION
 # define CS_SVN_VERSION			"test"
+#endif
+#ifdef CS_CACHEEX
+#ifdef CS_CACHEEX_AIO
+#define CS_AIO_VERSION			CS_SVN_VERSION
+#endif
 #endif
 #ifndef CS_TARGET
 # define CS_TARGET				"unknown"

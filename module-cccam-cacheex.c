@@ -41,8 +41,8 @@ void cc_cacheex_feature_trigger_in(struct s_client *cl, uint8_t *buf)
 	if(
 		!check_client(cl) || 
 		!(
-			(cl->typ == 'c' && (cl->account->cacheex.mode == 2 || cl->account->cacheex.mode == 1)) ||
-			(cl->typ == 'p' && cl->reader->cacheex.mode == 3)
+			(cl->typ == 'c' && cl->account->cacheex.mode > 0) ||
+			(cl->typ == 'p' && cl->reader->cacheex.mode > 0)
 		)
 	)
 	{
@@ -82,6 +82,10 @@ void cc_cacheex_feature_trigger_in(struct s_client *cl, uint8_t *buf)
 			else if(cl->typ == 'p' && cl->reader->cacheex.mode == 3)
 			{
 				lgonly_tab = &cl->reader->cacheex.lg_only_tab;
+			}
+			else
+			{
+				return;
 			}
 
 			// remotesettings enabled - replace local settings
@@ -167,6 +171,10 @@ void cc_cacheex_feature_trigger_in(struct s_client *cl, uint8_t *buf)
 			{
 				filter = &cl->reader->cacheex.filter_caidtab;
 			}
+			else
+			{
+				return;
+			}
 
 			cecspvaluetab_clear(filter);
 
@@ -208,13 +216,17 @@ void cc_cacheex_feature_trigger_in(struct s_client *cl, uint8_t *buf)
 			memset(&ctab, 0, sizeof(ctab));
 
 			if(cl->typ == 'c' && (cl->account->cacheex.mode == 2 || cl->account->cacheex.mode == 1))
-				{
-					ctab = &cl->account->cacheex.cacheex_nopushafter_tab;
-				}
-				else if(cl->typ == 'p' && cl->reader->cacheex.mode == 3)
-				{
-					ctab = &cl->reader->cacheex.cacheex_nopushafter_tab;
-				}
+			{
+				ctab = &cl->account->cacheex.cacheex_nopushafter_tab;
+			}
+			else if(cl->typ == 'p' && cl->reader->cacheex.mode == 3)
+			{
+				ctab = &cl->reader->cacheex.cacheex_nopushafter_tab;
+			}
+			else
+			{
+				return;
+			}
 
 			filter_count = buf[i+4];
 			i += 5;
@@ -280,6 +292,10 @@ void cc_cacheex_feature_trigger_in(struct s_client *cl, uint8_t *buf)
 			else if(cl->typ == 'p' && cl->reader->cacheex.mode == 3)
 			{
 				lgonly_tab = &cl->reader->cacheex.lg_only_tab;
+			}
+			else
+			{
+				return;
 			}
 
 			filter_count = buf[i+4];
