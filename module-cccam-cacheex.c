@@ -422,7 +422,6 @@ void cc_cacheex_feature_trigger(struct s_client *cl, int32_t feature, uint8_t mo
 					payload[i] = cl->reader->cacheex.localgenerated_only_in;
 				else
 					payload[i] = cfg.cacheex_localgenerated_only_in;
-				i += 1;
 			}
 			else if(mode == 3)
 			{
@@ -430,7 +429,6 @@ void cc_cacheex_feature_trigger(struct s_client *cl, int32_t feature, uint8_t mo
 					payload[i] = cl->account->cacheex.localgenerated_only_in;
 				else
 					payload[i] = cfg.cacheex_localgenerated_only_in;
-				i += 1;
 			}
 			
 			break;
@@ -1237,7 +1235,6 @@ static int32_t cc_cacheex_push_out(struct s_client *cl, struct ecm_request_t *er
 	{
 		*ofs = 0xFF;
 	}
-	ofs += 1;
 #endif
 
 	int32_t res = cc_cmd_send(cl, buf, size + 20, MSG_CACHE_PUSH);

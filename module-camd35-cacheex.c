@@ -421,7 +421,6 @@ void camd35_cacheex_feature_trigger(struct s_client *cl, int32_t feature, uint8_
 					payload[i] = cl->reader->cacheex.localgenerated_only_in;
 				else
 					payload[i] = cfg.cacheex_localgenerated_only_in;
-				i += 1;
 			}
 			else if(mode == 3)
 			{
@@ -429,7 +428,6 @@ void camd35_cacheex_feature_trigger(struct s_client *cl, int32_t feature, uint8_
 					payload[i] = cl->account->cacheex.localgenerated_only_in;
 				else
 					payload[i] = cfg.cacheex_localgenerated_only_in;
-				i += 1;
 			}
 			
 			break;
@@ -890,7 +888,6 @@ void camd35_cacheex_feature_request(struct s_client *cl)
 	buf[2] = 0;
 
 	i2b_buf(2, CACHEEX_FEATURES, buf + i); // set feature-list here
-	i += 2;
 
 	camd35_send_without_timeout(cl, buf, 12); //send adds +20
 }
@@ -907,7 +904,6 @@ void camd35_cacheex_feature_request_reply(struct s_client *cl, uint8_t *buf)
 	rbuf[2] = 0;
 	
 	i2b_buf(2, CACHEEX_FEATURES, rbuf + i);
-	i += 2;
 
 	camd35_send_without_timeout(cl, rbuf, 12); //send adds +20
 }
@@ -1230,7 +1226,6 @@ static int32_t camd35_cacheex_push_out(struct s_client *cl, struct ecm_request_t
 	{
 		*ofs = 0xFF;
 	}
-	ofs += 1;
 #endif
 	int32_t res = camd35_send(cl, buf, size);
 	NULLFREE(buf);
