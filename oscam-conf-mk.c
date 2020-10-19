@@ -619,7 +619,7 @@ char *mk_t_logfile(void)
 
 	if(cfg.logfile)
 	{
-		pos += snprintf(value + pos, needed - pos, "%s%s", dot, cfg.logfile);
+		snprintf(value + pos, needed - pos, "%s%s", dot, cfg.logfile);
 	}
 	return value;
 }

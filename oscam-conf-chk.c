@@ -382,9 +382,9 @@ void chk_cltab(char *classasc, CLASSTAB *clstab)
 	for(ptr1 = strtok_r(classasc, ",", &saveptr1); ptr1; ptr1 = strtok_r(NULL, ",", &saveptr1))
 	{
 		ptr1 = trim(ptr1);
-		if(ptr1[0] == '!')
+		if(ptr1[0] == '!' && newclstab.bclass != NULL)
 			{ newclstab.bclass[newclstab.bn++] = (uint8_t)a2i(ptr1 + 1, 2); }
-		else
+		else if(newclstab.aclass != NULL)
 			{ newclstab.aclass[newclstab.an++] = (uint8_t)a2i(ptr1, 2); }
 	}
 
