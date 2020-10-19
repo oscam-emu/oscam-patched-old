@@ -260,7 +260,7 @@ static int dvbapi_ioctl(int fd, uint32_t request, ...)
 
 			case DMX_STOP:
 			{
-				ret = send(fd, &request, sizeof(request), 0);
+				send(fd, &request, sizeof(request), 0);
 				ret = 1;
 				break;
 			}
@@ -2467,7 +2467,7 @@ void dvbapi_set_pid(int32_t demux_id, int32_t num, uint32_t idx, bool enable, bo
 										{
 											cs_log("ERROR: Could not close demuxer fd (errno=%d %s)", errno, strerror(errno));
 										}
-										currentfd = ca_fd[i] = 0;
+										// currentfd = ca_fd[i] = 0;
 									}
 								}
 							}
@@ -3323,7 +3323,7 @@ void dvbapi_resort_ecmpids(int32_t demux_id)
 			}
 		}
 	}
-	p_order = demux[demux_id].ECMpidcount + 1;
+	// p_order = demux[demux_id].ECMpidcount + 1;
 
 	for(n = 0; n < demux[demux_id].ECMpidcount; n++)
 	{
@@ -5669,6 +5669,11 @@ void dvbapi_process_input(int32_t demux_id, int32_t filter_num, uint8_t *buffer,
 				return;
 			}
 
+			if(!curpid)
+			{
+				cs_log_dbg(D_DVBAPI, "Error: no current PID is set!");
+				return;
+			}
 #ifdef WITH_EMU
 			if(caid_is_powervu(curpid->CAID)) // ecm counter for powervu
 			{
@@ -5727,6 +5732,12 @@ void dvbapi_process_input(int32_t demux_id, int32_t filter_num, uint8_t *buffer,
 					curpid->irdeto_maxindex = buffer[5]; // numchids = 7 (0..6)
 				}
 			}
+		}
+		
+		if(!curpid)
+		{
+			cs_log_dbg(D_DVBAPI, "Error: no current PID is set!");
+			return;
 		}
 
 		if(!(er = get_ecmtask()))
@@ -7097,7 +7108,7 @@ static void *dvbapi_main_local(void *cli)
 			{
 				if(type[i] == 1)
 				{
-					connfd = -1; // initially no socket to read from
+					// connfd = -1; // initially no socket to read from
 					uint8_t add_to_poll = 0; // we may need to additionally poll this socket when no PMT data comes in
 
 					if(pfd2[i].fd == listenfd)
@@ -7174,7 +7185,7 @@ static void *dvbapi_main_local(void *cli)
 								}
 							}
 							close(connfd);
-							connfd = -1;
+							// connfd = -1;
 
 							// last connection closed
 							if(!active_conn && (cfg.dvbapi_listenport || cfg.dvbapi_boxtype == BOXTYPE_PC_NODMX))
@@ -8284,6 +8295,12 @@ int32_t dvbapi_set_section_filter(int32_t demux_id, ECM_REQUEST *er, int32_t n)
 	if(pid != -1)
 	{
 		curpid = &demux[demux_id].ECMpids[pid];
+	}
+
+	if(!curpid)
+	{
+		cs_log_dbg(D_DVBAPI, "Error: no current PID is set!");
+		return -1;
 	}
 
 	if(curpid->table != er->ecm[0] && curpid->table != 0)
