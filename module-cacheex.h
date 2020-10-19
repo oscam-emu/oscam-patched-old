@@ -30,7 +30,7 @@ extern void cacheex_init(void);
 extern void cacheex_clear_account_stats(struct s_auth *account);
 extern void cacheex_clear_client_stats(struct s_client *client);
 extern void cacheex_load_config_file(void);
-static inline bool cacheex_reader(struct s_reader *rdr) { return rdr->cacheex.mode == 1; }
+static inline bool cacheex_reader(struct s_reader *rdr) { return rdr ? (rdr->cacheex.mode == 1 ? 1 : 0) : 0; }
 extern bool cacheex_is_match_alias(struct s_client *cl, ECM_REQUEST *er);
 void cacheex_set_csp_lastnode(ECM_REQUEST *er);
 void cacheex_set_cacheex_src(ECM_REQUEST *ecm, struct s_client *cl);
@@ -39,7 +39,7 @@ void cacheex_free_csp_lastnodes(ECM_REQUEST *er);
 void checkcache_process_thread_start(void);
 void cacheex_push_out(struct s_client *cl, ECM_REQUEST *er);
 bool cacheex_check_queue_length(struct s_client *cl);
-static inline int8_t cacheex_get_rdr_mode(struct s_reader *reader) { return reader->cacheex.mode; }
+static inline int8_t cacheex_get_rdr_mode(struct s_reader *reader) { return reader ? reader->cacheex.mode : 0; }
 void cacheex_init_hitcache(void);
 void cacheex_free_hitcache(void);
 void cacheex_cleanup_hitcache(bool force);
