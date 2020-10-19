@@ -39,8 +39,8 @@ int32_t chk_is_null_nodeid(uint8_t node_id[], uint8_t len);
 bool check_client(struct s_client *cl);
 uint16_t caidvaluetab_get_value(CAIDVALUETAB *cv, uint16_t caid, uint16_t default_value);
 int32_t chk_is_fakecw(uint8_t *cw);
-int32_t chk_srvid_disablecrccws_only_for_exception(ECM_REQUEST *er);
 #ifdef CS_CACHEEX_AIO
+int32_t chk_srvid_disablecrccws_only_for_exception(ECM_REQUEST *er);
 int32_t chk_srvid_no_wait_time(ECM_REQUEST *er);
 int32_t chk_srvid_localgenerated_only_exception(ECM_REQUEST *er);
 bool chk_nopushafter(uint16_t caid, CAIDVALUETAB *cv, int32_t ecm_time);

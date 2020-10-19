@@ -693,8 +693,8 @@ void cacheex_cache_push(ECM_REQUEST *er)
 					&& chk_ctab(er->caid, &rdr->ctab)                                        // Caid-check
 					&& (!checkECMD5(er) || chk_ident_filter(er->caid, er->prid, &rdr->ftab)) // Ident-check (not for csp: prid=0 always!)
 					&& chk_srvid(cl, er)                                                     // Service-check
-#ifdef CS_CACHEEX_AIO
 					&& chk_csp_ctab(er, &rdr->cacheex.filter_caidtab)                        // cacheex_ecm_filter
+#ifdef CS_CACHEEX_AIO
 					&& (er->localgenerated 													//  lg-only-check
 						|| chk_srvid_localgenerated_only_exception(er)	 					//		service-exception
 						|| !(rdr->cacheex.localgenerated_only							 	//		rdr-lg-only

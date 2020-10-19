@@ -742,8 +742,8 @@ typedef struct s_tuntab
 typedef struct s_sidtab
 {
 	char			label[64];
-	uint8_t			disablecrccws_only_for_exception;
 #ifdef CS_CACHEEX_AIO
+	uint8_t			disablecrccws_only_for_exception;
 	uint8_t			no_wait_time;
 	uint8_t			lg_only_exception;
 #endif
