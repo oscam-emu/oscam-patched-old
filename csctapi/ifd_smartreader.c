@@ -1007,13 +1007,17 @@ static int32_t smartreader_usb_open_dev(struct s_reader *reader)
 	// Likely scenario is a static smartreader_sio kernel module.
 	if(libusb_detach_kernel_driver(crdr_data->usb_dev_handle, crdr_data->interface) != 0 && errno != ENODATA)
 	{
-		detach_errno = errno;
 		smartreader_usb_close_internal(reader);
 		rdr_log(reader, "Couldn't detach interface from kernel. Please unload the FTDI drivers");
 		return (LIBUSB_ERROR_NOT_SUPPORTED);
 	}
 #endif
 	ret = libusb_get_device_descriptor(crdr_data->usb_dev, &usbdesc);
+	if(ret != 0) {
+		rdr_log_dbg(reader, D_IFD, "libusb_get_device_descriptor failed");
+	} else {
+		rdr_log_dbg(reader, D_IFD, "libusb_get_device_descriptor ok");
+	}
 
 #ifdef __WIN32__
 	// set configuration (needed especially for windows)
@@ -1025,51 +1029,44 @@ static int32_t smartreader_usb_open_dev(struct s_reader *reader)
 		ret = libusb_get_configuration(crdr_data->usb_dev_handle, &config);
 
 		// libusb-win32 on Windows 64 can return a null pointer for a valid device
-		if(libusb_set_configuration(crdr_data->usb_dev_handle, config) &&
-				errno != EBUSY)
+		if(libusb_set_configuration(crdr_data->usb_dev_handle, config) && errno != EBUSY)
 		{
-#if defined(__linux__)
-//			if(detach_errno == 0) { libusb_attach_kernel_driver(crdr_data->usb_dev_handle, crdr_data->interface); }
-#endif
 			smartreader_usb_close_internal(reader);
 			if(detach_errno == EPERM)
 			{
 				rdr_log(reader, "inappropriate permissions on device!");
 				return (-8);
-			}
-			else
-			{
+			} else {
 				rdr_log(reader, "unable to set usb configuration. Make sure smartreader_sio is unloaded!");
 				return (-3);
 			}
+		} else {
+			rdr_log_dbg(rdr, D_IFD, "libusb_set_configuration failed");
 		}
 	}
 #endif
 
 	ret = libusb_claim_interface(crdr_data->usb_dev_handle, crdr_data->interface) ;
+
 	if(ret != 0)
 	{
-#if defined(__linux__)
-//		if(detach_errno == 0) { libusb_attach_kernel_driver(crdr_data->usb_dev_handle, crdr_data->interface); }
-#endif
 		smartreader_usb_close_internal(reader);
 		if(detach_errno == EPERM)
 		{
 			rdr_log(reader, "inappropriate permissions on device!");
 			return (-8);
-		}
-		else
-		{
+		} else {
 			rdr_log(reader, "unable to claim usb device. Make sure smartreader_sio is unloaded!");
 			return (-5);
 		}
 	}
+	else {
+		rdr_log_dbg(reader, D_IFD, "smartreader_usb_close_internal OK");
+	}
+
 	if(smartreader_usb_reset(reader) != 0)
 	{
 		libusb_release_interface(crdr_data->usb_dev_handle, crdr_data->interface);
-#if defined(__linux__)
-//		if(detach_errno == 0) { libusb_attach_kernel_driver(crdr_data->usb_dev_handle, crdr_data->interface); }
-#endif
 		smartreader_usb_close_internal(reader);
 		rdr_log(reader, "smartreader_usb_reset failed");
 		return (-6);
@@ -1086,9 +1083,7 @@ static int32_t smartreader_usb_open_dev(struct s_reader *reader)
 		if(usbdesc.idProduct == 0x6011)
 		{
 			crdr_data->type = TYPE_4232H;
-		}
-		else
-		{
+		} else {
 			crdr_data->type = TYPE_2232C;
 		}
 	}
@@ -1107,9 +1102,6 @@ static int32_t smartreader_usb_open_dev(struct s_reader *reader)
 	if(smartreader_set_baudrate(reader, 9600) != 0)
 	{
 		libusb_release_interface(crdr_data->usb_dev_handle, crdr_data->interface);
-#if defined(__linux__)
-//		if(detach_errno == 0) { libusb_attach_kernel_driver(crdr_data->usb_dev_handle, crdr_data->interface); }
-#endif
 		smartreader_usb_close_internal(reader);
 		rdr_log(reader, "set baudrate failed");
 		return (-7);
@@ -1232,6 +1224,12 @@ static void *ReaderThread(void *p)
 								  0);
 
 		ret = libusb_submit_transfer(crdr_data->usbt[idx]);
+		if(ret != 0)
+		{
+			rdr_log_dbg(reader, D_IFD, "libusb_submit_transfer ok");
+		} else {
+			rdr_log_dbg(reader, D_IFD, "libusb_submit_transfer failed");
+		}
 	}
 
 	while(crdr_data->running)
@@ -1369,26 +1367,43 @@ static int32_t SR_Init(struct s_reader *reader)
 		rdr_log(reader, "Unable to open smartreader device %s in bus %s endpoint in 0x%02X out 0x%02X (ret=%d)\n", dev, busname, crdr_data->in_ep, crdr_data->out_ep, ret);
 		return ERROR;
 	}
+
 	if (crdr_data->rdrtype >= 2) {
-
-
-		rdr_log_dbg(reader, D_DEVICE, "SR: Setting smartreader latency timer to 16 ms");
 		//Set the FTDI latency timer to 16 ms is ftdi default latency.
 		ret = smartreader_set_latency_timer(reader, 16);
+		rdr_log_dbg(reader, D_DEVICE, "SR: Setting smartreader latency timer to %d ms", ret);
 	} else {
-		rdr_log_dbg(reader, D_DEVICE, "SR: Setting smartreader latency timer to 1 ms");
 		//Set the FTDI latency timer to 1 ms .
 		ret = smartreader_set_latency_timer(reader, 1);
+		rdr_log_dbg(reader, D_DEVICE, "SR: Setting smartreader latency timer to %d ms", ret);
 	}
+
 		//Set databits to 8o2
 	ret = smartreader_set_line_property(reader, BITS_8, STOP_BIT_2, ODD);
+	if(ret != 0)
+	{
+		rdr_log_dbg(reader, D_IFD, "smartreader_set_line_property ok");
+	} else {
+		rdr_log_dbg(reader, D_IFD, "smartreader_set_line_property failed");
+	}
 
 	//Set the DTR LOW and RTS LOW
 	ret = smartreader_setdtr_rts(reader, 0, 0);
-
+	if(ret != 0)
+	{
+		rdr_log_dbg(reader, D_IFD, "smartreader_setdtr_rts ok");
+	} else {
+		rdr_log_dbg(reader, D_IFD, "smartreader_setdtr_rts failed");
+	}
 
 	//Disable flow control
 	ret = smartreader_setflowctrl(reader, 0);
+	if(ret != 0)
+	{
+		rdr_log_dbg(reader, D_IFD, "smartreader_setflowctrl ok");
+	} else {
+		rdr_log_dbg(reader, D_IFD, "smartreader_setflowctrl failed");
+	}
 
 	// start the reading thread
 	crdr_data->g_read_buffer_size = 0;
