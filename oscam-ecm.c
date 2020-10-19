@@ -84,13 +84,11 @@ static uint8_t time_sort(ECM_CACHE *a, ECM_CACHE *b)
 	return (((int64_t)(a->upd_time.time) * 1000ull + (int64_t) a->upd_time.millitm) > ((int64_t)(b->upd_time.time) * 1000ull + (int64_t) b->upd_time.millitm)) ? -1 : 1;
 }
 
-#ifdef CS_CACHEEX
 static int compare_csp_hash_ecmcache(const void *arg, const void *obj)
 {
 	uint32_t h = ((const ECM_CACHE*)obj)->csp_hash;
 	return memcmp(arg, &h, 4);
 }
-#endif
 
 void ecm_cache_cleanup(bool force)
 {
@@ -1896,7 +1894,11 @@ int32_t write_ecm_answer(struct s_reader *reader, ECM_REQUEST *er, int8_t rc, ui
 			cs_log_dbg(D_TRACE, "notice: CW checksum check disabled");
 		}
 
-		if(chk_if_ignore_checksum(er, &reader->disablecrccws_only_for) && caid_is_videoguard(er->caid) && !chk_srvid_disablecrccws_only_for_exception(er))
+		if(chk_if_ignore_checksum(er, &reader->disablecrccws_only_for) && caid_is_videoguard(er->caid)
+#ifdef CS_CACHEEX_AIO		 
+		 && !chk_srvid_disablecrccws_only_for_exception(er)
+#endif
+		)
 		{
 			uint8_t k, csum;
 			uint8_t hit = 0;

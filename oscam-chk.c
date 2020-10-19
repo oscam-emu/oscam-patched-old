@@ -154,6 +154,7 @@ int32_t chk_srvid_match(ECM_REQUEST *er, SIDTAB *sidtab)
 	return (rc == 7);
 }
 
+#ifdef CS_CACHEEX_AIO
 int32_t chk_srvid_disablecrccws_only_for_exception(ECM_REQUEST *er)
 {
 	int32_t nr;
@@ -169,7 +170,6 @@ int32_t chk_srvid_disablecrccws_only_for_exception(ECM_REQUEST *er)
 	return(0);
 }
 
-#ifdef CS_CACHEEX_AIO
 int32_t chk_srvid_no_wait_time(ECM_REQUEST *er)
 {
 	int32_t nr;

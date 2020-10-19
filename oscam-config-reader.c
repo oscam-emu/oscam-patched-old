@@ -1465,9 +1465,7 @@ void free_reader(struct s_reader *rdr)
 	ftab_clear(&rdr->localcards);
 	ftab_clear(&rdr->fchid);
 	ftab_clear(&rdr->ftab);
-#ifdef CS_CACHEEX_AIO
 	ftab_clear(&rdr->disablecrccws_only_for);
-#endif
 
     NULLFREE(rdr->cltab.aclass);
  	NULLFREE(rdr->cltab.bclass);
