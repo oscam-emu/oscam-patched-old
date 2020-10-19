@@ -6682,14 +6682,14 @@ static char *send_oscam_services_edit(struct templatevars * vars, struct uripara
 
 	tpl_addVar(vars, TPLADD, "LABEL", xml_encode(vars, sidtab->label));
 	tpl_addVar(vars, TPLADD, "LABELENC", urlencode(vars, sidtab->label));
-#ifdef CS_CACHEEX_AIO
-	tpl_addVar(vars, TPLADD, "DCRCCHECKED", (sidtab->disablecrccws_only_for_exception == 1) ? "checked" : "" );
-	tpl_addVar(vars, TPLADD, "NWCHECKED", (sidtab->no_wait_time == 1) ? "checked" : "" );
-	tpl_addVar(vars, TPLADD, "LGOECHECKED", (sidtab->lg_only_exception == 1) ? "checked" : "" );
-#endif
 
 	if(sidtab)
 	{
+#ifdef CS_CACHEEX_AIO
+		tpl_addVar(vars, TPLADD, "DCRCCHECKED", (sidtab->disablecrccws_only_for_exception == 1) ? "checked" : "" );
+		tpl_addVar(vars, TPLADD, "NWCHECKED", (sidtab->no_wait_time == 1) ? "checked" : "" );
+		tpl_addVar(vars, TPLADD, "LGOECHECKED", (sidtab->lg_only_exception == 1) ? "checked" : "" );
+#endif
 		for(i = 0; i < sidtab->num_caid; i++)
 		{
 			if(i == 0) { tpl_printf(vars, TPLADD, "CAIDS", "%04X", sidtab->caid[i]); }
@@ -7402,7 +7402,7 @@ static char *send_oscam_failban(struct templatevars * vars, struct uriparams * p
 		if(strcmp(getParam(params, "intip"), "all") == 0)
 		{
 			// clear whole list
-			while((v_ban_entry = ll_iter_next(&itr)))
+			while(ll_iter_next(&itr))
 			{
 				ll_iter_remove_data(&itr);
 			}
