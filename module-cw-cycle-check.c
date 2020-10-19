@@ -217,6 +217,7 @@ static int32_t checkcwcycle_int(ECM_REQUEST *er, char *er_ecmf , char *user, uin
 
 	//read lock
 	cs_readlock(__func__, &cwcycle_lock);
+	bool readlocked = true;
 	for(currentnode = cw_cc_list; currentnode; currentnode = currentnode->next)
 	{
 		if(currentnode->caid != er->caid || currentnode->provid != er->prid || currentnode->sid != er->srvid || currentnode->chid != er->chid)
@@ -251,6 +252,7 @@ static int32_t checkcwcycle_int(ECM_REQUEST *er, char *er_ecmf , char *user, uin
 			}
 			//now we have all data and can leave read lock
 			cs_readunlock(__func__, &cwcycle_lock);
+			readlocked = false;
 #ifdef WITH_DEBUG
 			if(cs_dblevel & D_CWC)
 			{
@@ -581,6 +583,11 @@ static int32_t checkcwcycle_int(ECM_REQUEST *er, char *er_ecmf , char *user, uin
 			cwc = NULL;
 		}
 		break;
+	}
+
+	if (readlocked)
+	{
+		cs_readunlock(__func__, &cwcycle_lock);
 	}
 
 	if(need_new_entry)
