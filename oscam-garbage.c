@@ -139,10 +139,7 @@ static void garbage_collector(void)
 				}
 			}
 
-			if(j < 3)
-			{
-				cs_writeunlock(__func__, &garbage_lock[i]);
-			}
+			cs_writeunlock(__func__, &garbage_lock[i]);
 
 			// list has been taken out before so we don't need a lock here anymore!
 			while(garbage)
