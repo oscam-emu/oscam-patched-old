@@ -535,7 +535,7 @@ static int32_t drecas_card_init(struct s_reader *reader, ATR *newatr)
 			do
 			{
 				tempbuf[0] = '\0';
-				if(usercmd != NULL) free(usercmd);
+				if(usercmd != NULL) NULLFREE(usercmd);
 
 				if(fgets(tempbuf, 2048, pFile) == NULL) continue;
 
@@ -571,7 +571,7 @@ static int32_t drecas_card_init(struct s_reader *reader, ATR *newatr)
 			rdr_log(reader, "Can't open script file (%s)", reader->userscript);
 		}
 
-		//if(usercmd != NULL) free(usercmd);
+		if(usercmd != NULL) free(usercmd);
 		if(tempbuf != NULL) free(tempbuf);
 	}
 
