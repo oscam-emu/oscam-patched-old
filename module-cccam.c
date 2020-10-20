@@ -1068,7 +1068,7 @@ int32_t cc_send_srv_data(struct s_client *cl)
 
 int32_t loop_check(uint8_t *myid, struct s_client *cl)
 {
-	if(!cl)
+	if(!cl || !myid)
 	{
 		return 0;
 	}
@@ -2926,7 +2926,7 @@ int32_t cc_parse_msg(struct s_client *cl, uint8_t *buf, int32_t l)
 		case MSG_NEW_CARD_SIDINFO:
 		case MSG_NEW_CARD:
 		{
-			if(l < 16)
+			if(l < 16 || !rdr)
 			{
 				break;
 			}
@@ -3095,7 +3095,8 @@ int32_t cc_parse_msg(struct s_client *cl, uint8_t *buf, int32_t l)
 					if(config_enabled(WITH_LB) && !cfg.lb_mode)
 					{
 						cl->stopped = 1; // server says invalid
-						rdr->card_status = CARD_FAILURE;
+						if(rdr)
+							rdr->card_status = CARD_FAILURE;
 					}
 				}
 			}
@@ -4204,7 +4205,6 @@ int32_t cc_srv_wakeup_readers(struct s_client *cl)
 	int32_t wakeup = 0;
 	struct s_reader *rdr;
 	struct s_client *client;
-	struct cc_data *cc;
 
 	for(rdr = first_active_reader; rdr; rdr = rdr->next)
 	{
@@ -4231,7 +4231,7 @@ int32_t cc_srv_wakeup_readers(struct s_client *cl)
 		}
 
 		// reader is in shutdown
-		if((client = rdr->client) == NULL || (cc = client->cc) == NULL || client->kill)
+		if((client = rdr->client) == NULL || (client->cc) == NULL || client->kill)
 		{
 			continue;
 		}
@@ -4306,7 +4306,7 @@ int32_t cc_srv_connect(struct s_client *cl)
 
 	cs_log_dbg(D_TRACE, "receive ccc checksum");
 
-	if((i = cc_recv_to(cl, buf, 20)) == 20)
+	if(cc_recv_to(cl, buf, 20) == 20)
 	{
 		//cs_log_dump_dbg(D_CLIENT, buf, 20, "cccam: recv:");
 		cc_crypt(&cc->block[DECRYPT], buf, 20, DECRYPT);
@@ -4770,7 +4770,7 @@ int32_t cc_cli_connect(struct s_client *cl)
 	cc_crypt(&cc->block[ENCRYPT], (uint8_t *)pwd, cs_strlen(pwd), ENCRYPT);
 	cc_cmd_send(cl, buf, 6, MSG_NO_HEADER); // send 'CCcam' xor w/ pwd
 
-	if((n = cc_recv_to(cl, data, 20)) != 20)
+	if((cc_recv_to(cl, data, 20)) != 20)
 	{
 		cs_log("%s login failed, usr/pwd invalid", getprefix());
 		cc_cli_close(cl, 0);

@@ -350,14 +350,14 @@ int32_t init_provid(void)
 	nr = 0;
 	while(fgets(token, MAXLINESIZE, fp))
 	{
-		int32_t i, l;
+		int32_t i;
 		struct s_provid *new_provid = NULL;
 		char *tmp, *ptr1;
 
 		tmp = trim(token);
 
 		if(tmp[0] == '#') { continue; }
-		if((l = cs_strlen(tmp)) < 11) { continue; }
+		if(cs_strlen(tmp) < 11) { continue; }
 		if(!(payload = strchr(token, '|'))) { continue; }
 
 		*payload++ = '\0';
@@ -519,14 +519,14 @@ int32_t init_srvid(void)
 
 	while(fgets(token, MAXLINESIZE, fp))
 	{
-		int32_t l, len = 0, len2, srvidtmp;
+		int32_t len = 0, len2, srvidtmp;
 		uint32_t k;
 		uint32_t pos;
 		char *srvidasc, *prov;
 		tmp = trim(token);
 
 		if(tmp[0] == '#') { continue; }
-		if((l = cs_strlen(tmp)) < 6) { continue; }
+		if(cs_strlen(tmp) < 6) { continue; }
 		if(!(srvidasc = strchr(token, ':'))) { continue; }
 		if(!(payload = strchr(token, '|'))) { continue; }
 		*payload++ = '\0';
@@ -1091,14 +1091,12 @@ int32_t init_tierid(void)
 	nr = 0;
 	while(fgets(token, MAXLINESIZE, fp))
 	{
-
-		int32_t l;
 		void *ptr;
 		char *tmp, *tieridasc;
 		tmp = trim(token);
 
 		if(tmp[0] == '#') { continue; }
-		if((l = cs_strlen(tmp)) < 6) { continue; }
+		if(cs_strlen(tmp) < 6) { continue; }
 		if(!(payload = strchr(token, '|'))) { continue; }
 		if(!(tieridasc = strchr(token, ':'))) { continue; }
 		*payload++ = '\0';
