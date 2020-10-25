@@ -614,7 +614,7 @@ static char *_ghttp_basic_auth(struct s_client *client)
 	{
 		cs_log_dbg(D_CLIENT, "%s: username specified and no existing session, adding basic auth", client->reader->label);
 		ret = snprintf((char *)auth, sizeof(auth), "%s:%s", client->reader->r_usr, client->reader->r_pwd);
-		ret = b64encode((char *)auth, ret, &encauth);
+		b64encode((char *)auth, ret, &encauth);
 	}
 	return encauth;
 }
@@ -859,7 +859,7 @@ static int32_t ghttp_capmt_notify(struct s_client *client, struct demux_s *demux
 			client->reader->label, (pids_len > 0) ? "POST" : "GET", demux->onid, demux->tsid,
 			demux->program_number, demux->ECMpidcount, demux->ens);
 
-	ret = ghttp_send(client, req, ret + pids_len);
+	ghttp_send(client, req, ret + pids_len);
 
 	if(pids_len > 0)
 	{

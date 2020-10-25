@@ -549,11 +549,15 @@ void cardreader_process_ecm(struct s_reader *reader, struct s_client *cl, ECM_RE
 	write_ecm_answer(reader, er, ea.rc, ea.rcEx, ea.cw, ea.msglog, ea.tier, &ea.cw_ex);
 
 	cl->lastecm = time((time_t *)0);
-	char ecmd5[17 * 3];
-	cs_hexdump(0, er->ecmd5, 16, ecmd5, sizeof(ecmd5));
+#ifdef WITH_DEBUG
+	if(cs_dblevel & D_READER)
+	{
+		char ecmd5[17 * 3];
+		cs_hexdump(0, er->ecmd5, 16, ecmd5, sizeof(ecmd5));
 
-	rdr_log_dbg(reader, D_READER, "ecm hash: %s real time: %"PRId64" ms", ecmd5, comp_timeb(&tpe, &tps));
-
+		rdr_log_dbg(reader, D_READER, "ecm hash: %s real time: %"PRId64" ms", ecmd5, comp_timeb(&tpe, &tps));
+	}
+#endif
 	reader_post_process(reader);
 }
 

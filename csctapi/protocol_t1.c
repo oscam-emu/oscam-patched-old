@@ -145,10 +145,12 @@ int32_t Protocol_T1_Command(struct s_reader *reader, unsigned char *command, uin
 		timeout = ICC_Async_GetTimings(reader, reader->CWT);  // we are going to send: CWT timeout
 		//cs_sleepus(reader->block_delay); // we were receiving, now sending so wait BGT time
 		ret = T1_Block_SendSBlock(reader, block_data, T1_BLOCK_S_IFS_REQ, 1, &inf, timeout);
-		rdr_log_dbg(reader, D_IFD, "Protocol: Sending block S(IFS request, %d)", inf);
+		if(ret == ERROR)
+		{
+			rdr_log_dbg(reader, D_IFD, "Protocol: Sending block S(IFS request, %d)", inf);
+		}
 
 		/* Receive a block */
-
 		timeout = ICC_Async_GetTimings(reader, reader->BWT); // we are going to receive so set Block Waiting Timeout!
 		//cs_sleepus(reader->block_delay); // we were sending, now receiving so wait BGT time
 		ret = Protocol_T1_ReceiveBlock(reader, block_data, &block_length, &rsp_type, timeout);
@@ -170,7 +172,10 @@ int32_t Protocol_T1_Command(struct s_reader *reader, unsigned char *command, uin
 		timeout = ICC_Async_GetTimings(reader, reader->CWT);  // we are going to send: CWT timeout
 		//cs_sleepus(reader->block_delay); // we were receiving, now sending so wait BGT time
 		ret = T1_Block_SendSBlock(reader, block_data, T1_BLOCK_S_RESYNCH_REQ, 0, NULL, timeout);
-		rdr_log_dbg(reader, D_IFD, "Protocol: Sending block S(RESYNCH request)");
+		if(ret == ERROR)
+		{
+			rdr_log_dbg(reader, D_IFD, "Protocol: Sending block S(RESYNCH request)");
+		}
 
 		/* Receive a block */
 		timeout = ICC_Async_GetTimings(reader, reader->BWT); // we are going to receive so set Block Waiting Timeout!

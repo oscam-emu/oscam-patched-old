@@ -513,9 +513,10 @@ int8_t cacheex_maxhop_lg(struct s_client *cl)
 	{
 		if(cl->reader->cacheex.maxhop_lg > max)
 		{
-			maxhop_lg = max;
+			cl->reader->cacheex.maxhop_lg = max;
 		}
-		else if(cl->reader->cacheex.maxhop_lg < maxhop)
+		
+		if(cl->reader->cacheex.maxhop_lg < maxhop)
 		{
 			maxhop_lg = maxhop;
 		}
@@ -692,8 +693,8 @@ void cacheex_cache_push(ECM_REQUEST *er)
 					&& chk_ctab(er->caid, &rdr->ctab)                                        // Caid-check
 					&& (!checkECMD5(er) || chk_ident_filter(er->caid, er->prid, &rdr->ftab)) // Ident-check (not for csp: prid=0 always!)
 					&& chk_srvid(cl, er)                                                     // Service-check
-#ifdef CS_CACHEEX_AIO
 					&& chk_csp_ctab(er, &rdr->cacheex.filter_caidtab)                        // cacheex_ecm_filter
+#ifdef CS_CACHEEX_AIO
 					&& (er->localgenerated 													//  lg-only-check
 						|| chk_srvid_localgenerated_only_exception(er)	 					//		service-exception
 						|| !(rdr->cacheex.localgenerated_only							 	//		rdr-lg-only
@@ -782,6 +783,7 @@ bool cacheex_is_match_alias(struct s_client *cl, ECM_REQUEST *er)
 	return check_client(cl) && cl->account && cl->account->cacheex.mode == 1 && is_cacheex_matcher_matching(NULL, er);
 }
 
+#ifdef WITH_DEBUG
 static void log_cacheex_cw(ECM_REQUEST *er, char *reason)
 {
 	uint8_t *data;
@@ -797,6 +799,7 @@ static void log_cacheex_cw(ECM_REQUEST *er, char *reason)
 	cs_log_dbg(D_CACHEEX,"got pushed ecm [%s]: %s - odd/even 0x%x - CSP cw: %s - pushed from %s, at hop %d, origin node-id %" PRIu64 "X",
 			reason, buf_ecm, er->ecm[0], (checkECMD5(er)?"NO":"YES"), er->from_csp ? "csp" : username((er->cacheex_src?er->cacheex_src:er->client)), ll_count(er->csp_lastnodes), er->csp_lastnodes ? cacheex_node_id(remotenodeid): 0);
 }
+#endif
 
 // check if sky_ger 64 bit CW has valid checksum bytes and therefore is probably invalid
 uint8_t check_nds_cwex(ECM_REQUEST *er)
@@ -841,7 +844,7 @@ static int32_t cacheex_add_to_cache_int(struct s_client *cl, ECM_REQUEST *er, in
 		return 0;
 	}
 
-	if(!cfg.disablecrccws && ((cl->typ == 'c' && !cl->account->disablecrccacheex) || ( cl->typ == 'p' && !cl->reader->disablecrccws)))
+	if(!cfg.disablecrccws && ((cl->typ == 'c' && cl->account && !cl->account->disablecrccacheex) || ( cl->typ == 'p' && cl->reader && !cl->reader->disablecrccws)))
 	{
 		uint8_t selectedForIgnChecksum = chk_if_ignore_checksum(er, &cfg.disablecrccws_only_for);
 		if(cl->typ == 'c')
@@ -878,7 +881,7 @@ static int32_t cacheex_add_to_cache_int(struct s_client *cl, ECM_REQUEST *er, in
 		{
 			if(check_nds_cwex(er))
 			{
-				if(cl->reader->dropbadcws)
+				if(check_client(cl) && cl->reader && cl->reader->dropbadcws)
 				{
 					if (((D_CACHEEX) & cs_dblevel)) // avoid useless operations if debug is not enabled
 					{
@@ -942,7 +945,12 @@ static int32_t cacheex_add_to_cache_int(struct s_client *cl, ECM_REQUEST *er, in
 
 	if(!chk_halfCW(er, er->cw))
 	{
-		log_cacheex_cw(er, "bad half cw");
+#ifdef WITH_DEBUG
+		if(cs_dblevel & D_CACHEEX)
+		{
+			log_cacheex_cw(er, "bad half cw");
+		}
+#endif
 		cl->cwcacheexerr++;
 		if(cl->account)
 			{ cl->account->cwcacheexerr++; }

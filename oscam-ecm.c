@@ -84,13 +84,11 @@ static uint8_t time_sort(ECM_CACHE *a, ECM_CACHE *b)
 	return (((int64_t)(a->upd_time.time) * 1000ull + (int64_t) a->upd_time.millitm) > ((int64_t)(b->upd_time.time) * 1000ull + (int64_t) b->upd_time.millitm)) ? -1 : 1;
 }
 
-#ifdef CS_CACHEEX
 static int compare_csp_hash_ecmcache(const void *arg, const void *obj)
 {
 	uint32_t h = ((const ECM_CACHE*)obj)->csp_hash;
 	return memcmp(arg, &h, 4);
 }
-#endif
 
 void ecm_cache_cleanup(bool force)
 {
@@ -950,8 +948,7 @@ int32_t send_dcw(struct s_client *client, ECM_REQUEST *er)
 #ifdef CS_CACHEEX_AIO
 		if(er->cw_count > 0x0F000000 || er->localgenerated)
 		{
-			uint32_t cw_count_cleaned;
-			cw_count_cleaned = er->cw_count ^= 0x0F000000;
+			uint32_t cw_count_cleaned = er->cw_count ^ 0x0F000000;
 			if(cw_count_cleaned > 1)
 				snprintf(sreason+cx, (sizeof sreason)-cx, " (cw count %d) (lg)", cw_count_cleaned);
 			else
@@ -1386,10 +1383,14 @@ void request_cw_from_readers(ECM_REQUEST *er, uint8_t stop_stage)
 			}
 
 			struct s_reader *rdr = ea->reader;
-			char ecmd5[17 * 3];
-			cs_hexdump(0, er->ecmd5, 16, ecmd5, sizeof(ecmd5));
-			cs_log_dbg(D_TRACE | D_CSP, "request_cw stage=%d to reader %s ecm hash=%s", er->stage, rdr ? rdr->label : "", ecmd5);
-
+#ifdef WITH_DEBUG
+			if (cs_dblevel & (D_TRACE | D_CSP))
+			{
+				char ecmd5[17 * 3];
+				cs_hexdump(0, er->ecmd5, 16, ecmd5, sizeof(ecmd5));
+				cs_log_dbg(D_TRACE | D_CSP, "request_cw stage=%d to reader %s ecm hash=%s", er->stage, rdr ? rdr->label : "", ecmd5);
+			}
+#endif
 			ea->status |= REQUEST_SENT;
 			cs_ftime(&ea->time_request_sent);
 
@@ -1471,7 +1472,7 @@ void chk_dcw(struct s_ecm_answer *ea)
 	ECM_REQUEST *ert = ea->er;
 	struct s_ecm_answer *ea_list;
 	struct s_reader *eardr = ea->reader;
-	if(!ert)
+	if(!ert || !eardr)
 		{ return; }
 
 	// ecm request already answered!
@@ -1481,9 +1482,13 @@ void chk_dcw(struct s_ecm_answer *ea)
 		if(ea && ert->rc < E_NOTFOUND && ea->rc < E_NOTFOUND && memcmp(ea->cw, ert->cw, sizeof(ert->cw)) != 0)
 		{
 			char cw1[16 * 3 + 2], cw2[16 * 3 + 2];
-			cs_hexdump(0, ea->cw, 16, cw1, sizeof(cw1));
-			cs_hexdump(0, ert->cw, 16, cw2, sizeof(cw2));
-
+#ifdef WITH_DEBUG
+			if(cs_dblevel & D_TRACE)
+			{
+				cs_hexdump(0, ea->cw, 16, cw1, sizeof(cw1));
+				cs_hexdump(0, ert->cw, 16, cw2, sizeof(cw2));
+			}
+#endif
 			char ip1[20] = "", ip2[20] = "";
 			if(ea->reader && check_client(ea->reader->client)) { cs_strncpy(ip1, cs_inet_ntoa(ea->reader->client->ip), sizeof(ip1)); }
 			if(ert->cacheex_src) { cs_strncpy(ip2, cs_inet_ntoa(ert->cacheex_src->ip), sizeof(ip2)); }
@@ -1752,6 +1757,11 @@ int32_t write_ecm_answer(struct s_reader *reader, ECM_REQUEST *er, int8_t rc, ui
 	struct timeb now;
 	cs_ftime(&now);
 
+#ifdef CS_CACHEEX_AIO
+	uint8_t dontsetAnswered = 0;
+#endif
+	uint8_t dontwriteStats = 0;
+
 	if(er && er->parent)
 	{
 		// parent is only set on reader->client->ecmtask[], but we want original er
@@ -1767,6 +1777,16 @@ int32_t write_ecm_answer(struct s_reader *reader, ECM_REQUEST *er, int8_t rc, ui
 		if(er->tps.time < timeout)
 			{ return 0; }
 	}
+
+#ifdef CS_CACHEEX_AIO
+	if(rc < E_NOTFOUND && !er->localgenerated && (reader->cacheex.localgenerated_only_in || chk_lg_only(er, &reader->cacheex.lg_only_in_tab)) && !chk_srvid_localgenerated_only_exception(er))
+	{
+		cs_log_dbg(D_CACHEEX, "reader: %s !er->localgenerated - rc: E_NOTFOUND set, no stats written for reader", reader ? reader->label : "-");
+		rc = E_NOTFOUND;
+		dontsetAnswered = 1;
+		dontwriteStats = 1;
+	}
+#endif
 
 	struct s_ecm_answer *ea = get_ecm_answer(reader, er);
 	if(!ea) { return 0; }
@@ -1784,26 +1804,24 @@ int32_t write_ecm_answer(struct s_reader *reader, ECM_REQUEST *er, int8_t rc, ui
 	// Skip check for BISS1 - cw could be zero but still catch cw=0 by anticascading
 	// Skip check for BISS2 - we use the extended cw, so the "simple" cw is always zero
 
-#ifdef CS_CACHEEX_AIO
-	// vg2 bad/wrong chksum/ecm
+	// bad/wrong chksum/ecm
 	if(rc == E_NOTFOUND && rcEx == E2_WRONG_CHKSUM)
 	{
-		er->rc = E_INVALID;
-		er->rcEx = rcEx;
-		er->stage = 5;
-		er->reader_avail= 0;				// count of available readers for ecm
-		er->readers= 0;						// count of available used readers for ecm
-		er->reader_requested= 0;			// count of real requested readers
-		er->localreader_count= 0;			// count of selected local readers
-		er->cacheex_reader_count= 0;		// count of selected cacheex mode-1 readers
-		er->fallback_reader_count= 0;		// count of selected fb readers
-		er->reader_count= 0;				// count of selected not fb readers
-		send_dcw(er->client, er);
 		cs_log_dbg(D_READER, "ECM for reader %s was bad/has a wrong chksum!", reader ? reader->label : "-");
-		cs_writeunlock(__func__, &ea->ecmanswer_lock);
-		return 0;
+		rc = E_INVALID;
+		rcEx = E2_WRONG_CHKSUM;
+		er->stage = 5;
+
+		// dont write stats for bad/wrong chksum/ecm
+		dontwriteStats = 1;
+
+		// set all other matching_readers => inactive to skip them and dont spread the bad ecm
+		struct s_ecm_answer *ea_list;
+		for(ea_list = er->matching_rdr; ea_list; ea_list = ea_list->next)
+		{
+			ea_list->status &= ~(READER_ACTIVE | READER_FALLBACK);
+		}
 	}
-#endif
 
 	if(rc < E_NOTFOUND && cw && chk_is_null_CW(cw) && !caid_is_biss(er->caid))
 	{
@@ -1876,7 +1894,11 @@ int32_t write_ecm_answer(struct s_reader *reader, ECM_REQUEST *er, int8_t rc, ui
 			cs_log_dbg(D_TRACE, "notice: CW checksum check disabled");
 		}
 
-		if(chk_if_ignore_checksum(er, &reader->disablecrccws_only_for) && caid_is_videoguard(er->caid) && !chk_srvid_disablecrccws_only_for_exception(er))
+		if(chk_if_ignore_checksum(er, &reader->disablecrccws_only_for) && caid_is_videoguard(er->caid)
+#ifdef CS_CACHEEX_AIO		 
+		 && !chk_srvid_disablecrccws_only_for_exception(er)
+#endif
+		)
 		{
 			uint8_t k, csum;
 			uint8_t hit = 0;
@@ -1943,7 +1965,14 @@ int32_t write_ecm_answer(struct s_reader *reader, ECM_REQUEST *er, int8_t rc, ui
 #endif
 	//END -- SPECIAL CHECKs for rc
 
-	ea->status |= REQUEST_ANSWERED;
+#ifdef CS_CACHEEX_AIO
+	if(!dontsetAnswered)
+	{
+#endif
+		ea->status |= REQUEST_ANSWERED;
+#ifdef CS_CACHEEX_AIO
+	}
+#endif
 	ea->rc = rc;
 	ea->ecm_time = comp_timeb(&now, &ea->time_request_sent);
 	if(ea->ecm_time < 1) { ea->ecm_time = 1; } // set ecm_time 1 if answer immediately
@@ -1999,14 +2028,21 @@ int32_t write_ecm_answer(struct s_reader *reader, ECM_REQUEST *er, int8_t rc, ui
 #endif
 		}
 
-		// readers stats for LB
-		send_reader_stat(reader, er, ea, ea->rc);
-
+		if(!dontwriteStats)
+		{
+			// readers stats for LB
+			send_reader_stat(reader, er, ea, ea->rc);
+		}
+		
 		// reader checks
+#ifdef WITH_DEBUG
+	if(cs_dblevel & D_TRACE)
+	{
 		char ecmd5[17 * 3];
 		cs_hexdump(0, er->ecmd5, 16, ecmd5, sizeof(ecmd5));
 		rdr_log_dbg(reader, D_TRACE, "ecm answer for ecm hash %s rc=%d", ecmd5, ea->rc);
-
+	}
+#endif
 		// Update reader stats:
 		if(ea->rc == E_FOUND)
 		{

@@ -634,15 +634,13 @@ int32_t init_free_userdb(struct s_auth *ptr)
 		config_list_gc_values(account_opts, ptr);
 		ftab_clear(&ptr->ftab);
 		ftab_clear(&ptr->fchid);
-#ifdef CS_CACHEEX_AIO		
-		ftab_clear(&ptr->disablecrccacheex_only_for);
-#endif
 		tuntab_clear(&ptr->ttab);
 		caidtab_clear(&ptr->ctab);
 		NULLFREE(ptr->cltab.aclass);
 		NULLFREE(ptr->cltab.bclass);
 #ifdef CS_CACHEEX
 		cecspvaluetab_clear(&ptr->cacheex.filter_caidtab);
+		ftab_clear(&ptr->disablecrccacheex_only_for);
 #ifdef CS_CACHEEX_AIO
 		caidtab_clear(&ptr->cacheex.localgenerated_only_caidtab);
 		caidtab_clear(&ptr->cacheex.localgenerated_only_in_caidtab);

@@ -1737,11 +1737,14 @@ void stat_get_best_reader(ECM_REQUEST *er)
 		if(nr > 5)
 			{ snprintf(rptr, l, "...(%d more)", nr - 5); }
 
-		char ecmbuf[ECM_FMT_LEN];
-		format_ecm(er, ecmbuf, ECM_FMT_LEN);
+		if(cs_dblevel & D_LB)
+		{
+			char ecmbuf[ECM_FMT_LEN];
+			format_ecm(er, ecmbuf, ECM_FMT_LEN);
 
-		cs_log_dbg(D_LB, "loadbalancer: client %s for %s: n=%d selected readers: %s",
-					username(er->client), ecmbuf, nr, buf);
+			cs_log_dbg(D_LB, "loadbalancer: client %s for %s: n=%d selected readers: %s",
+						username(er->client), ecmbuf, nr, buf);
+		}
 	}
 #endif
 	return;

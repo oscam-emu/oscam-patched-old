@@ -1247,14 +1247,20 @@ void update_card_list(void)
 						{
 							card = create_card2(rdr, (j << 8) | k, ptr->caid[k], reshare);
 							if(!card)
-								{ return; }
+							{
+								cs_readunlock(__func__, &readerlist_lock);
+								return;
+							}
 							card->card_type = CT_CARD_BY_SERVICE_READER;
 							card->sidtab = ptr;
 							for(l = 0; l < ptr->num_provid; l++)
 							{
 								struct cc_provider *prov;
 								if(!cs_malloc(&prov, sizeof(struct cc_provider)))
-									{ return; }
+								{
+									cs_readunlock(__func__, &readerlist_lock);
+									return;
+								}
 								prov->prov = ptr->provid[l];
 								ll_append(card->providers, prov);
 							}
@@ -1284,7 +1290,10 @@ void update_card_list(void)
 					{
 						card = create_card2(rdr, j, caid, reshare);
 						if(!card)
-							{ return; }
+						{
+							cs_readunlock(__func__, &readerlist_lock);
+							return;
+						}
 						card->card_type = CT_LOCALCARD;
 
 						//Setting UA: (Unique Address):
@@ -1295,7 +1304,10 @@ void update_card_list(void)
 						{
 							struct cc_provider *prov;
 							if(!cs_malloc(&prov, sizeof(struct cc_provider)))
-								{ return; }
+							{
+								cs_readunlock(__func__, &readerlist_lock);
+								return;
+							}
 							prov->prov = rdr->ftab.filts[j].prids[k];
 
 							//cs_log("Ident CCcam card report provider: %02X%02X%02X", buf[21 + (k*7)]<<16, buf[22 + (k*7)], buf[23 + (k*7)]);
@@ -1334,7 +1346,10 @@ void update_card_list(void)
 					{
 						card = create_card2(rdr, j, lcaid, reshare);
 						if(!card)
-							{ return; }
+						{
+							cs_readunlock(__func__, &readerlist_lock);
+							return;
+						}
 						card->card_type = CT_CARD_BY_CAID1;
 						if(!rdr->audisabled)
 							{ cc_UA_oscam2cccam(rdr->hexserial, card->hexserial, lcaid); }
@@ -1370,7 +1385,10 @@ void update_card_list(void)
 							uint32_t prid = get_reader_prid(rdr, j);
 							struct cc_provider *prov;
 							if(!cs_malloc(&prov, sizeof(struct cc_provider)))
-								{ return; }
+							{
+								cs_readunlock(__func__, &readerlist_lock);
+								return;
+							}
 							prov->prov = prid;
 							//cs_log("Ident CCcam card report provider: %02X%02X%02X", buf[21 + (k*7)]<<16, buf[22 + (k*7)], buf[23 + (k*7)]);
 							if(!rdr->audisabled)
@@ -1397,7 +1415,10 @@ void update_card_list(void)
 					uint16_t caid = rdr->caid;
 					card = create_card2(rdr, 1, caid, reshare);
 					if(!card)
-						{ return; }
+					{
+						cs_readunlock(__func__, &readerlist_lock);
+						return;
+					}
 					card->card_type = CT_CARD_BY_CAID3;
 
 					if(!rdr->audisabled)
@@ -1407,7 +1428,10 @@ void update_card_list(void)
 						uint32_t prid = get_reader_prid(rdr, j);
 						struct cc_provider *prov;
 						if(!cs_malloc(&prov, sizeof(struct cc_provider)))
-							{ return; }
+						{
+							cs_readunlock(__func__, &readerlist_lock);
+							return;
+						}
 						prov->prov = prid;
 						//cs_log("Ident CCcam card report provider: %02X%02X%02X", buf[21 + (k*7)]<<16, buf[22 + (k*7)], buf[23 + (k*7)]);
 						if(!rdr->audisabled)

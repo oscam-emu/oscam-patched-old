@@ -361,13 +361,13 @@
  *			constants
  * =========================== */
 #define CS_VERSION				"1.20_svn"
-#ifdef CS_CACHEEX
-#ifdef CS_CACHEEX_AIO
-#define CS_AIO_VERSION			"9.2.6"
-#endif
-#endif
 #ifndef CS_SVN_VERSION
 # define CS_SVN_VERSION			"test"
+#endif
+#ifdef CS_CACHEEX
+#ifdef CS_CACHEEX_AIO
+#define CS_AIO_VERSION			CS_SVN_VERSION
+#endif
 #endif
 #ifndef CS_TARGET
 # define CS_TARGET				"unknown"
@@ -742,8 +742,8 @@ typedef struct s_tuntab
 typedef struct s_sidtab
 {
 	char			label[64];
-	uint8_t			disablecrccws_only_for_exception;
 #ifdef CS_CACHEEX_AIO
+	uint8_t			disablecrccws_only_for_exception;
 	uint8_t			no_wait_time;
 	uint8_t			lg_only_exception;
 #endif

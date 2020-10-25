@@ -367,7 +367,6 @@ static void rcu_load(uint8_t *rcu)
 	{
 		uint32_t destructors[rcuh.dessize / sizeof(int)];
 		rcu_load_offs(destructors, ptr, rcuh.dessize);
-		ptr += rcuh.dessize;
 	}
 
 	ptr = rcu_data + rcu_data_size - 16 + 4;
