@@ -112,7 +112,7 @@ void emu_set_keyfile_path(const char *path)
 		free(emu_keyfile_path);
 	}
 
-	pathLength = strlen(path);
+	pathLength = cs_strlen(path);
 	emu_keyfile_path = (char *)malloc(pathLength + 1);
 	if (emu_keyfile_path == NULL)
 	{
@@ -164,12 +164,12 @@ static void write_key_to_file(char identifier, uint32_t provider, const char *ke
 	char line[1200], dateText[100], filename[EMU_KEY_FILENAME_MAX_LEN + 1];
 	char *path, *filepath, *keyValue;
 	uint32_t pathLength;
-	uint8_t fileNameLen = strlen(EMU_KEY_FILENAME);
+	uint8_t fileNameLen = cs_strlen(EMU_KEY_FILENAME);
 	struct dirent *pDirent;
 	DIR *pDir;
 	FILE *file = NULL;
 
-	pathLength = strlen(emu_keyfile_path);
+	pathLength = cs_strlen(emu_keyfile_path);
 	path = (char *)malloc(pathLength + 1);
 	if (path == NULL)
 	{
@@ -177,14 +177,14 @@ static void write_key_to_file(char identifier, uint32_t provider, const char *ke
 	}
 	cs_strncpy(path, emu_keyfile_path, pathLength + 1);
 
-	pathLength = strlen(path);
+	pathLength = cs_strlen(path);
 	if (pathLength >= fileNameLen && strcasecmp(path + pathLength - fileNameLen, EMU_KEY_FILENAME) == 0)
 	{
 		// cut file name
 		path[pathLength - fileNameLen] = '\0';
 	}
 
-	pathLength = strlen(path);
+	pathLength = cs_strlen(path);
 	if (path[pathLength - 1] == '/' || path[pathLength - 1] == '\\')
 	{
 		// cut trailing /
@@ -214,7 +214,7 @@ static void write_key_to_file(char identifier, uint32_t provider, const char *ke
 		cs_strncpy(filename, EMU_KEY_FILENAME, sizeof(filename));
 	}
 
-	pathLength = strlen(path) + 1 + strlen(filename) + 1;
+	pathLength = cs_strlen(path) + 1 + cs_strlen(filename) + 1;
 	filepath = (char *)malloc(pathLength);
 	if (filepath == NULL)
 	{
@@ -258,7 +258,7 @@ static void write_key_to_file(char identifier, uint32_t provider, const char *ke
 
 	free(keyValue);
 
-	fwrite(line, strlen(line), 1, file);
+	fwrite(line, cs_strlen(line), 1, file);
 	fclose(file);
 }
 
@@ -289,7 +289,7 @@ int8_t emu_set_key(char identifier, uint32_t provider, char *keyName, uint8_t *o
 		}
 
 		// All keyNames should have a length of 8 after converting
-		if (strlen(keyName) != 8)
+		if (cs_strlen(keyName) != 8)
 		{
 			cs_log("WARNING: Wrong key format in %s: F %08X %s", EMU_KEY_FILENAME, provider, keyName);
 			return 0;
@@ -387,7 +387,7 @@ int8_t emu_set_key(char identifier, uint32_t provider, char *keyName, uint8_t *o
 			newKeyData->identifier = identifier;
 			newKeyData->provider = provider;
 
-			if (strlen(keyName) < EMU_MAX_CHAR_KEYNAME)
+			if (cs_strlen(keyName) < EMU_MAX_CHAR_KEYNAME)
 			{
 				cs_strncpy(newKeyData->keyName, keyName, EMU_MAX_CHAR_KEYNAME);
 			}
@@ -474,7 +474,7 @@ int8_t emu_set_key(char identifier, uint32_t provider, char *keyName, uint8_t *o
 	KeyDB->EmuKeys[KeyDB->keyCount].identifier = identifier;
 	KeyDB->EmuKeys[KeyDB->keyCount].provider = provider;
 
-	if (strlen(keyName) < EMU_MAX_CHAR_KEYNAME)
+	if (cs_strlen(keyName) < EMU_MAX_CHAR_KEYNAME)
 	{
 		cs_strncpy(KeyDB->EmuKeys[KeyDB->keyCount].keyName, keyName, EMU_MAX_CHAR_KEYNAME);
 	}
@@ -692,13 +692,13 @@ uint8_t emu_read_keyfile(struct s_reader *rdr, const char *opath)
 	char line[1200], keyName[EMU_MAX_CHAR_KEYNAME], keyString[1026], identifier;
 	char *path, *filepath, filename[EMU_KEY_FILENAME_MAX_LEN + 1];
 	uint32_t pathLength, provider, keyLength;
-	uint8_t fileNameLen = strlen(EMU_KEY_FILENAME);
+	uint8_t fileNameLen = cs_strlen(EMU_KEY_FILENAME);
 	uint8_t *key;
 	struct dirent *pDirent;
 	DIR *pDir;
 	FILE *file = NULL;
 
-	pathLength = strlen(opath);
+	pathLength = cs_strlen(opath);
 	path = (char *)malloc(pathLength + 1);
 	if (path == NULL)
 	{
@@ -706,14 +706,14 @@ uint8_t emu_read_keyfile(struct s_reader *rdr, const char *opath)
 	}
 	cs_strncpy(path, opath, pathLength + 1);
 
-	pathLength = strlen(path);
+	pathLength = cs_strlen(path);
 	if (pathLength >= fileNameLen && strcasecmp(path + pathLength - fileNameLen, EMU_KEY_FILENAME) == 0)
 	{
 		// cut file name
 		path[pathLength - fileNameLen] = '\0';
 	}
 
-	pathLength = strlen(path);
+	pathLength = cs_strlen(path);
 	if (path[pathLength - 1] == '/' || path[pathLength - 1] == '\\')
 	{
 		// cut trailing /
@@ -745,7 +745,7 @@ uint8_t emu_read_keyfile(struct s_reader *rdr, const char *opath)
 		return 0;
 	}
 
-	pathLength = strlen(path) + 1 + strlen(filename) + 1;
+	pathLength = cs_strlen(path) + 1 + cs_strlen(filename) + 1;
 	filepath = (char *)malloc(pathLength);
 	if (filepath == NULL)
 	{
@@ -773,7 +773,7 @@ uint8_t emu_read_keyfile(struct s_reader *rdr, const char *opath)
 			continue;
 		}
 
-		keyLength = strlen(keyString) / 2;
+		keyLength = cs_strlen(keyString) / 2;
 		key = (uint8_t *)malloc(keyLength);
 		if (key == NULL)
 		{
@@ -781,7 +781,7 @@ uint8_t emu_read_keyfile(struct s_reader *rdr, const char *opath)
 			return 0;
 		}
 
-		if (char_to_bin(key, keyString, strlen(keyString))) // Conversion OK
+		if (char_to_bin(key, keyString, cs_strlen(keyString))) // Conversion OK
 		{
 			emu_set_key(identifier, provider, keyName, key, keyLength, 0, NULL, rdr);
 		}
@@ -831,7 +831,7 @@ void emu_read_keymemory(struct s_reader *rdr)
 			continue;
 		}
 
-		keyLength = strlen(keyString) / 2;
+		keyLength = cs_strlen(keyString) / 2;
 
 		key = (uint8_t *)malloc(keyLength);
 		if (key == NULL)
@@ -840,7 +840,7 @@ void emu_read_keymemory(struct s_reader *rdr)
 			return;
 		}
 
-		if (char_to_bin(key, keyString, strlen(keyString))) // Conversion OK
+		if (char_to_bin(key, keyString, cs_strlen(keyString))) // Conversion OK
 		{
 			emu_set_key(identifier, provider, keyName, key, keyLength, 0, NULL, rdr);
 		}

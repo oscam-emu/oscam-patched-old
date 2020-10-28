@@ -750,7 +750,7 @@ static int32_t emu_reader_init(struct s_reader *UNUSED(reader))
 		if (cfg.emu_stream_source_auth_user && cfg.emu_stream_source_auth_password)
 		{
 			snprintf(authtmp, sizeof(authtmp), "%s:%s", cfg.emu_stream_source_auth_user, cfg.emu_stream_source_auth_password);
-			b64encode(authtmp, strlen(authtmp), &emu_stream_source_auth);
+			b64encode(authtmp, cs_strlen(authtmp), &emu_stream_source_auth);
 		}
 		else
 		{

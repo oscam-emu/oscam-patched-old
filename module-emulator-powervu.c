@@ -2588,7 +2588,7 @@ int8_t powervu_get_hexserials(uint8_t hexserials[][4], uint32_t maxCount, uint16
 				continue;
 			}
 
-			length = strlen(KeyDB->EmuKeys[j].keyName);
+			length = cs_strlen(KeyDB->EmuKeys[j].keyName);
 
 			if (length < 3)
 			{
@@ -2654,7 +2654,7 @@ int8_t powervu_get_hexserials_new(uint8_t hexserials[][4], uint32_t maxCount, ui
 			continue;
 		}
 
-		length = strlen(KeyDB->EmuKeys[i].keyName);
+		length = cs_strlen(KeyDB->EmuKeys[i].keyName);
 
 		if (length < 3)
 		{
