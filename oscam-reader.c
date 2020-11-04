@@ -1080,7 +1080,7 @@ int32_t casc_process_ecm(struct s_reader *reader, ECM_REQUEST *er)
 	cs_log_dump_dbg(D_ATR, er->ecm, er->ecmlen, "casc ecm (%s):", (reader) ? reader->label : "n/a");
 	rc = 0;
 
-	if((sflag) || (reader->typ == R_GBOX))
+	if(sflag)
 	{
 		rc = reader->ph.c_send_ecm(cl, &cl->ecmtask[n]);
 		if(rc != 0)
@@ -1118,8 +1118,7 @@ void reader_get_ecm(struct s_reader *reader, ECM_REQUEST *er)
 	struct ecm_request_t *ecm;
 	time_t timeout;
 
-	if (reader->typ != R_GBOX) {
-		cs_readlock(__func__, &ecmcache_lock);
+	cs_readlock(__func__, &ecmcache_lock);
 
 		for(ecm = ecmcwcache; ecm; ecm = ecm->next)
 		{
@@ -1165,7 +1164,6 @@ void reader_get_ecm(struct s_reader *reader, ECM_REQUEST *er)
 			cs_readunlock(__func__, &ea->ecmanswer_lock);
 			return;
 		}
-	}
 	
 	lb_update_last(ea_er, reader);
 

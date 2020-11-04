@@ -1892,7 +1892,6 @@ static int32_t gbox_send_ecm(struct s_client *cli, ECM_REQUEST *er)
 	send_buf[len1 + 9] = 0x00;
 	buflen = len1 + 10;
 
-	//TODO: set requested number of cards according to er->stage, max for fallback=4
 	nb_matching_crds = gbox_get_cards_for_ecm(&send_buf[0], len1 + 10, cli->reader->gbox_maxecmsend, er, &current_avg_card_time, peer->gbox.id, cli->reader->gbox_force_remm);
 
 	buflen += nb_matching_crds * 3;
