@@ -229,6 +229,13 @@ static int32_t CAK7GetDataType(struct s_reader *reader, uint8_t dt)
 		CAK7do_cmd(reader, dt, 0x10, cta_res, &cta_lr, sub, retlen);
 		// hier eigentlich check auf 90 am ende usw... obs halt klarging ...
 
+		if((cta_lr == 0) || (cta_res[cta_lr-2] == 0x6F && cta_res[cta_lr-1] == 0x01))
+		{
+			reader->card_status = CARD_NEED_INIT;
+			add_job(reader->client, ACTION_READER_RESTART, NULL, 0);
+			break;
+		}
+
 		uint32_t newsub = (cta_res[9] << 16) + (cta_res[10] << 8) + (cta_res[11]);
 		if(newsub == 0xFFFFFF)
 		{
@@ -576,20 +583,56 @@ static int32_t nagra3_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 	memcpy(&emmreq[14], ep->emm + 9, ep->emm[9] + 1);
 	do_cak7_cmd(reader, cta_res, &cta_lr, emmreq, sizeof(emmreq), 0xB0);
 
-	if(cta_res[cta_lr - 2] != 0x90 && cta_res[cta_lr - 1] != 0x00)
+	if(cta_lr == 0)
+	{
+		rdr_log_dbg(reader, D_READER, "card reinit necessary");
+		CAK7_reinit(reader);
+	}
+	else if(cta_res[cta_lr - 2] != 0x90 && cta_res[cta_lr - 1] != 0x00)
 	{
 		rdr_log(reader, "(EMM) Reader will be restart now cause: %02X %02X card answer!!!", cta_res[cta_lr - 2], cta_res[cta_lr - 1]);
-		reader->card_status = CARD_NEED_INIT;
-		add_job(reader->client, ACTION_READER_RESTART, NULL, 0);
+		CAK7_reinit(reader);
 	}
-
-	struct timeb now;
-	cs_ftime(&now);
-	int64_t gone_now = comp_timeb(&now, &reader->emm_last);
-	int64_t gone_refresh = comp_timeb(&reader->emm_last, &reader->last_refresh);
-	if((gone_now > 3600*1000) || (gone_refresh > 12*3600*1000))
+	else
 	{
-		add_job(reader->client, ACTION_READER_CARDINFO, NULL, 0); // refresh entitlement since it might have been changed!
+		if(reader->cak7_seq >= reader->cak7_restart)
+		{
+			rdr_log_dbg(reader, D_READER, "reinit necessary to reset command counter");
+			CAK7_reinit(reader);
+		}
+		else if(cta_res[4] == 0x80)
+		{
+			rdr_log_dbg(reader, D_READER, "EMM forced card to reinit");
+			reader->card_status = CARD_NEED_INIT;
+			add_job(reader->client, ACTION_READER_RESTART, NULL, 0);
+			return OK;
+		}
+		else if(cta_res[13] == 0x02)
+		{
+			rdr_log_dbg(reader, D_READER, "Revision update - card reinit necessary");
+			reader->card_status = CARD_NEED_INIT;
+			add_job(reader->client, ACTION_READER_RESTART, NULL, 0);
+			return OK;
+		}
+		else if((cta_res[4] & 64) == 64)
+		{
+			rdr_log_dbg(reader, D_READER, "negotiating new Session Key");
+			CAK7_getCamKey(reader);
+		}
+		else if(cta_res[8] == 0x0E)
+		{
+			rdr_log_dbg(reader, D_READER, "card got wrong EMM");
+			return OK;
+		}
+
+		struct timeb now;
+		cs_ftime(&now);
+		int64_t gone_now = comp_timeb(&now, &reader->emm_last);
+		int64_t gone_refresh = comp_timeb(&reader->emm_last, &reader->last_refresh);
+		if((gone_now > 3600*1000) || (gone_refresh > 12*3600*1000))
+		{
+			add_job(reader->client, ACTION_READER_CARDINFO, NULL, 0); // refresh entitlement since it might have been changed!
+		}
 	}
 
 	return OK;
