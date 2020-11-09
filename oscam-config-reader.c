@@ -518,7 +518,9 @@ static void exp60_fn(const char *token, char *value, void *setting, FILE *f)
 	else if(cfg.http_full_cfg)
 		{ fprintf_conf(f, "exp60", "\n"); }
 }
+#endif
 
+#if defined(READER_NAGRA_MERLIN) || defined(READER_NAGRA)		
 static void nuid_fn(const char *token, char *value, void *setting, FILE *f)
 {
 	struct s_reader *rdr = setting;
@@ -1177,6 +1179,8 @@ static const struct config_list reader_opts[] =
 	DEF_OPT_FUNC("mod50"                          , 0,                                    mod50_fn),
 	DEF_OPT_FUNC("key60"                          , 0,                                    key60_fn),
 	DEF_OPT_FUNC("exp60"                          , 0,                                    exp60_fn),
+#endif
+#if defined(READER_NAGRA_MERLIN) || defined(READER_NAGRA)
 	DEF_OPT_FUNC("nuid"                           , 0,                                    nuid_fn),
 	DEF_OPT_FUNC("cwekey"                         , 0,                                    cwekey_fn),
 #endif
@@ -1291,7 +1295,10 @@ static bool reader_check_setting(const struct config_list *UNUSED(clist), void *
 		"fix9993", "rsakey", "deskey", "ins7e", "ins7e11", "ins2e06", "k1_generic", "k1_unique", "force_irdeto", "needsemmfirst", "boxkey",
 		"atr", "detect", "nagra_read", "mhz", "cardmhz", "readtiers", "read_old_classes", "use_gpio", "needsglobalfirst",
 #ifdef READER_NAGRA_MERLIN
-		"mod1", "data50", "mod50", "key60", "exp60", "nuid", "cwekey",
+		"mod1", "data50", "mod50", "key60", "exp60", 
+#endif
+#if defined(READER_NAGRA_MERLIN) || defined(READER_NAGRA)		
+		"nuid", "cwekey",
 #endif
 #if defined(READER_DRE) || defined(READER_DRECAS)
 		"exec_cmd_file",
