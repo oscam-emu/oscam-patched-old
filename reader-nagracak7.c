@@ -629,8 +629,9 @@ static int32_t nagra3_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 		cs_ftime(&now);
 		int64_t gone_now = comp_timeb(&now, &reader->emm_last);
 		int64_t gone_refresh = comp_timeb(&reader->emm_last, &reader->last_refresh);
-		if((gone_now > 3600*1000) || (gone_refresh > 12*3600*1000))
+		if(((gone_now > 3600*1000) && (gone_now < 365*24*3600*1000)) || ((gone_refresh > 12*3600*1000) && (gone_refresh < 365*24*3600*1000)))
 		{
+			reader->last_refresh=now;
 			add_job(reader->client, ACTION_READER_CARDINFO, NULL, 0); // refresh entitlement since it might have been changed!
 		}
 	}
