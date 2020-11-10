@@ -364,7 +364,7 @@ const struct s_cardreader cardreader_pcsc =
 {
 	.desc                    = "pcsc",
 	.typ                     = R_PCSC,
-	.skip_extra_atr_parsing  = 0,
+	.skip_extra_atr_parsing  = 1,
 	.skip_t1_command_retries = 1,
 	.skip_setting_ifsc       = 1,
 	.reader_init             = pcsc_init,
