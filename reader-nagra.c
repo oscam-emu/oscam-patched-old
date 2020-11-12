@@ -380,13 +380,13 @@ static int32_t NegotiateSessionKey(struct s_reader *reader)
 		0x00 };//keynr
 
 	uint8_t cmd2a[] = {
-		0x00, 
-		0xA5, 0xFB, 0x02, 0x76,	//NUID 
-		0x00, 0x08,		//OTP-CSC 
+		0x00,
+		0xA5, 0xFB, 0x02, 0x76,	//NUID
+		0x00, 0x08,		//OTP-CSC
 		0x00, 0x00,		//OTA-CSC
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
-		0x00, 
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00,
 		0x22, 0x11 }; //Provider ID
 
 	uint8_t tmp[64];
@@ -426,10 +426,10 @@ static int32_t NegotiateSessionKey(struct s_reader *reader)
 	{
 		if (reader->nuid_length == 4) //nuid is set
 		{
-	 		// inject provid
- 			cmd2a[26] = reader->prid[0][2];
- 			cmd2a[27] = reader->prid[0][3];
-		
+			// inject provid
+			cmd2a[26] = reader->prid[0][2];
+			cmd2a[27] = reader->prid[0][3];
+
 			memcpy(&cmd2a[1], reader->nuid, 4); // inject NUID
 
 			if (!do_cmd(reader, 0x2a,0x1E,0xAA,0x42, cmd2a, cta_res, &cta_lr))
@@ -437,7 +437,7 @@ static int32_t NegotiateSessionKey(struct s_reader *reader)
 				rdr_log_dbg(reader, D_READER, "CMD$2A failed");
 				return ERROR;
 			}
-		} 
+		}
 		else
 		{
 			if(!do_cmd(reader, 0x2a, 0x02, 0xaa, 0x42, NULL, cta_res, &cta_lr))
@@ -445,7 +445,7 @@ static int32_t NegotiateSessionKey(struct s_reader *reader)
 				rdr_log_dbg(reader, D_READER, "CMD$2A failed");
 				return ERROR;
 			}
-				
+
 		}
 	}
 	else if(!do_cmd(reader, 0x26, 0x07, 0xa6, 0x42, tmp, cta_res, &cta_lr))
@@ -658,7 +658,7 @@ static void addProvider(struct s_reader *reader, uint8_t *cta_res)
 static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_res, uint16_t cta_lr)
 {
 	struct nagra_data *csystem_data = reader->csystem_data;
-	char ds[20], de[16];
+	char ds[36], de[36];
 	uint16_t chid;
 
 	switch(dt)
@@ -1372,7 +1372,7 @@ static int32_t nagra2_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, str
 			uint8_t _cwe0[8];
 			uint8_t _cwe1[8];
 			char tmp_dbg[25];
-			
+
 			if(csystem_data->swapCW == 1)
 			{
 				rdr_log_dbg(reader, D_READER, "swap cws");
@@ -1385,24 +1385,24 @@ static int32_t nagra2_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, str
 				idea_cbc_encrypt(&cta_res[30], &_cwe0[0], 8, &csystem_data->ksSession, v, IDEA_DECRYPT);
 				memset(v, 0, sizeof(v));
 				idea_cbc_encrypt(&cta_res[4], &_cwe1[0], 8, &csystem_data->ksSession, v, IDEA_DECRYPT);
-			}	
-			rdr_log_dbg(reader, D_READER, "CW0 after IDEA decrypt: %s", cs_hexdump(1, _cwe0, 24, tmp_dbg, sizeof(tmp_dbg)));
-			rdr_log_dbg(reader, D_READER, "CW1 after IDEA decrypt: %s", cs_hexdump(1, _cwe1, 24, tmp_dbg, sizeof(tmp_dbg)));
-			
+			}
+			rdr_log_dbg(reader, D_READER, "CW0 after IDEA decrypt: %s", cs_hexdump(1, _cwe0, 8, tmp_dbg, sizeof(tmp_dbg)));
+			rdr_log_dbg(reader, D_READER, "CW1 after IDEA decrypt: %s", cs_hexdump(1, _cwe1, 8, tmp_dbg, sizeof(tmp_dbg)));
+
 			if(CW_NEEDS_3DES())
 			{
 				rdr_log_dbg(reader, D_READER, "3DES encryption of CWs detected. Using CWPK index:%02X", (csystem_data->ird_info & 7));
-									
+
 				if(reader->cwekey_length != 16)
 				{
 					rdr_log_dbg(reader, D_READER, "ERROR: Invalid CWPK, can not decrypt CW");
 					return ERROR;
 				}
-				
+
 				des_ecb3_decrypt(_cwe0, reader->cwekey);
 				des_ecb3_decrypt(_cwe1, reader->cwekey);
-				rdr_log_dbg(reader, D_READER, "CW0 after 3DES decrypt: %s", cs_hexdump(1, _cwe0, 24, tmp_dbg, sizeof(tmp_dbg)));
-				rdr_log_dbg(reader, D_READER, "CW1 after 3DES decrypt: %s", cs_hexdump(1, _cwe1, 24, tmp_dbg, sizeof(tmp_dbg)));
+				rdr_log_dbg(reader, D_READER, "CW0 after 3DES decrypt: %s", cs_hexdump(1, _cwe0, 8, tmp_dbg, sizeof(tmp_dbg)));
+				rdr_log_dbg(reader, D_READER, "CW1 after 3DES decrypt: %s", cs_hexdump(1, _cwe1, 8, tmp_dbg, sizeof(tmp_dbg)));
 			}
 
 			int chkok = 1;
@@ -1437,7 +1437,7 @@ static int32_t nagra2_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, str
 			}
 			memcpy(ea->cw, _cwe0, 0x08);
 			memcpy(ea->cw + 8, _cwe1, 0x08);
-			
+
 			return OK;
 		}
 	}

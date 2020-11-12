@@ -79,7 +79,7 @@ static void addProvider(struct s_reader *reader, uint8_t *cta_res)
 
 static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_res, uint16_t cta_lr)
 {
-	char ds[11], de[11];
+	char ds[36], de[36];
 
 	switch(dt)
 	{
@@ -629,7 +629,7 @@ static int32_t nagra3_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 		cs_ftime(&now);
 		int64_t gone_now = comp_timeb(&now, &reader->emm_last);
 		int64_t gone_refresh = comp_timeb(&reader->emm_last, &reader->last_refresh);
-		if(((gone_now > 3600000) && (gone_now < 31536000000LL)) || ((gone_refresh > 43200000) && (gone_refresh < 31536000000LL)))
+		if(((gone_now > (int64_t)3600*1000) && (gone_now < (int64_t)365*24*3600*1000)) || ((gone_refresh > (int64_t)12*3600*1000) && (gone_refresh < (int64_t)365*24*3600*1000)))
 		{
 			reader->last_refresh=now;
 			add_job(reader->client, ACTION_READER_CARDINFO, NULL, 0); // refresh entitlement since it might have been changed!
