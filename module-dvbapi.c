@@ -1122,7 +1122,7 @@ static int32_t dvbapi_get_descrambler_info(void)
 
 	if(dvbapi_ioctl(fd, CA_GET_DESCR_INFO, &descr_info) < 0)
 	{
-		cs_log("ERROR: ioctl(CA_GET_DESCR_INFO): %s", strerror(errno));
+		cs_log_dbg(D_DVBAPI,"ERROR: ioctl(CA_GET_DESCR_INFO): %s", strerror(errno));
 	}
 
 	if(close(fd) < 0)
