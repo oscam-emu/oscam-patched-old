@@ -197,7 +197,7 @@ tommy_inline void tommy_list_insert_tail_not_empty(tommy_node* head, tommy_node*
  * \param node The node to insert.
  * \param data The object containing the node. It's used to set the tommy_node::data field of the node.
  */
-tommy_inline void tommy_list_insert_head(tommy_list* list, tommy_node* node, void* data)
+tommy_inline void tommy_list_insert_head_check(tommy_list* list, tommy_node* node)
 {
 	tommy_node* head = tommy_list_head(list);
 
@@ -205,8 +205,6 @@ tommy_inline void tommy_list_insert_head(tommy_list* list, tommy_node* node, voi
 		tommy_list_insert_head_not_empty(list, node);
 	else
 		tommy_list_insert_first(list, node);
-
-	node->data = data;
 }
 
 /**
@@ -214,7 +212,7 @@ tommy_inline void tommy_list_insert_head(tommy_list* list, tommy_node* node, voi
  * \param node The node to insert.
  * \param data The object containing the node. It's used to set the tommy_node::data field of the node.
  */
-tommy_inline void tommy_list_insert_tail(tommy_list* list, tommy_node* node, void* data)
+tommy_inline void tommy_list_insert_tail_check(tommy_list* list, tommy_node* node)
 {
 	tommy_node* head = tommy_list_head(list);
 
@@ -222,6 +220,28 @@ tommy_inline void tommy_list_insert_tail(tommy_list* list, tommy_node* node, voi
 		tommy_list_insert_tail_not_empty(head, node);
 	else
 		tommy_list_insert_first(list, node);
+}
+
+/**
+ * Inserts an element at the head of a list and sets the data.
+ * \param node The node to insert.
+ * \param data The object containing the node. It's used to set the tommy_node::data field of the node.
+ */
+tommy_inline void tommy_list_insert_head(tommy_list* list, tommy_node* node, void* data)
+{
+	tommy_list_insert_head_check(list, node);
+
+	node->data = data;
+}
+
+/**
+ * Inserts an element at the tail of a list and sets the data.
+ * \param node The node to insert.
+ * \param data The object containing the node. It's used to set the tommy_node::data field of the node.
+ */
+tommy_inline void tommy_list_insert_tail(tommy_list* list, tommy_node* node, void* data)
+{
+	tommy_list_insert_tail_check(list, node);
 
 	node->data = data;
 }
@@ -234,7 +254,7 @@ tommy_inline void tommy_list_insert_tail(tommy_list* list, tommy_node* node, voi
  * \param node The node to remove. The node must be in the list.
  * \return The tommy_node::data field of the node removed.
  */
-tommy_inline void* tommy_list_remove_existing(tommy_list* list, tommy_node* node)
+tommy_inline void tommy_list_remove_existing(tommy_list* list, tommy_node* node)
 {
 	tommy_node* head = tommy_list_head(list);
 
@@ -249,8 +269,6 @@ tommy_inline void* tommy_list_remove_existing(tommy_list* list, tommy_node* node
 		*list = node->next; /* the new head, in case 0 */
 	else
 		node->prev->next = node->next;
-
-	return node->data;
 }
 
 /**

@@ -29,7 +29,7 @@ void *search_remove_elem_hash_table(void *ht, void *key, int key_len, void *comp
 	return tommy_hashlin_remove(ht, compare, key, tommy_hash_u32(0, key, key_len));
 }
 
-void *remove_elem_hash_table(void *ht, void *ht_node)
+void remove_elem_hash_table(void *ht, void *ht_node)
 {
 	return tommy_hashlin_remove_existing(ht, ht_node);
 }
@@ -49,7 +49,7 @@ void sort_list(void *ll, void *cmp)
 	tommy_list_sort (ll, cmp);
 }
 
-void *remove_elem_list(void *ll, void *ll_node)
+void remove_elem_list(void *ll, void *ll_node)
 {
 	return tommy_list_remove_existing(ll, ll_node);
 }
