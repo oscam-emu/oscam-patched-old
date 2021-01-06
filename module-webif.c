@@ -7926,6 +7926,10 @@ static char *send_oscam_cacheex(struct templatevars * vars, struct uriparams * p
 				{
 					tpl_printf(vars, TPLADD, "CLIENTDESCRIPTION","%s(%s)",!apicall?"&#13;":"",xml_encode(vars, cl->account->description));
 				}
+				else
+				{
+					tpl_addVar(vars, TPLADD, "CLIENTDESCRIPTION", "");
+				}
 			}
 			else
 			{
@@ -7934,6 +7938,10 @@ static char *send_oscam_cacheex(struct templatevars * vars, struct uriparams * p
 				if(cl->account->description)
 				{
 					tpl_addVar(vars, TPLADD, "CLIENTDESCRIPTION", cl->account->description);
+				}
+				else
+				{
+					tpl_addVar(vars, TPLADD, "CLIENTDESCRIPTION", "");
 				}
 			}
 
@@ -7969,6 +7977,10 @@ static char *send_oscam_cacheex(struct templatevars * vars, struct uriparams * p
 				{
 					tpl_printf(vars, TPLADD, "CLIENTDESCRIPTION","%s(%s)",!apicall?"&#13;":"",xml_encode(vars, cl->reader->description));
 				}
+				else
+				{
+					tpl_addVar(vars, TPLADD, "CLIENTDESCRIPTION", "");
+				}
 			}
 			else
 			{
@@ -7977,6 +7989,10 @@ static char *send_oscam_cacheex(struct templatevars * vars, struct uriparams * p
 				if(cl->reader->description)
 				{
 					tpl_addVar(vars, TPLADD, "CLIENTDESCRIPTION", cl->reader->description);
+				}
+				else
+				{
+					tpl_addVar(vars, TPLADD, "CLIENTDESCRIPTION", "");
 				}
 			}
 
