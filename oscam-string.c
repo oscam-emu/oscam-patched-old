@@ -281,7 +281,7 @@ char *cs_hexdump(int32_t m, const uint8_t *buf, int32_t n, char *target, int32_t
  */
 bool gethexval_within_range(char c)
 {
-	if((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'))
+	if((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f'))
 	{
 		return true;
 	}
