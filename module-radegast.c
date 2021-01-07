@@ -148,6 +148,12 @@ static void radegast_process_ecm(uint8_t *buf, int32_t l)
 
 			case 8: // ECM PROCESS PID ?? don't know, not needed
 				break;
+
+			case 9: // Adding srvid because ECM contains 0000
+				if(i+2 >= l)
+					{ break; }
+				er->srvid = (buf[i + 4] << 8 ) | (buf[i + 2]);
+				break;
 		}
 	}
 
