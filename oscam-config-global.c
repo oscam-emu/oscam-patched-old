@@ -387,7 +387,7 @@ static const struct config_list global_opts[] =
 	DEF_OPT_INT32("lb_auto_timeout_p"              , OFS(lb_auto_timeout_p)             , DEFAULT_LB_AUTO_TIMEOUT_P),
 	DEF_OPT_INT32("lb_auto_timeout_t"              , OFS(lb_auto_timeout_t)             , DEFAULT_LB_AUTO_TIMEOUT_T),
 #endif
-	DEF_OPT_FUNC("double_check_caid"               , OFS(double_check_caid)             , check_caidtab_fn),
+	DEF_OPT_FUNC("double_check_caid"               , OFS(double_check_caid)             , chk_ftab_fn),
 	DEF_OPT_STR("ecmfmt"                           , OFS(ecmfmt)                        , NULL),
 	DEF_OPT_INT32("resolvegethostbyname"           , OFS(resolve_gethostbyname)         , 0),
 	DEF_OPT_INT32("failbantime"                    , OFS(failbantime)                   , 0),
@@ -1425,7 +1425,7 @@ void config_free(void)
 {
 	config_sections_free(oscam_conf, &cfg);
 	caidvaluetab_clear(&cfg.ftimeouttab);
-	caidtab_clear(&cfg.double_check_caid);
+	ftab_clear(&cfg.double_check_caid);
 	ftab_clear(&cfg.disablecrccws_only_for);
 #ifdef WITH_LB
 	caidvaluetab_clear(&cfg.lb_retrylimittab);

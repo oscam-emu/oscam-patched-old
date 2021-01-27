@@ -725,7 +725,7 @@ static char *send_oscam_config_global(struct templatevars *vars, struct uriparam
 
 	tpl_addVar(vars, TPLADD, "DCHECKCSELECTED", (cfg.double_check == 1) ? "checked" : "");
 
-	value = mk_t_caidtab(&cfg.double_check_caid);
+	value = mk_t_ftab(&cfg.double_check_caid);
 	tpl_addVar(vars, TPLADD, "DOUBLECHECKCAID", value);
 	free_mk_t(value);
 
