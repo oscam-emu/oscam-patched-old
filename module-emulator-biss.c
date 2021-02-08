@@ -430,7 +430,7 @@ static int8_t biss_mode1_ecm(struct s_reader *rdr, const uint8_t *ecm, uint16_t 
 			if (get_sw(hash, sw, sw_length, rdr->emu_datecodedenabled, i == 0 ? 2 : 1)) // Do not print "key not found" for frequency off by 1, 2
 			{
 				memcpy(sw + sw_length, sw, sw_length);
-				return 0;
+				return EMU_OK;
 			}
 
 			if (i == 0) // No key found matching our hash: create example SoftCam.Key BISS line for the live log
@@ -453,7 +453,7 @@ static int8_t biss_mode1_ecm(struct s_reader *rdr, const uint8_t *ecm, uint16_t 
 		if (get_sw(hash, sw, sw_length, rdr->emu_datecodedenabled, 2))
 		{
 			memcpy(sw + sw_length, sw, sw_length);
-			return 0;
+			return EMU_OK;
 		}
 
 		// No key found matching our hash: create example SoftCam.Key BISS line for the live log
@@ -466,7 +466,7 @@ static int8_t biss_mode1_ecm(struct s_reader *rdr, const uint8_t *ecm, uint16_t 
 		if (get_sw(tsid << 16 | onid, sw, sw_length, 0, 2))
 		{
 			memcpy(sw + sw_length, sw, sw_length);
-			return 0;
+			return EMU_OK;
 		}
 	}
 
@@ -485,7 +485,7 @@ static int8_t biss_mode1_ecm(struct s_reader *rdr, const uint8_t *ecm, uint16_t 
 		if (get_sw((srvid << 16) | pid, sw, sw_length, 0, 2))
 		{
 			memcpy(sw + sw_length, sw, sw_length);
-			return 0;
+			return EMU_OK;
 		}
 	}
 
@@ -493,7 +493,7 @@ static int8_t biss_mode1_ecm(struct s_reader *rdr, const uint8_t *ecm, uint16_t 
 	if (get_sw((srvid << 16) | ecm_pid, sw, sw_length, 0, 2))
 	{
 		memcpy(sw + sw_length, sw, sw_length);
-		return 0;
+		return EMU_OK;
 	}
 
 	// 6. Default BISS key for events with many feeds sharing the same session word
@@ -503,7 +503,7 @@ static int8_t biss_mode1_ecm(struct s_reader *rdr, const uint8_t *ecm, uint16_t 
 		memcpy(sw + sw_length, sw, sw_length);
 		cs_hexdump(0, sw, sw_length, tmp_buffer1, sizeof(tmp_buffer1));
 		cs_log("No specific match found. Using 'All Feeds' key: %s", tmp_buffer1);
-		return 0;
+		return EMU_OK;
 	}
 
 	// Print example key lines for available hash search methods, if no key is found
@@ -513,7 +513,7 @@ static int8_t biss_mode1_ecm(struct s_reader *rdr, const uint8_t *ecm, uint16_t 
 	// Check if universal hash is common and warn user
 	if (is_common_hash(hash)) cs_log("Feed has commonly used pids, universal hash clashes in SoftCam.Key are likely!");
 
-	return 2;
+	return EMU_KEY_NOT_FOUND;
 }
 
 static inline int8_t get_ecm_key(uint16_t onid, uint16_t esid, uint8_t parity, uint8_t *key)
