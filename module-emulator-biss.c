@@ -306,17 +306,6 @@ static int8_t is_valid_namespace(uint32_t namespace)
 	return 0;
 }
 
-static int8_t is_valid_tsid_onid(uint16_t tsid, uint16_t onid)
-{
-	// tsid and onid form a valid provider as long as they
-	// are not 0x0000, or any combination of 0x0001 and 0xFFFF.
-
-	if (!tsid || !onid) return 0;
-	if ((tsid == 0x0001 || tsid == 0xFFFF) && (onid == 0x0001 || onid == 0xFFFF)) return 0;
-
-	return 1;
-}
-
 static int8_t get_sw(uint32_t provider, uint8_t *sw, uint8_t sw_length, int8_t dateCoded, int8_t printMsg)
 {
 	// If date-coded keys are enabled in the webif, this function evaluates the expiration date
@@ -471,8 +460,8 @@ static int8_t biss_mode1_ecm(struct s_reader *rdr, const uint8_t *ecm, uint16_t 
 		annotate(tmp_buffer3, sizeof(tmp_buffer3), ecm_copy, ecm_len, hash, 0, rdr->emu_datecodedenabled);
 	}
 
-	// 3. Valid [tsid] [onid] combination
-	if (is_valid_tsid_onid(tsid, onid))
+	// 3. Valid [tsid] [onid] combination (per enigma2)
+	if (onid != 0 && (onid != 1 || tsid >= 2) && onid < 0xFF00)
 	{
 		if (get_sw(tsid << 16 | onid, sw, sw_length, 0, 2))
 		{
