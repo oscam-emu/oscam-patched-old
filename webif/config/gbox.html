@@ -18,8 +18,8 @@
 				<TD CLASS="invisible">
 					<TABLE>
 						<TR>
-							<TD><input name="my_vers" class="short" type="text" maxlength="2" value="##GBOXMYVERS##">&nbsp;default: 2A (2 hex chars)</TD>
-							<TD><A data-p="my_cpu_api">CPU API: </A><input name="my_cpu_api" class="short" type="text" maxlength="2" value="##GBOXMYCPUAPI##">&nbsp;default: 40 (2 hex chars)</TD>
+							<TD><input name="my_vers" class="short" type="text" maxlength="2" value="##GBOXMYVERS##">&nbsp;default: 2A hex</TD>
+							<TD><A data-p="my_cpu_api">CPU API: </A><input name="my_cpu_api" class="short" type="text" maxlength="2" value="##GBOXMYCPUAPI##">&nbsp;default: 61 hex</TD>
 						</TR>
 					</TABLE>
 				</TD>
@@ -38,7 +38,7 @@
 			</TR>
 			<TR><TD><A data-p="tmp_dir">Gbox tmp dir:</A></TD><TD><input name="tmp_dir" type="text" maxlength="64" value="##GBOXTMPDIR##">&nbsp;default: Oscam tmp dir</TD></TR>
 			<TR><TD><A data-p="ignore_peer">Ignored peer(s):</A></TD><TD>Maximum 16 peers (4 hex chars each), comma-separated<BR><textarea name="ignore_peer" rows="1" class="bt" maxlength="79">##GBOXIGNOREDPEER##</textarea><BR></TD></TR>
-			<TR><TD><A data-p="block_ecm">Block ECM(s) peer(s):</A></TD><TD>Maximum 16 peers (4 hex chars each), comma-separated<BR><textarea name="block_ecm" rows="1" class="bt" maxlength="79">##GBOXBLOCKECM##</textarea><BR></TD></TR>
+			<TR><TD><A data-p="block_ecm">Block ECM for peer(s):</A></TD><TD>Maximum 16 peers (4 hex chars each), comma-separated<BR><textarea name="block_ecm" rows="1" class="bt" maxlength="79">##GBOXBLOCKECM##</textarea><BR></TD></TR>
 			<TR><TD><A data-p="accept_remm_peer">Accept REMM from peer(s):</A></TD><TD><input name="accept_remm_peer" type="text" maxlength="39" value="##GBOXACCEPTREMM##">&nbsp;max 8 peers, comma-separated</TD></TR>
 			<TR><TD><A data-p="proxy_card">Proxy cards:</A></TD><TD>Maximum 32 Cards (8 hex chars each), comma-separated<BR><textarea name="proxy_card" rows="4" class="bt" maxlength="287">##GBOXPROXYCARD##</textarea><BR></TD></TR>
 		<TR><TH COLSPAN="2">GBox Short Message Service - Send GSMS</TH></TR>

@@ -16,8 +16,6 @@ int  gbox_direct_send_gsms(uint16_t boxid, uint8_t num, char *gsms);
 void gbox_get_online_peers(void);
 void write_gsms_ack(struct s_client *cli);
 void gsms_unavail(void);
-void start_sms_sender(void);
-void stop_sms_sender(void);
 
 #endif
 

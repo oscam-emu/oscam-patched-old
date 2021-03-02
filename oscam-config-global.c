@@ -1242,7 +1242,6 @@ static const struct config_list gbox_opts[] =
 	DEF_OPT_FUNC("gbox_dest_peers" , OFS(gbox_dest_peers)  , gbox_dest_peers_fn ),
 	DEF_OPT_FUNC("gbox_msg_txt"    , OFS(gbox_msg_txt)     , gbox_msg_txt_fn ),
 	DEF_OPT_UINT8("ccc_reshare"    , OFS(cc_gbx_reshare_en), 0),
-	DEF_OPT_FUNC("ccc_gbx_caid"    , OFS(ccc_gbx_check_caidtab), check_caidtab_fn),
 	DEF_LAST_OPT
 };
 #else
