@@ -36,7 +36,7 @@ static int32_t poll_gsms_data(uint16_t *boxid, uint8_t *num, char *text)
 
 	if(length1 < 13)
 	{
-		cs_log("min msg char in %s = 6, actual = %d", fname, length1 - 7);
+		cs_log("GSMS failed. Min msg char in %s = 6, actual = %d", fname, length1 - 7);
 		fclose(fhandle);
 		unlink(fname);
 		return -1;
@@ -473,84 +473,6 @@ void gbox_send_gsms_ack(struct s_client *cli)
 		cs_log_dbg(D_READER,"<-[gbx] send GSMS_ACK to %s:%d id: %04X", rdr->device, rdr->r_port, peer->gbox.id);
 		gbox_send(cli, outbuf, 16);
 	}
-}
-
-static pthread_t sms_sender_thread;
-static int32_t sms_sender_active = 0;
-static pthread_cond_t sleep_cond;
-static pthread_mutex_t sleep_cond_mutex;
-static pthread_mutex_t sms_mutex;
-
-static void sms_mutex_init(void)
-{
-	static int8_t mutex_init = 0;
-	if(!mutex_init)
-	{
-		SAFE_MUTEX_INIT(&sms_mutex, NULL);
-		cs_pthread_cond_init(__func__, &sleep_cond_mutex, &sleep_cond);
-		mutex_init = 1;
-	}
-}
-
-static void sms_sender(void)
-{
-	char *fext= FILE_GSMS_TXT;
-	char *fname = get_gbox_tmp_fname(fext);
-
-	while(sms_sender_active)
-	{
-		if(file_exists(fname))
-		{
-			gbox_init_send_gsms();
-		}
-
-		sleepms_on_cond(__func__, &sleep_cond_mutex, &sleep_cond, 1000);
-	}
-
-	pthread_exit(NULL);
-}
-
-void start_sms_sender(void)
-{
-	int32_t is_active;
-
-	sms_mutex_init();
-	SAFE_MUTEX_LOCK(&sms_mutex);
-
-	is_active = sms_sender_active;
-	if(!sms_sender_active)
-	{
-		sms_sender_active = 1;
-	}
-
-	if(is_active || cfg.gsms_dis)
-	{
-		SAFE_MUTEX_UNLOCK(&sms_mutex);
-		return;
-	}
-
-	int32_t ret = start_thread("sms sender", (void *)&sms_sender, NULL, &sms_sender_thread, 0, 1);
-	if(ret)
-	{
-		sms_sender_active = 0;
-	}
-
-	SAFE_MUTEX_UNLOCK(&sms_mutex);
-}
-
-void stop_sms_sender(void)
-{
-	sms_mutex_init();
-	SAFE_MUTEX_LOCK(&sms_mutex);
-
-	if(sms_sender_active)
-	{
-		sms_sender_active = 0;
-		SAFE_COND_SIGNAL(&sleep_cond);
-		SAFE_THREAD_JOIN(sms_sender_thread, NULL);
-	}
-
-	SAFE_MUTEX_UNLOCK(&sms_mutex);
 }
 
 #endif
