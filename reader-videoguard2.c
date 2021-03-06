@@ -1216,7 +1216,7 @@ static int32_t videoguard2_do_ecm(struct s_reader *reader, const ECM_REQUEST *er
 		new_len -= 2;
 	}
 
-	if(reader->caid == 0x92F || reader->caid == 0x91F)
+	if(reader->caid == 0x92F || reader->caid == 0x91F || reader->caid == 0x961)
 	{
 		ins40[2] = 0x60;
 	}
