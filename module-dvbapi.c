@@ -191,8 +191,7 @@ static const char *get_extension_descriptor_txt(uint8_t extension_tag)
 		case 0x15: return "AC-4"; // with stream type 0x06
 		case 0x18: return "protection message";
 		case 0x19: return "audio preselection";
-		case 0x20: return "TTML subtitling"; // (could become 0x1A, value in A038 draft seems weird)
-		case 0x21: return "DTS-UHD"; // with stream type 0x06 (could become 0x1B, value in A038 draft seems weird)
+		case 0x20: return "TTML subtitling"; // with stream type 0x06
 		default: return "Undefined";
 	}
 }
@@ -3954,8 +3953,11 @@ static void dvbapi_parse_pmt_descriptors(int32_t demux_id, const uint8_t *buffer
 					case 0x0E: // DTS-HD descriptor (DVB)
 					case 0x0F: // DTS Neural descriptor (DVB)
 					case 0x15: // AC-4 descriptor (DVB)
-					case 0x21: // DTS-UHD descriptor (DVB)
 						*type = STREAM_AUDIO;
+						break;
+
+					case 0x20: // TTML subtitling descriptor (DVB)
+						*type = STREAM_SUBTITLE;
 						break;
 
 					default:
