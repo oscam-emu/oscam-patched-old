@@ -1403,38 +1403,39 @@ static int32_t nagra2_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, str
 				des_ecb3_decrypt(_cwe1, reader->cwekey);
 				rdr_log_dbg(reader, D_READER, "CW0 after 3DES decrypt: %s", cs_hexdump(1, _cwe0, 8, tmp_dbg, sizeof(tmp_dbg)));
 				rdr_log_dbg(reader, D_READER, "CW1 after 3DES decrypt: %s", cs_hexdump(1, _cwe1, 8, tmp_dbg, sizeof(tmp_dbg)));
+
+				int chkok = 1;
+				if(((_cwe0[0] + _cwe0[1] + _cwe0[2]) & 0xFF) != _cwe0[3])
+				{
+					chkok = 0;
+					rdr_log_dbg(reader, D_READER, "CW0 checksum error [0]");
+				}
+
+				if(((_cwe0[4] + _cwe0[5] + _cwe0[6]) & 0xFF) != _cwe0[7])
+				{
+					chkok = 0;
+					rdr_log_dbg(reader, D_READER, "CW0 checksum error [1]");
+				}
+
+				if(((_cwe1[0] + _cwe1[1] + _cwe1[2]) & 0xFF) != _cwe1[3])
+				{
+					chkok = 0;
+					rdr_log_dbg(reader, D_READER, "CW1 checksum error [0]");
+				}
+
+				if(((_cwe1[4] + _cwe1[5] + _cwe1[6]) & 0xFF) != _cwe1[7])
+				{
+					chkok = 0;
+					rdr_log_dbg(reader, D_READER, "CW1 checksum error [1]");
+				}
+
+				if(chkok == 0)
+				{
+					rdr_log_dbg(reader, D_READER, "CW Decrypt failed");
+					return ERROR;
+				}
 			}
 
-			int chkok = 1;
-			if(((_cwe0[0] + _cwe0[1] + _cwe0[2]) & 0xFF) != _cwe0[3])
-			{
-				chkok = 0;
-				rdr_log_dbg(reader, D_READER, "CW0 checksum error [0]");
-			}
-
-			if(((_cwe0[4] + _cwe0[5] + _cwe0[6]) & 0xFF) != _cwe0[7])
-			{
-				chkok = 0;
-				rdr_log_dbg(reader, D_READER, "CW0 checksum error [1]");
-			}
-
-			if(((_cwe1[0] + _cwe1[1] + _cwe1[2]) & 0xFF) != _cwe1[3])
-			{
-				chkok = 0;
-				rdr_log_dbg(reader, D_READER, "CW1 checksum error [0]");
-			}
-
-			if(((_cwe1[4] + _cwe1[5] + _cwe1[6]) & 0xFF) != _cwe1[7])
-			{
-				chkok = 0;
-				rdr_log_dbg(reader, D_READER, "CW1 checksum error [1]");
-			}
-
-			if(chkok == 0)
-			{
-				rdr_log_dbg(reader, D_READER, "CW Decrypt failed");
-				return ERROR;
-			}
 			memcpy(ea->cw, _cwe0, 0x08);
 			memcpy(ea->cw + 8, _cwe1, 0x08);
 
