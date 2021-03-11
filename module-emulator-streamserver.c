@@ -316,12 +316,22 @@ static void ParseDescriptors(uint8_t *buffer, uint16_t info_length, uint8_t *typ
 					case 0x0E: // DTS-HD descriptor (DVB)
 					case 0x0F: // DTS Neural descriptor (DVB)
 					case 0x15: // AC-4 descriptor (DVB)
-					case 0x21: // DTS-UHD descriptor (DVB)
 						*type = STREAM_AUDIO;
+						break;
+
+					case 0x20: // TTML subtitling descriptor (DVB)
+						*type = STREAM_SUBTITLE;
+						break;
+
+					default:
+						*type = STREAM_UNDEFINED;
 						break;
 				}
 				break;
 			}
+
+			default:
+				break;
 		}
 	}
 }
