@@ -2466,6 +2466,7 @@ void dvbapi_set_pid(int32_t demux_id, int32_t num, uint32_t idx, bool enable, bo
 										{
 											cs_log("ERROR: Could not close demuxer fd (errno=%d %s)", errno, strerror(errno));
 										}
+										ca_fd[i] = 0;
 									}
 								}
 							}
