@@ -383,7 +383,7 @@ static uint32_t ca_descramblers_total = 0; // total number of available descramb
 static uint32_t ca_descramblers_used = 0; // total number of used descramblers during decoding
 static int32_t ca_fd[CA_MAX]; // holds fd handle of all ca devices (0 not in use)
 static LLIST *ll_activestreampids; // list of all enabled streampids on ca devices
-static int32_t unassoc_fd[MAX_DEMUX];
+static int32_t assoc_fd[MAX_ASSOC_FD]; // list of all client sockets
 
 bool is_dvbapi_usr(char *usr)
 {
@@ -4722,15 +4722,6 @@ int32_t dvbapi_parse_capmt(const uint8_t *buffer, uint32_t length, int32_t connf
 	{
 		case CA_PMT_CMD_OK_DESCRAMBLING:
 		{
-			// remove from unassoc_fd when necessary
-			for(i = 0; i < MAX_DEMUX; i++)
-			{
-				if(unassoc_fd[i] == connfd)
-				{
-					unassoc_fd[i] = 0;
-				}
-			}
-
 			dvbapi_capmt_notify(&demux[demux_id]);
 			dvbapi_prepare_descrambling(demux_id, msgid);
 			return demux_id;
@@ -6318,7 +6309,7 @@ static void dvbapi_get_packet_size(uint8_t *mbuf, uint16_t mbuf_len, uint16_t *c
 	}
 }
 
-static void dvbapi_handlesockmsg(uint8_t *mbuf, uint16_t chunksize, uint16_t data_len, uint8_t *add_to_poll, int32_t connfd, uint16_t *client_proto_version)
+static void dvbapi_handlesockmsg(uint8_t *mbuf, uint16_t chunksize, uint16_t data_len, int32_t connfd, uint16_t *client_proto_version)
 {
 	uint32_t msgid = 0;
 	if(*client_proto_version >= 3)
@@ -6381,7 +6372,6 @@ static void dvbapi_handlesockmsg(uint8_t *mbuf, uint16_t chunksize, uint16_t dat
 		{
 			cs_log_dbg(D_DVBAPI,"Received DVBAPI_AOT_CA_PMT object on socket %d:", connfd);
 			dvbapi_parse_capmt(mbuf + (chunksize - data_len), data_len, connfd, NULL, *client_proto_version, msgid);
-			(*add_to_poll) = 0;
 			break;
 		}
 
@@ -6431,12 +6421,6 @@ static void dvbapi_handlesockmsg(uint8_t *mbuf, uint16_t chunksize, uint16_t dat
 						}
 					}
 				}
-					
-				if(cfg.dvbapi_listenport)
-				{
-					(*add_to_poll) = 1;
-					break;
-				}
 			}
 			else if(cfg.dvbapi_pmtmode != 6)
 			{
@@ -6446,7 +6430,6 @@ static void dvbapi_handlesockmsg(uint8_t *mbuf, uint16_t chunksize, uint16_t dat
 					cs_log("ERROR: Could not close PMT fd (errno=%d %s)", errno, strerror(errno));
 				}
 			}
-			(*add_to_poll) = 0;
 			break;
 		}
 		default:
@@ -6465,8 +6448,7 @@ static void dvbapi_handlesockmsg(uint8_t *mbuf, uint16_t chunksize, uint16_t dat
 	}
 }	
 
-static bool dvbapi_handlesockdata(int32_t connfd, uint8_t *mbuf, uint16_t mbuf_size, uint16_t unhandled_len,
-					uint8_t *add_to_poll, uint16_t *new_unhandled_len, uint16_t *client_proto_version)
+static bool dvbapi_handlesockdata(int32_t connfd, uint8_t *mbuf, uint16_t mbuf_size, uint16_t unhandled_len, uint16_t *new_unhandled_len, uint16_t *client_proto_version)
 {
 	int32_t recv_result;
 	uint16_t chunksize = 1, data_len = 1;
@@ -6535,7 +6517,7 @@ static bool dvbapi_handlesockdata(int32_t connfd, uint8_t *mbuf, uint16_t mbuf_s
 			}
 		}
 
-		dvbapi_handlesockmsg(mbuf, chunksize-msgid_size, data_len, add_to_poll, connfd, client_proto_version);
+		dvbapi_handlesockmsg(mbuf, chunksize-msgid_size, data_len, connfd, client_proto_version);
 
 		unhandled_len -= chunksize;
 		if(unhandled_len > 0)
@@ -6548,6 +6530,41 @@ static bool dvbapi_handlesockdata(int32_t connfd, uint8_t *mbuf, uint16_t mbuf_s
 
 	(*new_unhandled_len) = unhandled_len;
 	return true;
+}
+
+static void add_to_assoc_fd(int sock)
+{
+	uint i;
+
+	for(i = 0; i < MAX_ASSOC_FD; i++)
+	{
+		if(assoc_fd[i] == sock)
+		{
+			return; // do not add twice
+		}
+	}
+
+	for(i = 0; i < MAX_ASSOC_FD; i++)
+	{
+		if(!assoc_fd[i])
+		{
+			assoc_fd[i] = sock;
+			return;
+		}
+	}
+}
+
+static void del_from_assoc_fd(int sock)
+{
+	uint i;
+
+	for(i = 0; i < MAX_ASSOC_FD; i++)
+	{
+		if(assoc_fd[i] == sock)
+		{
+			assoc_fd[i] = 0;
+		}
+	}
 }
 
 static void *dvbapi_main_local(void *cli)
@@ -6615,7 +6632,7 @@ static void *dvbapi_main_local(void *cli)
 	}
 
 	memset(ca_fd, 0, sizeof(ca_fd));
-	memset(unassoc_fd, 0, sizeof(unassoc_fd));
+	memset(assoc_fd, 0, sizeof(assoc_fd));
 	dvbapi_read_priority();
 	dvbapi_load_channel_cache();
 	dvbapi_detect_api();
@@ -6742,18 +6759,20 @@ static void *dvbapi_main_local(void *cli)
 		}
 
 		pfdcount = (listenfd > -1) ? 1 : 0;
-		for(i = 0; i < MAX_DEMUX; i++)
+
+		for(i = 0; i < MAX_ASSOC_FD; i++) // add all associated fds (this should include also demux[X].socket_fd)
 		{
-			// add client fd's which are not yet associated
-			// with the demux but needs to be polled for data
-			if(unassoc_fd[i])
+			if(assoc_fd[i])
 			{
-				pfd2[pfdcount].fd = unassoc_fd[i];
+				pfd2[pfdcount].fd = assoc_fd[i];
 				pfd2[pfdcount].events = (POLLIN | POLLPRI);
 				client_proto_version[pfdcount] = last_client_proto_version;
 				type[pfdcount++] = 1;
 			}
+		}
 
+		for(i = 0; i < MAX_DEMUX; i++)
+		{
 			if(demux[i].program_number == 0)
 			{
 				continue; // only evalutate demuxers that have channels assigned
@@ -6955,29 +6974,6 @@ static void *dvbapi_main_local(void *cli)
 					}
 				}
 			}
-
-			if(demux[i].socket_fd > 0 && cfg.dvbapi_pmtmode != 6)
-			{
-				rc = 0;
-				for(j = 0; j < pfdcount; j++)
-				{
-					if(pfd2[j].fd == demux[i].socket_fd)
-					{
-						rc = 1;
-						break;
-					}
-				}
-
-				if(rc == 1)
-				{
-					continue;
-				}
-
-				pfd2[pfdcount].fd = demux[i].socket_fd;
-				pfd2[pfdcount].events = (POLLIN | POLLPRI);
-				ids[pfdcount] = i;
-				type[pfdcount++] = 1;
-			}
 		}
 
 		rc = 0;
@@ -7021,18 +7017,14 @@ static void *dvbapi_main_local(void *cli)
 			{
 				if(type[i] == 1)
 				{
+					del_from_assoc_fd(pfd2[i].fd);
+
 					for(j = 0; j < MAX_DEMUX; j++)
 					{
 						// if listenfd closes stop all assigned decoding!
 						if(demux[j].socket_fd == pfd2[i].fd)
 						{
 							dvbapi_stop_descrambling(j, 0);
-						}
-
-						// remove from unassoc_fd when necessary
-						if(unassoc_fd[j] == pfd2[i].fd)
-						{
-							unassoc_fd[j] = 0;
 						}
 					}
 
@@ -7098,8 +7090,6 @@ static void *dvbapi_main_local(void *cli)
 			{
 				if(type[i] == 1)
 				{
-					uint8_t add_to_poll = 0; // we may need to additionally poll this socket when no PMT data comes in
-
 					if(pfd2[i].fd == listenfd)
 					{
 						if(cfg.dvbapi_pmtmode == 6)
@@ -7119,7 +7109,8 @@ static void *dvbapi_main_local(void *cli)
 								client->ip = SIN_GET_ADDR(servaddr);
 								client->port = ntohs(SIN_GET_PORT(servaddr));
 							}
-							add_to_poll = 1;
+
+							add_to_assoc_fd(connfd);
 
 							if(cfg.dvbapi_pmtmode == 3 || cfg.dvbapi_pmtmode == 0)
 							{
@@ -7146,7 +7137,7 @@ static void *dvbapi_main_local(void *cli)
 							memcpy(mbuf, unhandled_buf[i], unhandled_buf_used[i]);
 						}
 
-						if(!dvbapi_handlesockdata(connfd, mbuf, mbuf_size, unhandled_buf_used[i], &add_to_poll, &unhandled_buf_used[i], &client_proto_version[i]))
+						if(!dvbapi_handlesockdata(connfd, mbuf, mbuf_size, unhandled_buf_used[i], &unhandled_buf_used[i], &client_proto_version[i]))
 						{
 							unhandled_buf_used[i] = 0;
 							client_proto_version[i] = 0; // reset protocol, next client could old protocol.
@@ -7154,7 +7145,6 @@ static void *dvbapi_main_local(void *cli)
 							// client disconnects, stop all assigned decoding
 							cs_log_dbg(D_DVBAPI, "Socket %d reported connection close", connfd);
 							int active_conn = 0; // other active connections counter
-							add_to_poll = 0;
 
 							for(j = 0; j < MAX_DEMUX; j++)
 							{
@@ -7166,13 +7156,10 @@ static void *dvbapi_main_local(void *cli)
 								{
 									active_conn++;
 								}
-
-								// remove from unassoc_fd when necessary
-								if(unassoc_fd[j] == connfd)
-								{
-									unassoc_fd[j] = 0;
-								}
 							}
+
+							// stop polling on this socket
+							del_from_assoc_fd(connfd);
 							close(connfd);
 
 							// last connection closed
@@ -7202,21 +7189,6 @@ static void *dvbapi_main_local(void *cli)
 								}
 							}
 							memcpy(unhandled_buf[i], mbuf, unhandled_buf_used[i]);
-						}
-
-						// if the connection is new and we read no PMT data, then add it to the poll,
-						// otherwise this socket will not be checked with poll when data arives
-						// because fd it is not yet assigned with the demux
-						if(add_to_poll)
-						{
-							for(j = 0; j < MAX_DEMUX; j++)
-							{
-								if(!unassoc_fd[j])
-								{
-									unassoc_fd[j] = connfd;
-									break;
-								}
-							}
 						}
 					}
 				}
