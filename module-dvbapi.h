@@ -398,6 +398,7 @@ enum stream_type
 #define MAX_EMM_PIDS    24 // Max number of EMM pids per demux
 #define MAX_STREAM_PIDS 32 // Max number of pids other than ECM and EMM (e.g. audio, video, subtitle, etc) per demux (hardware descramblers might have a capacity of 30 pids)
 #define MAX_FILTER      64
+#define MAX_ASSOC_FD    MAX_DEMUX
 
 #define PTINUM          10
 #define SLOTNUM         20

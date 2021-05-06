@@ -260,7 +260,7 @@ static int dvbapi_ioctl(int fd, uint32_t request, ...)
 			case DMX_STOP:
 			{
 				ret = send(fd, &request, sizeof(request), 0);
-				ret = 1;
+				if(!(ret == 1)){ ret = 1; }
 				break;
 			}
 
@@ -383,7 +383,7 @@ static uint32_t ca_descramblers_total = 0; // total number of available descramb
 static uint32_t ca_descramblers_used = 0; // total number of used descramblers during decoding
 static int32_t ca_fd[CA_MAX]; // holds fd handle of all ca devices (0 not in use)
 static LLIST *ll_activestreampids; // list of all enabled streampids on ca devices
-static int32_t unassoc_fd[MAX_DEMUX];
+static int32_t assoc_fd[MAX_ASSOC_FD]; // list of all client sockets
 
 bool is_dvbapi_usr(char *usr)
 {
@@ -2466,7 +2466,7 @@ void dvbapi_set_pid(int32_t demux_id, int32_t num, uint32_t idx, bool enable, bo
 										{
 											cs_log("ERROR: Could not close demuxer fd (errno=%d %s)", errno, strerror(errno));
 										}
-										currentfd = ca_fd[i] = 0;
+										ca_fd[i] = 0;
 									}
 								}
 							}
@@ -2572,7 +2572,7 @@ void dvbapi_stop_descrambling(int32_t demux_id, uint32_t msgid)
 	}
 	demux[demux_id].pidindex = -1;
 	demux[demux_id].curindex = -1;
-	
+
 	if(!cfg.dvbapi_listenport && cfg.dvbapi_boxtype != BOXTYPE_PC_NODMX)
 	{
 		unlink(ECMINFO_FILE);
@@ -3335,7 +3335,6 @@ void dvbapi_resort_ecmpids(int32_t demux_id)
 			}
 		}
 	}
-	p_order = demux[demux_id].ECMpidcount + 1;
 
 	for(n = 0; n < demux[demux_id].ECMpidcount; n++)
 	{
@@ -4736,15 +4735,6 @@ int32_t dvbapi_parse_capmt(const uint8_t *buffer, uint32_t length, int32_t connf
 	{
 		case CA_PMT_CMD_OK_DESCRAMBLING:
 		{
-			// remove from unassoc_fd when necessary
-			for(i = 0; i < MAX_DEMUX; i++)
-			{
-				if(unassoc_fd[i] == connfd)
-				{
-					unassoc_fd[i] = 0;
-				}
-			}
-
 			dvbapi_capmt_notify(&demux[demux_id]);
 			dvbapi_prepare_descrambling(demux_id, msgid);
 			return demux_id;
@@ -5590,7 +5580,7 @@ void dvbapi_process_input(int32_t demux_id, int32_t filter_num, uint8_t *buffer,
 	int32_t pid = demux[demux_id].demux_fd[filter_num].pidindex;
 	uint16_t filtertype = demux[demux_id].demux_fd[filter_num].type;
 	uint16_t sctlen = SCT_LEN(buffer);
-	
+
 	if(sctlen < 4)
 	{
 		cs_log_dbg(D_DVBAPI, "Received filter data with invalid section length!");
@@ -6207,7 +6197,7 @@ static void set_chunksize_data_len_to_invalid(uint16_t *chunksize, uint16_t *dat
 }
 
 static void log_packeterror(uint16_t mbuf_len, const char* command)
-{ 
+{
 	cs_log("dvbapi_get_packet_size(): error - buffer length (%" PRIu16 ") too short for %s", mbuf_len, command);
 }
 
@@ -6259,7 +6249,6 @@ static void dvbapi_get_packet_size(uint8_t *mbuf, uint16_t mbuf_len, uint16_t *c
 	char* command = "DVBAPI_UNKNOWN_COMMAND";
 	uint32_t tmp_data_len = 0;
 	uint32_t opcode = b2i(4, mbuf);
-	
 
 	switch (opcode)
 	{
@@ -6290,7 +6279,7 @@ static void dvbapi_get_packet_size(uint8_t *mbuf, uint16_t mbuf_len, uint16_t *c
 			}
 			break;
 		}
-		
+
 		default:
 		{
 			if((opcode & 0xFFFFFF00) == DVBAPI_AOT_CA_PMT)
@@ -6306,13 +6295,13 @@ static void dvbapi_get_packet_size(uint8_t *mbuf, uint16_t mbuf_len, uint16_t *c
 			break;
 		}
 	}
-	
+
 	if(tmp_data_len == 0 || commandsize == 0)
 	{
 		set_chunksize_data_len_to_invalid(chunksize, data_len);
 		return;
 	}
-	
+
 	if(tmp_data_len + commandsize > 0xFFFF)
 	{
 		cs_log("This packet is too big: %d bytes => truncated!", tmp_data_len);
@@ -6321,7 +6310,7 @@ static void dvbapi_get_packet_size(uint8_t *mbuf, uint16_t mbuf_len, uint16_t *c
 
 	(*data_len) = tmp_data_len;
 	(*chunksize) += commandsize + tmp_data_len;
-	
+
 	if(*chunksize > mbuf_len)
 	{
 		cs_log_dbg(D_DVBAPI, "This %s packet is incomplete => command length is (%" PRIu16 ")", command, *chunksize);
@@ -6332,7 +6321,7 @@ static void dvbapi_get_packet_size(uint8_t *mbuf, uint16_t mbuf_len, uint16_t *c
 	}
 }
 
-static void dvbapi_handlesockmsg(uint8_t *mbuf, uint16_t chunksize, uint16_t data_len, uint8_t *add_to_poll, int32_t connfd, uint16_t *client_proto_version)
+static void dvbapi_handlesockmsg(uint8_t *mbuf, uint16_t chunksize, uint16_t data_len, int32_t connfd, uint16_t *client_proto_version)
 {
 	uint32_t msgid = 0;
 	if(*client_proto_version >= 3)
@@ -6347,7 +6336,6 @@ static void dvbapi_handlesockmsg(uint8_t *mbuf, uint16_t chunksize, uint16_t dat
 	}
 
 	uint32_t opcode = b2i(4, mbuf);
-	
 	switch(opcode)
 	{
 		case DVBAPI_FILTER_DATA:
@@ -6384,22 +6372,21 @@ static void dvbapi_handlesockmsg(uint8_t *mbuf, uint16_t chunksize, uint16_t dat
 			dvbapi_net_send(DVBAPI_SERVER_INFO, connfd, msgid, -1, -1, NULL, NULL, NULL, client_proto);
 
 			// now the protocol handshake is complete set correct version so all further packets are sent with correct message id.
-			(*client_proto_version) = client_proto; 
-				
+			(*client_proto_version) = client_proto;
+
 			// setting the global var according to the client
 			last_client_proto_version = client_proto;
 			break;
 		}
-			
+
 		case DVBAPI_AOT_CA_PMT:
 		{
 			cs_log_dbg(D_DVBAPI,"Received DVBAPI_AOT_CA_PMT object on socket %d:", connfd);
 			dvbapi_parse_capmt(mbuf + (chunksize - data_len), data_len, connfd, NULL, *client_proto_version, msgid);
-			(*add_to_poll) = 0;
 			break;
 		}
 
-		case (DVBAPI_AOT_CA_STOP):
+		case DVBAPI_AOT_CA_STOP:
 		{
 			cs_log_dbg(D_DVBAPI, "Received DVBAPI_AOT_CA_STOP object on socket %d:", connfd);
 			if(cfg.dvbapi_boxtype == BOXTYPE_IPBOX || cfg.dvbapi_boxtype == BOXTYPE_PC_NODMX || cfg.dvbapi_listenport)
@@ -6422,7 +6409,7 @@ static void dvbapi_handlesockmsg(uint8_t *mbuf, uint16_t chunksize, uint16_t dat
 						break;
 					}
 				}
-					
+
 				// ipbox fix
 				if(cfg.dvbapi_boxtype == BOXTYPE_IPBOX)
 				{
@@ -6445,12 +6432,6 @@ static void dvbapi_handlesockmsg(uint8_t *mbuf, uint16_t chunksize, uint16_t dat
 						}
 					}
 				}
-					
-				if(cfg.dvbapi_listenport)
-				{
-					(*add_to_poll) = 1;
-					break;
-				}
 			}
 			else if(cfg.dvbapi_pmtmode != 6)
 			{
@@ -6460,7 +6441,6 @@ static void dvbapi_handlesockmsg(uint8_t *mbuf, uint16_t chunksize, uint16_t dat
 					cs_log("ERROR: Could not close PMT fd (errno=%d %s)", errno, strerror(errno));
 				}
 			}
-			(*add_to_poll) = 0;
 			break;
 		}
 		default:
@@ -6477,10 +6457,9 @@ static void dvbapi_handlesockmsg(uint8_t *mbuf, uint16_t chunksize, uint16_t dat
 			break;
 		}
 	}
-}	
+}
 
-static bool dvbapi_handlesockdata(int32_t connfd, uint8_t *mbuf, uint16_t mbuf_size, uint16_t unhandled_len,
-					uint8_t *add_to_poll, uint16_t *new_unhandled_len, uint16_t *client_proto_version)
+static bool dvbapi_handlesockdata(int32_t connfd, uint8_t *mbuf, uint16_t mbuf_size, uint16_t unhandled_len, uint16_t *new_unhandled_len, uint16_t *client_proto_version)
 {
 	int32_t recv_result;
 	uint16_t chunksize = 1, data_len = 1;
@@ -6491,11 +6470,11 @@ static bool dvbapi_handlesockdata(int32_t connfd, uint8_t *mbuf, uint16_t mbuf_s
 	{
 		msgid_size = 5;
 	}
-	
+
 	do
 	{
 		missing_header_bytes = dvbapi_get_nbof_missing_header_bytes(mbuf, unhandled_len, msgid_size);
-	
+
 		if(missing_header_bytes != 0)
 		{
 			// read first few bytes so we know packet type and length
@@ -6517,10 +6496,10 @@ static bool dvbapi_handlesockdata(int32_t connfd, uint8_t *mbuf, uint16_t mbuf_s
 				}
 			}
 		}
-	
+
 		cs_log_dump_dbg(D_DVBAPI, mbuf, unhandled_len, "Got packetdata (msgid size: %d, clientprotocol: %d)", msgid_size, *client_proto_version);
 		dvbapi_get_packet_size(mbuf+msgid_size, unhandled_len-msgid_size, &chunksize, &data_len);
-		
+
 		chunksize+=msgid_size;
 		if(chunksize > mbuf_size)
 		{
@@ -6549,7 +6528,7 @@ static bool dvbapi_handlesockdata(int32_t connfd, uint8_t *mbuf, uint16_t mbuf_s
 			}
 		}
 
-		dvbapi_handlesockmsg(mbuf, chunksize-msgid_size, data_len, add_to_poll, connfd, client_proto_version);
+		dvbapi_handlesockmsg(mbuf, chunksize-msgid_size, data_len, connfd, client_proto_version);
 
 		unhandled_len -= chunksize;
 		if(unhandled_len > 0)
@@ -6557,11 +6536,46 @@ static bool dvbapi_handlesockdata(int32_t connfd, uint8_t *mbuf, uint16_t mbuf_s
 			memmove(mbuf, mbuf + chunksize, unhandled_len);
 		}
 	} while(unhandled_len != 0 && packet_count++ < 8);
-	
+
 	cs_log_dbg(D_DVBAPI, "Processing socketdata completed after %d packets with %d bytes left unprocessed", packet_count, unhandled_len);
 
 	(*new_unhandled_len) = unhandled_len;
 	return true;
+}
+
+static void add_to_assoc_fd(int sock)
+{
+	uint i;
+
+	for(i = 0; i < MAX_ASSOC_FD; i++)
+	{
+		if(assoc_fd[i] == sock)
+		{
+			return; // do not add twice
+		}
+	}
+
+	for(i = 0; i < MAX_ASSOC_FD; i++)
+	{
+		if(!assoc_fd[i])
+		{
+			assoc_fd[i] = sock;
+			return;
+		}
+	}
+}
+
+static void del_from_assoc_fd(int sock)
+{
+	uint i;
+
+	for(i = 0; i < MAX_ASSOC_FD; i++)
+	{
+		if(assoc_fd[i] == sock)
+		{
+			assoc_fd[i] = 0;
+		}
+	}
 }
 
 static void *dvbapi_main_local(void *cli)
@@ -6629,7 +6643,7 @@ static void *dvbapi_main_local(void *cli)
 	}
 
 	memset(ca_fd, 0, sizeof(ca_fd));
-	memset(unassoc_fd, 0, sizeof(unassoc_fd));
+	memset(assoc_fd, 0, sizeof(assoc_fd));
 	dvbapi_read_priority();
 	dvbapi_load_channel_cache();
 	dvbapi_detect_api();
@@ -6756,18 +6770,20 @@ static void *dvbapi_main_local(void *cli)
 		}
 
 		pfdcount = (listenfd > -1) ? 1 : 0;
-		for(i = 0; i < MAX_DEMUX; i++)
+
+		for(i = 0; i < MAX_ASSOC_FD; i++) // add all associated fds (this should include also demux[X].socket_fd)
 		{
-			// add client fd's which are not yet associated
-			// with the demux but needs to be polled for data
-			if(unassoc_fd[i])
+			if(assoc_fd[i])
 			{
-				pfd2[pfdcount].fd = unassoc_fd[i];
+				pfd2[pfdcount].fd = assoc_fd[i];
 				pfd2[pfdcount].events = (POLLIN | POLLPRI);
 				client_proto_version[pfdcount] = last_client_proto_version;
 				type[pfdcount++] = 1;
 			}
+		}
 
+		for(i = 0; i < MAX_DEMUX; i++)
+		{
 			if(demux[i].program_number == 0)
 			{
 				continue; // only evalutate demuxers that have channels assigned
@@ -6969,29 +6985,6 @@ static void *dvbapi_main_local(void *cli)
 					}
 				}
 			}
-
-			if(demux[i].socket_fd > 0 && cfg.dvbapi_pmtmode != 6)
-			{
-				rc = 0;
-				for(j = 0; j < pfdcount; j++)
-				{
-					if(pfd2[j].fd == demux[i].socket_fd)
-					{
-						rc = 1;
-						break;
-					}
-				}
-
-				if(rc == 1)
-				{
-					continue;
-				}
-
-				pfd2[pfdcount].fd = demux[i].socket_fd;
-				pfd2[pfdcount].events = (POLLIN | POLLPRI);
-				ids[pfdcount] = i;
-				type[pfdcount++] = 1;
-			}
 		}
 
 		rc = 0;
@@ -7035,18 +7028,14 @@ static void *dvbapi_main_local(void *cli)
 			{
 				if(type[i] == 1)
 				{
+					del_from_assoc_fd(pfd2[i].fd);
+
 					for(j = 0; j < MAX_DEMUX; j++)
 					{
 						// if listenfd closes stop all assigned decoding!
 						if(demux[j].socket_fd == pfd2[i].fd)
 						{
 							dvbapi_stop_descrambling(j, 0);
-						}
-
-						// remove from unassoc_fd when necessary
-						if(unassoc_fd[j] == pfd2[i].fd)
-						{
-							unassoc_fd[j] = 0;
 						}
 					}
 
@@ -7112,9 +7101,6 @@ static void *dvbapi_main_local(void *cli)
 			{
 				if(type[i] == 1)
 				{
-					connfd = -1; // initially no socket to read from
-					uint8_t add_to_poll = 0; // we may need to additionally poll this socket when no PMT data comes in
-
 					if(pfd2[i].fd == listenfd)
 					{
 						if(cfg.dvbapi_pmtmode == 6)
@@ -7134,7 +7120,8 @@ static void *dvbapi_main_local(void *cli)
 								client->ip = SIN_GET_ADDR(servaddr);
 								client->port = ntohs(SIN_GET_PORT(servaddr));
 							}
-							add_to_poll = 1;
+
+							add_to_assoc_fd(connfd);
 
 							if(cfg.dvbapi_pmtmode == 3 || cfg.dvbapi_pmtmode == 0)
 							{
@@ -7161,7 +7148,7 @@ static void *dvbapi_main_local(void *cli)
 							memcpy(mbuf, unhandled_buf[i], unhandled_buf_used[i]);
 						}
 
-						if(!dvbapi_handlesockdata(connfd, mbuf, mbuf_size, unhandled_buf_used[i], &add_to_poll, &unhandled_buf_used[i], &client_proto_version[i]))
+						if(!dvbapi_handlesockdata(connfd, mbuf, mbuf_size, unhandled_buf_used[i], &unhandled_buf_used[i], &client_proto_version[i]))
 						{
 							unhandled_buf_used[i] = 0;
 							client_proto_version[i] = 0; // reset protocol, next client could old protocol.
@@ -7169,7 +7156,6 @@ static void *dvbapi_main_local(void *cli)
 							// client disconnects, stop all assigned decoding
 							cs_log_dbg(D_DVBAPI, "Socket %d reported connection close", connfd);
 							int active_conn = 0; // other active connections counter
-							add_to_poll = 0;
 
 							for(j = 0; j < MAX_DEMUX; j++)
 							{
@@ -7181,15 +7167,11 @@ static void *dvbapi_main_local(void *cli)
 								{
 									active_conn++;
 								}
-
-								// remove from unassoc_fd when necessary
-								if(unassoc_fd[j] == connfd)
-								{
-									unassoc_fd[j] = 0;
-								}
 							}
+
+							// stop polling on this socket
+							del_from_assoc_fd(connfd);
 							close(connfd);
-							connfd = -1;
 
 							// last connection closed
 							if(!active_conn && (cfg.dvbapi_listenport || cfg.dvbapi_boxtype == BOXTYPE_PC_NODMX))
@@ -7218,21 +7200,6 @@ static void *dvbapi_main_local(void *cli)
 								}
 							}
 							memcpy(unhandled_buf[i], mbuf, unhandled_buf_used[i]);
-						}
-
-						// if the connection is new and we read no PMT data, then add it to the poll,
-						// otherwise this socket will not be checked with poll when data arives
-						// because fd it is not yet assigned with the demux
-						if(add_to_poll)
-						{
-							for(j = 0; j < MAX_DEMUX; j++)
-							{
-								if(!unassoc_fd[j])
-								{
-									unassoc_fd[j] = connfd;
-									break;
-								}
-							}
 						}
 					}
 				}
@@ -8115,7 +8082,7 @@ void dvbapi_write_ecminfo_file(struct s_client *client, ECM_REQUEST *er, uint8_t
 				proto_name = "none";
 				break;
 		}
-		
+
 		if(cfg.dvbapi_ecminfo_type == ECMINFO_TYPE_GBOX)
 		{
 			switch(er->rc)
@@ -9089,8 +9056,10 @@ uint32_t is_ca_used(uint8_t cadevice, int32_t pid)
 
 uint32_t count_active_indexers(void)
 {
+	uint i, usecounter = 0;
 	struct s_streampid *listitem;
 	LL_ITER itr;
+
 	if(!ll_activestreampids)
 	{
 		return 0;
@@ -9098,19 +9067,18 @@ uint32_t count_active_indexers(void)
 
 	bool indexer_in_use[ca_descramblers_total];
 	memset(&indexer_in_use, 0, sizeof(indexer_in_use));
-	
-	uint32_t usecounter = 0;
+
 	if(ll_count(ll_activestreampids) > 0)
 	{
 		itr = ll_iter_create(ll_activestreampids);
 		while((listitem = ll_iter_next(&itr)))
-		{	
+		{
 			if(listitem->caindex != INDEX_INVALID && listitem->caindex < INDEX_MAX)
 			{
 				indexer_in_use[listitem->caindex] = true;
 			}
 		}
-		uint32_t i = 0;
+
 		for(i = 0; i < ca_descramblers_total; i++)
 		{
 			if(indexer_in_use[i] == true)
@@ -9119,7 +9087,7 @@ uint32_t count_active_indexers(void)
 			}
 		}
 	}
-	
+
 	return usecounter;
 }
 
