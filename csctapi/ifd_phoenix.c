@@ -150,7 +150,7 @@ int32_t Phoenix_Reset(struct s_reader *reader, ATR *atr)
 			{ continue; }
 		if(ATR_InitFromArray(atr, buf, n) != ERROR)
 			{ ret = OK; }
-		// Succesfully retrieve ATR
+		// Successfully retrieve ATR
 		if(ret == OK)
 			{ break; }
 	}
