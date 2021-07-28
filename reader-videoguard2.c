@@ -1188,7 +1188,7 @@ static int32_t videoguard2_do_ecm(struct s_reader *reader, const ECM_REQUEST *er
 {
 	uint8_t cta_res[CTA_RES_LEN];
 	static const char valid_ecm[] = { 0x00, 0x00, 0x01 };
-	uint8_t ins40[5] = { 0xD1, 0x40, 0x00, 0x80, 0xFF };
+	uint8_t ins40[5] = { 0xD1, 0x40, 0x60, 0x80, 0xFF };
 	static const uint8_t ins54[5] = { 0xD3, 0x54, 0x00, 0x00, 0x00};
 	int32_t posECMpart2 = er->ecm[6] + 7;
 	int32_t lenECMpart2 = er->ecm[posECMpart2] + 1;
@@ -1214,11 +1214,6 @@ static int32_t videoguard2_do_ecm(struct s_reader *reader, const ECM_REQUEST *er
 		tbuff[2] = 0x08;
 		memmove(tbuff + 11, tbuff + 13, new_len - 11);
 		new_len -= 2;
-	}
-
-	if(reader->caid == 0x92F || reader->caid == 0x91F || reader->caid == 0x961)
-	{
-		ins40[2] = 0x60;
 	}
 
 	ins40[4] = new_len;
