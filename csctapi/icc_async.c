@@ -111,7 +111,7 @@ int32_t ICC_Async_Device_Init(struct s_reader *reader)
 	int32_t ret = crdr_ops->reader_init(reader);
 	if(ret == OK)
 	{
-		rdr_log_dbg(reader, D_IFD, "Device %s succesfully opened", reader->device);
+		rdr_log_dbg(reader, D_IFD, "Device %s successfully opened", reader->device);
 	}
 	else
 	{
@@ -323,7 +323,7 @@ int32_t ICC_Async_Activate(struct s_reader *reader, ATR *atr, uint16_t deprecate
 		memcpy(reader->rom, atr->hb, (atr->hbn>15)?15:atr->hbn); // get historical bytes from atr
 	}
 #endif
-	rdr_log_dbg(reader, D_READER, "Card succesfully activated");
+	rdr_log_dbg(reader, D_READER, "Card successfully activated");
 
 	return OK;
 }
@@ -371,7 +371,7 @@ int32_t ICC_Async_CardWrite(struct s_reader *reader, unsigned char *command, uin
 				if(ret == OK)
 				{
 					//reader->ifsc = DEFAULT_IFSC; // tryfix cardtimeouts: ifsc is setup at card init, on resync it should not return to default_ifsc
-					rdr_log(reader, "T1 Resync command succesfull ifsc = %i", reader->ifsc);
+					rdr_log(reader, "T1 Resync command successful ifsc = %i", reader->ifsc);
 					ret = ERROR;
 				}
 				else
@@ -439,7 +439,7 @@ int32_t ICC_Async_Transmit(struct s_reader *reader, uint32_t size, uint32_t expe
 		ICC_Async_InvertBuffer(reader, size, sent);
 	}
 	call(crdr_ops->transmit(reader, sent, size, expectedlen, delay, timeout));
-	rdr_log_dbg(reader, D_IFD, "Transmit succesful");
+	rdr_log_dbg(reader, D_IFD, "Transmit successful");
 	if(reader->convention == ATR_CONVENTION_INVERSE && crdr_ops->need_inverse)
 	{
 		// revert inversion cause the code in protocol_t0 is accessing buffer after transmit
@@ -455,7 +455,7 @@ int32_t ICC_Async_Receive(struct s_reader *reader, uint32_t size, unsigned char 
 
 	rdr_log_dbg(reader, D_IFD, "Receive size %d bytes, delay %d us, timeout=%d us", size, delay, timeout);
 	call(crdr_ops->receive(reader, data, size, delay, timeout));
-	rdr_log_dbg(reader, D_IFD, "Receive succesful");
+	rdr_log_dbg(reader, D_IFD, "Receive successful");
 	if(reader->convention == ATR_CONVENTION_INVERSE && crdr_ops->need_inverse == 1)
 	{
 		ICC_Async_InvertBuffer(reader, size, data);
@@ -474,7 +474,7 @@ int32_t ICC_Async_Close(struct s_reader *reader)
 		NULLFREE(reader->crdr_data);
 		NULLFREE(reader->csystem_data);
 	}
-	rdr_log_dbg(reader, D_IFD, "Device %s succesfully closed", reader->device);
+	rdr_log_dbg(reader, D_IFD, "Device %s successfully closed", reader->device);
 	return OK;
 }
 
@@ -692,7 +692,7 @@ static int32_t Parse_ATR(struct s_reader *reader, ATR *atr, uint16_t deprecated)
 				D = atr_d_table[DI];
 				uint32_t F = atr_f_table[FI];
 				PPS_success = 1;
-				rdr_log_dbg(reader, D_ATR, "PTS Succesfull, selected protocol: T%i, F=%d, D=%d, N=%d", reader->protocol_type, F, D, N);
+				rdr_log_dbg(reader, D_ATR, "PTS successful, selected protocol: T%i, F=%d, D=%d, N=%d", reader->protocol_type, F, D, N);
 			}
 			else
 			{
@@ -701,7 +701,7 @@ static int32_t Parse_ATR(struct s_reader *reader, ATR *atr, uint16_t deprecated)
 		}
 
 		//When for SCI, T14 protocol, TA1 is obeyed, this goes OK for mosts devices, but somehow on DM7025 Sky S02 card goes wrong when setting ETU (ok on DM800/DM8000)
-		if(!PPS_success) // last PPS not succesfull
+		if(!PPS_success) // last PPS not successful
 		{
 			unsigned char TA1;
 			if(ATR_GetInterfaceByte(atr, 1, ATR_INTERFACE_BYTE_TA, &TA1) == ATR_OK)
