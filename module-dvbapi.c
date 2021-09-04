@@ -1305,7 +1305,7 @@ static int32_t dvbapi_read_device(int32_t dmx_fd, uint8_t *buf, uint32_t length)
 					return (errno == EOVERFLOW ? 0 : -1);
 				}
 
-				if(readed > 0) // succesfull read
+				if(readed > 0) // successful read
 				{
 					count += readed;
 				}
