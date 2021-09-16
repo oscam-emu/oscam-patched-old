@@ -26,17 +26,19 @@
 static struct gbox_data local_gbox;
 static int8_t local_gbox_initialized = 0;
 static uint8_t local_cards_initialized = 0;
-static time_t last_stats_written;
 uint8_t local_gbx_rev = 0x30;
+uint32_t startup = 0;
 
-static uint16_t gbox_add_local_cards(void);
+static uint32_t gbox_add_local_cards(void);
 static int32_t gbox_send_ecm(struct s_client *cli, ECM_REQUEST *er);
 void start_gbx_ticker(void);
 
 char *get_gbox_tmp_fname(char *fext)
 {
-	static char gbox_tmpfile_buf[64] = { 0 };
+	static char gbox_tmpfile_buf[128];
+	memset(gbox_tmpfile_buf, 0, sizeof(gbox_tmpfile_buf));
 	const char *slash = "/";
+
 	if(!cfg.gbox_tmp_dir)
 	{
 		snprintf(gbox_tmpfile_buf, sizeof(gbox_tmpfile_buf), "%s%s%s",get_tmp_dir(), slash, fext);
@@ -94,7 +96,7 @@ static void write_attack_file (struct s_client *cli, uint8_t txt_id, uint16_t rc
 
 	if(txt_id == GBOX_ATTACK_PEER_IGNORE)
 	{
-		fprintf(fhandle, "ATTACK ALERT FROM %04X  %s - peer is ignored - %s",
+		fprintf(fhandle, "ATTACK ALERT FROM %04X  %s - peer ignored by conf - %s",
 			rcvd_id, cs_inet_ntoa(cli->ip), tsbuf);
 	}
 
@@ -156,12 +158,16 @@ void write_msg_info(struct s_client *cli, uint8_t msg_id, uint8_t txt_id, uint16
 
 		char *cmd = buf;
 		FILE *p;
-		if ((p = popen(cmd, "w")) == NULL)
+		if((p = popen(cmd, "w")) == NULL)
 		{
-			cs_log("Error %s",fname);
+			cs_log("Error popen: %s",fname);
 			return;
 		}
-		pclose(p);
+		if(pclose(p) == -1)
+		{
+			cs_log("Error pclose(): %s",fname);
+			return;
+		}
 	}
 	return;
 }
@@ -646,10 +652,10 @@ void gbox_send_hello(struct s_client *proxy, uint8_t hello_stat)
 
 				if(nbcards_cnt == MAX_GBOX_CARDS)
 				{
-					cs_log("gbox_send_hello - max cards send to peer reached");
+					cs_log("max card limit [%d] send to peer %04X is exceeded", MAX_GBOX_CARDS, peer->gbox.id);
 					break;
 				}
-			
+
 				if(nbcards_cnt == nb_send_cards)
 				{
 					break;
@@ -1117,7 +1123,7 @@ int32_t gbox_cmd_hello_rcvd(struct s_client *cli, uint8_t *data, int32_t n)
 		}
 			peer->crd_crc_change = 0;
 			peer->next_hello = 0;
-//			cli->last = time((time_t *)0);
+			cli->last = time((time_t *)0);
 	}
 	else
 	{
@@ -1163,7 +1169,7 @@ static int8_t is_blocked_peer(uint16_t peer_id)
 	return 0;
 }
 
-static int8_t check_peer_ignored(uint16_t peer_id)
+int8_t check_peer_ignored(uint16_t peer_id)
 {
 	int i;
 	if (cfg.gbox_ignored_peer_num > 0)
@@ -1581,12 +1587,6 @@ int32_t gbox_recv_cmd_switch(struct s_client *proxy, uint8_t *data, int32_t n)
 			cs_log_dump_dbg(D_READER, data, n, "unknown data (%d bytes) received from %s %s",
 							n, username(proxy), proxy->reader->device);
 	} // end switch
-
-	if((time(NULL) - last_stats_written) > STATS_WRITE_TIME)
-	{
-		gbox_write_stats();
-		last_stats_written = time(NULL);
-	}
 	return 0;
 }
 
@@ -1617,7 +1617,7 @@ uint8_t add_betatunnel_card(uint16_t caid, uint8_t slot)
 	return 0;
 }
 
-static uint16_t gbox_add_local_cards(void)
+static uint32_t gbox_add_local_cards(void)
 {
 	int32_t i;
 	uint32_t prid = 0;
@@ -1632,6 +1632,7 @@ static uint16_t gbox_add_local_cards(void)
 	uint16_t cc_peer_id = 0;
 	struct cc_provider *provider;
 	uint8_t *node1 = NULL;
+	uint8_t offset = 0;
 
 	gbox_delete_cards(GBOX_DELETE_WITH_TYPE, GBOX_CARD_TYPE_CCCAM);
 #endif
@@ -1652,29 +1653,26 @@ static uint16_t gbox_add_local_cards(void)
 				{
 					prid = cl->reader->prid[i][1] << 16 | cl->reader->prid[i][2] << 8 | cl->reader->prid[i][3];
 					gbox_add_card(local_gbox.id, gbox_get_caprovid(cl->reader->caid, prid), slot, DEFAULT_GBOX_RESHARE, 0, GBOX_CARD_TYPE_LOCAL, NULL);
-					crdnb++;
 				}
 			}
-			else if(caid_is_viaccess(cl->reader->caid)) //skip via issuer
+			else if(caid_is_viaccess(cl->reader->caid))
 			{
-				for(i = 1; i < cl->reader->nprov; i++)
+				for(i = 1; i < cl->reader->nprov; i++)  //skip via issuer
 				{
 					prid = cl->reader->prid[i][1] << 16 | cl->reader->prid[i][2] << 8 | cl->reader->prid[i][3];
 					gbox_add_card(local_gbox.id, gbox_get_caprovid(cl->reader->caid, prid), slot, DEFAULT_GBOX_RESHARE, 0, GBOX_CARD_TYPE_LOCAL, NULL);
-					crdnb++;
 				}
 			}
 			else
 			{
 				gbox_add_card(local_gbox.id, gbox_get_caprovid(cl->reader->caid, 0), slot, DEFAULT_GBOX_RESHARE, 0, GBOX_CARD_TYPE_LOCAL, NULL);
-				crdnb++;
 				if(chk_is_betatunnel_caid(cl->reader->caid) == 1) // 1702 1722
 					{ 
 						if(add_betatunnel_card(cl->reader->caid, gbox_next_free_slot(local_gbox.id)))
 							{ crdnb++; } 
 					}
 			}
-			//crdnb++;
+			crdnb++;
 		} // end local readers
 #ifdef MODULE_CCCAM
 		if(cfg.cc_gbx_reshare_en &&	cfg.cc_reshare > -1 && cl->typ == 'p' && cl->reader && cl->reader->typ == R_CCCAM && cl->cc)
@@ -1687,9 +1685,9 @@ static uint16_t gbox_add_local_cards(void)
 				// calculate gbox id from cc node
 				node1 = ll_has_elements(card->remote_nodes);
 				checksum = ((node1[0] ^ node1[7]) << 8) | ((node1[1] ^ node1[6]) << 24) | (node1[2] ^ node1[5]) | ((node1[3] ^ node1[4]) << 16);
-				cc_peer_id = ((((checksum >> 24) & 0xFF) ^ ((checksum >> 8) & 0xFF)) << 8 | (((checksum >> 16) & 0xFF) ^ (checksum & 0xFF)));
+				cc_peer_id = ((((checksum >> 24) & 0xFF) ^ ((checksum >> 8) & 0xFF)) << 8 | (((checksum >> 16) & 0xFF) ^ (checksum & 0xFF))) + offset;
 
- 				slot = gbox_next_free_slot(cc_peer_id);
+				slot = gbox_next_free_slot(cc_peer_id);
 
 				if(caid_is_seca(card->caid) || caid_is_viaccess(card->caid) || caid_is_cryptoworks(card->caid))
 				{
@@ -1705,6 +1703,13 @@ static uint16_t gbox_add_local_cards(void)
 				}
 				cccrdnb++;
 				crdnb++;
+
+				if(slot % 18 == 0)
+					{ 
+						//offset++;
+						offset += (rand() % 18) +1;
+						//cs_log("cccrdnum: %d, slot: %d, offset: %d, caid: %04X, peer: %04X", cccrdnb, slot, offset, card->caid, cc_peer_id);
+					}
 			}
 		} // end cccam
 #endif
@@ -1733,7 +1738,7 @@ static uint16_t gbox_add_local_cards(void)
 			else
 			{ cs_log("Local gbox cards initialized - cards: %d", crdnb); } 
 		}
-	return crdnb - cccrdnb;
+	return (cccrdnb << 16) | (crdnb - cccrdnb);
 } //end add local gbox cards
 
 void gbx_local_card_stat(uint8_t crdstat, uint16_t caid)
@@ -1757,7 +1762,8 @@ void gbx_local_card_stat(uint8_t crdstat, uint16_t caid)
 		{
 			return;
 		}
-		cs_log("Card update send to peer(s) online - crd(s):%d", gbox_add_local_cards());
+
+		cs_log("Card update send to peer(s) online - Local/Proxy crd(s):%d", gbox_add_local_cards() & 0xffff);
 		//gbox_write_local_cards_info(); //done by gbox_add_local_cards()
 		gbox_send_peer_crd_update();
 	}
@@ -2295,7 +2301,6 @@ static int8_t init_local_gbox(void)
 		}
 	}
 
-	last_stats_written = time(NULL);
 	gbox_write_version();
 
 	return local_gbox_initialized;
@@ -2642,7 +2647,6 @@ static int32_t gbx_tick_active = 0;
 static pthread_cond_t gbx_tick_sleep_cond;
 static pthread_mutex_t gbx_tick_sleep_cond_mutex;
 static pthread_mutex_t gbx_tick_mutex;
-uint32_t startup = 0;
 
 static void gbx_tick_mutex_init(void)
 {
@@ -2666,12 +2670,20 @@ static void gbx_ticker(void)
 		{
 			gbox_init_send_gsms();
 		}
-		
+
 		startup++;
 		
-		if(startup < 30)
+		if(startup < GBOX_START_TIME)
 			{
 				delayed_crd_update();
+			}
+		else if(startup == GBOX_START_TIME -10)
+			{
+				gbox_add_local_cards();
+			}
+		else if(startup % STATS_WRITE_TIME == 0)
+			{
+				gbox_write_stats();
 			}
 
 		gbox_send_idle_msg();

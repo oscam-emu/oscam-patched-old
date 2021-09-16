@@ -164,7 +164,7 @@ void gbox_write_stats(void)
 		cs_log("Couldn't open %s: %s", fname, strerror(errno));
 		return;
 	}
-
+	fprintf(fhandle, "Statistics for peer cards received\n");
 	struct gbox_card *card;
 	cs_readlock(__func__, &gbox_cards_lock);
 	LL_ITER it = ll_iter_create(gbox_cards);
@@ -172,16 +172,16 @@ void gbox_write_stats(void)
 	{
 		if (card->type == GBOX_CARD_TYPE_GBOX)
 		{
-			fprintf(fhandle, "CardID %4d Card %08X id:%04X #CWs:%d AVGtime:%d ms\n",
-					card_count, card->caprovid, card->id.peer, card->no_cws_returned, card->average_cw_time);
-			fprintf(fhandle, "Good SIDs:\n");
+			fprintf(fhandle, "\nCard# %04d  CaProv:%08X ID:%04X #CWs:%d AVGtime:%d ms",
+					card_count +1, card->caprovid, card->id.peer, card->no_cws_returned, card->average_cw_time);
+			fprintf(fhandle, "\n Good SID: ");
 			LL_ITER it2 = ll_iter_create(card->goodsids);
 			while((srvid_good = ll_iter_next(&it2)))
-				{ fprintf(fhandle, "%04X\n", srvid_good->srvid.sid); }
-			fprintf(fhandle, "Bad SIDs:\n");
+				{ fprintf(fhandle, "%04X ", srvid_good->srvid.sid); }
+			fprintf(fhandle, "\n Bad SID: ");
 			it2 = ll_iter_create(card->badsids);
 			while((srvid_bad = ll_iter_next(&it2)))
-				{ fprintf(fhandle, "%04X #%d\n", srvid_bad->srvid.sid, srvid_bad->bad_strikes); }
+				{ fprintf(fhandle, "%04X ", srvid_bad->srvid.sid); }
 			card_count++;
 		}
 	} // end of while ll_iter_next
@@ -318,7 +318,6 @@ static uint8_t check_card_properties(uint32_t caprovid, uint16_t id_peer, uint8_
 	LL_ITER it = ll_iter_create(gbox_cards);
 			while((card = ll_iter_next(&it)))
 				{
-				//	crd_num++;
 					if (card->caprovid == caprovid && card->id.peer == id_peer && card->id.slot == slot && type != GBOX_CARD_TYPE_CCCAM)
 						{
 							if (distance < card->dist) //better card
@@ -372,7 +371,7 @@ void gbox_add_card(uint16_t id_peer, uint32_t caprovid, uint8_t slot, uint8_t le
 					cs_log("Card allocation failed");
 					return;
 				}
-			if (check_card_properties(caprovid, id_peer, slot, distance, type))
+			if (check_card_properties(caprovid, id_peer, slot, distance, type) && !check_peer_ignored(id_peer))
 				{
 					cs_log_dbg(D_READER, "add card to card_list - peer: %04X %08X dist %d", id_peer, caprovid, distance);
 					card->caprovid = caprovid;
