@@ -18,9 +18,10 @@
 #define RECEIVE_BUFFER_SIZE       1024
 #define MIN_GBOX_MESSAGE_LENGTH     10 // CMD + pw + pw. TODO: Check if is really min
 #define MIN_ECM_LENGTH               8
-#define STATS_WRITE_TIME           300 // write stats file every 5 min
+#define STATS_WRITE_TIME            60 // write stats file every 1 min
 #define MAX_GBOX_CARDS            1024 // send max. 1024 cards to peer
 #define LOCAL_GBOX_MAJOR_VERSION  0x02
+#define GBOX_START_TIME             30
 
 #define MSG_ECM       0x445C
 #define MSG_CW        0x4844
@@ -171,6 +172,7 @@ char *get_gbox_tmp_fname(char *fext);
 uint16_t gbox_get_local_gbox_id(void);
 uint16_t gbox_convert_password_to_id(uint32_t password);
 uint8_t get_peer_onl_status(uint16_t peer_id);
+int8_t check_peer_ignored(uint16_t peer_id);
 uint32_t gbox_get_local_gbox_password(void);
 void gbox_send(struct s_client *cli, uint8_t *buf, int32_t l);
 int8_t gbox_message_header(uint8_t *buf, uint16_t cmd, uint32_t peer_password, uint32_t local_password);
