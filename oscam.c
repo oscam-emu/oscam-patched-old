@@ -129,7 +129,7 @@ static char *prog_name;
 static char *stb_boxtype;
 static char *stb_boxname;
 
-static uint32_t oscam_stacksize = 0;
+static int32_t oscam_stacksize = 0;
 
 /*****************************************************************************
 		Statics
