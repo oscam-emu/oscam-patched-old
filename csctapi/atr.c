@@ -382,7 +382,7 @@ int32_t ATR_GetParameter(ATR *atr, int32_t name, uint32_t *parameter)
 	return (ATR_NOT_FOUND);
 }
 
-int32_t ATR_GetHistoricalBytes(ATR *atr, unsigned char hist[ATR_MAX_HISTORICAL], uint32_t *length)
+int32_t ATR_GetHistoricalBytes(ATR *atr, unsigned char *hist, uint32_t *length)
 {
 	if(atr->hbn == 0)
 		{ return (ATR_NOT_FOUND); }
@@ -392,7 +392,7 @@ int32_t ATR_GetHistoricalBytes(ATR *atr, unsigned char hist[ATR_MAX_HISTORICAL],
 	return (ATR_OK);
 }
 
-int32_t ATR_GetRaw(ATR *atr, unsigned char buffer[ATR_MAX_SIZE], uint32_t *length)
+int32_t ATR_GetRaw(ATR *atr, unsigned char *buffer, uint32_t *length)
 {
 	uint32_t i, j;
 
