@@ -238,10 +238,10 @@ static int32_t Sci_Read_ATR(struct s_reader *reader, ATR *atr)   // reads ATR on
 
 	if(n != atrlength + tck) { rdr_log(reader, "WARNING: Total ATR characters received is: %d instead of expected %d", n, atrlength + tck); }
 
-	if((buf[0] != 0x3B) && (buf[0] != 0x3F) && (n > 9 && !memcmp(buf + 4, "IRDETO", 6)))  //irdeto S02 reports FD as first byte on dreambox SCI, not sure about SH4 or phoenix
+	if((buf[0] != 0x3B) && (buf[0] != 0x3F) && (n > 9 && !memcmp(buf + 4, "IRDETO", 6)))  // irdeto S02 reports FD as first byte on dreambox SCI, not sure about SH4 or phoenix
 		{ buf[0] = 0x3B; }
 
-	statusreturn = ATR_InitFromArray(atr, buf, n);  // n should be same as atrlength but in case of atr read error its less so do not use atrlenght here!
+	statusreturn = ATR_InitFromArray(atr, buf, n);  // n should be same as atr length but in case of atr read error it's less, so do not use atr length here!
 
 	if(buf[7] == 0x70 && buf[8] == 0x70 && (buf[9]&0x0F) >= 10)
 	{
@@ -431,11 +431,11 @@ static int32_t Sci_FastReset(struct s_reader *reader, ATR *atr)
 
 	if(reader->seca_nagra_card == 1)
 	{
-		atr_len = reader->card_atr_length; // this is a special case the data buffer has only the atr lenght.
+		atr_len = reader->card_atr_length; // this is a special case the data buffer has only the atr length.
 	}
 	else
 	{
-		atr_len = reader->card_atr_length + 2; // data buffer has atr lenght + 2 bytes
+		atr_len = reader->card_atr_length + 2; // data buffer has atr length + 2 bytes
 	}
 
 	Sci_Activate(reader);

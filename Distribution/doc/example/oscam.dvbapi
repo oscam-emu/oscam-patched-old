@@ -15,7 +15,7 @@
 #  map:
 #   M: CAID[:][provider ID][:][service ID][:][ECM PID] target CAID[:][target provider ID]
 #
-#  lenght:
+#  length:
 #   L: CAID[:][provider ID][:][service ID][:][ECM PID] length
 #
 
