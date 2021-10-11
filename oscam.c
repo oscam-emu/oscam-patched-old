@@ -1032,7 +1032,7 @@ static void fix_stacksize(void)
 			return;
 		}
 
-		oscam_stacksize = (OSCAM_STACK_MIN / pagesize + 1) * pagesize;
+		oscam_stacksize = ((OSCAM_STACK_MIN) / pagesize + 1) * pagesize;
 	}
 }
 
