@@ -356,7 +356,7 @@ static int8_t gbox_reinit_proxy(struct s_client *proxy)
 	{
 		return -1;
 	}
-	
+
 	remove_peer_crd_file(proxy);
 	proxy->reader->tcp_connected = 0;
 	proxy->reader->card_status = CARD_NEED_INIT;
@@ -365,12 +365,12 @@ static int8_t gbox_reinit_proxy(struct s_client *proxy)
 	return 0;
 }
 
-//gbox.net doesn't accept slots >18 
-static uint8_t calc_slot(uint8_t slot)	
+//gbox.net doesn't accept slots >18
+static uint8_t calc_slot(uint8_t slot)
 {
 	int8_t i;
 	uint8_t cslot = slot;
-	
+
 	for(i=0 ; i < 9 ; i++)
 	{
 		if(slot > i*18)
@@ -407,7 +407,7 @@ uint16_t count_send_cards(struct s_client *proxy)
 					if(proxy->reader->gbox_cccam_reshare < 0)
 						{ continue; }
 					else
-					{ 
+					{
 						if(chk_ident_filter(gbox_get_caid(card->caprovid), gbox_get_provid(card->caprovid), &proxy->reader->ccc_gbx_reshare_ident))
 						{
 							nbcards++;
@@ -423,7 +423,7 @@ uint16_t count_send_cards(struct s_client *proxy)
 						continue;
 					}
 					else
-					{ 
+					{
 						continue;
 					}
 				}
@@ -437,7 +437,7 @@ uint16_t count_send_cards(struct s_client *proxy)
 			gbox_cards_iter_destroy(gci);
 	}
 	return nbcards;
-} 
+}
 
 void gbox_send(struct s_client *cli, uint8_t *buf, int32_t l)
 {
@@ -561,7 +561,7 @@ void gbox_send_hello(struct s_client *proxy, uint8_t hello_stat)
 			char buff[64];
 			snprintf(buff, sizeof(buff),"cards_to_%.24s", proxy->reader->label);
 			char *fname = get_gbox_tmp_fname(buff);
-			
+
 			FILE *fhandle = fopen(fname, "w");
 			if(!fhandle)
 			{
@@ -594,14 +594,14 @@ void gbox_send_hello(struct s_client *proxy, uint8_t hello_stat)
 					*(++ptr) = calc_slot(card->id.slot);
 					*(++ptr) = ((card->lvl - 1) << 4) + card->dist + 1;
 
-						fprintf(fhandle, "#%03d Peer Crd to %04X - crd %08X - level %d - dist %d - slot %02d - crd owner %04X\n", ++sendcrds, peer->gbox.id, card->caprovid, card->lvl -1, card->dist + 1, calc_slot(card->id.slot), card->id.peer); 
+						fprintf(fhandle, "#%03d Peer Crd to %04X - crd %08X - level %d - dist %d - slot %02d - crd owner %04X\n", ++sendcrds, peer->gbox.id, card->caprovid, card->lvl -1, card->dist + 1, calc_slot(card->id.slot), card->id.peer);
 				}
 				else if(card->type == GBOX_CARD_TYPE_CCCAM)
 				{
 					if(proxy->reader->gbox_cccam_reshare < 0)
 						{ continue; }
 					else
-					{ 
+					{
 						if(chk_ident_filter(gbox_get_caid(card->caprovid), gbox_get_provid(card->caprovid), &proxy->reader->ccc_gbx_reshare_ident))
 						{
 							if(proxy->reader->gbox_cccam_reshare > proxy->reader->gbox_reshare)
@@ -617,7 +617,7 @@ void gbox_send_hello(struct s_client *proxy, uint8_t hello_stat)
 						*(++ptr) = calc_slot(card->id.slot);
 						*(++ptr) = ((proxy->reader->gbox_cccam_reshare) << 4) + card->dist + 1;
 
-							fprintf(fhandle, "#%03d CCCM crd to %04X - crd %08X - level %d - dist %d - slot %02d - crd owner %04X\n", ++sendcrds, peer->gbox.id, card->caprovid, proxy->reader->gbox_cccam_reshare, card->dist + 1, calc_slot(card->id.slot), card->id.peer); 
+							fprintf(fhandle, "#%03d CCCM crd to %04X - crd %08X - level %d - dist %d - slot %02d - crd owner %04X\n", ++sendcrds, peer->gbox.id, card->caprovid, proxy->reader->gbox_cccam_reshare, card->dist + 1, calc_slot(card->id.slot), card->id.peer);
 						}
 						else
 						{ continue; }
@@ -636,7 +636,7 @@ void gbox_send_hello(struct s_client *proxy, uint8_t hello_stat)
 					*(++ptr) = calc_slot(card->id.slot);
 					*(++ptr) = ((proxy->reader->gbox_reshare - 1) << 4) + card->dist + 1;
 
-						fprintf(fhandle, "#%03d Locl Crd to %04X - crd %08X - level %d - dist %d - slot %02d - crd owner %04X\n", ++sendcrds, peer->gbox.id, card->caprovid, proxy->reader->gbox_reshare - 1, card->dist + 1, calc_slot(card->id.slot), card->id.peer); 
+						fprintf(fhandle, "#%03d Locl Crd to %04X - crd %08X - level %d - dist %d - slot %02d - crd owner %04X\n", ++sendcrds, peer->gbox.id, card->caprovid, proxy->reader->gbox_reshare - 1, card->dist + 1, calc_slot(card->id.slot), card->id.peer);
 					}
 					else
 					{
@@ -675,7 +675,7 @@ void gbox_send_hello(struct s_client *proxy, uint8_t hello_stat)
 		gbox_cards_iter_destroy(gci);
 		fclose(fhandle);
 	} // end if > HelloL
-	else 
+	else
 		{
 			GBOX_CARDS_ITER *gci = gbox_cards_iter_create();
 			while((card = gbox_cards_iter_next(gci)))
@@ -891,10 +891,10 @@ static uint8_t gbox_checkcode_recvd(struct s_client *cli, uint8_t *checkcode, ui
 	if(memcmp(peer->checkcode, checkcode, 7))
 	{
 		if (updcrc)
-			{ 
+			{
 				cs_log_dump_dbg(D_READER, peer->checkcode, 7, "-> old checkcode from %04X %s:", peer->gbox.id, cli->reader->label);
 				cs_log_dump_dbg(D_READER, checkcode, 7, "-> new checkcode from %04X %s:", peer->gbox.id, cli->reader->label);
-				memcpy(peer->checkcode, checkcode, 7); 
+				memcpy(peer->checkcode, checkcode, 7);
 			}
 		return 1;
 	}
@@ -985,7 +985,7 @@ int32_t gbox_cmd_hello_rcvd(struct s_client *cli, uint8_t *data, int32_t n)
 
 		if(peer->hostname && memcmp(peer->hostname, data + payload_len - 1 - hostname_len, hostname_len))
 			{
-				cs_log("WARNING - Received Hello from Peer %04X - hostname in cfg is different to received hostname", peer->gbox.id); 
+				cs_log("WARNING - Received Hello from Peer %04X - hostname in cfg is different to received hostname", peer->gbox.id);
 			}
 
 		if(!peer->hostname || memcmp(peer->hostname, data + payload_len - 1 - hostname_len, hostname_len))
@@ -1001,9 +1001,9 @@ int32_t gbox_cmd_hello_rcvd(struct s_client *cli, uint8_t *data, int32_t n)
 
 		diffcheck=gbox_checkcode_recvd(cli, data + payload_len - footer_len - 1, 1);
 			if(diffcheck)
-				{ 
+				{
 					peer->crd_crc_change = 1;
-					cs_log_dbg(D_READER,"-> first packet of hello from %04X - diffcheck=1 -> peer-card changed", peer->gbox.id); 
+					cs_log_dbg(D_READER,"-> first packet of hello from %04X - diffcheck=1 -> peer-card changed", peer->gbox.id);
 				}
 		peer->gbox.minor_version = data[payload_len - footer_len - 1 + 7];
 		peer->gbox.cpu_api = data[payload_len - footer_len + 7];
@@ -1016,8 +1016,8 @@ int32_t gbox_cmd_hello_rcvd(struct s_client *cli, uint8_t *data, int32_t n)
 	if (cards_number < 0)
 		{ return -1; }
 	else
-		{ 
-			peer->total_cards += cards_number; 
+		{
+			peer->total_cards += cards_number;
 			cs_log_dbg(D_READER,"-> Hello packet no. %d received - %d unfiltered card(s) - from %s %s", (data[11] & 0xF) + 1, cards_number, username(cli), cli->reader->device);
 		}
 
@@ -1051,7 +1051,7 @@ int32_t gbox_cmd_hello_rcvd(struct s_client *cli, uint8_t *data, int32_t n)
 				else
 				{
 					if(peer->crd_crc_change)
-						{ 
+						{
 							peer->crd_crc_change = 0;
 							cs_log_dbg(D_READER,"-> last packet of HelloS from %04X, peer-card changed -> write shared cards.info", peer->gbox.id);
 							if(peer->filtered_cards)
@@ -1082,7 +1082,7 @@ int32_t gbox_cmd_hello_rcvd(struct s_client *cli, uint8_t *data, int32_t n)
 			else
 			{
 				if(peer->crd_crc_change)
-					{ 
+					{
 						peer->crd_crc_change = 0;
 						cs_log_dbg(D_READER,"-> last packet of HelloR from %04X, peer-card changed -> write shared cards.info", peer->gbox.id);
 						if(peer->filtered_cards)
@@ -1303,21 +1303,21 @@ static int8_t gbox_incoming_ecm(struct s_client *cli, uint8_t *data, int32_t n)
 		er->caid = b2i(2, ecm + er->ecmlen + 5);
 	}
 
-	memcpy(er->ecm, data + 18, er->ecmlen); 
+	memcpy(er->ecm, data + 18, er->ecmlen);
 
 	er->gbox_ecm_src_peer = b2i(2, ecm + er->ecmlen); //boxid which ORIGINALLY broadcasted the ECM
 	ere->gbox_version = ecm[er->ecmlen + 2];
 	ere->gbox_rev = ecm[er->ecmlen + 3];
 	ere->gbox_type = ecm[er->ecmlen + 4];
-	uint32_t caprovid = b2i(4, ecm + er->ecmlen + 5); 
+	uint32_t caprovid = b2i(4, ecm + er->ecmlen + 5);
 	er->gbox_cw_src_peer = b2i(2, ecm + er->ecmlen + 10); //boxid to send ECM to (cw source peer)
 	ere->gbox_slot = ecm[er->ecmlen + 12];
 	diffcheck = gbox_checkcode_recvd(cl, data + n - 14, 0);
 	er->gbox_crc = gbox_get_checksum(&er->ecm[0], er->ecmlen);
 	er->gbox_ecm_dist = data[n - 15] + 1;
-	
+
 	memcpy(&ere->gbox_routing_info[0], &data[n - 15 - er->gbox_ecm_dist + 1], er->gbox_ecm_dist - 1);
-	
+
 	er->caid = gbox_get_caid(caprovid);
 	er->prid = gbox_get_provid(caprovid);
 
@@ -1478,7 +1478,7 @@ static void gbox_send_peer_crd_update(void)
 			if(peer->online)
 			{
 				gbox_send_hello(cl, GBOX_STAT_HELLOS);
-				cl->last = time((time_t *)0); 
+				cl->last = time((time_t *)0);
 			}
 		}
 	}
@@ -1501,7 +1501,7 @@ int32_t gbox_recv_cmd_switch(struct s_client *proxy, uint8_t *data, int32_t n)
 	{
 		case MSG_HERE:
 			cs_log_dbg(D_READER,"-> HERE? from %s %s - check reader port: %d might be wrong", username(proxy), proxy->reader->device, proxy->reader->r_port);
-			// todo: what to reply?? 
+			// todo: what to reply??
 			break;
 
 		case MSG_GOODBYE:
@@ -1551,7 +1551,7 @@ int32_t gbox_recv_cmd_switch(struct s_client *proxy, uint8_t *data, int32_t n)
 
 		case MSG_CHECKCODE:
 			diffcheck = gbox_checkcode_recvd(proxy, data + 10, 0);
-			
+
 			if (cfg.log_hello)
 			{
 				cs_log("-> HelloC checkcode from %s - %s %s", username(proxy), proxy->reader->device, diffcheck ? "- crc diff":"");
@@ -1560,9 +1560,9 @@ int32_t gbox_recv_cmd_switch(struct s_client *proxy, uint8_t *data, int32_t n)
 			{
 				cs_log_dbg(D_READER,"-> HelloC checkcode from %s - %s %s", username(proxy), proxy->reader->device, diffcheck ? "- crc diff":"");
 			}
-			
+
 			if(diffcheck)
-				{ 
+				{
 					gbox_write_share_cards_info(); //need that for gbox.net peer @ local crd change
 					cs_log_dbg(D_READER,"peer %s - %s checkcode changed", username(proxy), proxy->reader->device);
 				}
@@ -1667,9 +1667,9 @@ static uint32_t gbox_add_local_cards(void)
 			{
 				gbox_add_card(local_gbox.id, gbox_get_caprovid(cl->reader->caid, 0), slot, DEFAULT_GBOX_RESHARE, 0, GBOX_CARD_TYPE_LOCAL, NULL);
 				if(chk_is_betatunnel_caid(cl->reader->caid) == 1) // 1702 1722
-					{ 
+					{
 						if(add_betatunnel_card(cl->reader->caid, gbox_next_free_slot(local_gbox.id)))
-							{ crdnb++; } 
+							{ crdnb++; }
 					}
 			}
 			crdnb++;
@@ -1705,7 +1705,7 @@ static uint32_t gbox_add_local_cards(void)
 				crdnb++;
 
 				if(slot % 18 == 0)
-					{ 
+					{
 						//offset++;
 						offset += (rand() % 18) +1;
 						//cs_log("cccrdnum: %d, slot: %d, offset: %d, caid: %04X, peer: %04X", cccrdnb, slot, offset, card->caid, cc_peer_id);
@@ -1736,7 +1736,7 @@ static uint32_t gbox_add_local_cards(void)
 			if(cfg.cc_gbx_reshare_en)
 			{ cs_log("Local gbox cards initialized - cards: %d - filtered cccards: %d", crdnb - cccrdnb, cccrdnb); }
 			else
-			{ cs_log("Local gbox cards initialized - cards: %d", crdnb); } 
+			{ cs_log("Local gbox cards initialized - cards: %d", crdnb); }
 		}
 	return (cccrdnb << 16) | (crdnb - cccrdnb);
 } //end add local gbox cards
@@ -1780,7 +1780,7 @@ uint8_t chk_gbx_hdr_rcvd(uint16_t rcvd_header_cmd)
 		case MSG_GOODBYE:
 		case MSG_GSMS:
 		case MSG_GSMS_ACK:
-		case MSG_CW:	
+		case MSG_CW:
 		case MSG_CHECKCODE:
 		case MSG_ECM:
 		case MSG_REM_EMM:
@@ -2007,7 +2007,7 @@ static void gbox_send_dcw(struct s_client *cl, ECM_REQUEST *er)
 	struct gbox_ecm_request_ext *ere = er->src_data;
 
 	if(er->rc == E_NOTFOUND && cli->reader->gbox_force_remm && ere->gbox_rev >> 4)
-	{ 
+	{
 		gbox_send_remm_req(cli, er);
 		return;
 	}
@@ -2065,11 +2065,11 @@ static void gbox_send_dcw(struct s_client *cl, ECM_REQUEST *er)
 
 	// This copies the routing info from ECM to cw answer.
 	memcpy(&buf[44], &ere->gbox_routing_info, er->gbox_ecm_dist - 1);
-	buf[44 + er->gbox_ecm_dist - 1] = er->gbox_ecm_dist - 1;	//act. dist 
+	buf[44 + er->gbox_ecm_dist - 1] = er->gbox_ecm_dist - 1;	//act. dist
 /*
   uint8_t i;
 		for(i = 0; i < er->gbox_ecm_dist; i++)
-		{ 
+		{
 			buf[44 +i] = i;
 		}
 */
@@ -2080,7 +2080,7 @@ static void gbox_send_dcw(struct s_client *cl, ECM_REQUEST *er)
 	cs_log("sending dcw to peer : %04x data: %s", er->gbox_ecm_src_peer, cs_hexdump(0, buf, er->gbox_ecm_dist + 44, tmp, sizeof(tmp)));
 	*/
 
-	if(ere->gbox_rev >> 4)	
+	if(ere->gbox_rev >> 4)
 		{ gbox_send_remm_req(cli, er); }
 
 	cs_log_dbg(D_READER,"<- CW (<-%d) caid; %04X from cw-source-peer: %04X forward to ecm-requesting-peer: %04X - forwarding peer: %04X %s rev:%01X.%01X port:%d",
@@ -2130,7 +2130,7 @@ static int32_t gbox_send_ecm(struct s_client *cli, ECM_REQUEST *er)
 
 	uint8_t send_buf[1024];
 	int32_t buflen, len1;
-	
+
 	len1 = er->ecmlen + 18; // length till end of ECM
 
 	er->gbox_crc = gbox_get_checksum(&er->ecm[0], er->ecmlen);
@@ -2193,7 +2193,7 @@ static int32_t gbox_send_ecm(struct s_client *cli, ECM_REQUEST *er)
 		// distance ECM
 		uint8_t i;
 		for(i = 0; i < er->gbox_ecm_dist + 1; i++)
-			{ 
+			{
 				send_buf[buflen] = i;
 				buflen++;
 			}
@@ -2228,7 +2228,7 @@ static int32_t gbox_send_ecm(struct s_client *cli, ECM_REQUEST *er)
 		{
 			cs_log_dbg(D_READER, "Pending Card ID: %04X Slot: %02X time: %d", pending->id.peer, pending->id.slot, pending->pending_time);
 			er->gbox_cw_src_peer = pending->id.peer;
-			cs_log_dbg(D_READER,"<- ECM (<-%d) - caid: %04X prov: %06X sid: %04X to cw-src-peer: %04X - ecm_src_peer: %04X", 
+			cs_log_dbg(D_READER,"<- ECM (<-%d) - caid: %04X prov: %06X sid: %04X to cw-src-peer: %04X - ecm_src_peer: %04X",
 				gbox_get_crd_dist_lev(er->gbox_cw_src_peer) & 0xf, er->caid, er->prid, er->srvid, er->gbox_cw_src_peer, er->gbox_ecm_src_peer);
 		}
 		ll_li_destroy(li);
@@ -2442,7 +2442,7 @@ uint8_t k = 0;
 void gbox_send_idle_msg(void)
 {
 	if(k > 8) //10s
-	{	
+	{
 		struct s_client *cl;
 		cs_readlock(__func__, &clientlist_lock);
 
@@ -2672,7 +2672,7 @@ static void gbx_ticker(void)
 		}
 
 		startup++;
-		
+
 		if(startup < GBOX_START_TIME)
 			{
 				delayed_crd_update();
