@@ -1,0 +1,28 @@
+name: sync
+
+on:
+  schedule:
+    - cron: '0 */12 * * *'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        ref: oscam-svn
+
+    - name: install git svn
+      run: |
+        sudo add-apt-repository ppa:git-core/ppa
+        sudo apt-get update
+        sudo apt-get install git-svn
+
+    - name: sync with svn repo
+      run: |
+        git config --global user.name "oscam-emu bot"
+        git config --global user.email "oscam.emu@gmail.com"
+        git svn init https://svn.streamboard.tv/oscam/ --stdlayout
+        git svn rebase
+        git push origin
