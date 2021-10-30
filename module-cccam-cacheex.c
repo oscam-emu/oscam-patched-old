@@ -39,7 +39,7 @@ void cc_cacheex_feature_trigger_in(struct s_client *cl, uint8_t *buf)
 
 	// check client & cacheex-mode
 	if(
-		!check_client(cl) || 
+		!check_client(cl) ||
 		!(
 			(cl->typ == 'c' && cl->account->cacheex.mode > 0) ||
 			(cl->typ == 'p' && cl->reader->cacheex.mode > 0)
@@ -102,7 +102,7 @@ void cc_cacheex_feature_trigger_in(struct s_client *cl, uint8_t *buf)
 				{
 					FILTER d;
 					memset(&d, 0, sizeof(d));
-					
+
 					d.caid = b2i(2, buf + i);
 					i += 2;
 
@@ -119,7 +119,7 @@ void cc_cacheex_feature_trigger_in(struct s_client *cl, uint8_t *buf)
 				{
 					FILTER d;
 					memset(&d, 0, sizeof(d));
-					
+
 					d.caid = b2i(2, buf + i);
 					i += 2;
 
@@ -135,7 +135,7 @@ void cc_cacheex_feature_trigger_in(struct s_client *cl, uint8_t *buf)
 							if(lgonly_tab->filts[l].caid == d.caid)
 							{
 								rc = 1;
-								
+
 								if(lgonly_tab->filts[l].nprids+1 <= CS_MAXPROV)
 								{
 									lgonly_tab->filts[l].prids[lgonly_tab->filts[l].nprids] = d.prids[0];
@@ -162,7 +162,7 @@ void cc_cacheex_feature_trigger_in(struct s_client *cl, uint8_t *buf)
 
 			CECSPVALUETAB *filter;
 			memset(&filter, 0, sizeof(filter));
-			
+
 			if(cl->typ == 'c' && (cl->account->cacheex.mode == 2 || cl->account->cacheex.mode == 1) && cl->account->cacheex.allow_filter)
 			{
 				filter = &cl->account->cacheex.filter_caidtab;
@@ -183,11 +183,11 @@ void cc_cacheex_feature_trigger_in(struct s_client *cl, uint8_t *buf)
 				int32_t caid = -1, cmask = -1, provid = -1, srvid = -1;
 				CECSPVALUETAB_DATA d;
 				memset(&d, 0, sizeof(d));
-				
+
 				caid = b2i(2, buf + i);
 				if(caid == 0xFFFF) caid = -1;
 				i += 2;
-				
+
 				cmask = b2i(2, buf + i);
 				if(cmask == 0xFFFF) cmask = -1;
 				i += 2;
@@ -199,7 +199,7 @@ void cc_cacheex_feature_trigger_in(struct s_client *cl, uint8_t *buf)
 				srvid = b2i(2, buf + i);
 				if(srvid == 0xFFFF) srvid = -1;
 				i += 2;
-				
+
 				if(caid > 0)
 				{
 					d.caid = caid;
@@ -242,11 +242,11 @@ void cc_cacheex_feature_trigger_in(struct s_client *cl, uint8_t *buf)
 				caid = b2i(2, buf + i);
 				if(caid == 0xFFFF) caid = -1;
 				i += 2;
-				
+
 				value = b2i(2, buf + i);
 				if(value == 0xFFFF) value = -1;
 				i += 2;
-				
+
 				if(caid > 0)
 				{
 					d.caid = caid;
@@ -316,7 +316,7 @@ void cc_cacheex_feature_trigger_in(struct s_client *cl, uint8_t *buf)
 				{
 					FILTER d;
 					memset(&d, 0, sizeof(d));
-					
+
 					d.caid = b2i(2, buf + i);
 					i += 2;
 
@@ -339,7 +339,7 @@ void cc_cacheex_feature_trigger_in(struct s_client *cl, uint8_t *buf)
 				{
 					FILTER d;
 					memset(&d, 0, sizeof(d));
-					
+
 					d.caid = b2i(2, buf + i);
 					i += 2;
 
@@ -360,12 +360,12 @@ void cc_cacheex_feature_trigger_in(struct s_client *cl, uint8_t *buf)
 								if(lgonly_tab->filts[l].caid == d.caid)
 								{
 									rc = 1;
-									
+
 									if(lgonly_tab->filts[l].nprids+1 <= CS_MAXPROV)
 									{
 										lgonly_tab->filts[l].prids[lgonly_tab->filts[l].nprids] = d.prids[k];
 										lgonly_tab->filts[l].nprids++;
-									}	
+									}
 									else
 									{
 										cs_log_dbg(D_CACHEEX, "error: cacheex_lg_only_tab -> max. number of providers reached");
@@ -375,11 +375,11 @@ void cc_cacheex_feature_trigger_in(struct s_client *cl, uint8_t *buf)
 							if(!rc)
 							{
 								ftab_add(lgonly_tab, &d);
-							}	
+							}
 						}
 					}
 				}
-			}			
+			}
 			break;
 		default:
 			return;
@@ -392,7 +392,7 @@ void cc_cacheex_feature_trigger(struct s_client *cl, int32_t feature, uint8_t mo
 	uint16_t size = 2 + 2;
 	int i = 0;
 	uint8_t j;
-	uint8_t payload[MAX_ECM_SIZE-size]; 
+	uint8_t payload[MAX_ECM_SIZE-size];
 	memset(payload, 0, sizeof(payload));
 
 	// check client & cacheex-mode
@@ -430,7 +430,7 @@ void cc_cacheex_feature_trigger(struct s_client *cl, int32_t feature, uint8_t mo
 				else
 					payload[i] = cfg.cacheex_localgenerated_only_in;
 			}
-			
+
 			break;
 		// set localgenerated only caidtab; cx-aio < 9.2.6-04
 		case 2: ;
@@ -668,10 +668,10 @@ void cc_cacheex_feature_trigger(struct s_client *cl, int32_t feature, uint8_t mo
 			// payload-size
 			i2b_buf(2, sizeof(token), payload + i);
 			i += 2;
-			
+
 			size +=sizeof(token);
 			// set payload
-			
+
 			snprintf((char *)token, sizeof(token), "%s", CS_AIO_VERSION);
 			uint8_t *ofs = payload + i;
 			memcpy(ofs, token, sizeof(token));
@@ -698,13 +698,13 @@ void cc_cacheex_feature_trigger(struct s_client *cl, int32_t feature, uint8_t mo
 			{
 				return;
 			}
-			
+
 			char *cx_aio_ftab;
 			cx_aio_ftab = cxaio_ftab_to_buf(lgonly_tab);
 			if(cs_strlen(cx_aio_ftab) > 0 && cx_aio_ftab[0] != '\0')
 			{
 				size += cs_strlen(cx_aio_ftab) * sizeof(char);
-				
+
 				// payload-size
 				i2b_buf(2, cs_strlen(cx_aio_ftab), payload + i);
 				i += 2;
@@ -719,7 +719,7 @@ void cc_cacheex_feature_trigger(struct s_client *cl, int32_t feature, uint8_t mo
 					i++;
 				}
 			}
-			
+
 			if(size < 32)
 				size = 32;
 
@@ -766,7 +766,7 @@ void cc_cacheex_feature_request_save(struct s_client *cl, uint8_t *buf)
 		{
 			acc->cacheex.feature_bitfield = field;
 			// process feature-specific actions based on feature_bitfield received
-			
+
 			// flag 1 => set localgenerated only flag
 			if(acc->cacheex.feature_bitfield & 1)
 			{
@@ -821,7 +821,7 @@ void cc_cacheex_feature_request_save(struct s_client *cl, uint8_t *buf)
 			{
 				cc_cacheex_feature_trigger(cl, 1, 2);
 			}
-			
+
 			// flag 2 => set localgenerated_only_caidtab; cause of rdr->cacheex.localgenerated_only_in_caidtab is set
 			if(rdr->cacheex.feature_bitfield & 2 && !(rdr->cacheex.feature_bitfield & 64))
 			{
@@ -1448,7 +1448,7 @@ void cc_cacheex_push_in(struct s_client *cl, uint8_t *buf)
 			free_push_in_ecm(er);
 			return;
 		}
-		
+
 		if(
 			(cl->typ == 'p' && cl->reader && cl->reader->cacheex.mode == 2  && !chk_srvid_localgenerated_only_exception(er) // cx2
 				&& (

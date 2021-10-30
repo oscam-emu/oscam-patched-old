@@ -520,7 +520,7 @@ static void exp60_fn(const char *token, char *value, void *setting, FILE *f)
 }
 #endif
 
-#if defined(READER_NAGRA_MERLIN) || defined(READER_NAGRA)		
+#if defined(READER_NAGRA_MERLIN) || defined(READER_NAGRA)
 static void nuid_fn(const char *token, char *value, void *setting, FILE *f)
 {
 	struct s_reader *rdr = setting;
@@ -1300,9 +1300,9 @@ static bool reader_check_setting(const struct config_list *UNUSED(clist), void *
 		"fix9993", "rsakey", "deskey", "ins7e", "ins7e11", "ins2e06", "k1_generic", "k1_unique", "force_irdeto", "needsemmfirst", "boxkey",
 		"atr", "detect", "nagra_read", "mhz", "cardmhz", "readtiers", "read_old_classes", "use_gpio", "needsglobalfirst",
 #ifdef READER_NAGRA_MERLIN
-		"mod1", "data50", "mod50", "key60", "exp60", 
+		"mod1", "data50", "mod50", "key60", "exp60",
 #endif
-#if defined(READER_NAGRA_MERLIN) || defined(READER_NAGRA)		
+#if defined(READER_NAGRA_MERLIN) || defined(READER_NAGRA)
 		"nuid", "cwekey",
 #endif
 #if defined(READER_DRE) || defined(READER_DRECAS)

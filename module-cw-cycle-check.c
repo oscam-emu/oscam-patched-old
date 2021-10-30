@@ -791,7 +791,7 @@ uint8_t checkcwcycle(struct s_client *client, ECM_REQUEST *er, struct s_reader *
 				break;
 			}
 #endif
-			
+
 		}
 		else      // only logging
 		{

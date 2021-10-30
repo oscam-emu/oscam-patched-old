@@ -341,9 +341,9 @@ struct ecm_request_t *check_cache(ECM_REQUEST *er, struct s_client *cl)
 
 #ifdef CS_CACHEEX_AIO
 		// client
-		if( cl && !cw->localgenerated 
+		if( cl && !cw->localgenerated
 			&& !(chk_srvid_localgenerated_only_exception(er)) // service-based exception
-			&& (cl->account->cacheex.localgenerated_only 
+			&& (cl->account->cacheex.localgenerated_only
 				|| (chk_lg_only(er, &cl->account->cacheex.lg_only_tab))
 				) // only lg-flagged CWs
 		)
@@ -401,7 +401,7 @@ static void cacheex_cache_add(ECM_REQUEST *er, ECMHASH *result, CW *cw, bool add
 	{
 		uint8_t remotenodeid[8];
 		cacheex_get_srcnodeid(er, remotenodeid);
-		
+
 		if(!add_new_cw)
 		{
 			debug_ecm(D_CACHEEX| D_CSP, "got duplicate pushed ECM %s from %s - hop %i %s, src-nodeid %" PRIu64 "X", buf, er->from_csp ? "csp" : username(er->cacheex_src), ll_count(er->csp_lastnodes), er->localgenerated ? "(lg)" : "", cacheex_node_id(remotenodeid));
@@ -461,14 +461,14 @@ static void cacheex_cache_add(ECM_REQUEST *er, ECMHASH *result, CW *cw, bool add
 #ifdef CS_CACHEEX_AIO
 			uint8_t remotenodeid[8];
 			cacheex_get_srcnodeid(er, remotenodeid);
-			
+
 			uint8_t fakeF0 = 0, offset = 0;
-			
+
 			if(get_odd_even(er) == 0x81)
 				offset = 8;
 
 			if(
-				(cw_first->cw[7+offset] != 0x00 && er->cw[7+offset] != 0x00) 
+				(cw_first->cw[7+offset] != 0x00 && er->cw[7+offset] != 0x00)
 				&& (cw_first->cw[7+offset] ^ 0xF0) == er->cw[7+offset]
 			)
 			{
@@ -538,7 +538,7 @@ CW_CACHE_SETTING get_cw_cache(ECM_REQUEST *er)
 	//check for correct values
 	if(mode>3 || mode<0) mode=0;
 	if(timediff_old_cw<1) timediff_old_cw=0;
-	
+
 	CW_CACHE_SETTING cw_cache_setting;
 	memset(&cw_cache_setting, 0, sizeof(CW_CACHE_SETTING));
 	cw_cache_setting.mode = mode;
@@ -574,10 +574,10 @@ static bool cw_cache_check(ECM_REQUEST *er)
 						cw_cache->srvid = er->srvid;
 						cs_ftime(&cw_cache->first_recv_time);
 						cs_ftime(&cw_cache->upd_time);
-						
+
 						tommy_hashlin_insert(&ht_cw_cache, &cw_cache->ht_node, cw_cache, tommy_hash_u32(0, &er->cw, sizeof(er->cw)));
 						tommy_list_insert_tail(&ll_cw_cache, &cw_cache->ll_node, cw_cache);
-						
+
 						SAFE_RWLOCK_UNLOCK(&cw_cache_lock);
 						return true;
 					}
@@ -614,7 +614,7 @@ static bool cw_cache_check(ECM_REQUEST *er)
 
 				if(cw_cache_setting.timediff_old_cw > 0 && gone_diff > cw_cache_setting.timediff_old_cw) // late (>cw_cache_setting.timediff_old_cw) cw incoming
 				{
-					// log every dupe cw 
+					// log every dupe cw
 					if(cs_dblevel & D_CW_CACHE)
 					{
 						uint8_t remotenodeid[8];
@@ -639,7 +639,7 @@ static bool cw_cache_check(ECM_REQUEST *er)
 					{
 #ifdef WITH_DEBUG
 						if(cs_dblevel & D_CW_CACHE)
-						{						
+						{
 							uint8_t remotenodeid[8];
 							cacheex_get_srcnodeid(er, remotenodeid);
 							cs_log_dbg(D_CW_CACHE,"[late-15sec+ CW] cache: %04X:%06X:%04X:%s | in: %04X:%06X:%04X:%s | diff(now): %"PRIi64" ms > %"PRIu16" - %s - hop %i%s, src-nodeid %" PRIu64 "X", cw_cache->caid, cw_cache->prid, cw_cache->srvid, cw1, er->caid, er->prid, er->srvid, cw2, gone_diff, cw_cache_setting.timediff_old_cw, (er->selected_reader && cs_strlen(er->selected_reader->label)) ? er->selected_reader->label : username(er->cacheex_src), ll_count(er->csp_lastnodes), (er->localgenerated) ? " (lg)" : "", er->csp_lastnodes ? cacheex_node_id(remotenodeid): 0);
@@ -657,7 +657,7 @@ static bool cw_cache_check(ECM_REQUEST *er)
 					}
 				}
 			}
-			
+
 			SAFE_RWLOCK_UNLOCK(&cw_cache_lock);
 			return true;
 		}
@@ -801,7 +801,7 @@ void add_cache(ECM_REQUEST *er)
 
 #ifdef CS_CACHEEX_AIO
 	// dont push not flagged CWs - global
-	if(!er->localgenerated && 
+	if(!er->localgenerated &&
 		(
 			!chk_srvid_localgenerated_only_exception(er)
 			&& (cfg.cacheex_localgenerated_only || chk_lg_only(er, &cfg.cacheex_lg_only_tab))
@@ -844,7 +844,7 @@ void cw_cache_cleanup(bool force)
 
 	CW_CACHE *cw_cache;
 	node *i, *i_next;
-		
+
 	uint32_t ll_c = 0;
 	uint32_t ll_ten_percent = (uint)tommy_list_count(&ll_cw_cache)*0.1; // 10 percent of cache
 
@@ -855,7 +855,7 @@ void cw_cache_cleanup(bool force)
 	while(i)
 	{
 		i_next = i->next;
-		
+
 		cw_cache = get_data_from_node(i);
 
 		if(!cw_cache)
@@ -886,7 +886,7 @@ void cw_cache_cleanup(bool force)
 
 		i = i_next;
 	}
-	
+
 	SAFE_RWLOCK_UNLOCK(&cw_cache_lock);
 }
 #endif
@@ -974,11 +974,11 @@ void cacheex_get_srcnodeid(ECM_REQUEST *er, uint8_t *remotenodeid)
 	uint8_t *data;
 	data = ll_last_element(er->csp_lastnodes);
 	if(data)
-	{ 
+	{
 		memcpy(remotenodeid, data, 8);
 	}
 	else
-	{ 
+	{
 		memset(remotenodeid, 0 , 8);
 	}
 }

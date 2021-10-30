@@ -898,7 +898,7 @@ static int32_t irdeto_get_emm_type(EMM_PACKET *ep, struct s_reader *rdr)
 
 #ifdef WITH_DEBUG
 			if(cs_dblevel & D_EMM)
-			{			
+			{
 				cs_hexdump(1, rdr->hexserial, l, dumprdrserial, sizeof(dumprdrserial));
 				cs_hexdump(1, ep->hexserial, l, dumpemmserial, sizeof(dumpemmserial));
 				rdr_log_dbg_sensitive(rdr, D_EMM, "UNIQUE l = %d ep = {%s} rdr = {%s} base = %02x",
