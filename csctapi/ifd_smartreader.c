@@ -1757,11 +1757,11 @@ static int32_t SR_FastReset_With_ATR(struct s_reader *reader, ATR *atr)
 	int8_t atr_len = 0;
 	if(reader->seca_nagra_card == 1)
 	{
-		atr_len = reader->card_atr_length; // this is a special case the data buffer has only the atr lenght.
+		atr_len = reader->card_atr_length; // this is a special case the data buffer has only the atr length.
 	}
 	else
 	{
-		atr_len = reader->card_atr_length + 2; // data buffer has atr lenght + 2 bytes
+		atr_len = reader->card_atr_length + 2; // data buffer has atr length + 2 bytes
 	}
 
 	smart_fastpoll(reader, 1);

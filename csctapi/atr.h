@@ -122,7 +122,7 @@ int32_t ATR_GetCheckByte(ATR *atr, unsigned char *check_byte);
 int32_t ATR_GetFsMax(ATR *atr, uint32_t *fsmax);
 
 /* Raw ATR retrieving */
-int32_t ATR_GetRaw(ATR *atr, unsigned char *buffer, uint32_t *lenght);
+int32_t ATR_GetRaw(ATR *atr, unsigned char *buffer, uint32_t *length);
 int32_t ATR_GetSize(ATR *atr, uint32_t *size);
 
 /* Invert order of bits in a byte: b7->b0, b0->b7 */

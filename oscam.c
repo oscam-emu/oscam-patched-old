@@ -134,7 +134,7 @@ static char *prog_name;
 static char *stb_boxtype;
 static char *stb_boxname;
 
-static uint32_t oscam_stacksize = 0;
+static int32_t oscam_stacksize = 0;
 
 /*****************************************************************************
 		Statics
@@ -1028,7 +1028,7 @@ static void fix_stacksize(void)
 #ifndef PTHREAD_STACK_MIN
 #define PTHREAD_STACK_MIN 64000
 #endif
-#define OSCAM_STACK_MIN PTHREAD_STACK_MIN+32768
+#define OSCAM_STACK_MIN PTHREAD_STACK_MIN + 32768
 
 	if(oscam_stacksize < OSCAM_STACK_MIN)
 	{
@@ -1039,7 +1039,7 @@ static void fix_stacksize(void)
 			return;
 		}
 
-		oscam_stacksize = (((OSCAM_STACK_MIN) / pagesize) + 1) * pagesize;
+		oscam_stacksize = ((OSCAM_STACK_MIN) / pagesize + 1) * pagesize;
 	}
 }
 
@@ -1814,7 +1814,7 @@ int32_t main(int32_t argc, char *argv[])
 #ifdef CS_CACHEEX_AIO
 	init_cw_cache();
 	init_ecm_cache();
-#endif	
+#endif
 	cs_init_log();
 	init_machine_info();
 	init_check();
@@ -1909,7 +1909,7 @@ int32_t main(int32_t argc, char *argv[])
 	led_status_starting();
 
 	ac_init();
-	
+
 	gbox_send_init_hello();
 
 	start_thread("card poll", (void *) &card_poll, NULL, NULL, 1, 1);

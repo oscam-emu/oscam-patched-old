@@ -257,7 +257,7 @@ void gbox_recvd_remm_cmd_switch(struct s_client *cli, uint8_t *buf, int32_t n)
 		case MSGID_REMM_DATA:
 			cs_log_dbg(D_EMM,"-> Incoming gbox remote EMM data (%d bytes total - %d bytes emm-len) from %04X %s - %s",
 				n, buf[21], peer->gbox.id, username(cli), cli->reader->device);
-			gbox_recvd_remm_data(cli, buf, n, buf[21]); // buf[21]) = emm lenght
+			gbox_recvd_remm_data(cli, buf, n, buf[21]); // buf[21]) = emm length
 			break;
 
 		case MSGID_REMM_ACK:

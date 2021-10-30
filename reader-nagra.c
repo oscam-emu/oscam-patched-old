@@ -1022,7 +1022,7 @@ static int32_t nagra2_card_info(struct s_reader *reader)
 		rdr_log(reader, "Expiry Date : %s", nagra_datetime(reader, csystem_data->ExpiryDate, 0, currdate, &reader->card_valid_to));
 	}
 
-	if(reader->nagra_read && csystem_data->is_tiger && memcmp(reader->rom, "NCMED", 5) == 0)
+	if(reader->nagra_read && csystem_data->is_tiger && (memcmp(reader->rom, "NCMED", 5) == 0 || memcmp(reader->rom, "TIGER", 5) == 0))
 	{
 		ncmed_rec records[255];
 		int32_t num_records = 0;
