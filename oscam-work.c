@@ -269,7 +269,7 @@ void *work_thread(void *ptr)
 					{
 						if(cl->reader->ph.type == MOD_CONN_TCP)
 							{
-								network_tcp_connection_close(reader, "disconnect on receive"); 
+								network_tcp_connection_close(reader, "disconnect on receive");
 #ifdef CS_CACHEEX_AIO
 								cl->cacheex_aio_checked = 0;
 #endif

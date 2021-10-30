@@ -1048,7 +1048,7 @@ static int32_t camd35_send_ecm(struct s_client *client, ECM_REQUEST *er)
 	buf[18] = 0xFF;
 	buf[19] = 0xFF;
 	memcpy(buf + 20, er->ecm, er->ecmlen);
-	
+
 	int32_t rc = (camd35_send(client, buf, 0) < 1) ? -1 : 0;
 
 	NULLFREE(buf);
@@ -1212,7 +1212,7 @@ static int32_t camd35_recv_chk(struct s_client *client, uint8_t *dcw, int32_t *r
 		client->c35_extmode = 2;
 	}
 #endif
-	
+
 	memcpy(dcw, buf + 20, 16);
 
 	return idx;

@@ -37,7 +37,7 @@ void camd35_cacheex_feature_trigger_in(struct s_client *cl, uint8_t *buf)
 
 	// check client & cacheex-mode
 	if(
-		!check_client(cl) || 
+		!check_client(cl) ||
 		!(
 			(cl->typ == 'c' && cl->account->cacheex.mode > 0) ||
 			(cl->typ == 'p' && cl->reader->cacheex.mode > 0)
@@ -100,7 +100,7 @@ void camd35_cacheex_feature_trigger_in(struct s_client *cl, uint8_t *buf)
 				{
 					FILTER d;
 					memset(&d, 0, sizeof(d));
-					
+
 					d.caid = b2i(2, buf + i);
 					i += 2;
 
@@ -117,7 +117,7 @@ void camd35_cacheex_feature_trigger_in(struct s_client *cl, uint8_t *buf)
 				{
 					FILTER d;
 					memset(&d, 0, sizeof(d));
-					
+
 					d.caid = b2i(2, buf + i);
 					i += 2;
 
@@ -133,7 +133,7 @@ void camd35_cacheex_feature_trigger_in(struct s_client *cl, uint8_t *buf)
 							if(lgonly_tab->filts[l].caid == d.caid)
 							{
 								rc = 1;
-								
+
 								if(lgonly_tab->filts[l].nprids+1 <= CS_MAXPROV)
 								{
 									lgonly_tab->filts[l].prids[lgonly_tab->filts[l].nprids] = d.prids[0];
@@ -160,7 +160,7 @@ void camd35_cacheex_feature_trigger_in(struct s_client *cl, uint8_t *buf)
 
 			CECSPVALUETAB *filter;
 			memset(&filter, 0, sizeof(filter));
-			
+
 			if(cl->typ == 'c' && (cl->account->cacheex.mode == 2 || cl->account->cacheex.mode == 1) && cl->account->cacheex.allow_filter)
 			{
 				filter = &cl->account->cacheex.filter_caidtab;
@@ -181,11 +181,11 @@ void camd35_cacheex_feature_trigger_in(struct s_client *cl, uint8_t *buf)
 				int32_t caid = -1, cmask = -1, provid = -1, srvid = -1;
 				CECSPVALUETAB_DATA d;
 				memset(&d, 0, sizeof(d));
-				
+
 				caid = b2i(2, buf + i);
 				if(caid == 0xFFFF) caid = -1;
 				i += 2;
-				
+
 				cmask = b2i(2, buf + i);
 				if(cmask == 0xFFFF) cmask = -1;
 				i += 2;
@@ -197,7 +197,7 @@ void camd35_cacheex_feature_trigger_in(struct s_client *cl, uint8_t *buf)
 				srvid = b2i(2, buf + i);
 				if(srvid == 0xFFFF) srvid = -1;
 				i += 2;
-				
+
 				if(caid > 0)
 				{
 					d.caid = caid;
@@ -228,7 +228,7 @@ void camd35_cacheex_feature_trigger_in(struct s_client *cl, uint8_t *buf)
 
 			filter_count = buf[i+4];
 			i += 5;
-			
+
 			caidvaluetab_clear(ctab);
 
 			for(j = 0; j < filter_count; j++)
@@ -240,11 +240,11 @@ void camd35_cacheex_feature_trigger_in(struct s_client *cl, uint8_t *buf)
 				caid = b2i(2, buf + i);
 				if(caid == 0xFFFF) caid = -1;
 				i += 2;
-				
+
 				value = b2i(2, buf + i);
 				if(value == 0xFFFF) value = -1;
 				i += 2;
-				
+
 				if(caid > 0)
 				{
 					d.caid = caid;
@@ -314,7 +314,7 @@ void camd35_cacheex_feature_trigger_in(struct s_client *cl, uint8_t *buf)
 				{
 					FILTER d;
 					memset(&d, 0, sizeof(d));
-					
+
 					d.caid = b2i(2, buf + i);
 					i += 2;
 
@@ -337,7 +337,7 @@ void camd35_cacheex_feature_trigger_in(struct s_client *cl, uint8_t *buf)
 				{
 					FILTER d;
 					memset(&d, 0, sizeof(d));
-					
+
 					d.caid = b2i(2, buf + i);
 					i += 2;
 
@@ -358,12 +358,12 @@ void camd35_cacheex_feature_trigger_in(struct s_client *cl, uint8_t *buf)
 								if(lgonly_tab->filts[l].caid == d.caid)
 								{
 									rc = 1;
-									
+
 									if(lgonly_tab->filts[l].nprids+1 <= CS_MAXPROV)
 									{
 										lgonly_tab->filts[l].prids[lgonly_tab->filts[l].nprids] = d.prids[k];
 										lgonly_tab->filts[l].nprids++;
-									}	
+									}
 									else
 									{
 										cs_log_dbg(D_CACHEEX, "error: cacheex_lg_only_tab -> max. number of providers reached");
@@ -373,11 +373,11 @@ void camd35_cacheex_feature_trigger_in(struct s_client *cl, uint8_t *buf)
 							if(!rc)
 							{
 								ftab_add(lgonly_tab, &d);
-							}	
+							}
 						}
 					}
 				}
-			}			
+			}
 			break;
 		default:
 			return;
@@ -390,7 +390,7 @@ void camd35_cacheex_feature_trigger(struct s_client *cl, int32_t feature, uint8_
 	uint16_t size = 20 + 2 + 2;
 	int i = 0;
 	uint8_t j;
-	uint8_t payload[MAX_ECM_SIZE-size]; 
+	uint8_t payload[MAX_ECM_SIZE-size];
 	memset(payload, 0, sizeof(payload));
 
 	// check client & cacheex-mode
@@ -398,7 +398,7 @@ void camd35_cacheex_feature_trigger(struct s_client *cl, int32_t feature, uint8_
 	{
 		return;
 	}
-	
+
 	switch(feature)
 	{
 		FTAB *lgonly_tab;
@@ -429,7 +429,7 @@ void camd35_cacheex_feature_trigger(struct s_client *cl, int32_t feature, uint8_
 				else
 					payload[i] = cfg.cacheex_localgenerated_only_in;
 			}
-			
+
 			break;
 		// set localgenerated only caidtab; cx-aio < 9.2.6-04
 		case 2: ;
@@ -679,7 +679,7 @@ void camd35_cacheex_feature_trigger(struct s_client *cl, int32_t feature, uint8_
 			i2b_buf(2, sizeof(token), payload + i);
 			i += 2;
 			// set payload
-			
+
 			snprintf((char *)token, sizeof(token), "%s", CS_AIO_VERSION);
 			uint8_t *ofs = payload + i;
 			memcpy(ofs, token, sizeof(token));
@@ -706,13 +706,13 @@ void camd35_cacheex_feature_trigger(struct s_client *cl, int32_t feature, uint8_
 			{
 				return;
 			}
-			
+
 			char *cx_aio_ftab;
 			cx_aio_ftab = cxaio_ftab_to_buf(lgonly_tab);
 			if(cs_strlen(cx_aio_ftab) > 0 && cx_aio_ftab[0] != '\0')
 			{
 				size += cs_strlen(cx_aio_ftab) * sizeof(char);
-				
+
 				// payload-size
 				i2b_buf(2, cs_strlen(cx_aio_ftab), payload + i);
 				i += 2;
@@ -727,7 +727,7 @@ void camd35_cacheex_feature_trigger(struct s_client *cl, int32_t feature, uint8_
 					i++;
 				}
 			}
-			
+
 			if(size < 32)
 				size = 32;
 
@@ -740,10 +740,10 @@ void camd35_cacheex_feature_trigger(struct s_client *cl, int32_t feature, uint8_
 	uint8_t buf[size];
 	memset(buf, 0, sizeof(buf));
 	buf[0] = 0x42;	// camd35_cacheex_feature_trigger
-	
+
 	buf[1] = (size - 20) & 0xFF;
 	buf[2] = (size - 20) >> 8;
-	
+
 	uint8_t *ofs = buf + 20;
 	memcpy(ofs, payload, size - 20);
 
@@ -781,7 +781,7 @@ void camd35_cacheex_feature_request_save(struct s_client *cl, uint8_t *buf)
 		{
 			acc->cacheex.feature_bitfield = field;
 			// process feature-specific actions based on feature_bitfield received
-			
+
 			// flag 1 => set localgenerated only flag
 			if(acc->cacheex.feature_bitfield & 1)
 			{
@@ -836,7 +836,7 @@ void camd35_cacheex_feature_request_save(struct s_client *cl, uint8_t *buf)
 			{
 				camd35_cacheex_feature_trigger(cl, 1, 2);
 			}
-			
+
 			// flag 2 => set lg_only_tab; cause of rdr->cacheex.lg_only_in_tab is set
 			if(rdr->cacheex.feature_bitfield & 2 && !(rdr->cacheex.feature_bitfield & 64))
 			{
@@ -902,7 +902,7 @@ void camd35_cacheex_feature_request_reply(struct s_client *cl, uint8_t *buf)
 	rbuf[0] = 0x41;
 	rbuf[1] = 12;
 	rbuf[2] = 0;
-	
+
 	i2b_buf(2, CACHEEX_FEATURES, rbuf + i);
 
 	camd35_send_without_timeout(cl, rbuf, 12); //send adds +20
@@ -1280,7 +1280,7 @@ static void camd35_cacheex_push_in(struct s_client *cl, uint8_t *buf)
 
 	if(!check_cacheex_filter(cl, er))
 	{
-		return; 
+		return;
 	}
 
 #ifdef CS_CACHEEX_AIO
@@ -1363,7 +1363,7 @@ static void camd35_cacheex_push_in(struct s_client *cl, uint8_t *buf)
 		{
 			er->localgenerated = 1;
 			cs_log_dbg(D_CACHEEX, "cacheex: received ECM with localgenerated flag %04X@%06X:%04X %s", er->caid, er->prid, er->srvid, username(cl));
-			
+
 			//check max nodes for lg flagged cw:
 			if(ll_count(er->csp_lastnodes) > cacheex_maxhop_lg(cl))
 			{
@@ -1389,7 +1389,7 @@ static void camd35_cacheex_push_in(struct s_client *cl, uint8_t *buf)
 						// !aio
 						(cl->cacheex_aio_checked && !cl->reader->cacheex.feature_bitfield
 							&& (
-								!cfg.cacheex_lg_only_in_aio_only && !cl->reader->cacheex.lg_only_in_aio_only 
+								!cfg.cacheex_lg_only_in_aio_only && !cl->reader->cacheex.lg_only_in_aio_only
 								&& (cfg.cacheex_localgenerated_only_in || cl->reader->cacheex.localgenerated_only_in || chk_lg_only(er, &cl->reader->cacheex.lg_only_in_tab) || chk_lg_only(er, &cfg.cacheex_lg_only_in_tab))
 							)
 						)
@@ -1408,7 +1408,7 @@ static void camd35_cacheex_push_in(struct s_client *cl, uint8_t *buf)
 						// !aio
 						(cl->cacheex_aio_checked && !cl->account->cacheex.feature_bitfield
 							&& (
-								!cfg.cacheex_lg_only_in_aio_only && !cl->account->cacheex.lg_only_in_aio_only 
+								!cfg.cacheex_lg_only_in_aio_only && !cl->account->cacheex.lg_only_in_aio_only
 								&& (cfg.cacheex_localgenerated_only_in || cl->account->cacheex.localgenerated_only_in || chk_lg_only(er, &cl->account->cacheex.lg_only_in_tab) || chk_lg_only(er, &cfg.cacheex_lg_only_in_tab))
 							)
 						)
@@ -1449,7 +1449,7 @@ static void camd35_cacheex_push_in(struct s_client *cl, uint8_t *buf)
 	if(!ll_count(er->csp_lastnodes) && cl->ncd_skey[8])
 	{
 		if(!cs_malloc(&data, 8))
-		{ 
+		{
 #ifdef CS_CACHEEX_AIO
 			free_push_in_ecm(er);
 #endif
@@ -1620,7 +1620,7 @@ bool camd35_cacheex_server(struct s_client *client, uint8_t *mbuf)
 		camd35_cacheex_feature_request_reply(client, mbuf);
 		break;
 	case 0x41:	// cacheex-features answer
-		// camd35_cacheex_feature_request_save(client, mbuf);		
+		// camd35_cacheex_feature_request_save(client, mbuf);
 		break;
 	case 0x42:	// cacheex-feature trigger in
 		camd35_cacheex_feature_trigger_in(client, mbuf);
@@ -1662,7 +1662,7 @@ bool camd35_cacheex_recv_chk(struct s_client *client, uint8_t *buf)
 #ifdef CS_CACHEEX_AIO
 	case 0x40:	  // cacheex-features request
 		camd35_cacheex_feature_request_reply(client, buf);
-		break;		
+		break;
 	case 0x41:	// cacheex-features answer
 		// camd35_cacheex_feature_request_save(client, buf);
 		break;

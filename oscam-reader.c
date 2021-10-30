@@ -117,7 +117,7 @@ static int32_t ecm_ratelimit_findspace(struct s_reader *reader, ECM_REQUEST *er,
 			int64_t gone = 0;
 #ifdef WITH_DEBUG
 			if(cs_dblevel & D_CLIENT)
-			{			
+			{
 				gone = comp_timeb(&actualtime, &reader->rlecmh[h].last);
 				cs_log_dbg(D_CLIENT, "ratelimiter found srvid %04X for %"PRId64" ms in slot %d/%d of reader %s", er->srvid, gone, h + 1, MAXECMRATELIMIT, reader->label);
 			}
@@ -137,13 +137,13 @@ static int32_t ecm_ratelimit_findspace(struct s_reader *reader, ECM_REQUEST *er,
 							// same ecm type!
 #ifdef WITH_DEBUG
 							if(cs_dblevel & D_CLIENT)
-							{							
+							{
 								char ecmd5[17 * 3];
 								cs_hexdump(0, reader->rlecmh[h].ecmd5, 16, ecmd5, sizeof(ecmd5));
 								cs_log_dbg(D_CLIENT, "ratelimiter ecm %s in this slot for next %d ms!", ecmd5,
 											(int)(reader->rlecmh[h].ratelimittime - gone));
 							}
-#endif							
+#endif
 							struct ecm_request_t *erold = NULL;
 							if(!cs_malloc(&erold, sizeof(struct ecm_request_t)))
 								{ return -2; }
@@ -1164,7 +1164,7 @@ void reader_get_ecm(struct s_reader *reader, ECM_REQUEST *er)
 			cs_readunlock(__func__, &ea->ecmanswer_lock);
 			return;
 		}
-	
+
 	lb_update_last(ea_er, reader);
 
 	if(ecm_ratelimit_check(reader, er, 1) != OK)

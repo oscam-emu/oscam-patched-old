@@ -115,19 +115,19 @@ static void chk_entry4sidtab(char *value, struct s_sidtab *sidtab, int32_t what)
 
 #ifdef CS_CACHEEX_AIO
 	if(what == 5) // lg_only_exception
-	{	
+	{
 		sidtab->lg_only_exception = a2i(buf, sizeof(lg_only_exception));
 		return;
 	}
 
 	if(what == 4) // no_wait_time
-	{	
+	{
 		sidtab->no_wait_time = a2i(buf, sizeof(no_wait_time));
 		return;
 	}
 
 	if(what == 3) // disablecrccws_only_for_exception
-	{	
+	{
 		sidtab->disablecrccws_only_for_exception = a2i(buf, sizeof(disablecrccws_only_for_exception));
 		return;
 	}

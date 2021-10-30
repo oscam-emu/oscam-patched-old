@@ -386,8 +386,8 @@ static void *chkcache_process(void)
 					}
 				}
 				else
-				{ 
-					NULLFREE(ecm); 
+				{
+					NULLFREE(ecm);
 				}
 			}
 		}
@@ -515,7 +515,7 @@ int8_t cacheex_maxhop_lg(struct s_client *cl)
 		{
 			cl->reader->cacheex.maxhop_lg = max;
 		}
-		
+
 		if(cl->reader->cacheex.maxhop_lg < maxhop)
 		{
 			maxhop_lg = maxhop;
@@ -570,7 +570,7 @@ static uint8_t chk_cwcheck(ECM_REQUEST *er, uint8_t cw_check_for_push)
 {
 	if(!cw_check_for_push)
 		return 1;
-	
+
 	CWCHECK check_cw;
 	check_cw = get_cwcheck(er);
 
@@ -676,7 +676,7 @@ void cacheex_cache_push(ECM_REQUEST *er)
 	cs_readlock(__func__, &clientlist_lock);
 	struct s_reader *rdr;
 	for(rdr = first_active_reader; rdr; rdr = rdr->next)
-	{	
+	{
 		cl = rdr->client;
 		if(check_client(cl) && er->cacheex_src != cl && rdr->cacheex.mode == 3) // send cache over reader
 		{
@@ -1372,7 +1372,7 @@ void cacheex_timeout(ECM_REQUEST *er)
 				result->waittime_block++;
 				cs_log_dbg(D_LB, "{client %s, caid %04X, prid %06X, srvid %04X} waittime_block count: %u ",
 					(check_client(er->client) ? er->client->account->usr : "-"), er->caid, er->prid, er->srvid, result->waittime_block);
-			}			
+			}
 		}
 
 		SAFE_RWLOCK_UNLOCK(&hitcache_lock);

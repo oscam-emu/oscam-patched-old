@@ -109,7 +109,7 @@ void ecm_cache_cleanup(bool force)
 	while(i)
 	{
 		i_next = i->next;
-		
+
 		ecm_cache = get_data_from_node(i);
 
 		if(!ecm_cache)
@@ -976,7 +976,7 @@ int32_t send_dcw(struct s_client *client, ECM_REQUEST *er)
 			snprintf(sreason+cx, (sizeof sreason)-cx, " (lg)");
 #endif
 	}
-	
+
 #endif
 
 	client->cwlastresptime = comp_timeb(&tpe, &er->tps);
@@ -1899,7 +1899,7 @@ int32_t write_ecm_answer(struct s_reader *reader, ECM_REQUEST *er, int8_t rc, ui
 		}
 
 		if(chk_if_ignore_checksum(er, &reader->disablecrccws_only_for) && caid_is_videoguard(er->caid)
-#ifdef CS_CACHEEX_AIO		 
+#ifdef CS_CACHEEX_AIO
 		 && !chk_srvid_disablecrccws_only_for_exception(er)
 #endif
 		)
@@ -2018,7 +2018,7 @@ int32_t write_ecm_answer(struct s_reader *reader, ECM_REQUEST *er, int8_t rc, ui
 		// Skip check for BISS2 - we use the extended cw, so the "simple" cw is always zero
 		if(ea && (ea->rc < E_NOTFOUND) && (!chk_is_null_CW(ea->cw) && !caid_is_biss(er->caid)))
 		{
-#ifdef CS_CACHEEX_AIO	
+#ifdef CS_CACHEEX_AIO
 			int32_t ecmtime = ea->ecm_time;
 
 			if(er->cacheex_wait_time_expired && er->cacheex_wait_time)
@@ -2037,7 +2037,7 @@ int32_t write_ecm_answer(struct s_reader *reader, ECM_REQUEST *er, int8_t rc, ui
 			// readers stats for LB
 			send_reader_stat(reader, er, ea, ea->rc);
 		}
-		
+
 		// reader checks
 #ifdef WITH_DEBUG
 	if(cs_dblevel & D_TRACE)
@@ -2379,7 +2379,7 @@ static bool ecm_cache_check(ECM_REQUEST *er)
 			int64_t gone_diff = 0;
 			gone_diff = comp_timeb(&er->tps, &ecm_cache->first_recv_time);
 			cs_ftime(&ecm_cache->upd_time);
-			
+
 			if(gone_diff >= cfg.ecm_cache_droptime * 1000)
 			{
 				cs_log_dbg(D_CW_CACHE, "[ecm_cache] ECM drop, current ecm_cache_size: %i - ecm_cache-mem-size: %i MiB", count_hash_table(&ht_ecm_cache), (int)(tommy_hashlin_memory_usage(&ht_ecm_cache)/1024/1024));
@@ -2387,7 +2387,7 @@ static bool ecm_cache_check(ECM_REQUEST *er)
 				return false;
 			}
 		}
-		
+
 		SAFE_RWLOCK_UNLOCK(&ecm_cache_lock);
 		return true;
 	}
@@ -3216,7 +3216,7 @@ int32_t format_ecm(ECM_REQUEST *ecm, char *result, size_t size)
 #endif
 	cs_hexdump(0, ecm->cw, 16, cwhex, sizeof(cwhex));
 #ifdef MODULE_GBOX
-	if(check_client(ecm->client) && get_module(ecm->client)->num == R_GBOX && ecm->gbox_ecm_dist)	
+	if(check_client(ecm->client) && get_module(ecm->client)->num == R_GBOX && ecm->gbox_ecm_dist)
 		{ return ecmfmt(result, size, ecm->caid, ecm->onid, ecm->prid, ecm->chid, ecm->pid, ecm->srvid, ecm->ecmlen, ecmd5hex, csphash, cwhex, ecm->gbox_ecm_src_peer, ecm->gbox_ecm_dist, payload, tier); }
 	else if (ecm->selected_reader && ecm->selected_reader->typ == R_GBOX && !ecm->gbox_ecm_dist)
 		{ return ecmfmt(result, size, ecm->caid, ecm->onid, ecm->prid, ecm->chid, ecm->pid, ecm->srvid, ecm->ecmlen, ecmd5hex, csphash, cwhex, ecm->selected_reader->gbox_cw_src_peer, ecm->selected_reader->currenthops, payload, tier); }

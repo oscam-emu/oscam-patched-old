@@ -219,7 +219,7 @@ uint8_t *gbox_update_my_checkcode(void)
 	checkcode[4] = 0x19;
 	checkcode[5] = 0x19;
 	checkcode[6] = 0x66;
-	
+
 	struct gbox_card *card;
 	cs_readlock(__func__, &gbox_cards_lock);
 	LL_ITER it = ll_iter_create(gbox_cards);
@@ -237,7 +237,7 @@ uint8_t *gbox_update_my_checkcode(void)
 				}
 			}
 	cs_readunlock(__func__, &gbox_cards_lock);
-	
+
 	if(memcmp(last_checkcode, checkcode, 7))
 	{
 		memcpy(last_checkcode, checkcode, 7);
@@ -314,7 +314,7 @@ static uint8_t check_card_properties(uint32_t caprovid, uint16_t id_peer, uint8_
 		{ return ret; }
 
 	struct gbox_card *card;
-	cs_writelock(__func__, &gbox_cards_lock);       
+	cs_writelock(__func__, &gbox_cards_lock);
 	LL_ITER it = ll_iter_create(gbox_cards);
 			while((card = ll_iter_next(&it)))
 				{
