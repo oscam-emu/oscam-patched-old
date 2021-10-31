@@ -23,6 +23,7 @@ jobs:
       run: |
         git config --global user.name "oscam-emu bot"
         git config --global user.email "oscam.emu@gmail.com"
-        git svn init https://svn.streamboard.tv/oscam/ --stdlayout
+        git svn init https://svn.streamboard.tv/oscam/trunk --rewrite-root=http://www.streamboard.tv/svn/oscam/trunk
+        git update-ref refs/remotes/git-svn refs/remotes/origin/oscam-svn
         git svn rebase
         git push origin
