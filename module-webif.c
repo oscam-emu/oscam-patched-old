@@ -939,11 +939,11 @@ static char *send_oscam_config_cache(struct templatevars *vars, struct uriparams
 	free_mk_t(value);
 
 	tpl_printf(vars, TPLADD, "CWCACHESIZE", "%d", cfg.cw_cache_size);
-	
+
 	tpl_printf(vars, TPLADD, "CWCACHEMEMORY", "%d", cfg.cw_cache_memory);
 
 	tpl_printf(vars, TPLADD, "ECMCACHESIZE", "%d", cfg.ecm_cache_size);
-	
+
 	tpl_printf(vars, TPLADD, "ECMCACHEMEMORY", "%d", cfg.ecm_cache_memory);
 
 	tpl_printf(vars, TPLADD, "ECMDROPTIME", "%d", cfg.ecm_cache_droptime);
@@ -993,7 +993,7 @@ static char *send_oscam_config_cache(struct templatevars *vars, struct uriparams
 	tpl_addVar(vars, TPLADD, "LOCALGENERATEDONLYINCHECKED", (cfg.cacheex_localgenerated_only_in == 1) ? "checked" : "");
 
 	tpl_addVar(vars, TPLADD, "LGONLYINAIOONLYCHECKED", (cfg.cacheex_lg_only_in_aio_only == 1) ? "checked" : "");
-	
+
 	value = mk_t_ftab(&cfg.cacheex_lg_only_in_tab);
 	tpl_addVar(vars, TPLADD, "LGONLYINTAB", value);
 	free_mk_t(value);
@@ -2484,7 +2484,7 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 	tpl_addVar(vars, TPLADD, "LOCALGENERATEDONLYINCHECKED", (rdr->cacheex.localgenerated_only_in == 1) ? "checked" : "");
 
 	tpl_addVar(vars, TPLADD, "LGONLYINAIOONLYCHECKED", (rdr->cacheex.lg_only_in_aio_only == 1) ? "checked" : "");
-	
+
 	value = mk_t_ftab(&rdr->cacheex.lg_only_in_tab);
 	tpl_addVar(vars, TPLADD, "LGONLYINTAB", value);
 	free_mk_t(value);
@@ -3789,7 +3789,7 @@ static char *send_oscam_user_config_edit(struct templatevars *vars, struct uripa
 
 	tpl_addVar(vars, TPLADD, "LOCALGENERATEDONLYINCHECKED", (account->cacheex.localgenerated_only_in == 1) ? "checked" : "");
 
-	tpl_addVar(vars, TPLADD, "LGONLYINAIOONLYCHECKED", (account->cacheex.lg_only_in_aio_only == 1) ? "checked" : "");	
+	tpl_addVar(vars, TPLADD, "LGONLYINAIOONLYCHECKED", (account->cacheex.lg_only_in_aio_only == 1) ? "checked" : "");
 
 	value = mk_t_ftab(&account->cacheex.lg_only_in_tab);
 	tpl_addVar(vars, TPLADD, "LGONLYINTAB", value);
@@ -4179,7 +4179,7 @@ static void webif_add_client_proto(struct templatevars *vars, struct s_client *c
 				tpl_addVar(vars, TPLADD, "CLIENTPROTOTITLE", "");
 			}
 		}
-		
+
 		if(cl->reader && cl->cacheex_aio_checked)
 		{
 			if(cl->reader->cacheex.feature_bitfield & 32)
@@ -4201,7 +4201,7 @@ static void webif_add_client_proto(struct templatevars *vars, struct s_client *c
 		if(cfg.http_showpicons)
 		{
 			tpl_addVar(vars, TPLADDONCE, "CLIENTPROTO", (char *)proto);
-			
+
 			char picon_name[32];
 			snprintf(picon_name, sizeof(picon_name) / sizeof(char) - 1, "%s", proto);
 			if(picon_exists(picon_name))
@@ -4232,7 +4232,7 @@ static void webif_add_client_proto(struct templatevars *vars, struct s_client *c
 					else
 						tpl_printf(vars, TPLADD, "CLIENTPROTOTITLE", "missing icon: IC_%s.tpl", proto);
 				}
-				
+
 				if(cl->reader && cl->cacheex_aio_checked)
 				{
 					if(cl->reader->cacheex.feature_bitfield & 32)
@@ -5846,7 +5846,7 @@ static char *send_oscam_status(struct templatevars * vars, struct uriparams * pa
 					tpl_printf(vars, TPLADD, "CLIENTPORT", "%d", cl->port);
 					const char *proto = client_get_proto(cl);
 #ifdef CS_CACHEEX_AIO
-					if(cl && 
+					if(cl &&
 						(  (cl->typ == 'c' && cl->account && cl->account->cacheex.feature_bitfield)
 #if defined(MODULE_CAMD35) || defined (MODULE_CAMD35_TCP)
 						|| (cl->c35_extmode > 1)

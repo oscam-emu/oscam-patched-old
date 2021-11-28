@@ -458,7 +458,7 @@ static int32_t nagra3_card_info(struct s_reader *reader)
 	{
 		rdr_log(reader, "Prv.ID: %s", cs_hexdump(1, reader->prid[i], 4, tmp, sizeof(tmp)));
 	}
- 
+
 	struct timeb now;
 	cs_ftime(&now);
 	reader->last_refresh=now;
