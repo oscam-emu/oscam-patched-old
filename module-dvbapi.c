@@ -4196,7 +4196,7 @@ static void dvbapi_parse_pmt_es_info(int32_t demux_id, const uint8_t *buffer, ui
 	}
 }
 
-static void dvbapi_parse_pmt_info(int32_t demux_id, const uint8_t *buffer, uint16_t length, uint8_t *ca_pmt_cmd_id)
+static void dvbapi_parse_pmt_info(int32_t demux_id, const uint8_t *buffer, uint16_t length, uint16_t pcr_pid, uint8_t *ca_pmt_cmd_id)
 {
 	uint16_t i, program_info_length, video_pid = 0;
 
@@ -4246,6 +4246,17 @@ static void dvbapi_parse_pmt_info(int32_t demux_id, const uint8_t *buffer, uint1
 		demux[demux_id].STREAMpidsType[0] = STREAM_VIDEO;
 		demux[demux_id].STREAMpidcount++;
 		video_pid = demux[demux_id].pmtpid;
+	}
+
+	// Fix for channels not listing the video pid inside the PMT: use the pcr pid instead
+	if(video_pid == 0 && pcr_pid != 0x1FFF)
+	{
+		demux[demux_id].STREAMpids[demux[demux_id].STREAMpidcount] = pcr_pid;
+		demux[demux_id].STREAMpidsType[demux[demux_id].STREAMpidcount] = STREAM_VIDEO;
+		demux[demux_id].STREAMpidcount++;
+		video_pid = pcr_pid;
+
+		cs_log("Demuxer %d found no video pid. Using the PCR pid %04X instead", demux_id, pcr_pid);
 	}
 
 	// Register found video pid on all ECM pids of this demuxer
@@ -4712,7 +4723,7 @@ int32_t dvbapi_parse_capmt(const uint8_t *buffer, uint32_t length, int32_t connf
 	// We continue parsing the CA PMT info for new or updated programs.
 	// For updated programs, we just delete all previous stream pids and
 	// ECM pids and start parsing the fresh data.
-	dvbapi_parse_pmt_info(demux_id, buffer + 4, length - 4, &ca_pmt_cmd_id);
+	dvbapi_parse_pmt_info(demux_id, buffer + 4, length - 4, 0x1FFF, &ca_pmt_cmd_id);
 
 	// Finally, evaluate what response the host requires from OSCam.
 	// This allows multiple CA applications to run at the host simultaneously.
@@ -4753,6 +4764,8 @@ int32_t dvbapi_parse_capmt(const uint8_t *buffer, uint32_t length, int32_t connf
 static void dvbapi_parse_pmt(int32_t demux_id, const uint8_t *buffer, uint16_t length, uint32_t msgid)
 {
 	uint16_t program_number = b2i(2, buffer + 3);
+	uint16_t pcr_pid = b2i(2, buffer + 8) & 0x1FFF;
+
 	if(program_number != demux[demux_id].program_number)
 	{
 		cs_log("Demuxer %d received PMT for undefined program %04X", demux_id, program_number);
@@ -4760,7 +4773,7 @@ static void dvbapi_parse_pmt(int32_t demux_id, const uint8_t *buffer, uint16_t l
 	}
 
 	dvbapi_stop_filter(demux_id, TYPE_PMT, msgid);
-	dvbapi_parse_pmt_info(demux_id, buffer + 10, length - 10 - 4, NULL); // last 4 bytes are the CRC-32
+	dvbapi_parse_pmt_info(demux_id, buffer + 10, length - 10 - 4, pcr_pid, NULL); // last 4 bytes are the CRC-32
 }
 
 static void dvbapi_create_srvid_line(int32_t demux_id, char *buffer, uint32_t buflen)
