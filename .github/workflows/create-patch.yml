@@ -1,0 +1,38 @@
+name: create patch
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  create-patch:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: checkout oscam-patched
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: checkout oscam-emu
+      uses: actions/checkout@v2
+      with:
+        repository: oscam-emu/oscam-emu
+        token: ${{ secrets.ACTIONS_TOKEN }}
+        path: emu
+
+    - name: create patch
+      run: |
+        git checkout oscam-svn
+        git checkout master
+        ./git-svn-diff.sh > oscam-emu.patch
+        sudo mv oscam-emu.patch emu
+
+    - name: commit changes
+      run: |
+        cd emu
+        git config --global user.name "oscam-emu"
+        git config --global user.email "oscam.emu@gmail.com"
+        git commit -am "Update patch"
+        git push
