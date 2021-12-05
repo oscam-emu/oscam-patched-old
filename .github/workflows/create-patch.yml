@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - master
+    paths-ignore:
+      - '.github/**'
 
 jobs:
   create-patch:
@@ -34,5 +36,7 @@ jobs:
         cd emu
         git config --global user.name "oscam-emu"
         git config --global user.email "oscam.emu@gmail.com"
-        git commit -am "Update patch"
-        git push
+        if ! git diff --quiet HEAD; then
+          git commit -am "Update patch"
+          git push
+        fi
