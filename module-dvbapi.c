@@ -4635,10 +4635,10 @@ int32_t dvbapi_parse_capmt(const uint8_t *buffer, uint32_t length, int32_t connf
 				|| (cfg.dvbapi_pmtmode != 6 && ca_pmt_list_management == CA_PMT_LIST_ONLY))
 			{
 				is_update = true;
-				cs_log("Demuxer %d received updated CA PMT for program %04X", i, parameters.program_number);
+				cs_log("Demuxer %d received CA PMT update for program %04X", i, parameters.program_number);
 			}
 
-			cs_log("Demuxer %d continues descrambling for program %04X", i, demux[i].program_number);
+			cs_log("Demuxer %d continues processing for program %04X", i, demux[i].program_number);
 			openxcas_set_sid(parameters.program_number);
 			demux[i].stop_descrambling = false; // don't stop current demuxer!
 			demux_id = i;
