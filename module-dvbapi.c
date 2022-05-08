@@ -4202,16 +4202,12 @@ static void dvbapi_parse_pmt_info(int32_t demux_id, const uint8_t *buffer, uint1
 
 	// Cleanout demuxer from possible stale info
 	// (reset ECM pids and streams)
-	if(demux[demux_id].running == false)
-	{
-		demux[demux_id].ECMpidcount = 0;
-	}
-
 	for(i = 0; i < demux[demux_id].ECMpidcount; i++)
 	{
 		demux[demux_id].ECMpids[i].streams = 0;
 	}
 
+	demux[demux_id].ECMpidcount = 0;
 	demux[demux_id].STREAMpidcount = 0;
 
 	// Parse program info
