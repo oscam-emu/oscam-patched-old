@@ -1187,7 +1187,6 @@ static int32_t videoguard2_card_init(struct s_reader *reader, ATR *newatr)
 static int32_t videoguard2_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, struct s_ecm_answer *ea)
 {
 	uint8_t cta_res[CTA_RES_LEN];
-	static const char valid_ecm[] = { 0x00, 0x00, 0x01 };
 	uint8_t ins40[5] = { 0xD1, 0x40, 0x60, 0x80, 0xFF };
 	static const uint8_t ins54[5] = { 0xD3, 0x54, 0x00, 0x00, 0x00};
 	int32_t posECMpart2 = er->ecm[6] + 7;
@@ -1200,7 +1199,7 @@ static int32_t videoguard2_do_ecm(struct s_reader *reader, const ECM_REQUEST *er
 	int32_t chk;
 	chk = checksum_ok(EcmIrdHeader);
 
-	if((memcmp(&(er->ecm[3]), valid_ecm, sizeof(valid_ecm)) != 0) || (chk == 0))
+	if((er->ecm[3] != 0) || (er->ecm[5] != 1) || chk == 0)
 	{
 		rdr_log(reader, "Not a valid ecm");
 		return E_CORRUPT;
