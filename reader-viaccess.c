@@ -1753,6 +1753,10 @@ static int32_t viaccess_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 		{
 			nanoF0Data = emmParsed;
 		}
+		else if(emmParsed[0] == 0xF0 && emmParsed[1] == 0x10)
+		{
+			nanoF0Data = emmParsed;
+		}
 		else if(emmParsed[0] == 0xD8 && emmParsed[2] == 0x45)
 		{
 			uint8_t pos = 4 + emmParsed[3];
@@ -2162,6 +2166,19 @@ static int32_t viaccess_reassemble_emm(struct s_reader *rdr, struct s_client *cl
 				memcpy(emmbuf + pos, "\xF0\x08", 2);
 				memcpy(emmbuf + pos + 2, buffer + 39, 8);
 				pos += 10;
+			}
+
+			if(buffer[2] == 0x34)
+			{
+				//add 9E 20 nano + first 32 uint8_ts of emm content
+				memcpy(emmbuf + pos, "\x9E\x20", 2);
+				memcpy(emmbuf + pos + 2, buffer + 7, 32);
+				pos += 34;
+
+				//add F0 10 nano + 16 subsequent uint8_ts of emm content
+				memcpy(emmbuf + pos, "\xF0\x10", 2);
+				memcpy(emmbuf + pos + 2, buffer + 39, 16);
+				pos += 18;
 			}
 			else
 			{
