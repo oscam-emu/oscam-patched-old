@@ -1199,7 +1199,7 @@ static int32_t videoguard2_do_ecm(struct s_reader *reader, const ECM_REQUEST *er
 	int32_t chk;
 	chk = checksum_ok(EcmIrdHeader);
 
-	if((er->ecm[3] != 0) || (er->ecm[5] != 1) || chk == 0)
+	if((er->ecm[3] != 0) || chk == 0 || (er->ecm[4] != 0 && 4 != er->ecm[2]- er->ecm[4]))
 	{
 		rdr_log(reader, "Not a valid ecm");
 		return E_CORRUPT;
