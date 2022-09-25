@@ -1753,7 +1753,7 @@ static int32_t viaccess_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 		{
 			nanoF0Data = emmParsed;
 		}
-		else if(emmParsed[0] == 0xF0 && emmParsed[1] == 0x10)
+		else if(emmParsed[0] == 0xF0 && emmParsed[1] == 0x10 && (emm_provid >> 8) == 0x0702)
 		{
 			nanoF0Data = emmParsed;
 		}
@@ -2168,7 +2168,7 @@ static int32_t viaccess_reassemble_emm(struct s_reader *rdr, struct s_client *cl
 				pos += 10;
 			}
 
-			if(buffer[2] == 0x34)
+			else if(buffer[2] == 0x34 && (provid >> 8) == 0x0702)
 			{
 				//add 9E 20 nano + first 32 uint8_ts of emm content
 				memcpy(emmbuf + pos, "\x9E\x20", 2);
