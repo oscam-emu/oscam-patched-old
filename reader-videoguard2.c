@@ -2,6 +2,7 @@
 #ifdef READER_VIDEOGUARD
 #include "cscrypt/md5.h"
 #include "cscrypt/des.h"
+#include "cscrypt/aes.h"
 #include "oscam-work.h"
 #include "reader-common.h"
 #include "reader-videoguard-common.h"
@@ -1272,7 +1273,7 @@ static int32_t videoguard2_do_ecm(struct s_reader *reader, const ECM_REQUEST *er
 						memcpy(buff_55, t_body, 1 );
 						break;
 
-					case 0x56: // tag data for astro
+					case 0x56: // tag data for aes 
 						memcpy(buff_56, t_body, 8);
 						break;
 
@@ -1363,74 +1364,126 @@ static int32_t videoguard2_do_ecm(struct s_reader *reader, const ECM_REQUEST *er
 				{
 					rdr_log_dbg(reader, D_READER, "classD3 ins54: Tag55_01 = %02X, CW-overcrypt may not required", buff_55[0]);
 				}
-				if(~((buff_55[0] >> 2) & 1)) //case 55_01 xx where bit2==0, no AES overcrypt
+				if(~((buff_55[0] >> 2) & 1)) //case 55_01 xx where bit2==0
 				{
 					if((buff_55[0] >> 1) & 1) //case 55_01 xx where bit1==1, unique Pairing
 					{
 						rdr_log_dbg(reader, D_READER, "classD3 ins54: CW is crypted, trying to decrypt unique pairing mode 0x%02X", buff_55[0]);
-						if(er->ecm[0] & 1){ //log crypted CW
-							rdr_log_dbg(reader, D_READER, "crypted CW is: 0000000000000000%02X%02X%02X%02X%02X%02X%02X%02X", ea->cw[0], ea->cw[1], ea->cw[2], ea->cw[3], ea->cw[4], ea->cw[5], ea->cw[6], ea->cw[7]);
-						} else {
-							rdr_log_dbg(reader, D_READER, "crypted CW is: %02X%02X%02X%02X%02X%02X%02X%02X0000000000000000", ea->cw[0], ea->cw[1], ea->cw[2], ea->cw[3], ea->cw[4], ea->cw[5], ea->cw[6], ea->cw[7]);
+						if((buff_56[0]|buff_56[1]|buff_56[2]|buff_56[3]|buff_56[4]|buff_56[5]|buff_56[6]|buff_56[7]) != 0) { //when 56_08 is non-zero use AES (mini-patch by para)
+							rdr_log_dbg(reader, D_READER, "crypted CW is: %02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X",
+								    	ea->cw[0], ea->cw[1], ea->cw[2], ea->cw[3], ea->cw[4], ea->cw[5], ea->cw[6], ea->cw[7],
+									buff_56[0], buff_56[1], buff_56[2], buff_56[3], buff_56[4], buff_56[5], buff_56[6], buff_56[7]);
+							uint8_t aesbuf[0x10];
+							uint8_t keybuf[0x10];
+							AES_KEY aeskey;
+							memcpy(aesbuf, rbuff + 5, 8);
+							memcpy(aesbuf + 8, buff_56, 8);
+							memcpy(keybuf, &(reader->k1_unique), 16);
+							if(reader->k1_unique[16] == 0x10) {
+								rdr_log_dbg(reader, D_READER, "use k1(AES) for CW decryption in unique pairing mode");
+								AES_set_decrypt_key(keybuf, 128, &aeskey);
+								AES_decrypt(aesbuf, aesbuf, &aeskey);
+								rdr_log_dbg(reader, D_READER, "decrypted CW is: %02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X",
+										aesbuf[0], aesbuf[1], aesbuf[2], aesbuf[3], aesbuf[4], aesbuf[5], aesbuf[6], aesbuf[7],
+										aesbuf[8], aesbuf[9], aesbuf[10], aesbuf[11], aesbuf[12], aesbuf[13], aesbuf[14], aesbuf[15]);
+								memcpy(ea->cw + 0, aesbuf, 8);
+							}
+							else {
+								rdr_log_dbg(reader, D_READER, "k1 for unique pairing mode is not set correctly");
+								return ERROR;
+							}
 						}
-						if((reader->k1_unique[16] == 0x08) || (reader->k1_unique[16] == 0x10)) //check k1 for unique pairing mode is DES(8 bytes) or 3DES(16 bytes) long
-						{
-							if(reader->k1_unique[16] == 0x08){
-								rdr_log_dbg(reader, D_READER, "use k1(DES) for CW decryption in unique pairing mode");
-								des_ecb_decrypt(ea->cw, reader->k1_unique, 0x08);
+						else { //case 56_08 is zero, DES or 3DES
+							if(er->ecm[0] & 1){ //log crypted CW
+								rdr_log_dbg(reader, D_READER, "crypted CW is: 0000000000000000%02X%02X%02X%02X%02X%02X%02X%02X", ea->cw[0], ea->cw[1], ea->cw[2], ea->cw[3], ea->cw[4], ea->cw[5], ea->cw[6], ea->cw[7]);
+							} else {
+								rdr_log_dbg(reader, D_READER, "crypted CW is: %02X%02X%02X%02X%02X%02X%02X%02X0000000000000000", ea->cw[0], ea->cw[1], ea->cw[2], ea->cw[3], ea->cw[4], ea->cw[5], ea->cw[6], ea->cw[7]);
+							}
+							if((reader->k1_unique[16] == 0x08) || (reader->k1_unique[16] == 0x10)) //check k1 for unique pairing mode is DES(8 bytes) or 3DES(16 bytes) long
+							{
+								if(reader->k1_unique[16] == 0x08){
+									rdr_log_dbg(reader, D_READER, "use k1(DES) for CW decryption in unique pairing mode");
+									des_ecb_decrypt(ea->cw, reader->k1_unique, 0x08);
+								}
+								else
+								{
+									rdr_log_dbg(reader, D_READER, "use k1(3DES) for CW decryption in unique pairing mode");
+									des_ecb3_decrypt(ea->cw, reader->k1_unique);
+								}
+								if(er->ecm[0] & 1){ //log decrypted CW
+									rdr_log_dbg(reader, D_READER, "decrypted CW is: 0000000000000000%02X%02X%02X%02X%02X%02X%02X%02X", ea->cw[0], ea->cw[1], ea->cw[2], ea->cw[3], ea->cw[4], ea->cw[5], ea->cw[6], ea->cw[7]);
+								} else {
+									rdr_log_dbg(reader, D_READER, "decrypted CW is: %02X%02X%02X%02X%02X%02X%02X%02X0000000000000000", ea->cw[0], ea->cw[1], ea->cw[2], ea->cw[3], ea->cw[4], ea->cw[5], ea->cw[6], ea->cw[7]);
+								}
 							}
 							else
 							{
-								rdr_log_dbg(reader, D_READER, "use k1(3DES) for CW decryption in unique pairing mode");
-								des_ecb3_decrypt(ea->cw, reader->k1_unique);
+								rdr_log_dbg(reader, D_READER, "k1 for unique pairing mode is not set");
+								return ERROR;
 							}
-							if(er->ecm[0] & 1){ //log decrypted CW
-								rdr_log_dbg(reader, D_READER, "decrypted CW is: 0000000000000000%02X%02X%02X%02X%02X%02X%02X%02X", ea->cw[0], ea->cw[1], ea->cw[2], ea->cw[3], ea->cw[4], ea->cw[5], ea->cw[6], ea->cw[7]);
-							} else {
-								rdr_log_dbg(reader, D_READER, "decrypted CW is: %02X%02X%02X%02X%02X%02X%02X%02X0000000000000000", ea->cw[0], ea->cw[1], ea->cw[2], ea->cw[3], ea->cw[4], ea->cw[5], ea->cw[6], ea->cw[7]);
-							}
-						}
-						else
-						{
-							rdr_log_dbg(reader, D_READER, "k1 for unique pairing mode is not set");
-							return ERROR;
 						}
 					}
 					else //case 55_01 xx where bit1==0, generic Pairing
 					{
 						rdr_log_dbg(reader, D_READER, "classD3 ins54: CW is crypted, trying to decrypt generic pairing mode 0x%02X", buff_55[0]);
-						if(er->ecm[0] & 1){ //log crypted CW
-							rdr_log_dbg(reader, D_READER, "crypted CW is: 0000000000000000%02X%02X%02X%02X%02X%02X%02X%02X", ea->cw[0], ea->cw[1], ea->cw[2], ea->cw[3], ea->cw[4], ea->cw[5], ea->cw[6], ea->cw[7]);
-						} else {
-							rdr_log_dbg(reader, D_READER, "crypted CW is: %02X%02X%02X%02X%02X%02X%02X%02X0000000000000000", ea->cw[0], ea->cw[1], ea->cw[2], ea->cw[3], ea->cw[4], ea->cw[5], ea->cw[6], ea->cw[7]);
+						if((buff_56[0]|buff_56[1]|buff_56[2]|buff_56[3]|buff_56[4]|buff_56[5]|buff_56[6]|buff_56[7]) != 0) { //when 56_08 is non-zero use AES
+							rdr_log_dbg(reader, D_READER, "crypted CW is: %02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X",
+									ea->cw[0], ea->cw[1], ea->cw[2], ea->cw[3], ea->cw[4], ea->cw[5], ea->cw[6], ea->cw[7],
+									buff_56[0], buff_56[1], buff_56[2], buff_56[3], buff_56[4], buff_56[5], buff_56[6], buff_56[7]);
+							uint8_t aesbuf[0x10];
+							uint8_t keybuf[0x10];
+							AES_KEY aeskey;
+							memcpy(aesbuf, rbuff + 5, 8);
+							memcpy(aesbuf + 8, buff_56, 8);
+							memcpy(keybuf, &(reader->k1_generic), 16);
+							if(reader->k1_generic[16] == 0x10) {
+								rdr_log_dbg(reader, D_READER, "use k1(AES) for CW decryption in generic pairing mode");
+								AES_set_decrypt_key(keybuf, 128, &aeskey);
+								AES_decrypt(aesbuf, aesbuf, &aeskey);
+								rdr_log_dbg(reader, D_READER, "decrypted CW is: %02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X",
+										aesbuf[0], aesbuf[1], aesbuf[2], aesbuf[3], aesbuf[4], aesbuf[5], aesbuf[6], aesbuf[7],
+										aesbuf[8], aesbuf[9], aesbuf[10], aesbuf[11], aesbuf[12], aesbuf[13], aesbuf[14], aesbuf[15]);
+								memcpy(ea->cw + 0, aesbuf, 8);
+							}
+							else {
+								rdr_log_dbg(reader, D_READER, "k1 for generic pairing mode is not set");
+								return ERROR;
+							}
 						}
-						if((reader->k1_generic[16] == 0x08) || (reader->k1_generic[16] == 0x10)) //check k1 for generic pairing mode is DES(8 bytes) or 3DES(16 bytes) long
-						{
-							if(reader->k1_generic[16] == 0x08){
-								rdr_log_dbg(reader, D_READER, "use k1(DES) for CW decryption in generic pairing mode");
-								des_ecb_decrypt(ea->cw, reader->k1_generic, 0x08);
+						else { // case 56_08 is zero, DES or 3DES
+							if(er->ecm[0] & 1){ //log crypted CW
+								rdr_log_dbg(reader, D_READER, "crypted CW is: 0000000000000000%02X%02X%02X%02X%02X%02X%02X%02X", ea->cw[0], ea->cw[1], ea->cw[2], ea->cw[3], ea->cw[4], ea->cw[5], ea->cw[6], ea->cw[7]);
+							} else {
+								rdr_log_dbg(reader, D_READER, "crypted CW is: %02X%02X%02X%02X%02X%02X%02X%02X0000000000000000", ea->cw[0], ea->cw[1], ea->cw[2], ea->cw[3], ea->cw[4], ea->cw[5], ea->cw[6], ea->cw[7]);
+							}
+							if((reader->k1_generic[16] == 0x08) || (reader->k1_generic[16] == 0x10)) //check k1 for generic pairing mode is DES(8 bytes) or 3DES(16 bytes) long
+							{
+								if(reader->k1_generic[16] == 0x08){
+									rdr_log_dbg(reader, D_READER, "use k1(DES) for CW decryption in generic pairing mode");
+									des_ecb_decrypt(ea->cw, reader->k1_generic, 0x08);
+								}
+								else
+								{
+									rdr_log_dbg(reader, D_READER, "use k1(3DES) for CW decryption in generic pairing mode");
+									des_ecb3_decrypt(ea->cw, reader->k1_generic);
+								}
+								if(er->ecm[0] & 1){ //log decrypted CW
+									rdr_log_dbg(reader, D_READER, "decrypted CW is: 0000000000000000%02X%02X%02X%02X%02X%02X%02X%02X", ea->cw[0], ea->cw[1], ea->cw[2], ea->cw[3], ea->cw[4], ea->cw[5], ea->cw[6], ea->cw[7]);
+								} else {
+									rdr_log_dbg(reader, D_READER, "decrypted CW is: %02X%02X%02X%02X%02X%02X%02X%02X0000000000000000", ea->cw[0], ea->cw[1], ea->cw[2], ea->cw[3], ea->cw[4], ea->cw[5], ea->cw[6], ea->cw[7]);
+								}
 							}
 							else
 							{
-								rdr_log_dbg(reader, D_READER, "use k1(3DES) for CW decryption in generic pairing mode");
-								des_ecb3_decrypt(ea->cw, reader->k1_generic);
+								rdr_log_dbg(reader, D_READER, "k1 for generic pairing mode is not set");
+								return ERROR;
 							}
-							if(er->ecm[0] & 1){ //log decrypted CW
-								rdr_log_dbg(reader, D_READER, "decrypted CW is: 0000000000000000%02X%02X%02X%02X%02X%02X%02X%02X", ea->cw[0], ea->cw[1], ea->cw[2], ea->cw[3], ea->cw[4], ea->cw[5], ea->cw[6], ea->cw[7]);
-							} else {
-								rdr_log_dbg(reader, D_READER, "decrypted CW is: %02X%02X%02X%02X%02X%02X%02X%02X0000000000000000", ea->cw[0], ea->cw[1], ea->cw[2], ea->cw[3], ea->cw[4], ea->cw[5], ea->cw[6], ea->cw[7]);
-							}
-						}
-						else
-						{
-							rdr_log_dbg(reader, D_READER, "k1 for generic pairing mode is not set");
-							return ERROR;
 						}
 					}
 				}
-				else //unkown pairing mode or AES overcrypt
+				else //unknown pairing mode 
 				{
-					rdr_log_dbg(reader, D_READER, "classD3 ins54: CW is crypted, unknown pairing mode 0x%02X, AES overcrypt?", buff_55[0]);
+					rdr_log_dbg(reader, D_READER, "classD3 ins54: CW is crypted, unknown pairing mode 0x%02X", buff_55[0]);
 					if(er->ecm[0] & 1){ //log crypted CW
 						rdr_log_dbg(reader, D_READER, "crypted CW is: 0000000000000000%02X%02X%02X%02X%02X%02X%02X%02X", ea->cw[0], ea->cw[1], ea->cw[2], ea->cw[3], ea->cw[4], ea->cw[5], ea->cw[6], ea->cw[7]);
 					} else {
