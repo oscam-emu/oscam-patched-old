@@ -45,7 +45,7 @@ struct template
 {
 	char ident[64];
 	char file[128];
-	char deps[256];
+	char deps[1024];
 	uint32_t data_len;
 	enum { TXT, BIN } type;
 	uint8_t mime_type;

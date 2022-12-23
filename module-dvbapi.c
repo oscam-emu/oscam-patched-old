@@ -6730,7 +6730,10 @@ static void *dvbapi_main_local(void *cli)
 	}
 
 #if defined WITH_COOLAPI || defined WITH_COOLAPI2 || defined WITH_NEUTRINO
-	system("pzapit -rz");
+	int sysret = system("pzapit -rz");
+	if(sysret == -1){
+  		// To avoid not used and correct error handling by not ignoring system return value
+	}
 #endif
 	cs_ftime(&start); // register start time
 

@@ -61,7 +61,7 @@ static inline void xxor(uint8_t *data, int32_t len, const uint8_t *v1, const uin
 static void scam_generate_deskey(char *keyString, uint8_t *desKey)
 {
 	uint8_t iv[8], *tmpKey;
-	int32_t i, passLen, alignedPassLen;
+	uint32_t i, passLen, alignedPassLen;
 	uint32_t key_schedule[32];
 
 	memset(iv, 0, 8);
