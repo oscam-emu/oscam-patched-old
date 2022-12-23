@@ -426,7 +426,9 @@ static void write_versionfile(bool use_stdout)
 	write_conf(MODULE_MONITOR, "Monitor");
 	write_conf(WITH_LB, "Loadbalancing support");
 	write_conf(CS_CACHEEX, "Cache exchange support");
+#ifdef CS_CACHEEX_AIO
 	write_conf(CS_CACHEEX_AIO, "Cache exchange AIO support");
+#endif
 	write_conf(CW_CYCLE_CHECK, "CW Cycle Check support");
 	write_conf(LCDSUPPORT, "LCD support");
 	write_conf(LEDSUPPORT, "LED support");
