@@ -55,8 +55,6 @@ pthread_key_t getssl;
 static CS_MUTEX_LOCK http_lock;
 CS_MUTEX_LOCK *lock_cs;
 
-static void webif_add_client_proto(struct templatevars *vars, struct s_client *cl, const char *proto, int8_t apicall);
-
 static uint8_t useLocal = 1;
 #define PRINTF_LOCAL_D useLocal ? "%'d" : "%d"
 #define PRINTF_LOCAL_F useLocal ? "%'.0f" : "%.0f"
@@ -2044,19 +2042,27 @@ static char *send_oscam_reader(struct templatevars *vars, struct uriparams *para
 			if(rdr->tcp_connected)
 			{
 				connected_readers += 1;
-				webif_add_client_proto(vars, rdr->client, client_get_proto(rdr->client), apicall);
-				tpl_addVar(vars, TPLADDONCE, "CLIENTPROTOSORT", reader_get_type_desc(rdr, 0));
 
 #ifdef CS_CACHEEX_AIO
 				if(rdr->cacheex.feature_bitfield)
 				{
+					tpl_addVar(vars, TPLADD, "CLIENTPROTOSORT", (const char*)new_proto);
+					tpl_addVar(vars, TPLADD, "CLIENTPROTO", (const char*)new_proto);
+
 					if(rdr->cacheex.feature_bitfield & 32)
 						tpl_addVar(vars, TPLADD, "CLIENTPROTOTITLE", rdr->cacheex.aio_version);
 					else if(cl->reader->cacheex.feature_bitfield)
 						tpl_addVar(vars, TPLADD, "CLIENTPROTOTITLE", "[cx-aio < 9.2.3]");
 				}
+				else
+				{
+					tpl_addVar(vars, TPLADD, "CLIENTPROTOSORT", proto);
+					tpl_addVar(vars, TPLADD, "CLIENTPROTO", proto);
+				}
+#else
+				tpl_addVar(vars, TPLADD, "CLIENTPROTO", reader_get_type_desc(rdr, 0));
+				tpl_addVar(vars, TPLADD, "CLIENTPROTOSORT", reader_get_type_desc(rdr, 0));
 #endif
-
 				switch(rdr->card_status)
 				{
 					case CARD_INSERTED:
@@ -2111,8 +2117,8 @@ static char *send_oscam_reader(struct templatevars *vars, struct uriparams *para
 							break;
 					}
 
-					tpl_addVar(vars, TPLADDONCE, "CLIENTPROTO", reader_get_type_desc(rdr, 0));
-					tpl_addVar(vars, TPLADDONCE, "CLIENTPROTOSORT", reader_get_type_desc(rdr, 0));
+					tpl_addVar(vars, TPLADD, "CLIENTPROTO", reader_get_type_desc(rdr, 0));
+					tpl_addVar(vars, TPLADD, "CLIENTPROTOSORT", reader_get_type_desc(rdr, 0));
 				}
 			}
 
