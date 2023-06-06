@@ -7,6 +7,7 @@
 #include "reader-common.h"
 #include "reader-nagra-common.h"
 #include "oscam-work.h"
+#include "oscam-chk.h"
 
 int8_t ins7e11_state = 0;
 
@@ -1404,35 +1405,42 @@ static int32_t nagra2_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, str
 				rdr_log_dbg(reader, D_READER, "CW0 after 3DES decrypt: %s", cs_hexdump(1, _cwe0, 8, tmp_dbg, sizeof(tmp_dbg)));
 				rdr_log_dbg(reader, D_READER, "CW1 after 3DES decrypt: %s", cs_hexdump(1, _cwe1, 8, tmp_dbg, sizeof(tmp_dbg)));
 
-				int chkok = 1;
-				if(((_cwe0[0] + _cwe0[1] + _cwe0[2]) & 0xFF) != _cwe0[3])
+				if (!cfg.disablecrccws && !reader->disablecrccws && !chk_if_ignore_checksum((ECM_REQUEST*) er, &cfg.disablecrccws_only_for) && !chk_if_ignore_checksum((ECM_REQUEST*) er, &reader->disablecrccws_only_for))
 				{
-					chkok = 0;
-					rdr_log_dbg(reader, D_READER, "CW0 checksum error [0]");
-				}
+					int chkok = 1;
+					if(((_cwe0[0] + _cwe0[1] + _cwe0[2]) & 0xFF) != _cwe0[3])
+					{
+						chkok = 0;
+						rdr_log_dbg(reader, D_READER, "CW0 checksum error [0]");
+					}
 
-				if(((_cwe0[4] + _cwe0[5] + _cwe0[6]) & 0xFF) != _cwe0[7])
-				{
-					chkok = 0;
-					rdr_log_dbg(reader, D_READER, "CW0 checksum error [1]");
-				}
+					if(((_cwe0[4] + _cwe0[5] + _cwe0[6]) & 0xFF) != _cwe0[7])
+					{
+						chkok = 0;
+						rdr_log_dbg(reader, D_READER, "CW0 checksum error [1]");
+					}
 
-				if(((_cwe1[0] + _cwe1[1] + _cwe1[2]) & 0xFF) != _cwe1[3])
-				{
-					chkok = 0;
-					rdr_log_dbg(reader, D_READER, "CW1 checksum error [0]");
-				}
+					if(((_cwe1[0] + _cwe1[1] + _cwe1[2]) & 0xFF) != _cwe1[3])
+					{
+						chkok = 0;
+						rdr_log_dbg(reader, D_READER, "CW1 checksum error [0]");
+					}
 
-				if(((_cwe1[4] + _cwe1[5] + _cwe1[6]) & 0xFF) != _cwe1[7])
-				{
-					chkok = 0;
-					rdr_log_dbg(reader, D_READER, "CW1 checksum error [1]");
-				}
+					if(((_cwe1[4] + _cwe1[5] + _cwe1[6]) & 0xFF) != _cwe1[7])
+					{
+						chkok = 0;
+						rdr_log_dbg(reader, D_READER, "CW1 checksum error [1]");
+					}
 
-				if(chkok == 0)
+					if(chkok == 0)
+					{
+						rdr_log_dbg(reader, D_READER, "CW Decrypt failed");
+						return ERROR;
+					}
+				}
+				else
 				{
-					rdr_log_dbg(reader, D_READER, "CW Decrypt failed");
-					return ERROR;
+					rdr_log_dbg(reader, D_READER, "checksum test skipped");
 				}
 			}
 
