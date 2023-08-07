@@ -1815,6 +1815,7 @@ struct s_reader										// contains device info, reader info and card info
 	int8_t			readtiers;						// method to get videoguard tiers
 	uint8_t			ins7E[0x1A + 1];
 	uint8_t			ins7E11[0x01 + 1];
+	uint8_t                 ins42[0x25 + 1];
 	uint8_t			ins2e06[0x04 + 1];
 	int8_t			ins7e11_fast_reset;
 	uint8_t			k1_generic[0x10 + 1];			// k1 for generic pairing mode
