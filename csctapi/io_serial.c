@@ -43,6 +43,10 @@
 #include "icc_async.h"
 #include "io_serial.h"
 
+#if defined(__APPLE__)
+#include <IOKIT/serial/ioss.h>
+#endif
+
 #define OK 0
 #define ERROR 1
 
@@ -134,17 +138,14 @@ bool IO_Serial_DTR_RTS(struct s_reader *reader, int32_t *dtr, int32_t *rts)
 bool IO_Serial_SetBitrate(struct s_reader *reader, uint32_t bitrate, struct termios *tio)
 {
 	/* Set the bitrate */
-#if defined(__linux__)
-	//FIXME workaround for Smargo until native mode works
-	if((reader->mhz == reader->cardmhz) && (reader->smargopatch != 1) && IO_Serial_Bitrate(bitrate) != B0)
-#else
+#if !defined(__linux__)
+#if !defined(__APPLE__)
 	if(IO_Serial_Bitrate(bitrate) == B0)
 	{
 		rdr_log(reader, "Baudrate %u not supported", bitrate);
 		return ERROR;
 	}
 	else
-#endif
 	{
 		//no overclocking
 		cfsetospeed(tio, IO_Serial_Bitrate(bitrate));
@@ -152,7 +153,20 @@ bool IO_Serial_SetBitrate(struct s_reader *reader, uint32_t bitrate, struct term
 		rdr_log_dbg(reader, D_DEVICE, "standard baudrate: cardmhz=%d mhz=%d -> effective baudrate %u",
 					   reader->cardmhz, reader->mhz, bitrate);
 	}
+#endif
+#endif
+
+	/* Set the bitrate */
 #if defined(__linux__)
+	//FIXME workaround for Smargo until native mode works
+	if((reader->mhz == reader->cardmhz) && (reader->smargopatch != 1) && IO_Serial_Bitrate(bitrate) != B0)
+	{
+		//no overclocking
+		cfsetospeed(tio, IO_Serial_Bitrate(bitrate));
+		cfsetispeed(tio, IO_Serial_Bitrate(bitrate));
+		rdr_log_dbg(reader, D_DEVICE, "standard baudrate: cardmhz=%d mhz=%d -> effective baudrate %u",
+					   reader->cardmhz, reader->mhz, bitrate);
+	}
 	else
 	{
 		//over or underclocking
@@ -184,6 +198,31 @@ bool IO_Serial_SetBitrate(struct s_reader *reader, uint32_t bitrate, struct term
 		ioctl(reader->handle, TIOCSSERIAL, &nuts);
 		cfsetospeed(tio, IO_Serial_Bitrate(38400));
 		cfsetispeed(tio, IO_Serial_Bitrate(38400));
+	}
+#endif
+
+	/* Set the bitrate */
+#if defined(__APPLE__)
+	if(IO_Serial_Bitrate(bitrate) == B0)
+	{
+		if(ioctl(reader->handle, IOSSIOSPEED, &bitrate) < 0)
+		{
+			rdr_log(reader, "Baudrate %u not supported", bitrate);
+			return ERROR;
+		}
+		else
+		{
+			rdr_log_dbg(reader, D_DEVICE, "custom baudrate: cardmhz=%d mhz=%d -> effective baudrate %u",
+						   reader->cardmhz, reader->mhz, bitrate);
+		}
+	}
+	else
+	{
+		//no overclocking
+		cfsetospeed(tio, IO_Serial_Bitrate(bitrate));
+		cfsetispeed(tio, IO_Serial_Bitrate(bitrate));
+		rdr_log_dbg(reader, D_DEVICE, "standard baudrate: cardmhz=%d mhz=%d -> effective baudrate %u",
+					   reader->cardmhz, reader->mhz, bitrate);
 	}
 #endif
 	return OK;
@@ -620,7 +659,7 @@ static int32_t IO_Serial_Bitrate(int32_t bitrate)
 		{ 115200, B115200 },
 #endif
 #ifdef B76800
-		{ 76800, B76800 },
+		{  76800, B76800  },
 #endif
 #ifdef B57600
 		{  57600, B57600  },

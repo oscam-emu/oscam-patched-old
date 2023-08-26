@@ -110,10 +110,15 @@ ifeq ($(uname_S),FreeBSD)
 	DEFAULT_LIBUSB_LIB = -lusb
 endif
 ifeq ($(uname_S),Darwin)
-	DEFAULT_LIBUSB_FLAGS = -I/opt/local/include
-	DEFAULT_LIBUSB_LIB = -L/opt/local/lib -lusb-1.0
-	DEFAULT_PCSC_FLAGS = -isysroot $(OSX_SDK)
-	DEFAULT_PCSC_LIB = -isysroot $(OSX_SDK) -framework IOKit -framework CoreFoundation -framework PCSC
+	FIX_OPENSSL_FLAGS_DIR := $(shell ln -sf /usr/local/opt/openssl@1.1/include/openssl /usr/local/include)
+	FIX_OPENSSL_LIB_DIR := $(shell ln -sf /usr/local/opt/openssl@1.1/lib/libssl.1.1.dylib /usr/local/lib)
+	FIX_OPENSSL_LIBCRYPTO_DIR := $(shell ln -sf /usr/local/opt/openssl@1.1/lib/libcrypto.1.1.dylib /usr/local/lib)
+	DEFAULT_LIBCRYPTO_LIB = -L/usr/local/opt/openssl@1.1/lib -lcrypto
+	DEFAULT_SSL_LIB = -L/usr/local/opt/openssl@1.1/lib -lssl
+	DEFAULT_LIBUSB_FLAGS = -I/usr/local/opt/libusb/include
+	DEFAULT_LIBUSB_LIB = -L/usr/local/opt/libusb/lib -lusb-1.0 -framework IOKit -framework CoreFoundation -framework Security
+	DEFAULT_PCSC_FLAGS = -I/usr/local/opt/pcsc-lite/include/PCSC
+	DEFAULT_PCSC_LIB = -L/usr/local/opt/pcsc-lite/lib -framework IOKit -framework CoreFoundation -framework PCSC
 else
 	# Get the compiler's last include PATHs. Basicaly it is /usr/include
 	# but in case of cross compilation it might be something else.
