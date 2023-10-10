@@ -28,6 +28,17 @@ bool emm_cache_configured(void)
 	return enable;
 }
 
+static char *get_emmcache_filename(char *dest, size_t destlen, const char *filename)
+{
+	const char *slash = "";
+	if(cfg.emmlogdir[strlen(cfg.emmlogdir) - 1] != '/')
+	{
+	slash = "/";
+	}
+	snprintf(dest, destlen, "%s%s%s", cfg.emmlogdir, slash, filename);
+	return dest;
+}
+
 void emm_save_cache(void)
 {
 	if(boxtype_is("dbox2")) return; // don't save emmcache on these boxes, they lack resources and will crash!
@@ -40,9 +51,9 @@ void emm_save_cache(void)
 	char fname[256];
 	struct timeb ts, te;
 
-	if(!cfg.emmlogdir)
+	if(cfg.emmlogdir)
 	{
-		get_tmp_dir_filename(fname, sizeof(fname), "oscam.emmcache");
+		get_emmcache_filename(fname, sizeof(fname), "oscam.emmcache");
 	}
 	else
 	{
@@ -106,9 +117,9 @@ void load_emmstat_from_file(void)
 	char *line;
 	FILE *file;
 
-	if(!cfg.emmlogdir)
+	if(cfg.emmlogdir)
 	{
-		get_tmp_dir_filename(fname, sizeof(fname), "oscam.emmstat");
+		get_emmcache_filename(fname, sizeof(fname), "oscam.emmstat");
 	}
 	else
 	{
@@ -220,9 +231,9 @@ void save_emmstat_to_file(void)
 
 	char fname[256];
 
-	if(!cfg.emmlogdir)
+	if(cfg.emmlogdir)
 	{
-		get_tmp_dir_filename(fname, sizeof(fname), "oscam.emmstat");
+		get_emmcache_filename(fname, sizeof(fname), "oscam.emmstat");
 	}
 	else
 	{
@@ -303,9 +314,9 @@ void emm_load_cache(void)
 	FILE *file;
 	struct s_emmcache *c;
 
-	if(!cfg.emmlogdir)
+	if(cfg.emmlogdir)
 	{
-		get_tmp_dir_filename(fname, sizeof(fname), "oscam.emmcache");
+		get_emmcache_filename(fname, sizeof(fname), "oscam.emmcache");
 	}
 	else
 	{

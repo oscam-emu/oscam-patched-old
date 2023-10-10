@@ -10,13 +10,22 @@
 #define __nullnullterminated
 #include <specstrings.h>
 #include <WinSCard.h>
-#else
+#endif
+
+#if !defined(__CYGWIN__)
+#if !defined(__APPLE__)
 #include <PCSC/pcsclite.h>
 #include <PCSC/winscard.h>
 #include <PCSC/wintypes.h>
-#if !defined(__APPLE__)
 #include <PCSC/reader.h>
 #endif
+#endif
+
+#if defined(__APPLE__)
+#include "pcsclite.h"
+#include "winscard.h"
+#include "wintypes.h"
+#include "reader.h"
 #endif
 
 #ifndef ERR_INVALID

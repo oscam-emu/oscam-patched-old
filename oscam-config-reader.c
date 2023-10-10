@@ -638,6 +638,34 @@ static void ins7E_fn(const char *token, char *value, void *setting, long var_siz
 		{ fprintf_conf(f, token, "\n"); }
 }
 
+static void ins42_fn(const char *token, char *value, void *setting, long var_size, FILE *f)
+{
+	uint8_t *var = setting;
+	var_size -= 1; // var_size contains sizeof(var) which is [X + 1]
+	if(value)
+	{
+		int32_t len = cs_strlen(value);
+		if(len != var_size * 2 || key_atob_l(value, var, len))
+		{
+			if(len > 0)
+				{ fprintf(stderr, "reader %s parse error, %s=%s\n", token, token, value); }
+			memset(var, 0, var_size + 1);
+		}
+		else
+		{
+			var[var_size] = 1; // found and correct
+		}
+		return;
+	}
+	if(var[var_size])
+	{
+		char tmp[var_size * 2 + 1];
+		fprintf_conf(f, token, "%s\n", cs_hexdump(0, var, var_size, tmp, sizeof(tmp)));
+	}
+	else if(cfg.http_full_cfg)
+		{ fprintf_conf(f, token, "\n"); }
+}
+
 static void des_and_3des_key_fn(const char *token, char *value, void *setting, FILE *f)
 {
 	uint8_t *var = setting;
@@ -1190,6 +1218,7 @@ static const struct config_list reader_opts[] =
 	DEF_OPT_FUNC("cwekey"                         , 0,                                    cwekey_fn),
 #endif
 	DEF_OPT_FUNC_X("ins7e"                        , OFS(ins7E),                           ins7E_fn, SIZEOF(ins7E)),
+	DEF_OPT_FUNC_X("ins42"                        , OFS(ins42),                           ins42_fn, SIZEOF(ins42)),
 	DEF_OPT_FUNC_X("ins7e11"                      , OFS(ins7E11),                         ins7E_fn, SIZEOF(ins7E11)),
 	DEF_OPT_FUNC_X("ins2e06"                      , OFS(ins2e06),                         ins7E_fn, SIZEOF(ins2e06)),
 	DEF_OPT_FUNC("k1_generic"                     , OFS(k1_generic),                      des_and_3des_key_fn),
@@ -1297,7 +1326,7 @@ static bool reader_check_setting(const struct config_list *UNUSED(clist), void *
 	static const char *hw_only_settings[] =
 	{
 		"readnano", "resetcycle", "smargopatch", "autospeed", "sc8in1_dtrrts_patch", "boxid","fix07",
-		"fix9993", "rsakey", "deskey", "ins7e", "ins7e11", "ins2e06", "k1_generic", "k1_unique", "force_irdeto", "needsemmfirst", "boxkey",
+		"fix9993", "rsakey", "deskey", "ins7e", "ins42", "ins7e11", "ins2e06", "k1_generic", "k1_unique", "force_irdeto", "needsemmfirst", "boxkey",
 		"atr", "detect", "nagra_read", "mhz", "cardmhz", "readtiers", "read_old_classes", "use_gpio", "needsglobalfirst",
 #ifdef READER_NAGRA_MERLIN
 		"mod1", "data50", "mod50", "key60", "exp60",

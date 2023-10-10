@@ -28,7 +28,7 @@ static pthread_t log_thread;
 static pthread_cond_t log_thread_sleep_cond;
 static pthread_mutex_t log_thread_sleep_cond_mutex;
 static int32_t syslog_socket = -1;
-static struct sockaddr_in syslog_addr;
+static struct SOCKADDR syslog_addr;
 
 
 struct s_log
@@ -759,14 +759,14 @@ static void init_syslog_socket(void)
 	{
 		IN_ADDR_T in_addr;
 
-		if ((syslog_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1)
+		if ((syslog_socket = socket(DEFAULT_AF, SOCK_DGRAM, IPPROTO_UDP)) == -1)
 		{
 			perror("Socket create error!");
 		}
 
 		memset((char *) &syslog_addr, 0, sizeof(syslog_addr));
-		syslog_addr.sin_family = AF_INET;
-		syslog_addr.sin_port = htons(cfg.syslogport);
+		SIN_GET_FAMILY(syslog_addr) = DEFAULT_AF;
+		SIN_GET_PORT(syslog_addr) = htons(cfg.syslogport);
 		cs_resolve(cfg.sysloghost, &in_addr, NULL, NULL);
 		SIN_GET_ADDR(syslog_addr) = in_addr;
 	}
