@@ -385,7 +385,7 @@ static void write_versionfile(bool use_stdout)
 				st.tm_hour, st.tm_min, st.tm_sec);
 	}
 
-	fprintf(fp, "Version:        oscam-%s-r%s\n", CS_VERSION, CS_SVN_VERSION);
+	fprintf(fp, "Version:        oscam-%s-r%s%s\n", CS_VERSION, CS_SVN_VERSION, "-ICAM-v9");
 	fprintf(fp, "Compiler:       %s\n", CS_TARGET);
 	fprintf(fp, "Box type:       %s (%s)\n", boxtype_get(), boxname_get());
 	fprintf(fp, "PID:            %d\n", getppid());
@@ -424,6 +424,10 @@ static void write_versionfile(bool use_stdout)
 		write_conf(WITH_STAPI5, "DVB API with STAPI5 support");
 		write_conf(WITH_NEUTRINO, "DVB API with NEUTRINO support");
 		write_conf(READ_SDT_CHARSETS, "DVB API read-sdt charsets");
+		if(config_enabled(WITH_EMU))
+		{
+			write_conf(true, "DVB API with ICAM streamrelay support");
+		}
 	}
 	write_conf(IRDETO_GUESSING, "Irdeto guessing");
 	write_conf(CS_ANTICASC, "Anti-cascading support");

@@ -11,6 +11,7 @@
 #include "module-dvbapi-coolapi.h"
 #include "module-dvbapi-stapi.h"
 #include "module-dvbapi-chancache.h"
+#include "module-emulator-streamserver.h"
 #include "module-stat.h"
 #include "oscam-chk.h"
 #include "oscam-client.h"
@@ -7850,7 +7851,13 @@ void dvbapi_send_dcw(struct s_client *client, ECM_REQUEST *er)
 		delayer(er, delay);
 
 #ifdef WITH_EMU
-		if(!chk_ctab_ex(er->caid, &cfg.emu_stream_relay_ctab) || !cfg.emu_stream_relay_enabled)
+		bool set_dvbapi_cw = true;
+		if(chk_ctab_ex(er->caid, &cfg.emu_stream_relay_ctab) && cfg.emu_stream_relay_enabled)
+		{
+			// streamserver set cw
+			set_dvbapi_cw = !stream_write_cw(er);
+		}
+		if (set_dvbapi_cw)
 #endif
 		switch(selected_api)
 		{

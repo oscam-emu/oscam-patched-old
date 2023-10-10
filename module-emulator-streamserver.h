@@ -18,6 +18,8 @@ typedef struct
 	uint32_t pvu_des_ks[8][2][32];
 	int8_t pvu_csa_used;
 	void* pvu_csa_ks[8];
+	int8_t icam_csa_used;
+	uint32_t* icam_csa_ks;
 } emu_stream_client_key_data;
 
 typedef struct
@@ -84,6 +86,7 @@ extern emu_stream_client_key_data emu_fixed_key_data[EMU_STREAM_SERVER_MAX_CONNE
 extern LLIST *ll_emu_stream_delayed_keys[EMU_STREAM_SERVER_MAX_CONNECTIONS];
 
 void *stream_key_delayer(void *arg);
+bool stream_write_cw(ECM_REQUEST *er);
 
 #endif // WITH_EMU
 
