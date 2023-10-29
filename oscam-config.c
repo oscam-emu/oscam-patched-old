@@ -1180,9 +1180,9 @@ int32_t chk_global_whitelist(ECM_REQUEST *er, uint32_t *line)
 			{
 				if(match_whitelist(er, entry))
 				{
+					cs_log_dbg(D_TRACE, "whitelist: mapped %04X@%06X to %04X@%06X", er->caid, er->prid, entry->mapcaid, entry->mapprovid);
 					er->caid = entry->mapcaid;
 					er->prid = entry->mapprovid;
-					cs_log_dbg(D_TRACE, "whitelist: mapped %04X@%06X to %04X@%06X", er->caid, er->prid, entry->mapcaid, entry->mapprovid);
 					break;
 				}
 			}

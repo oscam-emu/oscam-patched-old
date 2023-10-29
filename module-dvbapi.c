@@ -2132,6 +2132,11 @@ static void dvbapi_parse_cat_ca_descriptor(int32_t demux_id, const uint8_t *buff
 	ca_system_id = b2i(2, buffer);
 	ca_pid = b2i(2, buffer + 2) & 0x1FFF;
 
+	if(ca_system_id == 0x0000 || ca_pid == 0x1FFF)
+	{
+		return; // This is not a valid CAID or EMM pid
+	}
+
 	switch(ca_system_id >> 8)
 	{
 		case 0x01:
@@ -3851,6 +3856,11 @@ static void dvbapi_parse_pmt_ca_descriptor(int32_t demux_id, const uint8_t *buff
 	ca_system_id = b2i(2, buffer);
 	ca_pid = b2i(2, buffer + 2) & 0x1FFF;
 
+	if(ca_system_id == 0x0000 || (!caid_is_biss_fixed(ca_system_id) && !caid_is_fake(ca_system_id) && ca_pid == 0x1FFF))
+	{
+		return; // This is not a valid CAID or ECM pid
+	}
+
 	if(caid_is_seca(ca_system_id))
 	{
 		for(i = 2; i < descriptor_length; i += 15)
@@ -4215,16 +4225,12 @@ static void dvbapi_parse_pmt_info(int32_t demux_id, const uint8_t *buffer, uint1
 
 	// Cleanout demuxer from possible stale info
 	// (reset ECM pids and streams)
-	if(demux[demux_id].running == false)
-	{
-		demux[demux_id].ECMpidcount = 0;
-	}
-
 	for(i = 0; i < demux[demux_id].ECMpidcount; i++)
 	{
 		demux[demux_id].ECMpids[i].streams = 0;
 	}
 
+	demux[demux_id].ECMpidcount = 0;
 	demux[demux_id].STREAMpidcount = 0;
 
 	// Parse program info
@@ -4642,10 +4648,10 @@ int32_t dvbapi_parse_capmt(const uint8_t *buffer, uint32_t length, int32_t connf
 				|| (cfg.dvbapi_pmtmode != 6 && ca_pmt_list_management == CA_PMT_LIST_ONLY))
 			{
 				is_update = true;
-				cs_log("Demuxer %d received updated CA PMT for program %04X", i, parameters.program_number);
+				cs_log("Demuxer %d received CA PMT update for program %04X", i, parameters.program_number);
 			}
 
-			cs_log("Demuxer %d continues descrambling for program %04X", i, demux[i].program_number);
+			cs_log("Demuxer %d continues processing for program %04X", i, demux[i].program_number);
 			openxcas_set_sid(parameters.program_number);
 			demux[i].stop_descrambling = false; // don't stop current demuxer!
 			demux_id = i;
@@ -6737,7 +6743,10 @@ static void *dvbapi_main_local(void *cli)
 	}
 
 #if defined WITH_COOLAPI || defined WITH_COOLAPI2 || defined WITH_NEUTRINO
-	system("pzapit -rz");
+	int sysret = system("pzapit -rz");
+	if(sysret == -1){
+  		// To avoid not used and correct error handling by not ignoring system return value
+	}
 #endif
 	cs_ftime(&start); // register start time
 

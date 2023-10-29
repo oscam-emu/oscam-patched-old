@@ -1284,7 +1284,7 @@ void *init_oscam_ser(struct s_client *UNUSED(cl), uint8_t *UNUSED(mbuf), int32_t
 		{ memset(sdevice, 0, sizeof(sdevice)); }
 
 	param.module_idx = module_idx;
-	char *p;
+	char *p, *q;
 	char cltype = 'c'; // now auto should work
 
 	if(bcopy_end == -1) // mutex should be initialized only once
@@ -1296,7 +1296,9 @@ void *init_oscam_ser(struct s_client *UNUSED(cl), uint8_t *UNUSED(mbuf), int32_t
 	while((p = strrchr(sdevice, ';')))
 	{
 		*p = 0;
-		if(!(p + 1) || (!(p + 1)[0])) { return NULL; }
+		q = p;
+		q = q + 1;
+		if(!(q) || (!(q)[0])) { return NULL; }
 		if(!oscam_ser_parse_url(p + 1, &param.serialdata, &cltype)) { return NULL; }
 
 		ret = start_thread("oscam_ser_fork", oscam_ser_fork, (void *) &param, NULL, 1, 1);

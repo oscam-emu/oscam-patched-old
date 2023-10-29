@@ -834,6 +834,9 @@ function updateReaderpage(data) {
 		if (!is_nopoll('readercol9')) {
 			$(uid + " td.readercol9").text(item.stats.emmwritten);
 		}
+		if (!is_nopoll('readercol20')) {
+			$(uid + " td.readercol20").html( item.status + "<BR>" + item.ip);
+		}
 		if (!is_nopoll('readercol10')) {
 			$(uid + " td.readercol10").text(item.stats.emmskipped);
 		}

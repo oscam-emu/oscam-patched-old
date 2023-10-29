@@ -82,7 +82,7 @@ const char *remote_txt(void)
 
 const char *client_get_proto(struct s_client *cl)
 {
-	const char *ctyp;
+	const char *ctyp = "unknown";
 	switch(cl->typ)
 	{
 		case 's':
@@ -113,6 +113,7 @@ const char *client_get_proto(struct s_client *cl)
 
 		default:
 			ctyp = get_module(cl)->desc;
+			break;
 	}
 	return ctyp;
 }
