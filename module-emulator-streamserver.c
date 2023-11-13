@@ -8,6 +8,7 @@
 #include "ffdecsa/ffdecsa.h"
 #include "module-emulator-osemu.h"
 #include "module-emulator-streamserver.h"
+#include "module-emulator-icam.h"
 #include "module-emulator-powervu.h"
 #include "oscam-config.h"
 #include "oscam-net.h"
@@ -378,7 +379,7 @@ static void ParsePmtData(emu_stream_client_data *cdata)
 		{
 			caid = b2i(2, data + i + 2);
 
-			if (caid_is_powervu(caid) || caid == 0xA101) // add all supported caids here
+			if (chk_ctab_ex(caid, &cfg.emu_stream_relay_ctab) && (caid_is_powervu(caid) || caid == 0xA101 || caid_is_icam(caid))) // add all supported caids here
 			{
 				if (cdata->caid == NO_CAID_VALUE)
 				{
@@ -537,6 +538,12 @@ static void ParseEcmData(emu_stream_client_data *cdata)
 			powervu_ecm(data, dcw, NULL, cdata->srvid, cdata->caid, cdata->tsid, cdata->onid, cdata->ens, &cdata->key);
 		}
 	}
+#ifdef MODULE_RADEGAST
+	else if (caid_is_icam(cdata->caid))
+	{
+		icam_ecm(cdata);
+	}
+#endif // MODULE_RADEGAST
 	//else if () // All other caids
 	//{
 		//emu_process_ecm();
@@ -1230,6 +1237,84 @@ static void DescrambleTsPacketsCompel(emu_stream_client_data *data, uint8_t *str
 	}
 }
 
+static void DescrambleTsPacketsICam(emu_stream_client_data *data, uint8_t *stream_buf, uint32_t bufLength, uint16_t packetSize)
+{
+	uint8_t *packetCluster[4];
+	uint8_t scrambled_packets = 0, scramblingControl;
+	uint32_t i, tsHeader;
+	int8_t odd_even = -1, odd_even_count = 1;
+
+	for (i = 0; i < bufLength; i += packetSize)
+	{
+		tsHeader = b2i(4, stream_buf + i);
+		scramblingControl = (tsHeader & 0xC0) >> 6;
+
+#ifdef MODULE_RADEGAST
+		uint16_t pid, offset, payloadStart;
+
+		pid = (tsHeader & 0x1FFF00) >> 8;
+		payloadStart = (tsHeader & 0x400000) >> 22;
+
+		if (tsHeader & 0x20)
+		{
+			offset = 4 + stream_buf[i + 4] + 1;
+		}
+		else
+		{
+			offset = 4;
+		}
+
+		if (data->ecm_pid && pid == data->ecm_pid) // Process the ECM data
+		{
+			stream_server_has_ecm[data->connid] = 1;
+			data->key.icam_csa_used = emu_fixed_key_data[data->connid].icam_csa_used;
+
+			ParseTsData(0x80, 0xFE, 3, &data->have_ecm_data, data->ecm_data, sizeof(data->ecm_data),
+						&data->ecm_data_pos, payloadStart, stream_buf + i + offset, packetSize - offset, ParseEcmData, data);
+		}
+#endif // MODULE_RADEGAST
+
+		if (scramblingControl == 0)
+		{
+			continue;
+		}
+
+		scrambled_packets++;
+		scramblingControl &= 0x1;
+
+		if (odd_even == -1)
+		{
+			odd_even = scramblingControl;
+		}
+
+		if (odd_even != scramblingControl)
+		{
+			odd_even_count++;
+			odd_even = scramblingControl;
+		}
+	}
+
+	if (scrambled_packets == 0)
+		return;
+
+	SAFE_MUTEX_LOCK(&emu_fixed_key_data_mutex[data->connid]);
+
+	if (emu_fixed_key_data[data->connid].icam_csa_used && emu_fixed_key_data[data->connid].icam_csa_ks != NULL)
+	{
+		packetCluster[0] = stream_buf;
+		packetCluster[1] = stream_buf + bufLength;
+		packetCluster[2] = NULL;
+
+		decrypt_packets(emu_fixed_key_data[data->connid].icam_csa_ks, packetCluster);
+		if (odd_even_count > 1) // odd and even packets together cannot be decrypted in one step
+		{
+			decrypt_packets(emu_fixed_key_data[data->connid].icam_csa_ks, packetCluster);
+		}
+	}
+
+	SAFE_MUTEX_UNLOCK(&emu_fixed_key_data_mutex[data->connid]);
+}
+
 static int32_t connect_to_stream(char *http_buf, int32_t http_buf_len, char *stream_path)
 {
 	struct sockaddr_in cservaddr;
@@ -1238,15 +1323,6 @@ static int32_t connect_to_stream(char *http_buf, int32_t http_buf_len, char *str
 	int32_t streamfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (streamfd == -1)
 	{
-		return -1;
-	}
-
-	struct timeval tv;
-	tv.tv_sec = 2;
-	tv.tv_usec = 0;
-	if (setsockopt(streamfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof tv))
-	{
-		cs_log("ERROR: setsockopt() failed for SO_RCVTIMEO");
 		return -1;
 	}
 
@@ -1283,6 +1359,8 @@ static int32_t connect_to_stream(char *http_buf, int32_t http_buf_len, char *str
 	{
 		return -1;
 	}
+
+	fcntl(streamfd, F_SETFL, fcntl(streamfd, F_GETFL) | O_NONBLOCK);
 
 	return streamfd;
 }
@@ -1331,6 +1409,9 @@ static void *stream_client_handler(void *arg)
 	uint8_t *stream_buf;
 	uint16_t packetCount = 0, packetSize = 0, startOffset = 0;
 	uint32_t remainingDataPos, remainingDataLength, tmp_pids[4];
+
+	struct pollfd pfd[2];
+	int ret;
 
 	cs_log("Stream client %i connected", conndata->connid);
 
@@ -1454,35 +1535,57 @@ static void *stream_client_handler(void *arg)
 				cur_dvb_buffer_size = EMU_DVB_BUFFER_SIZE_CSA;
 				cur_dvb_buffer_wait = EMU_DVB_BUFFER_WAIT_CSA;
 			}
+			else if (emu_fixed_key_data[conndata->connid].icam_csa_used)
+			{
+				cur_dvb_buffer_size = 188 * cluster_size;
+				cur_dvb_buffer_wait = 188 * (cluster_size - 3);
+			}
 			else
 			{
 				cur_dvb_buffer_size = EMU_DVB_BUFFER_SIZE_DES;
 				cur_dvb_buffer_wait = EMU_DVB_BUFFER_WAIT_DES;
 			}
 
-			streamStatus = recv(streamfd, stream_buf + bytesRead, cur_dvb_buffer_size - bytesRead, MSG_WAITALL);
-			if (streamStatus == 0) // socket closed
-			{
-				cs_log("WARNING: stream client %i - stream source closed connection", conndata->connid);
-				streamConnectErrorCount++;
-				cs_sleepms(100);
-				break;
-			}
+			pfd[0].fd = streamfd;
+			pfd[0].events = POLLIN | POLLRDHUP | POLLHUP;
+			pfd[1].fd = conndata->connfd;
+			pfd[1].events = POLLRDHUP | POLLHUP;
 
-			if (streamStatus < 0) // error
-			{
-				if ((errno == EWOULDBLOCK) | (errno == EAGAIN))
-				{
-					cs_log("WARNING: stream client %i no data from stream source", conndata->connid);
-					streamDataErrorCount++; // 2 sec timeout * 15 = 30 seconds no data -> close
-					cs_sleepms(100);
-					continue;
-				}
+			ret = poll(pfd, 2, 2000);
 
+			if (ret < 0) // poll error
+			{
 				cs_log("WARNING: stream client %i error receiving data from stream source", conndata->connid);
 				streamConnectErrorCount++;
 				cs_sleepms(100);
 				break;
+			}
+			else if (ret == 0) // timeout
+			{
+				cs_log("WARNING: stream client %i no data from stream source", conndata->connid);
+				streamDataErrorCount++; // 2 sec timeout * 15 = 30 seconds no data -> close
+				continue;
+			}
+			else
+			{
+				if (pfd[0].revents & POLLIN) // new incoming data
+				{
+					streamStatus = recv(streamfd, stream_buf + bytesRead, cur_dvb_buffer_size - bytesRead, MSG_DONTWAIT);
+				}
+
+				if ((pfd[0].revents & POLLHUP) || (pfd[0].revents & POLLRDHUP)) // incoming connection closed
+				{
+					cs_log("WARNING: stream client %i - stream source closed connection", conndata->connid);
+					streamConnectErrorCount++;
+					cs_sleepms(100);
+					break;
+				}
+
+				if ((pfd[1].revents & POLLHUP) || (pfd[1].revents & POLLRDHUP)) // outgoing connection was closed -> e.g. user zapped to other channel
+				{
+					clientStatus = -1;
+					break;
+				}
 			}
 
 			if (streamStatus < cur_dvb_buffer_size - bytesRead) // probably just received header but no stream
@@ -1546,6 +1649,10 @@ static void *stream_client_handler(void *arg)
 							{
 								DescrambleTsPacketsCompel(data, stream_buf + startOffset, packetCount * packetSize, packetSize);
 							}
+							else if (caid_is_icam(data->caid)) // ICAM
+							{
+								DescrambleTsPacketsICam(data, stream_buf + startOffset, packetCount * packetSize, packetSize);
+							}
 						}
 						else
 						{
@@ -1590,6 +1697,15 @@ static void *stream_client_handler(void *arg)
 			free_key_struct(data->key.pvu_csa_ks[i]);
 		}
 	}
+
+	if (data->key.icam_csa_ks)
+	{
+		free_key_struct(data->key.icam_csa_ks);
+	}
+#ifdef MODULE_RADEGAST
+	icam_reset(data->connid);
+#endif
+
 	NULLFREE(data);
 
 	stream_client_disconnect(conndata);
@@ -1805,8 +1921,35 @@ void stop_stream_server(void)
 	gconncount = 0;
 	SAFE_MUTEX_UNLOCK(&emu_stream_server_mutex);
 
+#ifdef MODULE_RADEGAST
+	icam_close_radegast_connection();
+#endif
+
 	shutdown(glistenfd, 2);
 	close(glistenfd);
+}
+
+bool stream_write_cw(ECM_REQUEST *er)
+{
+	int32_t i;
+
+	if (caid_is_icam(er->caid))
+	{
+		bool cw_written = false;
+		//SAFE_MUTEX_LOCK(&emu_fixed_key_srvid_mutex);
+		for (i = 0; i < EMU_STREAM_SERVER_MAX_CONNECTIONS; i++)
+		{
+			if (emu_stream_cur_srvid[i] == er->srvid)
+			{
+				icam_write_cw(er, i);
+				cw_written = true;
+				// don't return as there might be more connections for the same channel (e.g. recordings)
+			}
+		}
+		//SAFE_MUTEX_UNLOCK(&emu_fixed_key_srvid_mutex);
+		return cw_written;
+	}
+	return true;
 }
 
 #endif // WITH_EMU

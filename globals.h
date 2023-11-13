@@ -2573,6 +2573,7 @@ static inline bool caid_is_seca(uint16_t caid) { return caid >> 8 == 0x01; }
 static inline bool caid_is_viaccess(uint16_t caid) { return caid >> 8 == 0x05; }
 static inline bool caid_is_irdeto(uint16_t caid) { return caid >> 8 == 0x06; }
 static inline bool caid_is_videoguard(uint16_t caid) { return caid >> 8 == 0x09; }
+static inline bool caid_is_icam(uint16_t caid) { return caid == 0x098C || caid == 0x098D || caid == 0x09C4; }
 static inline bool caid_is_conax(uint16_t caid) { return caid >> 8 == 0x0B; }
 static inline bool caid_is_cryptoworks(uint16_t caid) { return caid >> 8 == 0x0D; }
 static inline bool caid_is_powervu(uint16_t caid) { return caid >> 8 == 0x0E; }
