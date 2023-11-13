@@ -8413,6 +8413,77 @@ static char *send_oscam_api(struct templatevars * vars, FILE * f, struct uripara
 			return tpl_getTpl(vars, "APIERROR");
 		}
 	}
+	else if(strcmp(getParam(params, "part"), "sendcmd") == 0)
+	{
+		if(strcmp(getParam(params, "label"), ""))
+		{
+			struct s_reader *rdr = get_reader_by_label(getParam(params, "label"));
+			if(rdr)
+			{
+				char api_msg[150];
+				CMD_PACKET *cmd_pack = NULL;
+				if(!cs_malloc(&cmd_pack, sizeof(CMD_PACKET)))
+				{
+					tpl_addVar(vars, TPLADD, "APIERRORMESSAGE", "cs_malloc failed!");
+					return tpl_getTpl(vars, "APIERROR");
+				}
+				struct s_client *webif_client = cur_client();
+				webif_client->grp = 0xFF;  // access all readers
+
+				memset(cmd_pack, '0', sizeof(CMD_PACKET));
+				cmd_pack->client = webif_client;
+				cmd_pack->cmdlen = strlen(getParam(params, "cmd")) / 2;
+
+				if(cmd_pack->cmdlen > 0 && abs(cmd_pack->cmdlen) <= sizeof(cmd_pack->cmd))
+				{
+					if(key_atob_l(getParam(params, "cmd"), cmd_pack->cmd, cmd_pack->cmdlen*2))
+					{
+						tpl_addVar(vars, TPLADD, "APIERRORMESSAGE", "'cmd' has not been sent due to wrong value!");
+						return tpl_getTpl(vars, "APIERROR");
+					}
+				}
+				else
+				{
+					if(cmd_pack->cmdlen)
+					{
+						snprintf(api_msg, sizeof(api_msg), "Command would exceed %lu bytes!", (long unsigned int)sizeof(cmd_pack->cmd));
+						tpl_addVar(vars, TPLADD, "APIERRORMESSAGE", api_msg);
+					}
+					else
+					{
+						tpl_addVar(vars, TPLADD, "APIERRORMESSAGE", "Missing parameter 'cmd'!");
+					}
+					return tpl_getTpl(vars, "APIERROR");
+				}
+
+				struct s_client *cl = rdr->client;
+				if(rdr->enable == 1 && cl && cl->typ == 'r')
+				{
+					add_job(cl, ACTION_READER_SENDCMD, cmd_pack, sizeof(CMD_PACKET));
+					tpl_addVar(vars, TPLADD, "APICONFIRMMESSAGE", "command sent");
+					return tpl_getTpl(vars, "APICONFIRMATION");
+				}
+				else
+				{
+					snprintf(api_msg, sizeof(api_msg), "Reader '%s' is not suitable!", xml_encode(vars, rdr->label));
+					tpl_addVar(vars, TPLADD, "APIERRORMESSAGE", api_msg);
+					return tpl_getTpl(vars, "APIERROR");
+				}
+			}
+			else
+			{
+				//Send Errormessage
+				tpl_addVar(vars, TPLADD, "APIERRORMESSAGE", "no such reader");
+				return tpl_getTpl(vars, "APIERROR");
+			}
+		}
+		else
+		{
+			//Send Errormessage
+			tpl_addVar(vars, TPLADD, "APIERRORMESSAGE", "no reader selected");
+			return tpl_getTpl(vars, "APIERROR");
+		}
+	}
 	else if(strcmp(getParam(params, "part"), "shutdown") == 0)
 	{
 		if((strcmp(strtolower(getParam(params, "action")), "restart") == 0) ||

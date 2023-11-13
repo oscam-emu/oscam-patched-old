@@ -19,6 +19,7 @@ enum actions
 #ifdef READER_NAGRA_MERLIN
 	ACTION_READER_RENEW_SK     = 14,    // wr14
 #endif
+	ACTION_READER_SENDCMD      = 15,    // wr15
 	// Client actions
 	ACTION_CLIENT_UDP          = 22,    // wc22
 	ACTION_CLIENT_TCP          = 23,    // wc23
