@@ -66,6 +66,7 @@ extern int32_t cmd_table_get_info(struct s_reader *reader, const uint8_t *cmd, u
 extern int32_t cmd_exists(struct s_reader *reader, const uint8_t *cmd);
 extern int32_t read_cmd_len(struct s_reader *reader, const uint8_t *cmd);
 extern int32_t do_cmd(struct s_reader *reader, const uint8_t *ins, const uint8_t *txbuff, uint8_t *rxbuff, uint8_t *cta_res);
+int32_t videoguard_do_rawcmd(struct s_reader *reader, CMD_PACKET *cp);
 extern void rev_date_calc_tm(const uint8_t *Date, struct tm *timeinfo , int32_t base_year);
 extern void set_known_card_info(struct s_reader *reader, const uint8_t *atr, const uint32_t *atr_size);
 
