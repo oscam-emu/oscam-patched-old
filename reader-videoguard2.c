@@ -1568,6 +1568,11 @@ static int32_t videoguard2_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 	return videoguard_do_emm(reader, ep, 0xD1, vg2_read_tiers, do_cmd);
 }
 
+static int32_t videoguard2_do_rawcmd(struct s_reader *reader, CMD_PACKET *cp)
+{
+	return videoguard_do_rawcmd(reader, cp);
+}
+
 static int32_t videoguard2_card_info(struct s_reader *reader)
 {
 	// info is displayed in init, or when processing info
@@ -1596,6 +1601,7 @@ const struct s_cardsystem reader_videoguard2 =
 	.desc           = "videoguard2",
 	.caids          = (uint16_t[]){ 0x09, 0 },
 	.do_emm         = videoguard2_do_emm,
+	.do_rawcmd      = videoguard2_do_rawcmd,
 	.do_ecm         = videoguard2_do_ecm,
 	.card_info      = videoguard2_card_info,
 	.card_init      = videoguard2_card_init,

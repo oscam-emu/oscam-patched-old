@@ -63,6 +63,11 @@
 # define WITH_LIBCRYPTO 1
 #endif
 
+/* For deprecated but still needed cryptography functions:
+ * 10002 corresponds to OpenSSL version 1.0.2*/
+
+#define OPENSSL_API_COMPAT 10002
+
 #if defined(__CYGWIN__) || defined(__arm__) || defined(__SH4__) || defined(__MIPS__) || defined(__MIPSEL__) || defined(__powerpc__)
 # define CS_LOGFILE "/dev/tty"
 #endif
@@ -405,6 +410,8 @@
 #define MAX_ECM_SIZE			596
 #define MAX_EMM_SIZE			512
 #endif
+
+#define MAX_CMD_SIZE 0xff + 5  // maximum value from length byte + command header
 
 #ifdef WITH_EMU
 #define CS_EMMCACHESIZE			1024	// nr of EMMs that EMU reader will cache
@@ -898,6 +905,7 @@ typedef struct s_entitlement						// contains entitlement Info
 struct s_client;
 struct ecm_request_t;
 struct emm_packet_t;
+struct cmd_packet_t;
 struct s_ecm_answer;
 struct demux_s;
 
@@ -1004,6 +1012,7 @@ struct s_cardsystem
 	int32_t			(*do_ecm)(struct s_reader *, const struct ecm_request_t *, struct s_ecm_answer *);
 	int32_t			(*do_emm_reassembly)(struct s_reader *, struct s_client *, struct emm_packet_t *); // Returns 1/true if the EMM is ready to be written in the card
 	int32_t			(*do_emm)(struct s_reader *, struct emm_packet_t *);
+	int32_t			(*do_rawcmd)(struct s_reader *, struct cmd_packet_t *);
 	void			(*post_process)(struct s_reader *);
 	int32_t			(*get_emm_type)(struct emm_packet_t *, struct s_reader *);
 	int32_t			(*get_emm_filter)(struct s_reader *, struct s_csystem_emm_filter **, uint32_t *);
@@ -1531,6 +1540,13 @@ typedef struct emm_packet_t
 	uint8_t			skip_filter_check;
 	struct s_client *client;
 } EMM_PACKET;
+
+typedef struct cmd_packet_t
+{
+	uint8_t			cmd[MAX_CMD_SIZE];
+	int16_t			cmdlen;
+	struct s_client *client;
+} CMD_PACKET;
 
 struct s_reader										// contains device info, reader info and card info
 {
