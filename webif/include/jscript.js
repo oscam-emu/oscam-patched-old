@@ -835,7 +835,7 @@ function updateReaderpage(data) {
 			$(uid + " td.readercol9").text(item.stats.emmwritten);
 		}
 		if (!is_nopoll('readercol20')) {
-			$(uid + " td.readercol20").html( item.status + "<BR>" + item.ip);
+			$(uid + " td.readercol20").html(item.status + "<BR>" + item.ip);
 		}
 		if (!is_nopoll('readercol10')) {
 			$(uid + " td.readercol10").text(item.stats.emmskipped);
@@ -845,6 +845,9 @@ function updateReaderpage(data) {
 		}
 		if (!is_nopoll('readercol12')) {
 			$(uid + " td.readercol12").text(item.stats.lbweight);
+		}
+		if (!is_nopoll('readercol2')) {
+			$(uid + " td.readercol2").text(item.protocol);
 		}
 
 		if (typeof custompoll == 'function') {
