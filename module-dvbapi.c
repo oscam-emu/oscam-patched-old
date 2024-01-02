@@ -7489,6 +7489,25 @@ void delayer(ECM_REQUEST *er, uint32_t delay)
 	}
 }
 
+#ifdef WITH_EXTENDED_CW
+bool caid_is_csa_alt(uint16_t caid)
+{
+	return caid == 0x09c4 || caid == 0x098c || caid==0x098d;
+}
+
+bool select_csa_alt(ECM_REQUEST *er)
+{
+	if(caid_is_csa_alt(er->caid))
+	{
+		if((er->ecm[2] - er->ecm[4]) == 4)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+#endif
+
 void dvbapi_send_dcw(struct s_client *client, ECM_REQUEST *er)
 {
 	int32_t i, j, k, handled = 0;
@@ -7906,6 +7925,14 @@ void dvbapi_send_dcw(struct s_client *client, ECM_REQUEST *er)
 					if(er->cw_ex.algo == CW_ALGO_AES128)
 					{
 						dvbapi_write_cw(i, j, 0, er->cw_ex.session_word, 16, er->cw_ex.data, 16, er->cw_ex.algo, er->cw_ex.algo_mode, er->msgid);
+					}
+					else if(er->cw_ex.algo == CW_ALGO_CSA)
+					{
+						if(select_csa_alt(er))
+						{
+							er->cw_ex.algo = CW_ALGO_CSA_ALT;
+						}
+						dvbapi_write_cw(i, j, 0, er->cw, 8, NULL, 0, er->cw_ex.algo, er->cw_ex.algo_mode, er->msgid);
 					}
 					else
 					{
