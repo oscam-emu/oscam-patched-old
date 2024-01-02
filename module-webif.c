@@ -2025,6 +2025,10 @@ static char *send_oscam_reader(struct templatevars *vars, struct uriparams *para
 				tpl_addVar(vars, TPLADD, "LASTGSMS", rdr->last_gsms);
 			}
 #endif
+			if(apicall)
+			{
+				tpl_printf(vars, TPLADD, "PICONENABLED", "%d", cfg.http_showpicons?1:0);
+			}
 			tpl_addVar(vars, TPLADD, "READERNAMEENC", urlencode(vars, rdr->label));
 			if(!existing_insert)
 			{
@@ -2048,6 +2052,15 @@ static char *send_oscam_reader(struct templatevars *vars, struct uriparams *para
 				{
 					tpl_addVar(vars, TPLADD, "CLIENTPROTOSORT", (const char*)new_proto);
 					tpl_addVar(vars, TPLADD, "CLIENTPROTO", (const char*)new_proto);
+					if(cfg.http_showpicons)
+					{
+						char picon_name[32];
+						snprintf(picon_name, sizeof(picon_name) / sizeof(char) - 1, "%s", new_proto);
+						if(picon_exists(picon_name))
+						{
+							tpl_printf(vars, TPLADDONCE, "PROTOICON", (const char*)new_proto);
+						}
+					}
 
 					if(rdr->cacheex.feature_bitfield & 32)
 						tpl_addVar(vars, TPLADD, "CLIENTPROTOTITLE", rdr->cacheex.aio_version);
@@ -2058,10 +2071,28 @@ static char *send_oscam_reader(struct templatevars *vars, struct uriparams *para
 				{
 					tpl_addVar(vars, TPLADD, "CLIENTPROTOSORT", proto);
 					tpl_addVar(vars, TPLADD, "CLIENTPROTO", proto);
+					if(cfg.http_showpicons)
+					{
+						char picon_name[32];
+						snprintf(picon_name, sizeof(picon_name) / sizeof(char) - 1, "%s", proto);
+						if(picon_exists(picon_name))
+						{
+							tpl_printf(vars, TPLADDONCE, "PROTOICON", "%s",(char *)proto);
+						}
+					}
 				}
 #else
 				tpl_addVar(vars, TPLADD, "CLIENTPROTO", reader_get_type_desc(rdr, 0));
 				tpl_addVar(vars, TPLADD, "CLIENTPROTOSORT", reader_get_type_desc(rdr, 0));
+				if(cfg.http_showpicons)
+				{
+					char picon_name[32];
+					snprintf(picon_name, sizeof(picon_name) / sizeof(char) - 1, "%s", reader_get_type_desc(rdr, 0));
+					if(picon_exists(picon_name))
+					{
+						tpl_printf(vars, TPLADDONCE, "PROTOICON", "%s", reader_get_type_desc(rdr, 0));
+					}
+				}
 #endif
 				switch(rdr->card_status)
 				{

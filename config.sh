@@ -12,6 +12,7 @@ CONFIG_WEBIF_JQUERY=y
 # CONFIG_TOUCH=n
 # CONFIG_WITH_SSL=n
 CONFIG_HAVE_DVBAPI=y
+# CONFIG_WITH_EXTENDED_CW=n
 # CONFIG_WITH_NEUTRINO=n
 CONFIG_READ_SDT_CHARSETS=y
 CONFIG_IRDETO_GUESSING=y
@@ -460,6 +461,7 @@ menu_addons() {
 		TOUCH				"Touch Web Interface"					$(check_test "TOUCH") \
 		WITH_SSL			"OpenSSL support"						$(check_test "WITH_SSL") \
 		HAVE_DVBAPI			"DVB API"								$(check_test "HAVE_DVBAPI") \
+		WITH_EXTENDED_CW	"DVB API EXTENDED CW API"				$(check_test "WITH_EXTENDED_CW") \
 		WITH_NEUTRINO		"Neutrino support"						$(check_test "WITH_NEUTRINO") \
 		READ_SDT_CHARSETS	"DVB API read-sdt charsets"				$(check_test "READ_SDT_CHARSETS") \
 		IRDETO_GUESSING		"Irdeto guessing"						$(check_test "IRDETO_GUESSING") \
@@ -468,7 +470,7 @@ menu_addons() {
 		MODULE_MONITOR		"Monitor"								$(check_test "MODULE_MONITOR") \
 		WITH_LB				"Loadbalancing"							$(check_test "WITH_LB") \
 		CS_CACHEEX			"Cache exchange"						$(check_test "CS_CACHEEX") \
-		CS_CACHEEX_AIO			"Cache exchange aio (depend on Cache exchange)"			$(check_test "CS_CACHEEX_AIO") \
+		CS_CACHEEX_AIO		"Cache exchange aio (depend on Cache exchange)"			$(check_test "CS_CACHEEX_AIO") \
 		CW_CYCLE_CHECK		"CW Cycle Check"						$(check_test "CW_CYCLE_CHECK") \
 		LCDSUPPORT			"LCD support"							$(check_test "LCDSUPPORT") \
 		LEDSUPPORT			"LED support"							$(check_test "LEDSUPPORT") \

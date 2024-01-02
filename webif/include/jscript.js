@@ -847,7 +847,15 @@ function updateReaderpage(data) {
 			$(uid + " td.readercol12").text(item.stats.lbweight);
 		}
 		if (!is_nopoll('readercol2')) {
-			$(uid + " td.readercol2").text(item.protocol);
+			if (data.oscam.piconenabled == "1" && item.protoicon) {
+				$(uid + " td.readercol2").html('<img class="protoicon" title="Protocol ' + item.protocol + ' ' +
+					 item.prototitle + '" alt="IC_' + item.protoicon + '" src="image?i=IC_' + item.protoicon + '">');
+			} else {
+				$(uid + " td.readercol2").text(item.protocol);
+			}
+
+			$(uid + " td.readercol2")
+				.data('sort-value', item.protosort);
 		}
 
 		if (typeof custompoll == 'function') {
@@ -1249,20 +1257,20 @@ function updateStatuspage(data) {
 					'" href="status.html?hide=' +
 					item.thid.substring(3, item.thid.length) +
 					'"><img class="icon" alt="Hide"' +
-					'" src="image?i=ICHID"></img>');
+					'" src="image?i=ICHID">');
 			}
 
 			if (!is_nopoll('statuscol1')) {
 				$(uid + " > td.statuscol1").append('<a title="' + kill2 + ' ' +
 					name1 + ': ' + name3 + (item.desc ? '\n' + item.desc.replace('&#13;', '') : '') +
 					kill1 + '"><img class="icon" alt="' + kill2 + 
-					'" src="image?i=' + kill3 + '"></img>');
+					'" src="image?i=' + kill3 + '">');
 			}
 
 			if (!is_nopoll('statuscol4')) {
 				if (data.oscam.piconenabled == "1" && !item.upicmissing) {
 					$(uid + " > td.statuscol4").append('<a href="' + edit1 + name2 + '"><img class="statususericon" title="Edit ' +
-						name1 + ': ' + name3 + (item.desc ? '\n' + item.desc.replace('&#13;', '') : '') + '" src="image?i=IC_' + name2 + '"></img></a>');
+						name1 + ': ' + name3 + (item.desc ? '\n' + item.desc.replace('&#13;', '') : '') + '" src="image?i=IC_' + name2 + '"></a>');
 				} else {
 					$(uid + " > td.statuscol4").append('<a href="' + edit1 + name2 + '" title="Edit ' + name1 + ': ' +
 						name3 + (item.desc ? '\n' + item.desc.replace('&#13;', '') : '') + '\n' + item.upicmissing + '">' + name3 + '</a>');
@@ -1276,7 +1284,7 @@ function updateStatuspage(data) {
 			if (!is_nopoll('statuscol9')) {
 				if (data.oscam.piconenabled == "1" && item.protoicon) {
 					$(uid + " > td.statuscol9").append('<img class="protoicon" title="Protocol ' + item.protocol + ' ' + 
-						item.protocolext + '" alt="IC_' + item.protoicon + '" src="image?i=IC_' + item.protoicon + '"></img>');
+						item.protocolext + '" alt="IC_' + item.protoicon + '" src="image?i=IC_' + item.protoicon + '">');
 				} else {
 					$(uid + " > td.statuscol9").attr('title', item.protocolext).text(item.protocol);
 				}
@@ -1290,7 +1298,7 @@ function updateStatuspage(data) {
 			if (!is_nopoll('statuscol9')) {
 				if (data.oscam.piconenabled == "1" && item.protoicon) {
 					$(uid + " > td.statuscol9").html('<img class="protoicon" title="Protocol ' + item.protocol + ' ' + 
-						item.protocolext + '" alt="IC_' + item.protoicon + '" src="image?i=IC_' + item.protoicon + '"></img>');
+						item.protocolext + '" alt="IC_' + item.protoicon + '" src="image?i=IC_' + item.protoicon + '">');
 				} else {
 					$(uid + " > td.statuscol9").attr('title', item.protocolext).text(item.protocol);
 				}
@@ -1300,7 +1308,7 @@ function updateStatuspage(data) {
 				if (data.oscam.piconenabled == "1" && !item.upicmissing) {
 					$(uid + " > td.statuscol4").html('<a href="user_edit.html?user=' + item.name_enc +
 						'"><img class="statususericon" title="Edit User: ' + decodeURIComponent(item.name_enc) + item.desc +
-						'" src="image?i=IC_' + item.name_enc + '"></img></a>');
+						'" src="image?i=IC_' + item.name_enc + '"></a>');
 				} else {
 					$(uid + " > td.statuscol4").html('<a href="user_edit.html?user=' + item.name_enc + '" title="Edit User: ' +
 						decodeURIComponent(item.name_enc) + item.desc + item.upicmissing + '">' + decodeURIComponent(item.name_enc) + '</a>');
