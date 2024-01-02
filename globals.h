@@ -628,6 +628,7 @@ enum {E2_GLOBAL = 0, E2_GROUP, E2_CAID, E2_IDENT, E2_CLASS, E2_CHID, E2_QUEUE, E
 #define CW_ALGO_CSA				0
 #define CW_ALGO_DES				1
 #define CW_ALGO_AES128			2
+#define CW_ALGO_CSA_ALT			3
 #define CW_ALGO_MODE_ECB		0
 #define CW_ALGO_MODE_CBC		1
 
