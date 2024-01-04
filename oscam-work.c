@@ -129,7 +129,8 @@ void *work_thread(void *ptr)
 		{ return NULL; }
 
 	cl->work_mbuf = mbuf; // Track locally allocated data, because some callback may call cs_exit/cs_disconect_client/pthread_exit and then mbuf would be leaked
-	int32_t n = 0, rc = 0, i, idx, s;
+	int32_t n = 0, rc = 0, i, idx, s, dblvl;
+	(void)dblvl;
 	uint8_t dcw[16];
 	int8_t restart_reader = 0;
 
@@ -306,7 +307,6 @@ void *work_thread(void *ptr)
 
 				case ACTION_READER_SENDCMD:
 #ifdef WITH_CARDREADER
-					int32_t dblvl;
 					dblvl = cs_dblevel;
 					cs_dblevel = dblvl | D_READER;
 					rc = cardreader_do_rawcmd(reader, data->ptr);

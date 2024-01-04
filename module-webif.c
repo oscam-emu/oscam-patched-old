@@ -2058,7 +2058,7 @@ static char *send_oscam_reader(struct templatevars *vars, struct uriparams *para
 						snprintf(picon_name, sizeof(picon_name) / sizeof(char) - 1, "%s", new_proto);
 						if(picon_exists(picon_name))
 						{
-							tpl_printf(vars, TPLADDONCE, "PROTOICON", (const char*)new_proto);
+							tpl_printf(vars, TPLADDONCE, "PROTOICON", "%s",(char*)new_proto);
 						}
 					}
 
