@@ -2150,6 +2150,15 @@ static char *send_oscam_reader(struct templatevars *vars, struct uriparams *para
 
 					tpl_addVar(vars, TPLADD, "CLIENTPROTO", reader_get_type_desc(rdr, 0));
 					tpl_addVar(vars, TPLADD, "CLIENTPROTOSORT", reader_get_type_desc(rdr, 0));
+					if(cfg.http_showpicons)
+					{
+						char picon_name[32];
+						snprintf(picon_name, sizeof(picon_name) / sizeof(char) - 1, "%s", reader_get_type_desc(rdr, 0));
+						if(picon_exists(picon_name))
+						{
+							tpl_printf(vars, TPLADDONCE, "PROTOICON", "%s", reader_get_type_desc(rdr, 0));
+						}
+					}
 				}
 			}
 
