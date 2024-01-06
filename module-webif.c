@@ -8474,7 +8474,7 @@ static char *send_oscam_api(struct templatevars * vars, FILE * f, struct uripara
 				cmd_pack->client = webif_client;
 				cmd_pack->cmdlen = strlen(getParam(params, "cmd")) / 2;
 
-				if(cmd_pack->cmdlen > 0 && abs(cmd_pack->cmdlen) <= sizeof(cmd_pack->cmd))
+				if(cmd_pack->cmdlen > 0 && (unsigned long)abs(cmd_pack->cmdlen) <= sizeof(cmd_pack->cmd))
 				{
 					if(key_atob_l(getParam(params, "cmd"), cmd_pack->cmd, cmd_pack->cmdlen*2))
 					{
