@@ -177,19 +177,28 @@ static int32_t dre_command(struct s_reader *reader, const uint8_t *cmd, int32_t 
 	return OK;
 }
 
+#define dre_script_nb(cmd, len, cmd_type, crypted, keynum) \
+		dre_command(reader, cmd, len, cta_res, &cta_lr, crypted, keynum, crypted, cmd_type); \
+
 #define dre_script(cmd, len, cmd_type, crypted, keynum) \
 	{ \
-		dre_command(reader, cmd, len, cta_res, &cta_lr, crypted, keynum, crypted, cmd_type); \
+		dre_script_nb(cmd, len, cmd_type, crypted, keynum) \
 	}
+
+#define dre_cmd_nb(cmd) \
+		dre_command(reader, cmd, sizeof(cmd), cta_res, &cta_lr, 0, 0, 0, 0); \
 
 #define dre_cmd(cmd) \
 	{ \
-		dre_command(reader, cmd, sizeof(cmd), cta_res, &cta_lr, 0, 0, 0, 0); \
+		dre_cmd_nb(cmd) \
 	}
+
+#define dre_cmd_c_nb(cmd,crypted,keynum) \
+		dre_command(reader, cmd, sizeof(cmd),cta_res,&cta_lr, crypted, keynum, 1, 0); \
 
 #define dre_cmd_c(cmd,crypted,keynum) \
 	{ \
-		dre_command(reader, cmd, sizeof(cmd),cta_res,&cta_lr, crypted, keynum, 1, 0); \
+		dre_cmd_c_nb(cmd,crypted,keynum) \
 	}
 
 static int32_t dre_set_provider_info(struct s_reader *reader)
@@ -236,7 +245,7 @@ static int32_t dre_set_provider_info(struct s_reader *reader)
 
 chk_subscr:
 
-	if((dre_script(subscr, subscr_cmd_len, 0, 0, 0))) // ask subscription packages, returns error on 0x11 card
+	if(({dre_script_nb(subscr, subscr_cmd_len, 0, 0, 0)})) // ask subscription packages, returns error on 0x11 card
 	{
 		uint8_t pbm[subscr_len];
 		char tmp_dbg[subscr_len*2+1];
@@ -411,7 +420,7 @@ static int32_t dre_card_init(struct s_reader *reader, ATR *newatr)
 	switch(atr[6])
 	{
 		case 0:
-			if(!(dre_cmd(cmd56))) { return ERROR; }
+			if(!({dre_cmd_nb(cmd56)})) { return ERROR; }
 			if((cta_res[cta_lr - 2] != 0x90) || (cta_res[cta_lr - 1] != 0x00)) { return ERROR; }
 
 			switch(cta_res[4])
@@ -483,11 +492,11 @@ static int32_t dre_card_init(struct s_reader *reader, ATR *newatr)
 	cmd54[1] = csystem_data->provider;
 	uint8_t geocode = 0;
 
-	if((dre_cmd(cmd54))) // error would not be fatal, like on 0x11 cards
+	if(({dre_cmd_nb(cmd54)})) // error would not be fatal, like on 0x11 cards
 		{ geocode = cta_res[3]; }
 
 	providers[1] = csystem_data->provider;
-	if(!(dre_cmd(providers)))
+	if(!({dre_cmd_nb(providers)}))
 		{ return ERROR; } // fatal error
 
 	if((cta_res[cta_lr - 2] != 0x90) || (cta_res[cta_lr - 1] != 0x00))
@@ -639,7 +648,7 @@ static int32_t dre_card_init(struct s_reader *reader, ATR *newatr)
 
 				/*ret =*/
 
-				rdr_log(reader, "Script %s", (dre_script(usercmd, cmd_len, ignoreProvid, crypted, cryptkey)) ? "done" : "error");
+				rdr_log(reader, "Script %s", ({dre_script_nb(usercmd, cmd_len, ignoreProvid, crypted, cryptkey)}) ? "done" : "error");
 			}
 			while(!feof(pFile));
 		}
@@ -708,7 +717,7 @@ static int32_t dre_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, struct
 		rdr_log_dbg(reader, D_READER, "unused ECM info front:%s", cs_hexdump(0, er->ecm, 8, tmp_dbg, sizeof(tmp_dbg)));
 		rdr_log_dbg(reader, D_READER, "unused ECM info back:%s", cs_hexdump(0, er->ecm + 24, er->ecm[2] + 2 - 24, tmp_dbg, sizeof(tmp_dbg)));
 
-		if((dre_cmd(ecmcmd41))) // ecm request
+		if(({dre_cmd_nb(ecmcmd41)})) // ecm request
 		{
 			if((cta_res[cta_lr - 2] != 0x90) || (cta_res[cta_lr - 1] != 0x00))
 				{ return ERROR; } // exit if response is not 90 00
@@ -734,7 +743,7 @@ static int32_t dre_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, struct
 			rdr_log_dbg(reader, D_READER, "unused ECM info back:%s", cs_hexdump(0, er->ecm + 37, 4, tmp_dbg, sizeof(tmp_dbg)));
 			ecmcmd51[33] = csystem_data->provider; // no part of sig
 
-			if((dre_cmd(ecmcmd51))) // ecm request
+			if(({dre_cmd_nb(ecmcmd51)})) // ecm request
 			{
 				if((cta_res[cta_lr - 2] != 0x90) || (cta_res[cta_lr - 1] != 0x00))
 					{ return ERROR; } // exit if response is not 90 00
@@ -863,7 +872,7 @@ static int32_t dre_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 			memcpy(&emmcmd58[1], &ep->emm[40], 24);
 			emmcmd58[25] = csystem_data->provider;
 
-			if((dre_cmd(emmcmd58)))
+			if(({dre_cmd_nb(emmcmd58)}))
 				if((cta_res[cta_lr - 2] != 0x90) || (cta_res[cta_lr - 1] != 0x00))
 					{ return ERROR; }
 		}
@@ -882,7 +891,7 @@ static int32_t dre_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 
 				emmcmd52[0x39] = csystem_data->provider;
 
-				if((dre_cmd(emmcmd52)))
+				if(({dre_cmd_nb(emmcmd52)}))
 					if((cta_res[cta_lr - 2] != 0x90) || (cta_res[cta_lr - 1] != 0x00))
 						{ return ERROR; } // exit if response is not 90 00
 			}
@@ -918,7 +927,7 @@ static int32_t dre_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 
 				emmcmd52[0x39] = csystem_data->provider;
 
-				if((dre_cmd(emmcmd52)))
+				if(({dre_cmd_nb(emmcmd52)}))
 					if((cta_res[cta_lr - 2] != 0x90) || (cta_res[cta_lr - 1] != 0x00))
 						{ return ERROR; } // exit if response is not 90 00
 			}
@@ -1031,7 +1040,7 @@ static int32_t dre_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 
 					memcpy(&emmcmd91[9], &ep->emm[keypos], 8);
 
-					if((dre_cmd(emmcmd91)))
+					if(({dre_cmd_nb(emmcmd91)}))
 						if((cta_res[cta_lr - 2] != 0x90) || (cta_res[cta_lr - 1] != 0x00) || (cta_res[2] != 0xA2))
 							return ERROR; // exit if response is not 90 00
 
@@ -1188,7 +1197,7 @@ static int32_t dre_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 					emmcmd42[49] = ep->emm[i * 49 + 41]; // keynr
 					emmcmd42[50] = 0x58 + ep->emm[40]; // package nr
 					emmcmd42[51] = csystem_data->provider;
-					if((dre_cmd(emmcmd42)))
+					if(({dre_cmd_nb(emmcmd42)}))
 					{
 						if((cta_res[cta_lr - 2] != 0x90) || (cta_res[cta_lr - 1] != 0x00))
 							{ return ERROR; } // exit if response is not 90 00
@@ -1208,7 +1217,7 @@ static int32_t dre_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 				59 05 A2 02 05 01 5B
 				90 00 */
 
-				if((dre_cmd(emmcmd42))) // first emm request
+				if(({dre_cmd_nb(emmcmd42)})) // first emm request
 				{
 					if((cta_res[cta_lr - 2] != 0x90) || (cta_res[cta_lr - 1] != 0x00))
 						{ return ERROR; } // exit if response is not 90 00
@@ -1221,7 +1230,7 @@ static int32_t dre_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 					emmcmd42[50] = 0x58;
 					emmcmd42[49] = ep->emm[54]; // keynr
 
-					if((dre_cmd(emmcmd42))) // second emm request
+					if(({dre_cmd_nb(emmcmd42)})) // second emm request
 					{
 						if((cta_res[cta_lr - 2] != 0x90) || (cta_res[cta_lr - 1] != 0x00))
 							{ return ERROR; } // exit if response is not 90 00

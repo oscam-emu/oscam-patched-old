@@ -236,14 +236,20 @@ static int32_t drecas_MSP_command(struct s_reader *reader, const uint8_t *cmd, i
 	return OK;
 }
 
+#define drecas_MSP_script_nb(cmd, len) \
+		drecas_MSP_command(reader, cmd, len, cta_res, &cta_lr); \
+
 #define drecas_MSP_script(cmd, len) \
 	{ \
-		drecas_MSP_command(reader, cmd, len, cta_res, &cta_lr); \
+		drecas_MSP_script_nb(cmd, len) \
 	}
+
+#define drecas_MSP_cmd_nb(cmd) \
+		drecas_MSP_command(reader, cmd, sizeof(cmd), cta_res, &cta_lr); \
 
 #define drecas_MSP_cmd(cmd) \
 	{ \
-		drecas_MSP_command(reader, cmd, sizeof(cmd), cta_res, &cta_lr); \
+		drecas_MSP_cmd_nb(cmd) \
 	}
 
 static int32_t drecas_STM_command(struct s_reader *reader, const uint8_t *cmd, int32_t cmdlen, uint8_t *cta_res, uint16_t *p_cta_lr)
@@ -342,14 +348,20 @@ static int32_t drecas_STM_command(struct s_reader *reader, const uint8_t *cmd, i
 	return OK;
 }
 
+#define drecas_STM_script_nb(cmd, len) \
+		drecas_STM_command(reader, cmd, len, cta_res, &cta_lr); \
+
 #define drecas_STM_script(cmd, len) \
 	{ \
-		drecas_STM_command(reader, cmd, len, cta_res, &cta_lr); \
+		drecas_STM_script_nb(cmd, len) \
 	}
+
+#define drecas_STM_cmd_nb(cmd) \
+		drecas_STM_command(reader, cmd, sizeof(cmd), cta_res, &cta_lr); \
 
 #define drecas_STM_cmd(cmd) \
 	{ \
-		drecas_STM_command(reader, cmd, sizeof(cmd), cta_res, &cta_lr); \
+		drecas_STM_cmd_nb(cmd) \
 	}
 
 static int32_t drecas_set_provider_info(struct s_reader *reader)
@@ -363,7 +375,7 @@ static int32_t drecas_set_provider_info(struct s_reader *reader)
 
 	cs_clear_entitlement(reader);
 
-	if((drecas_MSP_cmd(subscr))) // ask subscription packages, returns error on 0x11 card
+	if(({drecas_MSP_cmd_nb(subscr)})) // ask subscription packages, returns error on 0x11 card
 	{
 		uint8_t pbm[32];
 		char tmp_dbg[65];
@@ -451,12 +463,12 @@ static int32_t drecas_card_init(struct s_reader *reader, ATR *newatr)
 	cmd54[1] = csystem_data->provider;
 	uint8_t geocode = 0;
 
-	if((drecas_MSP_cmd(cmd54))) // error would not be fatal, like on 0x11 cards
+	if(({drecas_MSP_cmd_nb(cmd54)})) // error would not be fatal, like on 0x11 cards
 		{ geocode = cta_res[7]; }
 
 	providers[1] = csystem_data->provider;
 
-	if(!(drecas_MSP_cmd(providers)))
+	if(!({drecas_MSP_cmd_nb(providers)}))
 		{ return ERROR; } // fatal error
 
 	if((cta_res[2] != 0x09) || (cta_res[3] != 0xC0))
@@ -557,11 +569,11 @@ static int32_t drecas_card_init(struct s_reader *reader, ATR *newatr)
 
 				if(tempbuf[0] != '7' && tempbuf[1] != '4')
 				{
-					rdr_log(reader, "Script %s", (drecas_MSP_script(usercmd, cmd_len)) ? "done" : "error");
+					rdr_log(reader, "Script %s", ({drecas_MSP_script_nb(usercmd, cmd_len)}) ? "done" : "error");
 				}
 				else
 				{
-					rdr_log(reader, "Script %s", (drecas_STM_script(usercmd, cmd_len)) ? "done" : "error");
+					rdr_log(reader, "Script %s", ({drecas_STM_script_nb(usercmd, cmd_len)}) ? "done" : "error");
 				}
 			}
 			while(!feof(pFile));
@@ -637,7 +649,7 @@ static int32_t drecas_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, str
 
 			ecmcmd51[33] = csystem_data->provider; // no part of sig
 
-			if((drecas_MSP_cmd(ecmcmd51))) // ecm request
+			if(({drecas_MSP_cmd_nb(ecmcmd51)})) // ecm request
 			{
 				if((cta_res[2] != 0x09) || (cta_res[3] != 0xC0))
 					{ return ERROR; } // exit if response is not 90 00
@@ -665,7 +677,7 @@ static int32_t drecas_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, str
 							return ERROR;
 						}
 
-						if(!(drecas_STM_cmd(stm_keys_t.stmcmd34[er->ecm[5] + (er->ecm[6] == 0x3B ? 0 : 32)])))
+						if(!({drecas_STM_cmd_nb(stm_keys_t.stmcmd34[er->ecm[5] + (er->ecm[6] == 0x3B ? 0 : 32)])}))
 						{
 							rdr_log_dbg(reader, D_READER, "Error STM set key: %s",cs_hexdump(0, cta_res, cta_lr, tmp_dbg, sizeof(tmp_dbg)));
 							return ERROR;
@@ -681,7 +693,7 @@ static int32_t drecas_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, str
 					stm_curkey[0] = er->ecm[5];
 					stm_curkey[1] = er->ecm[6];
 
-					if(!(drecas_STM_cmd(ecmcmd33)))
+					if(!({drecas_STM_cmd_nb(ecmcmd33)}))
 						{ return ERROR; }
 
 					if(cta_res[1] != 0x17 || cta_res[6] != 0xD2)
@@ -745,7 +757,7 @@ static int32_t drecas_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 			memcpy(&emmcmd58[1], &ep->emm[40], 24);
 			emmcmd58[25] = csystem_data->provider;
 
-			if((drecas_MSP_cmd(emmcmd58)))
+			if(({drecas_MSP_cmd_nb(emmcmd58)}))
 				if((cta_res[2] != 0x09) || (cta_res[3] != 0xC0))
 					{ return ERROR; }
 		}
@@ -765,7 +777,7 @@ static int32_t drecas_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 
 				emmcmd52[0x39] = csystem_data->provider;
 
-				if((drecas_MSP_cmd(emmcmd52)))
+				if(({drecas_MSP_cmd_nb(emmcmd52)}))
 					if((cta_res[2] != 0x09) || (cta_res[3] != 0xC0))
 						{ return ERROR; } // exit if response is not 90 00
 			}
@@ -802,7 +814,7 @@ static int32_t drecas_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 
 				emmcmd52[0x39] = csystem_data->provider;
 
-				if((drecas_MSP_cmd(emmcmd52)))
+				if(({drecas_MSP_cmd_nb(emmcmd52)}))
 					if((cta_res[2] != 0x09) || (cta_res[3] != 0xC0))
 						{ return ERROR; } // exit if response is not 90 00
 			}
