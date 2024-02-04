@@ -894,17 +894,6 @@ static int32_t videoguard2_card_init(struct s_reader *reader, ATR *newatr)
 		return ERROR;
 	}
 
-	int d37423_ok = 0;
-	static const uint8_t ins7403[5] = { 0xD0, 0x74, 0x03, 0x00, 0x00 }; // taken from v13 boot log
-	if(do_cmd(reader, ins7403, NULL, NULL, cta_res) < 0)
-	{
-		rdr_log(reader, "classD0 ins7403: failed");
-	}
-	else
-	{
-		d37423_ok = (cta_res[2] >> 5) & 1;
-	}
-
 	if(reader->ins7E11[0x01]) // the position of the ins7E is taken from v13 log
 	{
 		uint8_t ins742b[5] = { 0xD0, 0x74, 0x2b, 0x00, 0x00 };
@@ -1054,6 +1043,17 @@ static int32_t videoguard2_card_init(struct s_reader *reader, ATR *newatr)
 		return ERROR;
 	}
 
+	int d37423_ok = 0;
+	static const uint8_t ins7403[5] = { 0xD1, 0x74, 0x03, 0x00, 0x00 }; // taken from v13 boot log
+	if(do_cmd(reader, ins7403, NULL, NULL, cta_res) < 0)
+	{
+		rdr_log(reader, "classD1 ins7403: failed");
+	}
+	else
+	{
+		d37423_ok = (cta_res[2] >> 5) & 1;
+	}
+
 	// new ins74 present at boot
 	if(d37423_ok) // from ins7403 answer
 	{
@@ -1063,19 +1063,19 @@ static int32_t videoguard2_card_init(struct s_reader *reader, ATR *newatr)
 			rdr_log(reader, "classD1 ins7423: failed");
 		}
 	}
-/*
-	static const uint8_t ins742A[5] = { 0xD1, 0x74, 0x2A, 0x00, 0x00 };
+
+	static const uint8_t ins742A[5] = { 0xD0, 0x74, 0x2A, 0x00, 0x00 };
 	if(do_cmd(reader, ins742A, NULL, NULL, cta_res) < 0)
 	{
-		rdr_log(reader, "classD1 ins742A: failed");
+		rdr_log(reader, "classD0 ins742A: failed");
 	}
 
-	static const uint8_t ins741C[5] = { 0xD1, 0x74, 0x1C, 0x00, 0x00 };
-	if(do_cmd(reader, ins741C, NULL, NULL, cta_res) < 0)
+	static const uint8_t ins741B[5] = { 0xD1, 0x74, 0x1B, 0x00, 0x00 };
+	if(do_cmd(reader, ins741B, NULL, NULL, cta_res) < 0)
 	{
-		rdr_log(reader, "classD1 ins741C: failed");
+		rdr_log(reader, "classD1 ins741B: failed");
 	}
-*/
+
 	static const uint8_t ins4Ca[5] = { 0xD1, 0x4C, 0x00, 0x00, 0x00 };
 
 	payload4C[4] = 0x83;
@@ -1111,18 +1111,19 @@ static int32_t videoguard2_card_init(struct s_reader *reader, ATR *newatr)
 	}
 
 	// get PIN settings
-	static const uint8_t ins7411[5] = { 0xD1, 0x74, 0x11, 0x00, 0x00 };
+	static const uint8_t ins7411[5] = { 0xD3, 0x74, 0x11, 0x00, 0x00 };
 	uint8_t payload2e4[4];
-	if(do_cmd(reader, ins7411, NULL, NULL, cta_res) < 0)
+	uint8_t rbuff[264];
+	if(do_cmd(reader, ins7411, NULL, rbuff, cta_res) < 0)
 	{
-		rdr_log(reader, "classD1 ins7411: unable to get PIN");
+		rdr_log(reader, "classD3 ins7411: unable to get PIN");
 		return ERROR;
 	}
 	else
 	{
 		memset(payload2e4, 0, 4);
-		memcpy(payload2e4, cta_res + 2, 4);
-		reader->VgPin = (cta_res[4] << 8) + cta_res[5];
+		memcpy(payload2e4, rbuff + 7, 4);
+		reader->VgPin = (rbuff[9] << 8) + rbuff[10];
 		rdr_log(reader, "Pincode read: %04hu", reader->VgPin);
 	}
 
@@ -1284,7 +1285,7 @@ static int32_t videoguard2_do_ecm(struct s_reader *reader, const ECM_REQUEST *er
 						memcpy(buff_55, t_body, 1 );
 						break;
 
-					case 0x56: // tag data for aes 
+					case 0x56: // tag data for aes
 						memcpy(buff_56, t_body, 8);
 						break;
 
@@ -1492,7 +1493,7 @@ static int32_t videoguard2_do_ecm(struct s_reader *reader, const ECM_REQUEST *er
 						}
 					}
 				}
-				else //unknown pairing mode 
+				else //unknown pairing mode
 				{
 					rdr_log_dbg(reader, D_READER, "classD3 ins54: CW is crypted, unknown pairing mode 0x%02X", buff_55[0]);
 					if(er->ecm[0] & 1){ //log crypted CW
