@@ -13,12 +13,9 @@
 #include "oscam-string.h"
 #include "oscam-time.h"
 
-extern uint16_t len4caid[256];
-
 #define cs_srid      "oscam.srvid"
 #define cs_ratelimit "oscam.ratelimit"
 #define cs_trid      "oscam.tiers"
-#define cs_l4ca      "oscam.guess"
 #define cs_sidt      "oscam.services"
 #define cs_whitelist "oscam.whitelist"
 #define cs_provid    "oscam.provid"
@@ -1389,46 +1386,6 @@ void global_whitelist_read(void)
 		NULLFREE(old_list);
 		old_list = entry;
 	}
-}
-
-void init_len4caid(void)
-{
-	FILE *fp = open_config_file(cs_l4ca);
-	if(!fp)
-		{ return; }
-
-	int32_t nr;
-	char *value, *token;
-
-	if(!cs_malloc(&token, MAXLINESIZE))
-		{ return; }
-
-	memset(len4caid, 0, sizeof(uint16_t) << 8);
-	for(nr = 0; fgets(token, MAXLINESIZE, fp);)
-	{
-		int32_t i, c;
-		char *ptr;
-		if(!(value = strchr(token, ':')))
-			{ continue; }
-		*value++ = '\0';
-		if((ptr = strchr(value, '#')))
-			{ * ptr = '\0'; }
-		if(cs_strlen(trim(token)) != 2)
-			{ continue; }
-		if(cs_strlen(trim(value)) != 4)
-			{ continue; }
-		if((i = byte_atob(token)) < 0)
-			{ continue; }
-		if((c = word_atob(value)) < 0)
-			{ continue; }
-		len4caid[i] = c;
-		nr++;
-	}
-	NULLFREE(token);
-	fclose(fp);
-	if(nr)
-		{ cs_log("%d lengths for caid guessing loaded", nr); }
-	return;
 }
 
 #ifdef MODULE_SERIAL

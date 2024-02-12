@@ -423,7 +423,6 @@ char *tpl_getUnparsedTpl(const char *name, int8_t removeHeader, const char *subd
 											check_conf(READ_SDT_CHARSETS, ptr2);
 											check_conf(CLOCKFIX, ptr2);
 											check_conf(IPV6SUPPORT, ptr2);
-											check_conf(IRDETO_GUESSING, ptr2);
 											check_conf(LCDSUPPORT, ptr2);
 											check_conf(LEDSUPPORT, ptr2);
 											check_conf(MODULE_CAMD33, ptr2);
