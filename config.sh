@@ -15,7 +15,6 @@ CONFIG_HAVE_DVBAPI=y
 # CONFIG_WITH_EXTENDED_CW=n
 # CONFIG_WITH_NEUTRINO=n
 CONFIG_READ_SDT_CHARSETS=y
-CONFIG_IRDETO_GUESSING=y
 # CONFIG_CS_ANTICASC=n
 CONFIG_WITH_DEBUG=y
 CONFIG_MODULE_MONITOR=y
@@ -464,7 +463,6 @@ menu_addons() {
 		WITH_EXTENDED_CW	"DVB API EXTENDED CW API"				$(check_test "WITH_EXTENDED_CW") \
 		WITH_NEUTRINO		"Neutrino support"						$(check_test "WITH_NEUTRINO") \
 		READ_SDT_CHARSETS	"DVB API read-sdt charsets"				$(check_test "READ_SDT_CHARSETS") \
-		IRDETO_GUESSING		"Irdeto guessing"						$(check_test "IRDETO_GUESSING") \
 		CS_ANTICASC			"Anti cascading"						$(check_test "CS_ANTICASC") \
 		WITH_DEBUG			"Debug messages"						$(check_test "WITH_DEBUG") \
 		MODULE_MONITOR		"Monitor"								$(check_test "MODULE_MONITOR") \

@@ -16,7 +16,6 @@
 #include "module-dvbapi-mca.h"
 #include "module-dvbapi-chancache.h"
 #include "module-gbox-sms.h"
-#include "module-ird-guess.h"
 #include "module-lcd.h"
 #include "module-led.h"
 #include "module-stat.h"
@@ -90,7 +89,6 @@ struct s_client *first_client = NULL; // Pointer to clients list, first client i
 struct s_reader *first_active_reader = NULL; // list of active readers (enable=1 deleted = 0)
 LLIST *configured_readers = NULL; // list of all (configured) readers
 
-uint16_t len4caid[256]; // table for guessing caid (by len)
 char cs_confdir[128];
 uint16_t cs_dblevel = 0; // Debug Level
 int32_t thread_pipe[2] = {0, 0};
@@ -429,7 +427,6 @@ static void write_versionfile(bool use_stdout)
 			write_conf(true, "DVB API with ICAM v9 stream relay support");
 		}
 	}
-	write_conf(IRDETO_GUESSING, "Irdeto guessing");
 	write_conf(CS_ANTICASC, "Anti-cascading support");
 	write_conf(WITH_DEBUG, "Debug mode");
 	write_conf(MODULE_MONITOR, "Monitor");
@@ -1861,9 +1858,6 @@ int32_t main(int32_t argc, char *argv[])
 
 	cacheex_init();
 
-	init_len4caid();
-	init_irdeto_guess_tab();
-
 	write_versionfile(false);
 
 	led_init();
@@ -1997,7 +1991,6 @@ int32_t main(int32_t argc, char *argv[])
 	cfg.account = NULL;
 	init_free_sidtab();
 	free_readerdb();
-	free_irdeto_guess_tab();
 	config_free();
 	ssl_done();
 

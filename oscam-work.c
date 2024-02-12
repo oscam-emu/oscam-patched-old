@@ -333,7 +333,9 @@ void *work_thread(void *ptr)
 					break;
 
 				case ACTION_READER_POLL_STATUS:
+#ifdef READER_VIDEOGUARD
 					cardreader_poll_status(reader);
+#endif
 					break;
 
 #ifdef READER_NAGRA_MERLIN
