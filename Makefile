@@ -288,7 +288,6 @@ SRC-$(CONFIG_MODULE_GBOX) += module-gbox-sms.c
 SRC-$(CONFIG_MODULE_GBOX) += module-gbox-remm.c
 SRC-$(CONFIG_MODULE_GBOX) += module-gbox-cards.c
 SRC-$(CONFIG_MODULE_GBOX) += module-gbox.c
-SRC-$(CONFIG_IRDETO_GUESSING) += module-ird-guess.c
 SRC-$(CONFIG_LCDSUPPORT) += module-lcd.c
 SRC-$(CONFIG_LEDSUPPORT) += module-led.c
 SRC-$(CONFIG_MODULE_MONITOR) += module-monitor.c

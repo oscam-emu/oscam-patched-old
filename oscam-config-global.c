@@ -591,7 +591,7 @@ static const struct config_list webif_opts[] =
 	DEF_OPT_INT8("http_status_log"          , OFS(http_status_log)          , 1),
 #endif
 #ifndef WEBIF_JQUERY
-	DEF_OPT_STR("http_extern_jquery"        , OFS(http_extern_jquery)       , "//code.jquery.com/jquery-1.12.4.min.js"),
+	DEF_OPT_STR("http_extern_jquery"        , OFS(http_extern_jquery)       , "//code.jquery.com/jquery-3.7.1.min.js"),
 #endif
 	DEF_LAST_OPT
 };
