@@ -7,7 +7,6 @@
 #include "module-led.h"
 #include "module-stat.h"
 #include "module-webif.h"
-#include "module-ird-guess.h"
 #include "module-cw-cycle-check.h"
 #include "module-gbox.h"
 #include "oscam-cache.h"
@@ -30,7 +29,6 @@
 
 extern CS_MUTEX_LOCK ecmcache_lock;
 extern struct ecm_request_t *ecmcwcache;
-extern uint16_t len4caid[256];
 extern uint32_t ecmcwcache_size;
 extern int32_t exit_oscam;
 
@@ -2142,41 +2140,6 @@ int32_t write_ecm_answer(struct s_reader *reader, ECM_REQUEST *er, int8_t rc, ui
 	return res;
 }
 
-static void guess_cardsystem(ECM_REQUEST *er)
-{
-	uint16_t last_hope = 0;
-
-	// viaccess - check by provid-search
-	if((er->prid = chk_provid(er->ecm, 0x500)))
-		{ er->caid = 0x500; }
-
-	// nagra
-	// is ecm[1] always 0x30 ?
-	// is ecm[3] always 0x07 ?
-	if((er->ecm[6] == 1) && (er->ecm[4] == er->ecm[2] - 2))
-		{ er->caid = 0x1801; }
-
-	// seca2 - very poor
-	if((er->ecm[8] == 0x10) && ((er->ecm[9] & 0xF1) == 1))
-		{ last_hope = 0x100; }
-
-	// is cryptoworks, but which caid ?
-	if((er->ecm[3] == 0x81) && (er->ecm[4] == 0xFF) &&
-			(!er->ecm[5]) && (!er->ecm[6]) && (er->ecm[7] == er->ecm[2] - 5))
-	{
-		last_hope = 0xd00;
-	}
-
-	if(!er->caid && er->ecm[2] == 0x31 && er->ecm[0x0b] == 0x28)
-		{ guess_irdeto(er); }
-
-	if(!er->caid) // guess by len...
-		{ er->caid = len4caid[er->ecm[2] + 3]; }
-
-	if(!er->caid)
-		{ er->caid = last_hope; }
-}
-
 // chid calculation from module stat to here
 // to improve the quickfix concerning ecm chid info and extend it
 // to all client requests wereby the chid is known in module stat
@@ -2474,26 +2437,8 @@ void get_cw(struct s_client *client, ECM_REQUEST *er)
 		snprintf(er->msglog, sizeof(er->msglog), "invalid user group %s", username(client));
 	}
 
-	if(!er->caid)
-		{ guess_cardsystem(er); }
-
-	/* Quickfix Area */
-
 	// add chid for all client requests as in module stat
 	update_chid(er);
-
-	// quickfix for 0100:000065
-	if(er->caid == 0x100 && er->prid == 0x65 && er->srvid == 0)
-		{ er->srvid = 0x0642; }
-
-	// Quickfixes for Opticum/Globo HD9500
-	// Quickfix for 0500:030300
-	if(er->caid == 0x500 && er->prid == 0x030300)
-		{ er->prid = 0x030600; }
-
-	// Quickfix for 0500:D20200
-	if(er->caid == 0x500 && er->prid == 0xD20200)
-		{ er->prid = 0x030600; }
 
 	// betacrypt ecm with nagra header
 	if(chk_is_betatunnel_caid(er->caid) == 1 && (er->ecmlen == 0x89 || er->ecmlen == 0x4A) && er->ecm[3] == 0x07 && (er->ecm[4] == 0x84 || er->ecm[4] == 0x45))
