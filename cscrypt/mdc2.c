@@ -1,35 +1,31 @@
 #include "../globals.h"
 #include "mdc2.h"
 
-/* To everybody who want to fix this external openssl dependency bug
- * read this starting at page 5 https://board.streamboard.tv/forum/thread/47678-oscam-bug-report/?pageNo=5
- * Don't touch this if you have no real fix. Right now resolution is can't fix
- */
 
 #undef c2l
 #define c2l(c,l)        (l =((DES_LONG)(*((c)++)))    , \
-                         l|=((DES_LONG)(*((c)++)))<< 8L, \
-                         l|=((DES_LONG)(*((c)++)))<<16L, \
-                         l|=((DES_LONG)(*((c)++)))<<24L)
+						 l|=((DES_LONG)(*((c)++)))<< 8L, \
+						 l|=((DES_LONG)(*((c)++)))<<16L, \
+						 l|=((DES_LONG)(*((c)++)))<<24L)
 
 #undef l2c
 #define l2c(l,c)        (*((c)++)=(unsigned char)(((l)     )&0xff), \
-                        *((c)++)=(unsigned char)(((l)>> 8L)&0xff), \
-                        *((c)++)=(unsigned char)(((l)>>16L)&0xff), \
-                        *((c)++)=(unsigned char)(((l)>>24L)&0xff))
+						*((c)++)=(unsigned char)(((l)>> 8L)&0xff), \
+						*((c)++)=(unsigned char)(((l)>>16L)&0xff), \
+						*((c)++)=(unsigned char)(((l)>>24L)&0xff))
 
 # define FP(l,r) \
-        { \
-        register DES_LONG tt; \
-        PERM_OP(l,r,tt, 1,0x55555555L); \
-        PERM_OP(r,l,tt, 8,0x00ff00ffL); \
-        PERM_OP(l,r,tt, 2,0x33333333L); \
-        PERM_OP(r,l,tt,16,0x0000ffffL); \
-        PERM_OP(l,r,tt, 4,0x0f0f0f0fL); \
-        }
+		{ \
+		register DES_LONG tt; \
+		PERM_OP(l,r,tt, 1,0x55555555L); \
+		PERM_OP(r,l,tt, 8,0x00ff00ffL); \
+		PERM_OP(l,r,tt, 2,0x33333333L); \
+		PERM_OP(r,l,tt,16,0x0000ffffL); \
+		PERM_OP(l,r,tt, 4,0x0f0f0f0fL); \
+		}
 
-//OPENSSL_GLOBAL const DES_LONG DES_SPtrans[8][64] =
-const DES_LONG DES_SPtrans_Oscam[8][64] =
+#if !defined(WITH_SSL) || !defined(WITH_LIBCRYPTO)
+const DES_LONG DES_SPtrans[8][64] =
 {
 	{
 		/* nibble 0 */
@@ -184,42 +180,42 @@ const DES_LONG DES_SPtrans_Oscam[8][64] =
 		0x20000000L, 0x20800080L, 0x00020000L, 0x00820080L,
 	}
 };
+#endif
 
 
+#define LOAD_DATA_tmp(a,b,c,d,e,f) LOAD_DATA(a,b,c,d,e,f,g)
+#define LOAD_DATA(R,S,u,t,E0,E1,tmp) \
+		u=R^s[S  ]; \
+		t=R^s[S+1]
 
-#  define LOAD_DATA_tmp(a,b,c,d,e,f) LOAD_DATA(a,b,c,d,e,f,g)
-#  define LOAD_DATA(R,S,u,t,E0,E1,tmp) \
-        u=R^s[S  ]; \
-        t=R^s[S+1]
-
-# define D_ENCRYPT(LL,R,S) { \
-        LOAD_DATA_tmp(R,S,u,t,E0,E1); \
-        t=ROTATE(t,4); \
-        LL^= \
-            DES_SPtrans_Oscam[0][(u>> 2L)&0x3f]^ \
-            DES_SPtrans_Oscam[2][(u>>10L)&0x3f]^ \
-            DES_SPtrans_Oscam[4][(u>>18L)&0x3f]^ \
-            DES_SPtrans_Oscam[6][(u>>26L)&0x3f]^ \
-            DES_SPtrans_Oscam[1][(t>> 2L)&0x3f]^ \
-            DES_SPtrans_Oscam[3][(t>>10L)&0x3f]^ \
-            DES_SPtrans_Oscam[5][(t>>18L)&0x3f]^ \
-            DES_SPtrans_Oscam[7][(t>>26L)&0x3f]; }
+#define D_ENCRYPT(LL,R,S) { \
+		LOAD_DATA_tmp(R,S,u,t,E0,E1); \
+		t=ROTATE(t,4); \
+		LL^= \
+			DES_SPtrans[0][(u>> 2L)&0x3f]^ \
+			DES_SPtrans[2][(u>>10L)&0x3f]^ \
+			DES_SPtrans[4][(u>>18L)&0x3f]^ \
+			DES_SPtrans[6][(u>>26L)&0x3f]^ \
+			DES_SPtrans[1][(t>> 2L)&0x3f]^ \
+			DES_SPtrans[3][(t>>10L)&0x3f]^ \
+			DES_SPtrans[5][(t>>18L)&0x3f]^ \
+			DES_SPtrans[7][(t>>26L)&0x3f]; }
 
 #define IP(l,r) \
-        { \
-        register DES_LONG tt; \
-        PERM_OP(r,l,tt, 4,0x0f0f0f0fL); \
-        PERM_OP(l,r,tt,16,0x0000ffffL); \
-        PERM_OP(r,l,tt, 2,0x33333333L); \
-        PERM_OP(l,r,tt, 8,0x00ff00ffL); \
-        PERM_OP(r,l,tt, 1,0x55555555L); \
-        }
+		{ \
+		register DES_LONG tt; \
+		PERM_OP(r,l,tt, 4,0x0f0f0f0fL); \
+		PERM_OP(l,r,tt,16,0x0000ffffL); \
+		PERM_OP(r,l,tt, 2,0x33333333L); \
+		PERM_OP(l,r,tt, 8,0x00ff00ffL); \
+		PERM_OP(r,l,tt, 1,0x55555555L); \
+		}
 
-# define PERM_OP(a,b,t,n,m) ((t)=((((a)>>(n))^(b))&(m)),\
-        (b)^=(t),\
-        (a)^=((t)<<(n)))
+#define PERM_OP(a,b,t,n,m) ((t)=((((a)>>(n))^(b))&(m)),\
+		(b)^=(t),\
+		(a)^=((t)<<(n)))
 
-#  define ROTATE(a,n)     (((a)>>(n))+((a)<<(32-(n))))
+#define ROTATE(a,n)     (((a)>>(n))+((a)<<(32-(n))))
 
 
 
@@ -254,7 +250,7 @@ static const unsigned char odd_parity[256] =
 };
 
 #define HPERM_OP(a,t,n,m) ((t)=((((a)<<(16-(n)))^(a))&(m)),\
-        (a)=(a)^(t)^(t>>(16-(n))))
+		(a)=(a)^(t)^(t>>(16-(n))))
 
 # define ITERATIONS 16
 # define HALF_ITERATIONS 8
@@ -494,7 +490,8 @@ void DES_set_odd_parity(DES_cblock *key)
 }
 
 
-void DES_encrypt1_Oscam(DES_LONG *data, DES_key_schedule *ks, int enc)
+#if !defined(WITH_SSL) || !defined(WITH_LIBCRYPTO)
+void DES_encrypt1(DES_LONG *data, DES_key_schedule *ks, int enc)
 {
 	register DES_LONG l=0, r=0, t=0, u=0;
 	//l = r = t = u = 0;
@@ -569,7 +566,7 @@ void DES_encrypt1_Oscam(DES_LONG *data, DES_key_schedule *ks, int enc)
 	data[0] = l;
 	data[1] = r;
 }
-
+#endif
 
 
 static void mdc2_body(MDC2_CTX *c, const unsigned char *in, size_t len);
@@ -639,11 +636,11 @@ static void mdc2_body(MDC2_CTX *c, const unsigned char *in, size_t len)
 
 		DES_set_odd_parity(&c->h);
 		DES_set_key_unchecked(&c->h, &k);
-		DES_encrypt1_Oscam(d, &k, 1);
+		DES_encrypt1(d, &k, 1);
 
 		DES_set_odd_parity(&c->hh);
 		DES_set_key_unchecked(&c->hh, &k);
-		DES_encrypt1_Oscam(dd, &k, 1);
+		DES_encrypt1(dd, &k, 1);
 
 		ttin0 = tin0 ^ dd[0];
 		ttin1 = tin1 ^ dd[1];
