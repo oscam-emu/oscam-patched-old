@@ -101,7 +101,6 @@ if (OSCamOperatingSystem MATCHES "Windows/Cygwin")
 		${CMAKE_CURRENT_SOURCE_DIR}/csctapi
 		${CMAKE_CURRENT_SOURCE_DIR}/cscrypt
 		${CMAKE_CURRENT_SOURCE_DIR}/minilzo
-		${CMAKE_CURRENT_SOURCE_DIR}/ffdecsa
 		${CMAKE_CURRENT_SOURCE_DIR}/extapi/cygwin
 		/usr/include/w32api
 		${OPTIONAL_INCLUDE_DIR}
@@ -111,7 +110,6 @@ else (OSCamOperatingSystem MATCHES "Windows/Cygwin")
 		${CMAKE_CURRENT_SOURCE_DIR}/csctapi
 		${CMAKE_CURRENT_SOURCE_DIR}/cscrypt
 		${CMAKE_CURRENT_SOURCE_DIR}/minilzo
-		${CMAKE_CURRENT_SOURCE_DIR}/ffdecsa
 		${OPTIONAL_INCLUDE_DIR}
 		)
 endif (OSCamOperatingSystem MATCHES "Windows/Cygwin")
@@ -419,6 +417,39 @@ else (HAVE_PCSC)
 	endif (OSCamOperatingSystem MATCHES "Windows/Cygwin")
 endif (HAVE_PCSC)
 
+execute_process (COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/config.sh --enabled MODULE_STREAMRELAY OUTPUT_VARIABLE CONFIG_STREAMRELAY OUTPUT_STRIP_TRAILING_WHITESPACE)
+if (CONFIG_STREAMRELAY MATCHES "Y" AND NOT MODULE_STREAMRELAY EQUAL 1)
+	if (LIBDVBCSADIR)
+		check_include_file ("${LIBDVBCSADIR}/include/dvbcsa/dvbcsa.h" FOUND_LIBDVBCSA)
+		set (LIBADVBCSA_LIBRARY "${LIBDVBCSADIR}/libdvbcsa.a")
+		set (LIBDVBCSA_LIBRARY "${LIBDVBCSADIR}/libdvbcsa.so")
+	else (LIBDVBCSADIR)
+		check_include_file ("dvbcsa/dvbcsa.h" FOUND_LIBDVBCSA)
+		find_library (LIBADVBCSA_LIBRARY NAMES libdvbcsa.a)
+		find_library (LIBDVBCSA_LIBRARY NAMES dvbcsa)
+	endif (LIBDVBCSADIR)
+
+	if (HAVE_LIBDVBCSA)
+		if (STATIC_LIBDVBCSA AND FOUND_LIBDVBCSA AND EXISTS ${LIBADVBCSA_LIBRARY})
+			message(STATUS "  static libdvbcsa found (libdvbcsa.a).")
+			add_library(imp_libdvbcsa STATIC IMPORTED)
+			set_property(TARGET imp_libdvbcsa PROPERTY IMPORTED_LOCATION ${LIBADVBCSA_LIBRARY})
+			set (dvbcsa_link "imp_libdvbcsa")
+			set (STATICLIBDVBCSA True)
+		elseif ((NOT STATIC_LIBDVBCSA OR STATIC_LIBDVBCSA EQUAL 0) AND FOUND_LIBDVBCSA AND EXISTS ${LIBDVBCSA_LIBRARY})
+			message(STATUS "  libdvbcsa found (libdvbcsa.so).")
+			add_library(imp_libdvbcsa SHARED IMPORTED)
+			set_property(TARGET imp_libdvbcsa PROPERTY IMPORTED_LOCATION ${LIBDVBCSA_LIBRARY} )
+			set(dvbcsa_link dvbcsa)
+			set (STATICLIBDVBCSA False)
+		else (STATIC_LIBDVBCSA AND FOUND_LIBDVBCSA AND EXISTS ${LIBADVBCSA_LIBRARY})
+			message(FATAL_ERROR "  no libdvbcsa found!")
+		endif (STATIC_LIBDVBCSA AND FOUND_LIBDVBCSA AND EXISTS ${LIBADVBCSA_LIBRARY})
+	else (HAVE_LIBDVBCSA)
+		message(FATAL_ERROR "  HAVE_LIBDVBCSA disabled!")
+	endif (HAVE_LIBDVBCSA)
+endif (CONFIG_STREAMRELAY MATCHES "Y" AND NOT MODULE_STREAMRELAY EQUAL 1)
+
 # Manage config.h based on command line parameters
 # Manipulate config file based on given parameters and read unset parameters
 
@@ -467,7 +498,6 @@ execute_process (COMMAND make --no-print-directory --quiet -C ${CMAKE_CURRENT_SO
 add_subdirectory (csctapi)
 add_subdirectory (minilzo)
 add_subdirectory (cscrypt)
-add_subdirectory (ffdecsa)
 
 #----------------------- file groups ------------------------------
 execute_process (COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/config.sh --enabled MODULE_CAMD33 OUTPUT_VARIABLE CAMD33 OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -517,7 +547,7 @@ add_library (${csoscam} STATIC ${csoscam_srcs} ${csoscam_hdrs})
 
 set (exe_name "oscam")
 add_executable (${exe_name} ${exe_srcs} ${exe_hdrs})
-target_link_libraries (${exe_name} ${csoscam} ${csmodules} ${csreaders} csctapi cscrypt minilzo ffdecsa)
+target_link_libraries (${exe_name} ${csoscam} ${csmodules} ${csreaders} csctapi cscrypt minilzo)
 if(HAVE_LIBRT AND HAVE_LIBUSB)
 	if (LIBUSBDIR)
 		set (libusb_link "imp_libusb")
@@ -645,7 +675,7 @@ elseif (OSCamOperatingSystem MATCHES "SU980")
 	target_link_libraries (${exe_name} rt entropic)
 endif (OSCamOperatingSystem MATCHES "Linux")
 
-target_link_libraries (${exe_name} ${libusb_link} ${rt_link} ${setupapi_link} ${ole32_link} ${shell32_link} ${pthread_link} ${dl_link} ${xcas_link})
+target_link_libraries (${exe_name} ${libusb_link} ${rt_link} ${setupapi_link} ${ole32_link} ${shell32_link} ${pthread_link} ${dl_link} ${xcas_link} ${dvbcsa_link})
 
 #----------------------- put svnversion in the build ------------------------------
 # at every target rebuild, we re-build the oscam.c compilation...
@@ -671,10 +701,26 @@ add_definitions ("-D'CS_SVN_VERSION=\"${CS_SVN_VERSION}\"'")
 
 execute_process(COMMAND ${CMAKE_C_COMPILER} -dumpmachine COMMAND tr -d '\n' OUTPUT_VARIABLE CS_TARGET)
 add_definitions ("-D'CS_TARGET=\"${CS_TARGET}\"'")
+
+execute_process (COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/config.sh --enabled WITH_ARM_NEON OUTPUT_VARIABLE CONFIG_WITH_ARM_NEON OUTPUT_STRIP_TRAILING_WHITESPACE)
+if (CONFIG_WITH_ARM_NEON MATCHES "Y" AND NOT WITH_ARM_NEON EQUAL 0)
+	add_definitions ("-DWITH_ARM_NEON")
+	set (WITH_ARM_NEON "1")
+elseif (CONFIG_WITH_ARM_NEON MATCHES "Y" AND NOT WITH_ARM_NEON EQUAL 0)
+	message (status  " The config file has WITH_ARM_NEON enabled, but You disabled it by you cmake command COMPILING WHITOUT arm neon optimization")
+endif (CONFIG_WITH_ARM_NEON MATCHES "Y" AND NOT WITH_ARM_NEON EQUAL 0)
 #----------------------- global compile and link options ------------------------------
-#enable sse2 on x86
+#enable sse2 on x86, neon on arm
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse -msse2 -msse3")
+elseif (CMAKE_SYSTEM_PROCESSOR MATCHES "(arm)|(ARM)")
+	if (WITH_ARM_NEON EQUAL 1)
+		message(status "  ARM NEON is enabled, compiling with neon optimization")
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mfpu=neon")
+		set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -mfpu=neon")
+	else (WITH_ARM_NEON EQUAL 1)
+		message(status "  ARM NEON is disabled, compiling without neon optimization")
+	endif (WITH_ARM_NEON EQUAL 1)
 endif (CMAKE_SYSTEM_PROCESSOR MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
 
 # disable warning about unused but set variables in gcc 4.6+
@@ -684,7 +730,7 @@ if (CMAKE_COMPILER_IS_GNUCC)
 	list(GET GCC_VERSION_COMPONENTS 0 GCC_MAJOR)
 	list(GET GCC_VERSION_COMPONENTS 0 GCC_MINOR)
 	add_definitions ("-W -Wall ")
-	set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -O3 -pipe -ffunction-sections -fdata-sections -funroll-loops -fomit-frame-pointer -fno-schedule-insns")
+	set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -O2 -pipe -ffunction-sections -fdata-sections -fomit-frame-pointer -fno-schedule-insns")
 	set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -O2")
 	set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -ggdb")
 	set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -ggdb")
@@ -770,7 +816,7 @@ if (NOT DEFINED ENV{ANDROID_STANDALONE_TOOLCHAIN})
 		else (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/SoftCam.Key)
 				execute_process (COMMAND touch ${CMAKE_CURRENT_BINARY_DIR}/SoftCam.Key)
 		endif (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/SoftCam.Key)
-		set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--format=binary -Wl,SoftCam.Key -Wl,--format=default")
+		set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--format=binary -Wl,SoftCam.Key -Wl,--format=default -Wl,-z,noexecstack")
 	endif (WITH_SOFTCAM)
 endif (NOT DEFINED ENV{ANDROID_STANDALONE_TOOLCHAIN})
 endif (NOT DEFINED ENV{ANDROID_NDK})
@@ -846,9 +892,9 @@ if (HAVE_PTHREAD)
 	message (STATUS "  use system pthread functions")
 endif (HAVE_PTHREAD)
 if (HAVE_LIBUSB)
-if(STATIC_LIBUSB EQUAL 1)
-	message (STATUS "  You selected to enable static libusb")
-endif(STATIC_LIBUSB EQUAL 1)
+	if(STATIC_LIBUSB EQUAL 1)
+		message (STATUS "  You selected to enable static libusb")
+	endif(STATIC_LIBUSB EQUAL 1)
 	if(STATICLIBUSB AND NOT LIBUSBDIR)
 		message (STATUS "  use static libusb functions")
 	else(STATICLIBUSB AND NOT LIBUSBDIR)
@@ -863,6 +909,24 @@ endif(STATIC_LIBUSB EQUAL 1)
 		endif(LIBUSBDIR AND STATIC_LIBUSB EQUAL 0)
 	endif(STATICLIBUSB AND NOT LIBUSBDIR)
 endif (HAVE_LIBUSB)
+if (HAVE_LIBDVBCSA)
+	if(STATIC_LIBDVBCSA EQUAL 1)
+		message (STATUS "  You selected to enable static libdvbcsa")
+	endif(STATIC_LIBDVBCSA EQUAL 1)
+	if(STATICLIBDVBCSA AND NOT LIBDVBCSADIR)
+		message (STATUS "  use static libdvbcsa functions")
+	else(STATICLIBDVBCSA AND NOT LIBDVBCSADIR)
+		if (LIBDVBCSADIR AND STATIC_LIBDVBCSA EQUAL 0)
+			message(STATUS "  use system libdvbcsa from selected LIBDVBCSADIR functions")
+		elseif (LIBDVBCSADIR AND STATIC_LIBDVBCSA EQUAL 1)
+			message(STATUS "  use static libdvbcsa from selected LIBDVBCSADIR functions")
+		elseif(LIBDVBCSADIR)
+			message(STATUS " use system libdvbcsa from selected LIBDVBCSADIR functions")
+		elseif(NOT LIBDVBCSADIR AND NOT STATIC_LIBDVBCSA)
+			message (STATUS "  use system libdvbcsa functions")
+		endif(LIBDVBCSADIR AND STATIC_LIBDVBCSA EQUAL 0)
+	endif(STATICLIBDVBCSA AND NOT LIBDVBCSADIR)
+endif (HAVE_LIBDVBCSA)
 
 if (WITH_EMU)
 	message (STATUS "  Compile with EMU support")

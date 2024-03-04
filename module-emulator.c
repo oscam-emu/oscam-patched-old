@@ -4,8 +4,8 @@
 
 #ifdef WITH_EMU
 
+#include "module-streamrelay.h"
 #include "module-emulator-osemu.h"
-#include "module-emulator-streamserver.h"
 #include "module-emulator-biss.h"
 #include "module-emulator-irdeto.h"
 #include "module-emulator-powervu.h"
@@ -39,7 +39,9 @@
 #define CS_ERROR 0
 
 extern char cs_confdir[128];
+#ifdef MODULE_STREAMRELAY
 static int8_t emu_key_data_mutex_init = 0;
+#endif
 pthread_mutex_t emu_key_data_mutex;
 
 static void set_hexserial_to_version(struct s_reader *rdr)
@@ -724,11 +726,10 @@ const struct s_cardsystem reader_emu =
 
 static int32_t emu_reader_init(struct s_reader *UNUSED(reader))
 {
-	int32_t i;
-	char authtmp[128];
-
-	if (cfg.emu_stream_relay_enabled && (stream_server_thread_init == 0))
+#ifdef MODULE_STREAMRELAY
+	if (cfg.stream_relay_enabled && (stream_server_thread_init == 0))
 	{
+		int32_t i;
 		stream_server_thread_init = 1;
 		SAFE_MUTEX_INIT(&emu_fixed_key_srvid_mutex, NULL);
 
@@ -741,24 +742,6 @@ static int32_t emu_reader_init(struct s_reader *UNUSED(reader))
 
 		start_thread("stream_key_delayer", stream_key_delayer, NULL, NULL, 1, 1);
 		cs_log("Stream key delayer initialized");
-
-		cs_strncpy(emu_stream_source_host, cfg.emu_stream_source_host, sizeof(emu_stream_source_host));
-		emu_stream_source_port = cfg.emu_stream_source_port;
-		emu_stream_relay_port = cfg.emu_stream_relay_port;
-		emu_stream_emm_enabled = cfg.emu_stream_emm_enabled;
-
-		if (cfg.emu_stream_source_auth_user && cfg.emu_stream_source_auth_password)
-		{
-			snprintf(authtmp, sizeof(authtmp), "%s:%s", cfg.emu_stream_source_auth_user, cfg.emu_stream_source_auth_password);
-			b64encode(authtmp, cs_strlen(authtmp), &emu_stream_source_auth);
-		}
-		else
-		{
-			NULLFREE(emu_stream_source_auth);
-		}
-
-		start_thread("stream_server", stream_server, NULL, NULL, 1, 1);
-		cs_log("Stream relay server initialized");
 	}
 
 	// Initialize mutex for exclusive access to key database and key file
@@ -767,7 +750,7 @@ static int32_t emu_reader_init(struct s_reader *UNUSED(reader))
 		SAFE_MUTEX_INIT(&emu_key_data_mutex, NULL);
 		emu_key_data_mutex_init = 1;
 	}
-
+#endif
 	return CR_OK;
 }
 

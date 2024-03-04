@@ -24,7 +24,7 @@
 		PERM_OP(l,r,tt, 4,0x0f0f0f0fL); \
 		}
 
-#if !defined(WITH_SSL) || !defined(WITH_LIBCRYPTO)
+#if (OPENSSL_VERSION_NUMBER < 0x10101000L) //|| ((OPENSSL_VERSION_NUMBER > 0x10101000L) && !defined(WITH_SSL))
 const DES_LONG DES_SPtrans[8][64] =
 {
 	{
@@ -218,7 +218,7 @@ const DES_LONG DES_SPtrans[8][64] =
 #define ROTATE(a,n)     (((a)>>(n))+((a)<<(32-(n))))
 
 
-
+#if (OPENSSL_VERSION_NUMBER < 0x10101000L) //|| ((OPENSSL_VERSION_NUMBER > 0x10101000L) && !defined(WITH_SSL))
 static const unsigned char odd_parity[256] =
 {
 	1, 1, 2, 2, 4, 4, 7, 7, 8, 8, 11, 11, 13, 13, 14, 14,
@@ -490,7 +490,6 @@ void DES_set_odd_parity(DES_cblock *key)
 }
 
 
-#if !defined(WITH_SSL) || !defined(WITH_LIBCRYPTO)
 void DES_encrypt1(DES_LONG *data, DES_key_schedule *ks, int enc)
 {
 	register DES_LONG l=0, r=0, t=0, u=0;

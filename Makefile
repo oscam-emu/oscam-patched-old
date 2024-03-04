@@ -50,6 +50,10 @@ ifeq ($(uname_S),FreeBSD)
 	LIB_DL :=
 endif
 
+ifeq "$(shell ./config.sh --enabled MODULE_STREAMRELAY)" "Y"
+	override USE_LIBDVBCSA=1
+endif
+
 override STD_LIBS := -lm $(LIB_PTHREAD) $(LIB_DL) $(LIB_RT)
 override STD_DEFS := -D'CS_SVN_VERSION="$(SVN_REV)"'
 override STD_DEFS += -D'CS_CONFDIR="$(CONF_DIR)"'
@@ -58,20 +62,25 @@ override STD_DEFS += -D'CS_CONFDIR="$(CONF_DIR)"'
 CC_WARN = -W -Wall -Wshadow -Wredundant-decls -Wstrict-prototypes -Wold-style-definition
 
 # Compiler optimizations
-CC_OPTS = -O3 -ggdb -pipe -ffunction-sections -fdata-sections -funroll-loops -fomit-frame-pointer -fno-schedule-insns
+ifeq ($(HOSTCC),clang)
+	CC_OPTS = -O2 -ggdb -pipe -ffunction-sections -fdata-sections -fomit-frame-pointer
+else
+	CC_OPTS = -O2 -ggdb -pipe -ffunction-sections -fdata-sections -fomit-frame-pointer -fno-schedule-insns
+endif
 
 CC = $(CROSS_DIR)$(CROSS)gcc
 STRIP = $(CROSS_DIR)$(CROSS)strip
 
 LDFLAGS = -Wl,--gc-sections
 
+#enable sse2 on x86, neon on arm
 TARGETHELP := $(shell $(CC) --target-help 2>&1)
 ifneq (,$(findstring sse2,$(TARGETHELP)))
-override CFLAGS += -fexpensive-optimizations -mmmx -msse -msse2 -msse3
+override CFLAGS += -mmmx -msse -msse2 -msse3
 else ifneq (,$(findstring neon,$(TARGETHELP)))
-override CFLAGS += -fexpensive-optimizations -mfpu=neon
-else
-override CFLAGS += -fexpensive-optimizations
+	ifeq "$(shell ./config.sh --enabled WITH_ARM_NEON)" "Y"
+		override CFLAGS += -mfpu=neon
+	endif
 endif
 
 # The linker for powerpc have bug that prevents --gc-sections from working
@@ -108,6 +117,7 @@ DEFAULT_SU980_LIB = -lentropic -lrt
 DEFAULT_AZBOX_LIB = -Lextapi/openxcas -lOpenXCASAPI
 DEFAULT_LIBCRYPTO_LIB = -lcrypto
 DEFAULT_SSL_LIB = -lssl
+DEFAULT_LIBDVBCSA_LIB = -ldvbcsa
 ifeq ($(uname_S),Linux)
 	DEFAULT_LIBUSB_LIB = -lusb-1.0 -lrt
 else
@@ -119,7 +129,11 @@ ifeq ($(uname_S),FreeBSD)
 	DEFAULT_LIBUSB_LIB = -lusb
 endif
 ifeq ($(uname_S),Darwin)
-	DEFAULT_LIBUSB_LIB = -lusb-1.0 -lobjc -framework IOKit -framework CoreFoundation -framework Security
+	DEFAULT_SSL_LIB = -L/usr/local/opt/openssl/lib -lssl
+	DEFAULT_LIBCRYPTO_LIB = -L/usr/local/opt/openssl/lib -lcrypto
+	DEFAULT_LIBDVBCSA_LIB = -L/usr/local/opt/libdvbcsa/lib -ldvbcsa
+	DEFAULT_LIBUSB_FLAGS = -I/usr/local/opt/libusb/include
+	DEFAULT_LIBUSB_LIB = -L/usr/local/opt/libusb/lib -lusb-1.0 -lobjc -framework IOKit -framework CoreFoundation -framework Security
 	DEFAULT_PCSC_FLAGS = -I/usr/local/opt/pcsc-lite/include/PCSC
 	DEFAULT_PCSC_LIB = -L/usr/local/opt/pcsc-lite/lib -lpcsclite -lobjc -framework IOKit -framework CoreFoundation -framework PCSC
 else
@@ -176,6 +190,7 @@ $(eval $(call prepare_use_flags,SSL,ssl))
 $(eval $(call prepare_use_flags,LIBCRYPTO,))
 $(eval $(call prepare_use_flags,LIBUSB,libusb))
 $(eval $(call prepare_use_flags,PCSC,pcsc))
+$(eval $(call prepare_use_flags,LIBDVBCSA,libdvbcsa))
 $(eval $(call prepare_use_flags,UTF8))
 
 # Add PLUS_TARGET and EXTRA_TARGET to TARGET
@@ -281,16 +296,13 @@ SRC-$(CONFIG_MODULE_CCCSHARE) += module-cccshare.c
 SRC-$(CONFIG_MODULE_CONSTCW) += module-constcw.c
 SRC-$(CONFIG_WITH_EMU) += module-emulator.c
 SRC-$(CONFIG_WITH_EMU) += module-emulator-osemu.c
-SRC-$(CONFIG_WITH_EMU) += module-emulator-streamserver.c
 SRC-$(CONFIG_WITH_EMU) += module-emulator-biss.c
 SRC-$(CONFIG_WITH_EMU) += module-emulator-cryptoworks.c
 SRC-$(CONFIG_WITH_EMU) += module-emulator-director.c
-SRC-$(CONFIG_WITH_EMU) += module-emulator-icam.c
 SRC-$(CONFIG_WITH_EMU) += module-emulator-irdeto.c
 SRC-$(CONFIG_WITH_EMU) += module-emulator-nagravision.c
 SRC-$(CONFIG_WITH_EMU) += module-emulator-powervu.c
 SRC-$(CONFIG_WITH_EMU) += module-emulator-viaccess.c
-SRC-$(CONFIG_WITH_EMU) += ffdecsa/ffdecsa.c
 ifeq "$(CONFIG_WITH_EMU)" "y"
 ifeq "$(CONFIG_WITH_SOFTCAM)" "y"
 UNAME := $(shell uname -s)
@@ -298,7 +310,7 @@ ifneq ($(UNAME),Darwin)
 ifndef ANDROID_NDK
 ifndef ANDROID_STANDALONE_TOOLCHAIN
 TOUCH_SK := $(shell touch SoftCam.Key)
-override LDFLAGS += -Wl,--format=binary -Wl,SoftCam.Key -Wl,--format=default
+override LDFLAGS += -Wl,--format=binary -Wl,SoftCam.Key -Wl,--format=default -Wl,-z,noexecstack
 endif
 endif
 endif
@@ -332,6 +344,7 @@ SRC-$(CONFIG_MODULE_GHTTP) += module-ghttp.c
 SRC-$(CONFIG_MODULE_RADEGAST) += module-radegast.c
 SRC-$(CONFIG_MODULE_SCAM) += module-scam.c
 SRC-$(CONFIG_MODULE_SERIAL) += module-serial.c
+SRC-$(CONFIG_MODULE_STREAMRELAY) += module-streamrelay.c
 SRC-$(CONFIG_WITH_LB) += module-stat.c
 SRC-$(CONFIG_WEBIF) += module-webif-lib.c
 SRC-$(CONFIG_WEBIF) += module-webif-tpl.c
@@ -403,7 +416,7 @@ SRC := $(subst config.c,$(OBJDIR)/config.c,$(SRC))
 # starts the compilation.
 all:
 	@./config.sh --use-flags "$(USE_FLAGS)" --objdir "$(OBJDIR)" --make-config.mak
-	@-mkdir -p $(OBJDIR)/cscrypt $(OBJDIR)/csctapi $(OBJDIR)/minilzo $(OBJDIR)/ffdecsa $(OBJDIR)/webif
+	@-mkdir -p $(OBJDIR)/cscrypt $(OBJDIR)/csctapi $(OBJDIR)/minilzo $(OBJDIR)/webif
 	@-printf "\
 +-------------------------------------------------------------------------------\n\
 | OSCam ver: $(VER) rev: $(SVN_REV) target: $(TARGET)\n\
@@ -694,6 +707,13 @@ OSCam build system documentation\n\
                          SSL_LIB='$(DEFAULT_SSL_LIB)'\n\
                      Using USE_SSL=1 adds to '-ssl' to PLUS_TARGET.\n\
 \n\
+   USE_LIBDVBCSA=1 - Request linking with libdvbcsa. USE_LIBDVBCSA is automatically\n\
+                     The variables that control USE_LIBDVBCSA=1 build are:\n\
+                         LIBDVBCSA_FLAGS='$(DEFAULT_LIBDVBCSA_FLAGS)'\n\
+                         LIBDVBCSA_CFLAGS='$(DEFAULT_LIBDVBCSA_FLAGS)'\n\
+                         LIBDVBCSA_LDFLAGS='$(DEFAULT_LIBDVBCSA_FLAGS)'\n\
+                         LIBDVBCSA_LIB='$(DEFAULT_LIBDVBCSA_LIB)'\n\
+\n\
    USE_UTF8=1       - Request UTF-8 enabled webif by default.\n\
 \n\
  Automatically intialized variables:\n\
@@ -811,6 +831,8 @@ OSCam build system documentation\n\
      make USE_LIBCRYPTO=1 LIBCRYPTO_LIB=\"/usr/lib/libcrypto.a\"\n\n\
    Build OSCam with static libssl and libcrypto:\n\
      make USE_SSL=1 SSL_LIB=\"/usr/lib/libssl.a\" LIBCRYPTO_LIB=\"/usr/lib/libcrypto.a\"\n\n\
+   Build OSCam with static libdvbcsa:\n\
+     make USE_LIBDVBCSA=1 LIBDVBCSA_LIB=\"/usr/lib/libdvbcsa.a\"\n\n\
    Build with verbose messages and size optimizations:\n\
      make V=1 CC_OPTS=-Os\n\n\
    Build and set oscam file name:\n\

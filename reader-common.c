@@ -37,6 +37,11 @@ static void reader_nullcard(struct s_reader *reader)
 	reader->csystem = NULL;
 	memset(reader->hexserial, 0, sizeof(reader->hexserial));
 	memset(reader->prid, 0xFF, sizeof(reader->prid));
+	memset(reader->sa, 0, sizeof(reader->sa));
+	memset(reader->emm84, 0, sizeof(reader->emm84));
+	memset(reader->emm83s, 0, sizeof(reader->emm83s));
+	memset(reader->emm83u, 0, sizeof(reader->emm83u));
+	memset(reader->emm87, 0, sizeof(reader->emm87));
 	reader->caid = 0;
 	reader->nprov = 0;
 	cs_clear_entitlement(reader);

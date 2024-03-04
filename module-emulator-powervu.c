@@ -5,9 +5,8 @@
 #ifdef WITH_EMU
 
 #include "cscrypt/des.h"
-#include "ffdecsa/ffdecsa.h"
+#include "module-streamrelay.h"
 #include "module-emulator-osemu.h"
-#include "module-emulator-streamserver.h"
 #include "module-emulator-powervu.h"
 #include "oscam-string.h"
 #include "oscam-time.h"
@@ -649,7 +648,7 @@ static void create_hash(uint8_t *data, int len, uint8_t *hash, int mode)
 		case 35:
 			hash_modes_19_to_27_tables_3(dataPadded, hash, table23);
 			break;
-		
+
 		case 36:
 			hash_modes_19_to_27_tables_3(dataPadded, hash, table24);
 			break;
@@ -1867,7 +1866,11 @@ static void calculate_cw(uint8_t seedType, uint8_t *seed, uint8_t csaUsed, uint8
 }
 
 int8_t powervu_ecm(uint8_t *ecm, uint8_t *dw, EXTENDED_CW *cw_ex, uint16_t srvid, uint16_t caid,
-					uint16_t tsid, uint16_t onid, uint32_t ens, emu_stream_client_key_data *cdata)
+					uint16_t tsid, uint16_t onid, uint32_t ens
+#ifdef MODULE_STREAMRELAY
+		, emu_stream_client_key_data *cdata
+#endif
+)
 {
 	uint32_t i, j, k;
 	uint32_t ecmCrc32, keyRef0, keyRef1, keyRef2, channel_hash, group_id = 0;
@@ -1883,13 +1886,15 @@ int8_t powervu_ecm(uint8_t *ecm, uint8_t *dw, EXTENDED_CW *cw_ex, uint16_t srvid
 
 	//char tmpBuffer1[512];
 	char tmpBuffer2[17];
-
+#ifdef MODULE_STREAMRELAY
 	emu_stream_cw_item *cw_item;
 	int8_t update_global_key = 0;
 	int8_t update_global_keys[EMU_STREAM_SERVER_MAX_CONNECTIONS];
 
 	memset(update_global_keys, 0, sizeof(update_global_keys));
-
+#else
+#define EMU_STREAM_MAX_AUDIO_SUB_TRACKS 4
+#endif
 	if (ecmLen < 7)
 	{
 		return EMU_NOT_SUPPORTED;
@@ -2007,8 +2012,8 @@ int8_t powervu_ecm(uint8_t *ecm, uint8_t *dw, EXTENDED_CW *cw_ex, uint16_t srvid
 				channelId = b2i(2, ecm + i + 23);
 				ecmSrvid = (channelId >> 4) | ((channelId & 0xF) << 12);
 
-				cs_log_dbg(D_ATR, "csaUsed: %d, xorMode: %d, ecmSrvid: %04X, hashModeCw: %d, modeCW: %d",
-							csaUsed, xorMode, ecmSrvid, hashModeCw, modeCW);
+				cs_log_dbg(D_ATR, "csaUsed: %d, xorMode: %d, ecmSrvid: %04X (%d), hashModeCw: %d, modeCW: %d",
+							csaUsed, xorMode, ecmSrvid, srvid, hashModeCw, modeCW);
 
 				channel_hash = create_channel_hash(caid, tsid, onid, ens);
 				group_id = get_channel_group(channel_hash);
@@ -2068,7 +2073,7 @@ int8_t powervu_ecm(uint8_t *ecm, uint8_t *dw, EXTENDED_CW *cw_ex, uint16_t srvid
 				while (!decrypt_ok);
 
 				memcpy(seedBase, ecm + i + 6 + 2, 4);
-
+#ifdef MODULE_STREAMRELAY
 				if (cdata == NULL)
 				{
 					SAFE_MUTEX_LOCK(&emu_fixed_key_srvid_mutex);
@@ -2084,7 +2089,9 @@ int8_t powervu_ecm(uint8_t *ecm, uint8_t *dw, EXTENDED_CW *cw_ex, uint16_t srvid
 				}
 
 				calculateAll = cdata != NULL || update_global_key || cw_ex != NULL;
-
+#else
+				calculateAll = cw_ex != NULL;
+#endif
 				if (calculateAll) // Calculate all seeds
 				{
 					for (j = 0; j < 8; j++)
@@ -2123,7 +2130,7 @@ int8_t powervu_ecm(uint8_t *ecm, uint8_t *dw, EXTENDED_CW *cw_ex, uint16_t srvid
 					//cs_log_dbg(D_ATR, "csaUsed=%d, cw: %s cdata=%x, cw_ex=%x",
 					//			csaUsed, cs_hexdump(3, cw[0], 8, tmpBuffer1, sizeof(tmpBuffer1)),
 					//			(unsigned int)cdata, (unsigned int)cw_ex);
-
+#ifdef MODULE_STREAMRELAY
 					if (update_global_key)
 					{
 						for (j = 0; j < EMU_STREAM_SERVER_MAX_CONNECTIONS; j++)
@@ -2146,25 +2153,20 @@ int8_t powervu_ecm(uint8_t *ecm, uint8_t *dw, EXTENDED_CW *cw_ex, uint16_t srvid
 
 					if (cdata != NULL)
 					{
-						for (j = 0; j < 8; j++)
+						for (j = 0; j < EMU_STREAM_MAX_AUDIO_SUB_TRACKS + 2; j++)
 						{
 							if (csaUsed)
 							{
-								if (cdata->pvu_csa_ks[j] == NULL)
-								{
-									cdata->pvu_csa_ks[j] = get_key_struct();
-								}
-
 								if (ecm[0] == 0x80)
 								{
-									set_even_control_word(cdata->pvu_csa_ks[j], cw[j]);
+									dvbcsa_bs_key_set(cw[j], key_data[cdata->connid].key[j][EVEN]);
 								}
 								else
 								{
-									set_odd_control_word(cdata->pvu_csa_ks[j], cw[j]);
+									dvbcsa_bs_key_set(cw[j], key_data[cdata->connid].key[j][ODD]);
 								}
 
-								cdata->pvu_csa_used = 1;
+								cdata->csa_used = 1;
 							}
 							else
 							{
@@ -2177,11 +2179,11 @@ int8_t powervu_ecm(uint8_t *ecm, uint8_t *dw, EXTENDED_CW *cw_ex, uint16_t srvid
 									des_set_key(cw[j], cdata->pvu_des_ks[j][1]);
 								}
 
-								cdata->pvu_csa_used = 0;
+								cdata->csa_used = 0;
 							}
 						}
 					}
-
+#endif
 					if (cw_ex != NULL)
 					{
 						cw_ex->mode = CW_MODE_MULTIPLE_CW;
@@ -2197,7 +2199,7 @@ int8_t powervu_ecm(uint8_t *ecm, uint8_t *dw, EXTENDED_CW *cw_ex, uint16_t srvid
 							cw_ex->algo_mode = CW_ALGO_MODE_ECB;
 						}
 
-						for (j = 0; j < 4; j++)
+						for (j = 0; j < EMU_STREAM_MAX_AUDIO_SUB_TRACKS; j++)
 						{
 							memset(cw_ex->audio[j], 0, 16);
 
@@ -2428,6 +2430,10 @@ static void unmask_emm(uint8_t *emm)
 			emm[0x13 + 0x08 + i * 0x1B] ^= mask[0x0E];
 			emm[0x13 + 0x0C + i * 0x1B] ^= mask[0x0F];
 		}
+	}
+	else
+	{
+		cs_log("A new unknown emm mode [%d] is in use.", modeUnmask);
 	}
 
 	// Fix Header
