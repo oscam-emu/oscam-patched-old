@@ -287,16 +287,9 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 			if(cta_res[21] == 0x9C)
 			{
 				uint32_t timestamp = b2i(0x04, cta_res + 22);
-				uint8_t timestamp186D[4] = {0xA6, 0x9E, 0xFB, 0x7F};
-				uint32_t timestamp186Db2i = b2i(0x04, timestamp186D);
-				if(reader->caid == 0x186D)
-				{
-					reader->card_valid_to = tier_date(timestamp186Db2i, de, 11);
-				}
-				else
-				{
-					reader->card_valid_to = tier_date(timestamp, de, 11);
-				}
+
+				reader->card_valid_to = tier_date(timestamp, de, 11);
+
 				uint16_t chid = 0;
 				uint32_t id = b2i(0x02, cta_res + 19);
 				uint32_t start_date;
@@ -317,7 +310,7 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 				rdr_log(reader, "|%04X|%04X    |%s  |%s  |", id, chid, ds, de);
 				addProvider(reader, cta_res + 19);
 			}
-			if((reader->caid == 0x1856) && (cta_res[21] == 0x01))
+			if((reader->caid == 0x187E) && (cta_res[21] == 0x01))
 			{
 				uint16_t chid = 0;
 				uint32_t id = b2i(0x02, cta_res + 19);
@@ -371,6 +364,7 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 				addProvider(reader, cta_res + 19);
 
 				uint8_t check[] = {0x00, 0x01};
+				uint8_t checkecmcaid[] = {0xFF, 0x07};
 				if (reader->caid == 0x186D)
 				{
 					check[0] = (reader->caid - 0x03) & 0xFF;
@@ -383,7 +377,7 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 				{
 					check[0] = reader->caid & 0xFF;
 				}
-				
+
 				int p;
 
 				for(p=23; p < (cta_lr - 6); p++)
@@ -405,6 +399,11 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 							addSA(reader, cta_res + p + 5);
 							addemmfilter(reader, cta_res + p + 5);
 						}
+					}
+
+					if(!memcmp(cta_res + p, checkecmcaid, 2))
+					{
+						reader->caid = (SYSTEM_NAGRA | (cta_res + p + 2)[0]);
 					}
 				}
 			}
@@ -1231,30 +1230,30 @@ static int32_t CAK7_GetCamKey(struct s_reader *reader)
 	{
 		memcpy(cmd0e + 132, reader->nuid, reader->nuid_length); // inject NUID
 
-                uint8_t cwekeycount = 0;
+				uint8_t cwekeycount = 0;
 
-                if(reader->cwekey0_length)
-                        { cwekeycount++; }
-                if(reader->cwekey1_length)
-                        { cwekeycount++; }
-                if(reader->cwekey2_length)
-                        { cwekeycount++; }
-                if(reader->cwekey3_length)
-                        { cwekeycount++; }
-                if(reader->cwekey4_length)
-                        { cwekeycount++; }
-                if(reader->cwekey5_length)
-                        { cwekeycount++; }
-                if(reader->cwekey6_length)
-                        { cwekeycount++; }
-                if(reader->cwekey7_length)
-                        { cwekeycount++; }
+				if(reader->cwekey0_length)
+						{ cwekeycount++; }
+				if(reader->cwekey1_length)
+						{ cwekeycount++; }
+				if(reader->cwekey2_length)
+						{ cwekeycount++; }
+				if(reader->cwekey3_length)
+						{ cwekeycount++; }
+				if(reader->cwekey4_length)
+						{ cwekeycount++; }
+				if(reader->cwekey5_length)
+						{ cwekeycount++; }
+				if(reader->cwekey6_length)
+						{ cwekeycount++; }
+				if(reader->cwekey7_length)
+						{ cwekeycount++; }
 
-                if(cwekeycount == 0)
-                {
-                        rdr_log(reader, "only NUID defined - enter at least CWPK0");
-                        return ERROR;
-                }
+				if(cwekeycount == 0)
+				{
+						rdr_log(reader, "only NUID defined - enter at least CWPK0");
+						return ERROR;
+				}
 		else
 		{
 			if(reader->otpcsc_length)
@@ -1451,20 +1450,20 @@ static int32_t CAK7_GetCamKey(struct s_reader *reader)
 		rdr_log(reader,"Card is starting in UNIQUE mode");
 
 		if(!reader->mod2_length)
-        	{
-                	rdr_log(reader, "no mod2 defined");
-                	return ERROR;
-        	}
-                if(!reader->key3460_length)
-                {
-                        rdr_log(reader, "no key3460 defined");
-                        return ERROR;
-                }
-                if(!reader->key3310_length)
-                {
-                        rdr_log(reader, "no key3310 defined");
-                        return ERROR;
-                }
+			{
+					rdr_log(reader, "no mod2 defined");
+					return ERROR;
+			}
+				if(!reader->key3460_length)
+				{
+						rdr_log(reader, "no key3460 defined");
+						return ERROR;
+				}
+				if(!reader->key3310_length)
+				{
+						rdr_log(reader, "no key3310 defined");
+						return ERROR;
+				}
 		if(!CAK7_cmd03_unique(reader))
 		{return ERROR;}
 	}
@@ -1522,34 +1521,26 @@ static int32_t nagra3_card_init(struct s_reader *reader, ATR *newatr)
 	}
 	if(!reader->key3588_length)
 	{
-                rdr_log(reader, "no key3588 defined");
-                return ERROR;
-        }
-        if(!reader->data50_length)
-        {
-                rdr_log(reader, "no data50 defined");
-                return ERROR;
-        }
-        if(!reader->mod50_length)
-        {
-                rdr_log(reader, "no mod50 defined");
-                return ERROR;
-        }
-        if(!reader->idird_length)
-        {
-                rdr_log(reader, "no idird defined");
-                return ERROR;
-        }
+				rdr_log(reader, "no key3588 defined");
+				return ERROR;
+		}
+		if(!reader->data50_length)
+		{
+				rdr_log(reader, "no data50 defined");
+				return ERROR;
+		}
+		if(!reader->mod50_length)
+		{
+				rdr_log(reader, "no mod50 defined");
+				return ERROR;
+		}
+		if(!reader->idird_length)
+		{
+				rdr_log(reader, "no idird defined");
+				return ERROR;
+		}
 
 	CAK7GetDataType(reader, 0x02);
-	if(memcmp(atr + 20, "RevS64", 6) == 0)
-	{
-		reader->caid += 0x03;
-	}
-	else if(memcmp(atr + 20, "RevW60", 6) == 0)
-	{
-		reader->caid -= 0x28;
-	}
 	CAK7GetDataType(reader, 0x05);
 	if(!CAK7_GetCamKey(reader))
 	{return ERROR;}
@@ -1669,8 +1660,8 @@ static void nagra3_post_process(struct s_reader *reader)
 			if(!fastreinit(reader))
 			{
 				rdr_log(reader, "FASTreinit failed - need to restart reader");
-                reader->card_status = CARD_NEED_INIT;
-                add_job(reader->client, ACTION_READER_RESTART, NULL, 0);
+				reader->card_status = CARD_NEED_INIT;
+				add_job(reader->client, ACTION_READER_RESTART, NULL, 0);
 			}
 		}
 	}
