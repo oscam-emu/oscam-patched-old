@@ -12,6 +12,7 @@
 #include "module-dvbapi-stapi.h"
 #include "module-dvbapi-chancache.h"
 #include "module-stat.h"
+#include "module-streamrelay.h"
 #include "oscam-chk.h"
 #include "oscam-client.h"
 #include "oscam-config.h"
@@ -1248,6 +1249,14 @@ static int32_t dvbapi_detect_api(void)
 				maxfilter = filtercount;
 				cs_log("Detected %s Api: %d, userconfig boxtype: %d maximum number of filters is %d (oscam limit is %d)",
 					device_path, selected_api, cfg.dvbapi_boxtype, filtercount, MAX_FILTER);
+
+#ifdef MODULE_STREAMRELAY
+				// Log enabled demuxer fix
+				if(cfg.dvbapi_demuxer_fix)
+				{
+					cs_log("Demuxer fix enabled, try fixing stream relay audio/video sync...");
+				}
+#endif
 			}
 
 			// try at least 8 adapters
@@ -6817,10 +6826,24 @@ static void *dvbapi_main_local(void *cli)
 				}
 
 				// count ecm filters to see if demuxing is possible anyway
-				if(demux[i].demux_fd[g].type == TYPE_ECM)
+#ifdef MODULE_STREAMRELAY
+				if(cfg.dvbapi_demuxer_fix)
 				{
-					ecmcounter++;
+					if(demux[i].demux_fd[g].type == TYPE_ECM || demux[i].demux_fd[g].type == 3 || demux[i].demux_fd[g].type == 6)
+					{
+						ecmcounter++;
+					}
 				}
+				else
+				{
+#endif
+					if(demux[i].demux_fd[g].type == TYPE_ECM)
+					{
+						ecmcounter++;
+					}
+#ifdef MODULE_STREAMRELAY
+				}
+#endif
 
 				// count emm filters also
 				if(demux[i].demux_fd[g].type == TYPE_EMM)
@@ -7855,8 +7878,14 @@ void dvbapi_send_dcw(struct s_client *client, ECM_REQUEST *er)
 
 		delayer(er, delay);
 
-#ifdef WITH_EMU
-		if(!chk_ctab_ex(er->caid, &cfg.emu_stream_relay_ctab) || !cfg.emu_stream_relay_enabled)
+#ifdef MODULE_STREAMRELAY
+		bool set_dvbapi_cw = true;
+		if(chk_ctab_ex(er->caid, &cfg.stream_relay_ctab) && cfg.stream_relay_enabled)
+		{
+			// streamserver set cw
+			set_dvbapi_cw = !stream_write_cw(er);
+		}
+		if (set_dvbapi_cw)
 #endif
 		switch(selected_api)
 		{

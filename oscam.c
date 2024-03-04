@@ -22,6 +22,7 @@
 #include "module-webif.h"
 #include "module-webif-tpl.h"
 #include "module-cw-cycle-check.h"
+#include "module-streamrelay.h"
 #include "oscam-chk.h"
 #include "oscam-cache.h"
 #include "oscam-client.h"
@@ -409,6 +410,10 @@ static void write_versionfile(bool use_stdout)
 	write_conf(HAVE_DVBAPI, "DVB API support");
 	if(config_enabled(HAVE_DVBAPI))
 	{
+		if(config_enabled(MODULE_STREAMRELAY))
+		{
+			write_conf(true, "DVB API with Stream Relay support");
+		}
 		write_conf(WITH_AZBOX, "DVB API with AZBOX support");
 		write_conf(WITH_MCA, "DVB API with MCA support");
 		write_conf(WITH_COOLAPI, "DVB API with COOLAPI support");
@@ -436,6 +441,11 @@ static void write_versionfile(bool use_stdout)
 		case CLOCK_TYPE_MONOTONIC: write_conf(CLOCKFIX, "Clockfix with monotonic clock"); break;
 	}
 	write_conf(IPV6SUPPORT, "IPv6 support");
+#if defined(__arm__) || defined(__aarch64__)
+	write_conf(WITH_ARM_NEON, "ARM NEON (SIMD/MPE) support");
+#else
+	fprintf(fp, "%-40s %s\n", "ARM NEON (SIMD/MPE) support:", "not supported!");
+#endif
 
 	fprintf(fp, "\n");
 	write_conf(MODULE_CAMD33, "camd 3.3x");
@@ -451,6 +461,7 @@ static void write_versionfile(bool use_stdout)
 	write_conf(MODULE_CONSTCW, "constant CW");
 	write_conf(MODULE_PANDORA, "Pandora");
 	write_conf(MODULE_GHTTP, "ghttp");
+	write_conf(MODULE_STREAMRELAY, "Streamrelay");
 
 	fprintf(fp, "\n");
 	write_conf(WITH_CARDREADER, "Reader support");
@@ -1833,6 +1844,9 @@ int32_t main(int32_t argc, char *argv[])
 
 	init_sidtab();
 	init_readerdb();
+#ifdef MODULE_STREAMRELAY
+	init_stream_server();
+#endif
 	cfg.account = init_userdb();
 	init_signal();
 	init_provid();
@@ -1917,6 +1931,9 @@ int32_t main(int32_t argc, char *argv[])
 	// Cleanup
 #ifdef MODULE_GBOX
 	stop_gbx_ticker();
+#endif
+#ifdef MODULE_STREAMRELAY
+	stop_stream_server();
 #endif
 	webif_close();
 	azbox_close();

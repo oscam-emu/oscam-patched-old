@@ -1557,6 +1557,7 @@ struct s_reader										// contains device info, reader info and card info
 	int32_t			resetcounter;					// actual count
 	uint32_t		auprovid;						// AU only for this provid
 	int8_t			audisabled;						// exclude reader from auto AU
+	int8_t			autype;
 	int8_t			needsemmfirst;					// 0: reader descrambles without emm first, 1: reader needs emms before it can descramble
 	struct timeb	emm_last;							// time of last successfully written emm
 	int8_t			smargopatch;
@@ -1575,27 +1576,56 @@ struct s_reader										// contains device info, reader info and card info
 #ifdef READER_CRYPTOWORKS
 	int8_t			needsglobalfirst;				// 0:Write one Global EMM for SHARED EMM disabled 1:Write one Global EMM for SHARED EMM enabled
 #endif
-#if defined(READER_NAGRA_MERLIN) || defined(READER_NAGRA)
-	uint8_t			nuid[4];
-	uint8_t			nuid_length;
-	uint8_t			cwekey[16];
-	uint8_t			cwekey_length;
+#if defined(READER_NAGRA)
+	uint8_t			cak63nuid[4];
+	uint8_t			cak63nuid_length;
+	uint8_t			cak63cwekey[16];
+	uint8_t			cak63cwekey_length;
 #endif
 #ifdef READER_NAGRA_MERLIN
-	uint8_t			irdid[4];
-	uint8_t			irdid_length;
-	uint8_t			public_exponent[3];
-	uint8_t			public_exponent_length;
 	uint8_t			mod1[112];
 	uint8_t			mod1_length;
+	uint8_t			cmd0eprov[2];
+	uint8_t			cmd0eprov_length;
+	uint8_t			mod2[112];
+	uint8_t			mod2_length;
+	uint8_t			tmprsa[112];
 	uint8_t			data50[80];
 	uint8_t			data50_length;
 	uint8_t			mod50[80];
 	uint8_t			mod50_length;
+	uint8_t			key3588[136];
+	uint8_t			key3588_length;
 	uint8_t			key60[96];
-	uint8_t			key60_length;
 	uint8_t			exp60[96];
-	uint8_t			exp60_length;
+	uint8_t			key68[104];
+	uint8_t			exp68[104];
+	uint8_t			key3des[16];
+	uint8_t			klucz68[24];
+	uint8_t			pairtype;
+	uint8_t			hasunique;
+	uint8_t			key3460[96];
+	uint8_t			key3460_length;
+	uint8_t			key3310[16];
+	uint8_t			key3310_length;
+	uint8_t			cwekey0[16];
+	uint8_t			cwekey0_length;
+	uint8_t			cwekey1[16];
+	uint8_t			cwekey1_length;
+	uint8_t			cwekey2[16];
+	uint8_t			cwekey2_length;
+	uint8_t			cwekey3[16];
+	uint8_t			cwekey3_length;
+	uint8_t			cwekey4[16];
+	uint8_t			cwekey4_length;
+	uint8_t			cwekey5[16];
+	uint8_t			cwekey5_length;
+	uint8_t			cwekey6[16];
+	uint8_t			cwekey6_length;
+	uint8_t			cwekey7[16];
+	uint8_t			cwekey7_length;
+	uint8_t			idird[4];
+	uint8_t			idird_length;
 	uint8_t			kdt05_00[216];
 	uint8_t			kdt05_10[208];
 	uint8_t			cardid[8];
@@ -1606,7 +1636,12 @@ struct s_reader										// contains device info, reader info and card info
 	uint8_t			block3[8];
 	uint8_t			v[8];
 	uint8_t			iout[8];
+	uint32_t		dword_83DBC;
 	uint8_t			data2[4];
+	uint8_t			ecmheader[4];
+	uint8_t			timestmp1[4];
+	uint8_t			timestmp2[4];
+	uint8_t			cak7expo[0x11];
 	uint8_t			data[0x80];
 	uint8_t			step1[0x60];
 	uint8_t			step2[0x68];
@@ -1615,12 +1650,22 @@ struct s_reader										// contains device info, reader info and card info
 	uint8_t			result[104];
 	uint8_t			stillencrypted[0x50];
 	uint8_t			resultrsa[0x50];
-	uint32_t		cak7_restart;
 	uint32_t		cak7_seq;
+	uint32_t		needrestart;
+	uint8_t			otpcsc[2];
+	uint8_t			otpcsc_length;
+	uint8_t			otacsc[2];
+	uint8_t			otacsc_length;
+	uint8_t			forcepair[1];
+	uint8_t			forcepair_length;
 	uint8_t			cak7_camstate;
 	uint8_t			cak7_aes_key[32];
 	uint8_t			cak7_aes_iv[16];
-	struct timeb	last_refresh;
+	int8_t			forcecwswap;
+	int8_t			evensa;
+	int8_t			forceemmg;
+	int8_t			cwpkota;
+
 #endif
 #ifdef CS_CACHEEX
 	CECSP			cacheex;						// CacheEx Settings
@@ -1645,6 +1690,12 @@ struct s_reader										// contains device info, reader info and card info
 	int32_t			l_port;
 	CAIDTAB			ctab;
 	uint32_t		boxid;
+	int8_t			cak7_mode;
+	uint8_t			cak7type;
+	uint8_t			cwpkcaid[2];
+	uint8_t			cwpkcaid_length;
+	uint8_t			nuid[4];
+	uint8_t			nuid_length;
 	int8_t			nagra_read;						// read nagra ncmed records: 0 Disabled (default), 1 read all records, 2 read valid records only
 	int8_t			detect_seca_nagra_tunneled_card;
 	int8_t			force_irdeto;
@@ -1652,6 +1703,8 @@ struct s_reader										// contains device info, reader info and card info
 	uint8_t			boxkey_length;
 	uint8_t			rsa_mod[120];					// rsa modulus for nagra cards.
 	uint8_t			rsa_mod_length;
+	uint8_t			cwpk_mod[16];					// cwpk modulus for conax cards.
+	uint8_t			cwpk_mod_length;
 	uint8_t			des_key[128];					// 3des key for Viaccess 16 bytes, des key for Dre 128 bytes
 	uint8_t			des_key_length;
 	uint8_t			atr[64];
@@ -1663,8 +1716,18 @@ struct s_reader										// contains device info, reader info and card info
 	SIDTABS			lb_sidtabs;
 	uint8_t			hexserial[8];
 	int32_t			nprov;
+	int32_t			nsa;
+	int32_t			nemm84;
+	int32_t			nemm83u;
+	int32_t			nemm83s;
+	int32_t			nemm87;
 	uint8_t			prid[CS_MAXPROV][8];
 	uint8_t			sa[CS_MAXPROV][4];				// viaccess & seca
+	uint8_t			emm84[CS_MAXPROV][3];
+	uint8_t			emm83u[CS_MAXPROV][6];
+	uint8_t			emm83s[CS_MAXPROV][6];
+	uint8_t			emm87[CS_MAXPROV][6];
+	uint8_t			emm82;
 	uint8_t			read_old_classes;				// viaccess
 	uint8_t			maturity;						// viaccess & seca maturity level
 	uint16_t		caid;
@@ -2338,6 +2401,9 @@ struct s_config
 	int8_t			dvbapi_read_sdt;
 	int8_t			dvbapi_write_sdt_prov;
 	int8_t			dvbapi_extended_cw_api;
+#ifdef MODULE_STREAMRELAY
+	int8_t			dvbapi_demuxer_fix;
+#endif
 #endif
 
 #ifdef CS_ANTICASC
@@ -2386,16 +2452,22 @@ struct s_config
 	struct s_ip		*scam_allowed;
 #endif
 
-#ifdef WITH_EMU
-	char			*emu_stream_source_host;
-	int32_t			emu_stream_source_port;
-	char			*emu_stream_source_auth_user;
-	char			*emu_stream_source_auth_password;
-	int32_t			emu_stream_relay_port;
-	uint32_t		emu_stream_ecm_delay;
-	int8_t			emu_stream_relay_enabled;
-	int8_t			emu_stream_emm_enabled;
-	CAIDTAB			emu_stream_relay_ctab;			// use the stream server for these caids
+#ifdef MODULE_STREAMRELAY
+	char			*stream_source_host;
+	int32_t			stream_source_port;
+	char			*stream_source_auth_user;
+	char			*stream_source_auth_password;
+	int32_t			stream_relay_port;
+#ifdef MODULE_RADEGAST
+	int8_t			stream_client_source_host;
+#endif
+	int8_t			stream_relay_enabled;
+	CAIDTAB			stream_relay_ctab;			// use the stream server for these caids
+#ifdef WITH_NEUTRINO
+#define DEFAULT_STREAM_SOURCE_PORT 31339 //Neutrino
+#else
+#define DEFAULT_STREAM_SOURCE_PORT 8001 //Enigma2
+#endif
 #endif
 
 	int32_t			max_cache_time;					// seconds ecms are stored in ecmcwcache
