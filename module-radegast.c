@@ -7,6 +7,10 @@
 #include "oscam-net.h"
 #include "oscam-string.h"
 #include "oscam-reader.h"
+#ifdef MODULE_STREAMRELAY
+#include "module-streamrelay.h"
+#include "oscam-chk.h"
+#endif
 
 static int32_t radegast_connect(void);
 
@@ -86,6 +90,12 @@ static void radegast_send_dcw(struct s_client *client, ECM_REQUEST *er)
 	mbuf[0] = 0x02; // DCW
 	if(er->rc < E_NOTFOUND)
 	{
+#ifdef MODULE_STREAMRELAY
+		if(chk_ctab_ex(er->caid, &cfg.stream_relay_ctab) && cfg.stream_relay_enabled)
+		{
+			stream_write_cw(er);
+		}
+#endif
 		mbuf[1] = 0x12; // len (overall)
 		mbuf[2] = 0x05; // ACCESS
 		mbuf[3] = 0x10; // len

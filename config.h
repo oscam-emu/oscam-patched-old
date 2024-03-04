@@ -22,6 +22,7 @@
 //#define LCDSUPPORT 1
 //#define LEDSUPPORT 1
 //#define IPV6SUPPORT 1
+//#define WITH_ARM_NEON 1
 #define MODULE_MONITOR 1
 
 //#define MODULE_CAMD33 1
@@ -37,6 +38,7 @@
 //#define MODULE_PANDORA 1
 //#define MODULE_GHTTP 1
 #define MODULE_SCAM 1
+//#define MODULE_STREAMRELAY 1
 
 #define WITH_CARDREADER 1
 
