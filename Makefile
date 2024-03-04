@@ -50,7 +50,11 @@ ifeq ($(uname_S),FreeBSD)
 	LIB_DL :=
 endif
 
-override STD_LIBS := -lm $(LIB_PTHREAD) $(LIB_DL) $(LIB_RT)
+ifeq "$(shell ./config.sh --enabled MODULE_STREAMRELAY)" "Y"
+	LIB_DVBCSA = -ldvbcsa
+endif
+
+override STD_LIBS := -lm $(LIB_PTHREAD) $(LIB_DL) $(LIB_RT) $(LIB_DVBCSA)
 override STD_DEFS := -D'CS_SVN_VERSION="$(SVN_REV)"'
 override STD_DEFS += -D'CS_CONFDIR="$(CONF_DIR)"'
 
@@ -58,20 +62,21 @@ override STD_DEFS += -D'CS_CONFDIR="$(CONF_DIR)"'
 CC_WARN = -W -Wall -Wshadow -Wredundant-decls -Wstrict-prototypes -Wold-style-definition
 
 # Compiler optimizations
-CC_OPTS = -O3 -ggdb -pipe -ffunction-sections -fdata-sections -funroll-loops -fomit-frame-pointer -fno-schedule-insns
+CC_OPTS = -O2 -ggdb -pipe -ffunction-sections -fdata-sections -fomit-frame-pointer -fno-schedule-insns
 
 CC = $(CROSS_DIR)$(CROSS)gcc
 STRIP = $(CROSS_DIR)$(CROSS)strip
 
 LDFLAGS = -Wl,--gc-sections
 
+#enable sse2 on x86, neon on arm
 TARGETHELP := $(shell $(CC) --target-help 2>&1)
 ifneq (,$(findstring sse2,$(TARGETHELP)))
-override CFLAGS += -fexpensive-optimizations -mmmx -msse -msse2 -msse3
+override CFLAGS += -mmmx -msse -msse2 -msse3
 else ifneq (,$(findstring neon,$(TARGETHELP)))
-override CFLAGS += -fexpensive-optimizations -mfpu=neon
-else
-override CFLAGS += -fexpensive-optimizations
+	ifeq "$(shell ./config.sh --enabled WITH_ARM_NEON)" "Y"
+		override CFLAGS += -mfpu=neon
+	endif
 endif
 
 # The linker for powerpc have bug that prevents --gc-sections from working
@@ -332,6 +337,7 @@ SRC-$(CONFIG_MODULE_GHTTP) += module-ghttp.c
 SRC-$(CONFIG_MODULE_RADEGAST) += module-radegast.c
 SRC-$(CONFIG_MODULE_SCAM) += module-scam.c
 SRC-$(CONFIG_MODULE_SERIAL) += module-serial.c
+SRC-$(CONFIG_MODULE_STREAMRELAY) += module-streamrelay.c
 SRC-$(CONFIG_WITH_LB) += module-stat.c
 SRC-$(CONFIG_WEBIF) += module-webif-lib.c
 SRC-$(CONFIG_WEBIF) += module-webif-tpl.c
