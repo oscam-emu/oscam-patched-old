@@ -1477,6 +1477,7 @@ static void *stream_client_handler(void *arg)
 	uint8_t *stream_buf;
 	uint16_t packetCount = 0, packetSize = 0, startOffset = 0;
 	uint32_t remainingDataPos, remainingDataLength, tmp_pids[4];
+	uint8_t descrambling = 0;
 #ifdef WITH_EMU
 	int32_t cur_dvb_buffer_size, cur_dvb_buffer_wait;
 #else
@@ -1727,6 +1728,10 @@ static void *stream_client_handler(void *arg)
 #endif // WITH_EMU
 							{
 								DescrambleTsPackets(data, stream_buf + startOffset, packetCount * packetSize, packetSize, tsbbatch);
+								if (!descrambling && cfg.stream_relay_buffer_time) {
+									cs_sleepms(cfg.stream_relay_buffer_time);
+									descrambling = 1;
+								}
 							}
 						}
 						else
