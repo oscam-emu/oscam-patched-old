@@ -56,22 +56,31 @@ override STD_DEFS += -D'CS_CONFDIR="$(CONF_DIR)"'
 
 # Compiler warnings
 CC_WARN = -W -Wall -Wshadow -Wredundant-decls -Wstrict-prototypes -Wold-style-definition
+FFDECSA_WARN = -W -Wall # -Wold-style-definition -Wmissing-prototypes
 
 # Compiler optimizations
-CC_OPTS = -O3 -ggdb -pipe -ffunction-sections -fdata-sections -funroll-loops -fomit-frame-pointer -fno-schedule-insns
+ifeq ($(HOSTCC),clang)
+	CC_OPTS = -O3 -ggdb -pipe -ffunction-sections -fdata-sections -fomit-frame-pointer
+else
+	CC_OPTS = -O3 -ggdb -pipe -ffunction-sections -fdata-sections -fomit-frame-pointer -fno-schedule-insns
+endif
+FFDECSA_OPTS = $(CC_OPTS)
 
 CC = $(CROSS_DIR)$(CROSS)gcc
 STRIP = $(CROSS_DIR)$(CROSS)strip
 
 LDFLAGS = -Wl,--gc-sections
 
+#enable sse2 on x86, neon on arm
 TARGETHELP := $(shell $(CC) --target-help 2>&1)
 ifneq (,$(findstring sse2,$(TARGETHELP)))
-override CFLAGS += -fexpensive-optimizations -mmmx -msse -msse2 -msse3
+override CFLAGS += -mmmx -msse -msse2 -msse3
+override FFDECSA_OPTS += -mmmx -msse -msse2 -msse3
 else ifneq (,$(findstring neon,$(TARGETHELP)))
-override CFLAGS += -fexpensive-optimizations -mfpu=neon
-else
-override CFLAGS += -fexpensive-optimizations
+	ifeq "$(shell ./config.sh --enabled WITH_ARM_NEON)" "Y"
+		override CFLAGS += -mfpu=neon
+		override FFDECSA_OPTS += -mfpu=neon
+	endif
 endif
 
 # The linker for powerpc have bug that prevents --gc-sections from working
@@ -223,6 +232,17 @@ OBJDIR := $(BUILD_DIR)/$(TARGET)
 OSCAM_BIN := $(BINDIR)/oscam-$(VER)$(SVN_REV)-$(subst cygwin,cygwin.exe,$(TARGET))
 TESTS_BIN := tests.bin
 LIST_SMARGO_BIN := $(BINDIR)/list_smargo-$(VER)$(SVN_REV)-$(subst cygwin,cygwin.exe,$(TARGET))
+
+ifeq "$(shell ./config.sh --enabled WITH_EMU)" "Y"
+	FFDECSA_OBJ = $(OBJDIR)/ffdecsa/ffdecsa.o
+	ifdef FFDECSA_TEST
+		FFDECSA_TEST_BIN := $(BINDIR)/ffdecsa-test
+	endif
+	FFDECSA_INFO = $(shell echo '| FFdecsa:\n|  FFDECSA_WARN  = $(strip $(FFDECSA_WARN))\n|  FFDECSA_OPTS  = $(strip $(FFDECSA_OPTS))\n')
+	ifdef PARALLEL_MODE
+		override CFLAGS += -DPARALLEL_MODE=$(PARALLEL_MODE)
+	endif
+endif
 
 # Build list_smargo-.... only when WITH_LIBUSB build is requested.
 ifndef USE_LIBUSB
@@ -425,6 +445,7 @@ all:
 |  LDFLAGS  = $(strip $(LDFLAGS))\n\
 |  LIBS     = $(strip $(LIBS))\n\
 |  UseFlags = $(addsuffix =1,$(USE_FLAGS))\n\
+$(FFDECSA_INFO)\
 | Config:\n\
 |  Addons   : $(shell ./config.sh --use-flags "$(USE_FLAGS)" --show-enabled addons)\n\
 |  Protocols: $(shell ./config.sh --use-flags "$(USE_FLAGS)" --show-enabled protocols | sed -e 's|MODULE_||g')\n\
@@ -437,11 +458,11 @@ all:
 ifeq "$(shell ./config.sh --enabled WEBIF)" "Y"
 	@$(MAKE) --no-print-directory --quiet -C webif
 endif
-	@$(MAKE) --no-print-directory $(OSCAM_BIN) $(LIST_SMARGO_BIN)
+	@$(MAKE) --no-print-directory $(OSCAM_BIN) $(LIST_SMARGO_BIN) $(FFDECSA_TEST_BIN)
 
-$(OSCAM_BIN).debug: $(OBJ)
+$(OSCAM_BIN).debug: $(OBJ) $(FFDECSA_OBJ)
 	$(SAY) "LINK	$@"
-	$(Q)$(CC) $(LDFLAGS) $(OBJ) $(LIBS) -o $@
+	$(Q)$(CC) $(LDFLAGS) $(OBJ) $(FFDECSA_OBJ) $(LIBS) -o $@
 
 $(OSCAM_BIN): $(OSCAM_BIN).debug
 	$(SAY) "STRIP	$@"
@@ -451,6 +472,16 @@ $(OSCAM_BIN): $(OSCAM_BIN).debug
 $(LIST_SMARGO_BIN): utils/list_smargo.c
 	$(SAY) "BUILD	$@"
 	$(Q)$(CC) $(STD_DEFS) $(CC_OPTS) $(CC_WARN) $(CFLAGS) $(LDFLAGS) utils/list_smargo.c $(LIBS) -o $@
+
+$(FFDECSA_OBJ): ffdecsa/ffdecsa.c
+	@$(CC) -MP -MM -MT $@ -o $(subst .o,.d,$@) $<
+	$(SAY) "CC	$<"
+	$(Q)$(CC) $(FFDECSA_WARN) $(CFLAGS) $(FFDECSA_OPTS) -c $< -o $@
+
+$(FFDECSA_TEST_BIN): $(FFDECSA_OBJ)
+	$(SAY) "STRIP	$@"
+	$(Q)$(CC) $(CC_OPTS) $(CC_WARN) $(CFLAGS) $(FFDECSA_OBJ) ffdecsa/ffdecsa_test.c -o $@
+	$(Q)$(STRIP) $(FFDECSA_TEST_BIN)
 
 $(OBJDIR)/config.o: $(OBJDIR)/config.c
 	$(SAY) "CONF	$<"
@@ -462,6 +493,7 @@ $(OBJDIR)/%.o: %.c Makefile
 	$(Q)$(CC) $(STD_DEFS) $(CC_OPTS) $(CC_WARN) $(CFLAGS) -c $< -o $@
 
 -include $(subst .o,.d,$(OBJ))
+-include $(subst .o,.d,$(FFDECSA_OBJ))
 
 tests:
 	@-$(MAKE) --no-print-directory BUILD_TESTS=1 OSCAM_BIN=$(TESTS_BIN)
@@ -496,7 +528,7 @@ clean:
 	@-rm -rf $(BUILD_DIR) lib
 
 distclean: clean
-	@-for FILE in $(BINDIR)/list_smargo-* $(BINDIR)/oscam-$(VER)*; do \
+	@-for FILE in $(BINDIR)/list_smargo-* $(BINDIR)/ffdecsa* $(BINDIR)/oscam-$(VER)*; do \
 		echo "RM	$$FILE"; \
 		rm -rf $$FILE; \
 	done
@@ -557,6 +589,29 @@ OSCam build system documentation\n\
                     Default CC_WARN value is:\n\
                     '$(CC_WARN)'\n\
                     To add text to this variable set EXTRA_CC_WARN=text.\n\
+\n\
+   FFDECSA_WARN=  - This variable holds compiler warning parameters.\n\
+                    Default FFDECSA_WARN value is:\n\
+                    '$(FFDECSA_WARN)'\n\
+                    To change the text, set this variable to FFDECSA_WARN=text.\n\
+\n\
+   FFDECSA_OPTS=  - This variable holds compiler optimization parameters.\n\
+                    Default FFDECSA_OPTS value is:\n\
+                    '$(FFDECSA_OPTS)'\n\
+                    To change the text, set this variable to FFDECSA_OPTS=text.\n\
+\n\
+   Parallel mode  - Parallelization stuff, large speed differences are possible.\n\
+                    Possible choices:\n\
+                    'PARALLEL_32_INT'\n\
+                    'PARALLEL_64_LONG'\n\
+                    'PARALLEL_128_NEON'\n\
+                    'PARALLEL_128_SSE2'\n\
+                    For example, if you want.\n\
+                    'make PARALLEL_MODE=PARALLEL_32_INT'\n\
+                    or \n\
+                    'make CFLAGS="\"-DPARALLEL_MODE=PARALLEL_32_INT"\"'\n\
+\n\
+   FFDECSA_TEST=1 - Builds '$(BINDIR)/ffdecsa-test-$(VER)-$(SVN_REV)-$(subst cygwin,cygwin.exe,$(TARGET))' binary\n\
 \n\
    V=1            - Request build process to print verbose messages. By\n\
                     default the only messages that are shown are simple info\n\

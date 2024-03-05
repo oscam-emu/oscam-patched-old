@@ -467,7 +467,6 @@ execute_process (COMMAND make --no-print-directory --quiet -C ${CMAKE_CURRENT_SO
 add_subdirectory (csctapi)
 add_subdirectory (minilzo)
 add_subdirectory (cscrypt)
-add_subdirectory (ffdecsa)
 
 #----------------------- file groups ------------------------------
 execute_process (COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/config.sh --enabled MODULE_CAMD33 OUTPUT_VARIABLE CAMD33 OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -518,6 +517,15 @@ add_library (${csoscam} STATIC ${csoscam_srcs} ${csoscam_hdrs})
 set (exe_name "oscam")
 add_executable (${exe_name} ${exe_srcs} ${exe_hdrs})
 target_link_libraries (${exe_name} ${csoscam} ${csmodules} ${csreaders} csctapi cscrypt minilzo ffdecsa)
+
+#----- ffdecsa-test-binary-----
+file (GLOB ffdecsa_test_hdrs "ffdecsa/*.h")
+file (GLOB ffdecsa_test_srcs "ffdecsa/ffdecsa_test.c")
+set (ffdecsa_test_name "ffdecsa-test")
+add_executable (${ffdecsa_test_name} ${ffdecsa_test_srcs} ${ffdecsa_test_hdrs})
+target_link_libraries (${ffdecsa_test_name} ffdecsa)
+#----- ffdecsa-test-binary-----
+
 if(HAVE_LIBRT AND HAVE_LIBUSB)
 	if (LIBUSBDIR)
 		set (libusb_link "imp_libusb")
@@ -671,10 +679,26 @@ add_definitions ("-D'CS_SVN_VERSION=\"${CS_SVN_VERSION}\"'")
 
 execute_process(COMMAND ${CMAKE_C_COMPILER} -dumpmachine COMMAND tr -d '\n' OUTPUT_VARIABLE CS_TARGET)
 add_definitions ("-D'CS_TARGET=\"${CS_TARGET}\"'")
+
+execute_process (COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/config.sh --enabled WITH_ARM_NEON OUTPUT_VARIABLE CONFIG_WITH_ARM_NEON OUTPUT_STRIP_TRAILING_WHITESPACE)
+if (CONFIG_WITH_ARM_NEON MATCHES "Y" AND NOT WITH_ARM_NEON EQUAL 0)
+	add_definitions ("-DWITH_ARM_NEON")
+	set (WITH_ARM_NEON "1")
+elseif (CONFIG_WITH_ARM_NEON MATCHES "Y" AND NOT WITH_ARM_NEON EQUAL 0)
+	message (status  " The config file has WITH_ARM_NEON enabled, but You disabled it by you cmake command COMPILING WHITOUT arm neon optimization")
+endif (CONFIG_WITH_ARM_NEON MATCHES "Y" AND NOT WITH_ARM_NEON EQUAL 0)
 #----------------------- global compile and link options ------------------------------
-#enable sse2 on x86
+#enable sse2 on x86, neon on arm and aarch64
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse -msse2 -msse3")
+elseif (CMAKE_SYSTEM_PROCESSOR MATCHES "(arm)|(ARM)|(aarch64)")
+	if (WITH_ARM_NEON EQUAL 1)
+		message(status "  ARM NEON is enabled, compiling with neon optimization")
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mfpu=neon")
+		set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -mfpu=neon")
+	else (WITH_ARM_NEON EQUAL 1)
+		message(status "  ARM NEON is disabled, compiling without neon optimization")
+	endif (WITH_ARM_NEON EQUAL 1)
 endif (CMAKE_SYSTEM_PROCESSOR MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
 
 # disable warning about unused but set variables in gcc 4.6+
@@ -759,7 +783,13 @@ if( HAVE_LIBRT OR HAVE_LIBRT_STATIC)
 	endif (HAVE_LIBUSB)
 endif( HAVE_LIBRT OR HAVE_LIBRT_STATIC)
 
-#-------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------
+
+#----------------------- subdirectory ffdecsa (mandatory here to inherit CMAKE_C_FLAGS ) -
+
+add_subdirectory (ffdecsa)
+
+#--------------------------------------------------------------------------------
 
 if (NOT OSCamOperatingSystem MATCHES "Mac OS X")
 if (NOT DEFINED ENV{ANDROID_NDK})
@@ -846,9 +876,9 @@ if (HAVE_PTHREAD)
 	message (STATUS "  use system pthread functions")
 endif (HAVE_PTHREAD)
 if (HAVE_LIBUSB)
-if(STATIC_LIBUSB EQUAL 1)
-	message (STATUS "  You selected to enable static libusb")
-endif(STATIC_LIBUSB EQUAL 1)
+	if(STATIC_LIBUSB EQUAL 1)
+		message (STATUS "  You selected to enable static libusb")
+	endif(STATIC_LIBUSB EQUAL 1)
 	if(STATICLIBUSB AND NOT LIBUSBDIR)
 		message (STATUS "  use static libusb functions")
 	else(STATICLIBUSB AND NOT LIBUSBDIR)
