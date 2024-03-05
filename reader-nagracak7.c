@@ -287,9 +287,16 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 			if(cta_res[21] == 0x9C)
 			{
 				uint32_t timestamp = b2i(0x04, cta_res + 22);
-
-				reader->card_valid_to = tier_date(timestamp, de, 11);
-
+				uint8_t timestamp186D[4] = {0xA6, 0x9E, 0xFB, 0x7F};
+				uint32_t timestamp186Db2i = b2i(0x04, timestamp186D);
+				if(reader->caid == 0x186D)
+				{
+					reader->card_valid_to = tier_date(timestamp186Db2i, de, 11);
+				}
+				else
+				{
+					reader->card_valid_to = tier_date(timestamp, de, 11);
+				}
 				uint16_t chid = 0;
 				uint32_t id = b2i(0x02, cta_res + 19);
 				uint32_t start_date;
@@ -310,7 +317,7 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 				rdr_log(reader, "|%04X|%04X    |%s  |%s  |", id, chid, ds, de);
 				addProvider(reader, cta_res + 19);
 			}
-			if((reader->caid == 0x187E) && (cta_res[21] == 0x01))
+			if((reader->caid == 0x1856) && (cta_res[21] == 0x01))
 			{
 				uint16_t chid = 0;
 				uint32_t id = b2i(0x02, cta_res + 19);
@@ -519,7 +526,14 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 						expire_date = expire_date1 <= expire_date2 ? expire_date1 : expire_date2;
 						break;
 
-					case 0x1861: // Vodafone D08
+					case 0x186D: // HD04H
+						start_date = b2i(0x04, cta_res + 53);
+						expire_date1 = b2i(0x04, cta_res + 39);
+						expire_date2 = b2i(0x04, cta_res + 57);
+						expire_date = expire_date1 <= expire_date2 ? expire_date1 : expire_date2;
+						break;
+
+					case 0x1861: // Polsat, Vodafone D08
 						start_date = b2i(0x04, cta_res + 42);
 						expire_date = b2i(0x04, cta_res + 28);
 						break;
@@ -1547,26 +1561,7 @@ static int32_t nagra3_card_init(struct s_reader *reader, ATR *newatr)
 
 	CAK7GetDataType(reader, 0x09);
 
-	rdr_log(reader, "ready for requests");
-	return OK;
-}
-
-static int32_t nagra3_card_info(struct s_reader *reader)
-{
 	char tmp[4 * 3 + 1];
-	rdr_log(reader, "ROM:    %c %c %c %c %c %c %c %c", reader->rom[0], reader->rom[1], reader->rom[2], reader->rom[3], reader->rom[4], reader->rom[5], reader->rom[6], reader->rom[7]);
-	rdr_log(reader, "REV:    %c %c %c %c %c %c", reader->rom[9], reader->rom[10], reader->rom[11], reader->rom[12], reader->rom[13], reader->rom[14]);
-	rdr_log_sensitive(reader, "SER:    {%s}", cs_hexdump(1, reader->hexserial + 2, 4, tmp, sizeof(tmp)));
-	rdr_log(reader, "CAID:   %04X", reader->caid);
-	rdr_log(reader, "Prv.ID: %s(sysid)", cs_hexdump(1, reader->prid[0], 4, tmp, sizeof(tmp)));
-	cs_clear_entitlement(reader); // reset the entitlements
-	rdr_log(reader, "-----------------------------------------");
-	rdr_log(reader, "|id  |tier    |valid from  |valid to    |");
-	rdr_log(reader, "+----+--------+------------+------------+");
-	CAK7GetDataType(reader, 0x03);
-	CAK7GetDataType(reader, 0x0C);
-	rdr_log(reader, "-----------------------------------------");
-
 	reader->nsa     = 0;
 	reader->nemm84  = 0;
 	reader->nemm83u = 0;
@@ -1619,6 +1614,26 @@ static int32_t nagra3_card_info(struct s_reader *reader)
 		}
 		rdr_log(reader, "-----------------------------------------");
 	}
+
+	rdr_log(reader, "ready for requests");
+	return OK;
+}
+
+static int32_t nagra3_card_info(struct s_reader *reader)
+{
+	char tmp[4 * 3 + 1];
+	rdr_log(reader, "ROM:    %c %c %c %c %c %c %c %c", reader->rom[0], reader->rom[1], reader->rom[2], reader->rom[3], reader->rom[4], reader->rom[5], reader->rom[6], reader->rom[7]);
+	rdr_log(reader, "REV:    %c %c %c %c %c %c", reader->rom[9], reader->rom[10], reader->rom[11], reader->rom[12], reader->rom[13], reader->rom[14]);
+	rdr_log_sensitive(reader, "SER:    {%s}", cs_hexdump(1, reader->hexserial + 2, 4, tmp, sizeof(tmp)));
+	rdr_log(reader, "CAID:   %04X", reader->caid);
+	rdr_log(reader, "Prv.ID: %s(sysid)", cs_hexdump(1, reader->prid[0], 4, tmp, sizeof(tmp)));
+	cs_clear_entitlement(reader); // reset the entitlements
+	rdr_log(reader, "-----------------------------------------");
+	rdr_log(reader, "|id  |tier    |valid from  |valid to    |");
+	rdr_log(reader, "+----+--------+------------+------------+");
+	CAK7GetDataType(reader, 0x03);
+	CAK7GetDataType(reader, 0x0C);
+	rdr_log(reader, "-----------------------------------------");
 
 	return OK;
 }
