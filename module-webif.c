@@ -1317,6 +1317,7 @@ static char *send_oscam_config_streamrelay(struct templatevars *vars, struct uri
 	tpl_addVar(vars, TPLADD, "STREAM_CLIENT_SOURCE_HOST", (cfg.stream_client_source_host == 1) ? "checked" : "");
 #endif
 	tpl_printf(vars, TPLADD, "STREAM_RELAY_PORT", "%d", cfg.stream_relay_port);
+	tpl_printf(vars, TPLADD, "STREAM_RELAY_BUFFER_TIME", "%d", cfg.stream_relay_buffer_time);
 
 	tpl_printf(vars, TPLADD, "TMP", "STREAMRELAYENABLEDSELECTED%d", cfg.stream_relay_enabled);
 	tpl_addVar(vars, TPLADD, tpl_getVar(vars, "TMP"), "selected");

@@ -806,6 +806,7 @@ static void *stream_client_handler(void *arg)
 	uint8_t *stream_buf;
 	uint16_t packetCount = 0, packetSize = 0, startOffset = 0;
 	uint32_t remainingDataPos, remainingDataLength, tmp_pids[4];
+	uint8_t descrambling = 0;
 
 	const int32_t cur_dvb_buffer_size = DVB_BUFFER_SIZE_CSA;
 	const int32_t cur_dvb_buffer_wait = DVB_BUFFER_WAIT_CSA;
@@ -1013,6 +1014,10 @@ static void *stream_client_handler(void *arg)
 						if (chk_ctab_ex(data->caid, &cfg.stream_relay_ctab) && (data->caid != 0xA101 || data->caid == NO_CAID_VALUE))
 						{
 								DescrambleTsPackets(data, stream_buf + startOffset, packetCount * packetSize, packetSize, tsbbatch);
+								if (!descrambling && cfg.stream_relay_buffer_time) {
+									cs_sleepms(cfg.stream_relay_buffer_time);
+									descrambling = 1;
+								}
 						}
 						else
 						{
@@ -1073,7 +1078,7 @@ void *stream_server(void *UNUSED(a))
 #if DVBCSA_KEY_ECM > 0
 		"(ecm) "
 #endif
-		"dvbcsa parallel mode = %d", cluster_size);
+		"dvbcsa parallel mode = %d (relay buffer time: %d ms)", cluster_size, cfg.stream_relay_buffer_time);
 
 	if (!stream_server_mutex_init)
 	{

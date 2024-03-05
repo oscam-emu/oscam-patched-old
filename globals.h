@@ -2462,6 +2462,7 @@ struct s_config
 	int8_t			stream_client_source_host;
 #endif
 	int8_t			stream_relay_enabled;
+	uint32_t		stream_relay_buffer_time;
 	CAIDTAB			stream_relay_ctab;			// use the stream server for these caids
 #ifdef WITH_NEUTRINO
 #define DEFAULT_STREAM_SOURCE_PORT 31339 //Neutrino
