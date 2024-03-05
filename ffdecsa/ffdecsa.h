@@ -43,14 +43,12 @@ void *get_key_struct(void);
 void free_key_struct(void *keys);
 
 // -- set control words, 8 bytes each
-void set_control_words(void *keys, const unsigned char *even, const unsigned char *odd);
+void set_control_words_ecm(void *keys, const unsigned char *even, const unsigned char *odd, const unsigned char ecm);
 
 // -- set even control word, 8 bytes
-void set_even_control_word(void *keys, const unsigned char *even);
 void set_even_control_word_ecm(void *keys, const unsigned char *even, const unsigned char ecm);
 
 // -- set odd control word, 8 bytes
-void set_odd_control_word(void *keys, const unsigned char *odd);
 void set_odd_control_word_ecm(void *keys, const unsigned char *odd, const unsigned char ecm);
 
 // -- get control words, 8 bytes each
@@ -60,5 +58,9 @@ void set_odd_control_word_ecm(void *keys, const unsigned char *odd, const unsign
 // This interface is a bit complicated because it is designed for maximum speed.
 // Please read doc/how_to_use.txt.
 int decrypt_packets(void *keys, unsigned char **cluster);
+
+#define set_control_words(a,b,c)    set_control_words_ecm(a,b,c,0)
+#define set_even_control_word(a,b)  set_even_control_word_ecm(a,b,0)
+#define set_odd_control_word(a,b)   set_odd_control_word_ecm(a,b,0)
 
 #endif

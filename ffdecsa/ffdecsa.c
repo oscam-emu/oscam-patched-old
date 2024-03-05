@@ -62,8 +62,10 @@
 #if defined(__x86_64__) || defined(_M_X64)
 #define PARALLEL_MODE PARALLEL_128_SSE2
 
+#elif defined(__i386__)
+#define PARALLEL_MODE PARALLEL_64_MMX
+
 #elif defined(__mips__) || defined(__mips) || defined(__MIPS__)
-//#define PARALLEL_MODE PARALLEL_64_LONG
 #define PARALLEL_MODE PARALLEL_32_INT
 
 #elif defined(__sh__) || defined(__SH4__)
@@ -71,12 +73,8 @@
 #define COPY_UNALIGNED_PKT
 #define MEMALIGN_VAL 4
 
-#elif defined(__arm__)
-#ifdef WITH_ARM_NEON
+#elif (defined(__ARM_NEON__) || defined(__ARM_NEON)) && defined(WITH_ARM_NEON)
 #define PARALLEL_MODE PARALLEL_128_NEON
-#else
-#define PARALLEL_MODE PARALLEL_32_INT
-#endif
 
 #else
 #define PARALLEL_MODE PARALLEL_32_INT
@@ -142,6 +140,12 @@
 
 //
 
+#ifndef NO_FASTTRASP
+#define FASTTRASP
+#endif
+
+//
+
 #ifndef MALLOC
 #define MALLOC(X) malloc(X)
 #endif
@@ -180,7 +184,6 @@ struct csa_key_t{
         int iA[8];  // iA[0] is for A1, iA[7] is for A8
         int iB[8];  // iB[0] is for B1, iB[7] is for B8
 // used by stream (group)
-        MEMALIGN group ck_g[8][8]; // [byte][bit:0=LSB,7=MSB]
         MEMALIGN group iA_g[8][4]; // [0 for A1][0 for LSB]
         MEMALIGN group iB_g[8][4]; // [0 for B1][0 for LSB]
 // used by block
@@ -192,6 +195,9 @@ struct csa_key_t{
 struct csa_keys_t{
   struct csa_key_t even;
   struct csa_key_t odd;
+#if defined(PARALLEL_128_NEON) && defined(__arm__)
+  char padding[16];
+#endif
 };
 
 //-----stream cypher
@@ -237,61 +243,6 @@ static void key_schedule_stream(
 
 static void key_schedule_block(
   unsigned char *ck,    // [In]  ck[0]-ck[7]   8 bytes | Key.
-  unsigned char *kk)    // [Out] kk[0]-kk[55] 56 bytes | Key schedule.
-{
-  static const unsigned char key_perm[0x40] = {
-    0x12,0x24,0x09,0x07,0x2A,0x31,0x1D,0x15, 0x1C,0x36,0x3E,0x32,0x13,0x21,0x3B,0x40,
-    0x18,0x14,0x25,0x27,0x02,0x35,0x1B,0x01, 0x22,0x04,0x0D,0x0E,0x39,0x28,0x1A,0x29,
-    0x33,0x23,0x34,0x0C,0x16,0x30,0x1E,0x3A, 0x2D,0x1F,0x08,0x19,0x17,0x2F,0x3D,0x11,
-    0x3C,0x05,0x38,0x2B,0x0B,0x06,0x0A,0x2C, 0x20,0x3F,0x2E,0x0F,0x03,0x26,0x10,0x37,
-  };
-
-  int i,j,k;
-  int bit[64];
-  int newbit[64];
-  int kb[7][8];
-
-  // 56 steps
-  // 56 key bytes kk(55)..kk(0) by key schedule from ck
-
-  // kb(6,0) .. kb(6,7) = ck(0) .. ck(7)
-  kb[6][0] = ck[0];
-  kb[6][1] = ck[1];
-  kb[6][2] = ck[2];
-  kb[6][3] = ck[3];
-  kb[6][4] = ck[4];
-  kb[6][5] = ck[5];
-  kb[6][6] = ck[6];
-  kb[6][7] = ck[7];
-
-  // calculate kb[5] .. kb[0]
-  for(i=5; i>=0; i--){
-    // 64 bit perm on kb
-    for(j=0; j<8; j++){
-      for(k=0; k<8; k++){
-        bit[j*8+k] = (kb[i+1][j] >> (7-k)) & 1;
-        newbit[key_perm[j*8+k]-1] = bit[j*8+k];
-      }
-    }
-    for(j=0; j<8; j++){
-      kb[i][j] = 0;
-      for(k=0; k<8; k++){
-        kb[i][j] |= newbit[j*8+k] << (7-k);
-      }
-    }
-  }
-
-  // xor to give kk
-  for(i=0; i<7; i++){
-    for(j=0; j<8; j++){
-      kk[i*8+j] = kb[i][j] ^ i;
-    }
-  }
-
-}
-
-static void key_schedule_block_ecm(
-  unsigned char *ck,    // [In]  ck[0]-ck[7]   8 bytes | Key.
   unsigned char *kk,    // [Out] kk[0]-kk[55] 56 bytes | Key schedule.
   unsigned char ecm)    // ecm
 {
@@ -330,29 +281,14 @@ static void key_schedule_block_ecm(
   // 56 key bytes kk(55)..kk(0) by key schedule from ck
 
   // kb(6,0) .. kb(6,7) = ck(0) .. ck(7)
-  if (ecm == 4)
-  {
-     kb[6][0] = ecm_perm[ck[0]];
-     kb[6][1] = ck[1];
-     kb[6][2] = ck[2];
-     kb[6][3] = ck[3];
-     kb[6][4] = ecm_perm[ck[4]];
-     kb[6][5] = ck[5];
-     kb[6][6] = ck[6];
-     kb[6][7] = ck[7];
-  }
-  else
-  {
-     kb[6][0] = ck[0];
-     kb[6][1] = ck[1];
-     kb[6][2] = ck[2];
-     kb[6][3] = ck[3];
-     kb[6][4] = ck[4];
-     kb[6][5] = ck[5];
-     kb[6][6] = ck[6];
-     kb[6][7] = ck[7];
-  }
-
+  kb[6][0] = ecm==4?ecm_perm[ck[0]]:ck[0];
+  kb[6][1] = ck[1];
+  kb[6][2] = ck[2];
+  kb[6][3] = ck[3];
+  kb[6][4] = ecm==4?ecm_perm[ck[4]]:ck[4];
+  kb[6][5] = ck[5];
+  kb[6][6] = ck[6];
+  kb[6][7] = ck[7];
 
   // calculate kb[5] .. kb[0]
   for(i=5; i>=0; i--){
@@ -381,15 +317,13 @@ static void key_schedule_block_ecm(
 }
 
 //-----block utils
-
-static inline __attribute__((always_inline)) void trasp_N_8 (unsigned char *in,unsigned char* out,int count){
-  int *ri=(int *)in;
-  int *ibi=(int *)out;
+#ifdef FASTTRASP
+static inline __attribute__((always_inline)) void trasp_N_8 (int *in, int* out, int count){
   int j,i,k,g;
   // copy and first step
   for(g=0;g<count;g++){
-    ri[g]=ibi[2*g];
-    ri[GROUP_PARALLELISM+g]=ibi[2*g+1];
+    in[g]=out[2*g];
+    in[GROUP_PARALLELISM+g]=out[2*g+1];
   }
 //dump_mem("NE1 r[roff]",&r[roff],GROUP_PARALLELISM*8,GROUP_PARALLELISM);
 // now 01230123
@@ -398,10 +332,10 @@ static inline __attribute__((always_inline)) void trasp_N_8 (unsigned char *in,u
     for(i=0;i<2;i++){
       for(k=0;k<INTS_PER_ROW;k++){
         unsigned int t,b;
-        t=ri[INTS_PER_ROW*(j+i)+k];
-        b=ri[INTS_PER_ROW*(j+i+2)+k];
-        ri[INTS_PER_ROW*(j+i)+k]=     (t&0x0000ffff)      | ((b           )<<16);
-        ri[INTS_PER_ROW*(j+i+2)+k]=  ((t           )>>16) |  (b&0xffff0000) ;
+        t=in[INTS_PER_ROW*(j+i)+k];
+        b=in[INTS_PER_ROW*(j+i+2)+k];
+        in[INTS_PER_ROW*(j+i)+k]=     (t&0x0000ffff)      | ((b           )<<16);
+        in[INTS_PER_ROW*(j+i+2)+k]=  ((t           )>>16) |  (b&0xffff0000) ;
       }
     }
   }
@@ -411,10 +345,10 @@ static inline __attribute__((always_inline)) void trasp_N_8 (unsigned char *in,u
     for(i=0;i<1;i++){
       for(k=0;k<INTS_PER_ROW;k++){
         unsigned int t,b;
-        t=ri[INTS_PER_ROW*(j+i)+k];
-        b=ri[INTS_PER_ROW*(j+i+1)+k];
-        ri[INTS_PER_ROW*(j+i)+k]=     (t&0x00ff00ff)     | ((b&0x00ff00ff)<<8);
-        ri[INTS_PER_ROW*(j+i+1)+k]=  ((t&0xff00ff00)>>8) |  (b&0xff00ff00);
+        t=in[INTS_PER_ROW*(j+i)+k];
+        b=in[INTS_PER_ROW*(j+i+1)+k];
+        in[INTS_PER_ROW*(j+i)+k]=     (t&0x00ff00ff)     | ((b&0x00ff00ff)<<8);
+        in[INTS_PER_ROW*(j+i+1)+k]=  ((t&0xff00ff00)>>8) |  (b&0xff00ff00);
       }
     }
   }
@@ -422,9 +356,7 @@ static inline __attribute__((always_inline)) void trasp_N_8 (unsigned char *in,u
 // now 00000000
 }
 
-static inline __attribute__((always_inline)) void trasp_8_N (unsigned char *in,unsigned char* out,int count){
-  int *ri=(int *)in;
-  int *bdi=(int *)out;
+static inline __attribute__((always_inline)) void trasp_8_N (int *in, int* out, int count){
   int j,i,k,g;
 #define INTS_PER_ROW (GROUP_PARALLELISM/8*2)
 //dump_mem("NE1 r[roff]",&r[roff],GROUP_PARALLELISM*8,GROUP_PARALLELISM);
@@ -433,10 +365,10 @@ static inline __attribute__((always_inline)) void trasp_8_N (unsigned char *in,u
     for(i=0;i<1;i++){
       for(k=0;k<INTS_PER_ROW;k++){
         unsigned int t,b;
-        t=ri[INTS_PER_ROW*(j+i)+k];
-        b=ri[INTS_PER_ROW*(j+i+1)+k];
-        ri[INTS_PER_ROW*(j+i)+k]=     (t&0x00ff00ff)     | ((b&0x00ff00ff)<<8);
-        ri[INTS_PER_ROW*(j+i+1)+k]=  ((t&0xff00ff00)>>8) |  (b&0xff00ff00);
+        t=in[INTS_PER_ROW*(j+i)+k];
+        b=in[INTS_PER_ROW*(j+i+1)+k];
+        in[INTS_PER_ROW*(j+i)+k]=     (t&0x00ff00ff)     | ((b&0x00ff00ff)<<8);
+        in[INTS_PER_ROW*(j+i+1)+k]=  ((t&0xff00ff00)>>8) |  (b&0xff00ff00);
       }
     }
   }
@@ -446,21 +378,21 @@ static inline __attribute__((always_inline)) void trasp_8_N (unsigned char *in,u
     for(i=0;i<2;i++){
       for(k=0;k<INTS_PER_ROW;k++){
         unsigned int t,b;
-        t=ri[INTS_PER_ROW*(j+i)+k];
-        b=ri[INTS_PER_ROW*(j+i+2)+k];
-        ri[INTS_PER_ROW*(j+i)+k]=     (t&0x0000ffff)      | ((b           )<<16);
-        ri[INTS_PER_ROW*(j+i+2)+k]=  ((t           )>>16) |  (b&0xffff0000) ;
+        t=in[INTS_PER_ROW*(j+i)+k];
+        b=in[INTS_PER_ROW*(j+i+2)+k];
+        in[INTS_PER_ROW*(j+i)+k]=     (t&0x0000ffff)      | ((b           )<<16);
+        in[INTS_PER_ROW*(j+i+2)+k]=  ((t           )>>16) |  (b&0xffff0000) ;
       }
     }
   }
 //dump_mem("NE3 r[roff]",&r[roff],GROUP_PARALLELISM*8,GROUP_PARALLELISM);
 // now 01230123
   for(g=0;g<count;g++){
-    bdi[2*g]=ri[g];
-    bdi[2*g+1]=ri[GROUP_PARALLELISM+g];
+    out[2*g]=in[g];
+    out[2*g+1]=in[GROUP_PARALLELISM+g];
   }
 }
-
+#endif
 //-----block main function
 
 // block group
@@ -492,22 +424,18 @@ static void block_decypher_group(
   };
   MEMALIGN unsigned char r[GROUP_PARALLELISM*(8+56)];  /* 56 because we will move back in memory while looping */
   MEMALIGN unsigned char sbox_in[GROUP_PARALLELISM],sbox_out[GROUP_PARALLELISM],perm_out[GROUP_PARALLELISM];
-  int roff;
+  int roff=GROUP_PARALLELISM*56;
   int i,g,count_all=GROUP_PARALLELISM;
 
-  roff=GROUP_PARALLELISM*56;
-
-//#define FASTTRASP1
-#ifndef FASTTRASP1
+#ifndef FASTTRASP
   for(g=0;g<count;g++){
     // Init registers 
-    int j;
-    for(j=0;j<8;j++){
-      r[roff+GROUP_PARALLELISM*j+g]=ib[8*g+j];
+    for(i=0;i<8;i++){
+      r[roff+GROUP_PARALLELISM*i+g]=ib[8*g+i];
     }
   }
 #else
-  trasp_N_8((unsigned char *)&r[roff],(unsigned char *)ib,count);
+  trasp_N_8((int *)&r[roff],(int *)ib,count);
 #endif
 //dump_mem("OLD r[roff]",&r[roff],GROUP_PARALLELISM*8,GROUP_PARALLELISM);
 
@@ -542,14 +470,14 @@ static void block_decypher_group(
         out=B_FFOR(
 	    B_FFOR(
 	    B_FFOR(
-	    B_FFOR(
-	    B_FFOR(
 	           B_FFSH8L(B_FFAND(in,B_FFN_ALL_29()),1),
 	           B_FFSH8L(B_FFAND(in,B_FFN_ALL_02()),6)),
-	           B_FFSH8L(B_FFAND(in,B_FFN_ALL_04()),3)),
-	           B_FFSH8R(B_FFAND(in,B_FFN_ALL_10()),2)),
-	           B_FFSH8R(B_FFAND(in,B_FFN_ALL_40()),6)),
-	           B_FFSH8R(B_FFAND(in,B_FFN_ALL_80()),4));
+	    B_FFOR(
+                   B_FFSH8L(B_FFAND(in,B_FFN_ALL_04()),3),
+	           B_FFSH8R(B_FFAND(in,B_FFN_ALL_10()),2))),
+	    B_FFOR(
+                   B_FFSH8R(B_FFAND(in,B_FFN_ALL_40()),6),
+	           B_FFSH8R(B_FFAND(in,B_FFN_ALL_80()),4)));
 
         *(batch *)&po[g]=out;
       }
@@ -578,17 +506,15 @@ static void block_decypher_group(
 #endif
   }
 
-//#define FASTTRASP2
-#ifndef FASTTRASP2
+#ifndef FASTTRASP
   for(g=0;g<count;g++){
     // Copy results
-    int j;
-    for(j=0;j<8;j++){
-      bd[8*g+j]=r[roff+GROUP_PARALLELISM*j+g];
+    for(i=0;i<8;i++){
+      bd[8*g+i]=r[roff+GROUP_PARALLELISM*i+g];
     }
   }
 #else
-  trasp_8_N((unsigned char *)&r[roff],(unsigned char *)bd,count);
+  trasp_8_N((int *)&r[roff],(int *)bd,count);
 #endif
 }
 
@@ -613,40 +539,42 @@ int get_suggested_cluster_size(void){
 
 void *get_key_struct(void){
   struct csa_keys_t *keys=(struct csa_keys_t *)MALLOC(sizeof(struct csa_keys_t));
+#if defined(PARALLEL_128_NEON) && defined(__arm__)
+  keys->padding[0] = ((unsigned int)keys) & 0x8;
+  keys = (struct csa_keys_t *)((unsigned int)keys + (keys->padding[0] ? 0x8 : 0));
+#endif
   if(keys) {
     static const unsigned char pk[8] = { 0,0,0,0,0,0,0,0 };
-    set_control_words(keys,pk,pk);
+    set_control_words_ecm(keys,pk,pk,0);
     }
   return keys;
 }
 
 void free_key_struct(void *keys){
+#if defined(PARALLEL_128_NEON) && defined(__arm__)
+  return FREE((void *)((unsigned int)keys - (((struct csa_keys_t *)keys)->padding[0] ? 0x8 : 0)));
+#else
   return FREE(keys);
+#endif
 }
 
 //-----set control words
 
-static void schedule_key(struct csa_key_t *key, const unsigned char *pk){
+static void schedule_key(struct csa_key_t *key, const unsigned char *pk, const unsigned char ecm){
   // could be made faster, but is not run often
-  int bi,by;
   int i,j;
 // key
   memcpy(key->ck,pk,8);
 // precalculations for stream
   key_schedule_stream(key->ck,key->iA,key->iB);
-  for(by=0;by<8;by++){
-    for(bi=0;bi<8;bi++){
-      key->ck_g[by][bi]=(key->ck[by]&(1<<bi))?FF1():FF0();
-    }
-  }
-  for(by=0;by<8;by++){
-    for(bi=0;bi<4;bi++){
-      key->iA_g[by][bi]=(key->iA[by]&(1<<bi))?FF1():FF0();
-      key->iB_g[by][bi]=(key->iB[by]&(1<<bi))?FF1():FF0();
+  for(i=0;i<8;i++){
+    for(j=0;j<4;j++){
+      key->iA_g[i][j]=(key->iA[i]&(1<<j))?FF1():FF0();
+      key->iB_g[i][j]=(key->iB[i]&(1<<j))?FF1():FF0();
     }
   }
 // precalculations for block
-  key_schedule_block(key->ck,key->kk);
+  key_schedule_block(key->ck,key->kk,ecm);
   for(i=0;i<56;i++){
     for(j=0;j<BYTES_PER_BATCH;j++){
       *(((unsigned char *)&key->kkmulti[i])+j)=key->kk[i];
@@ -654,61 +582,26 @@ static void schedule_key(struct csa_key_t *key, const unsigned char *pk){
   }
 }
 
-static void schedule_key_ecm(struct csa_key_t *key, const unsigned char *pk, const unsigned char ecm){
-  // could be made faster, but is not run often
-  int bi,by;
-  int i,j;
-// key
-  memcpy(key->ck,pk,8);
-// precalculations for stream
-  key_schedule_stream(key->ck,key->iA,key->iB);
-  for(by=0;by<8;by++){
-    for(bi=0;bi<8;bi++){
-      key->ck_g[by][bi]=(key->ck[by]&(1<<bi))?FF1():FF0();
-    }
-  }
-  for(by=0;by<8;by++){
-    for(bi=0;bi<4;bi++){
-      key->iA_g[by][bi]=(key->iA[by]&(1<<bi))?FF1():FF0();
-      key->iB_g[by][bi]=(key->iB[by]&(1<<bi))?FF1():FF0();
-    }
-  }
-// precalculations for block
-  key_schedule_block_ecm(key->ck,key->kk,ecm);
-  for(i=0;i<56;i++){
-    for(j=0;j<BYTES_PER_BATCH;j++){
-      *(((unsigned char *)&key->kkmulti[i])+j)=key->kk[i];
-    }
-  }
-}
-
-void set_control_words(void *keys, const unsigned char *ev, const unsigned char *od){
-  schedule_key(&((struct csa_keys_t *)keys)->even,ev);
-  schedule_key(&((struct csa_keys_t *)keys)->odd,od);
-}
-
-void set_even_control_word(void *keys, const unsigned char *pk){
-  schedule_key(&((struct csa_keys_t *)keys)->even,pk);
+void set_control_words_ecm(void *keys, const unsigned char *ev, const unsigned char *od, const unsigned char ecm){
+  schedule_key(&((struct csa_keys_t *)keys)->even,ev,ecm);
+  schedule_key(&((struct csa_keys_t *)keys)->odd,od,ecm);
 }
 
 void set_even_control_word_ecm(void *keys, const unsigned char *pk, const unsigned char ecm){
-  schedule_key_ecm(&((struct csa_keys_t *)keys)->even,pk,ecm);
-}
-
-void set_odd_control_word(void *keys, const unsigned char *pk){
-  schedule_key(&((struct csa_keys_t *)keys)->odd,pk);
+  schedule_key(&((struct csa_keys_t *)keys)->even,pk,ecm);
 }
 
 void set_odd_control_word_ecm(void *keys, const unsigned char *pk, const unsigned char ecm){
-  schedule_key_ecm(&((struct csa_keys_t *)keys)->odd,pk,ecm);
+  schedule_key(&((struct csa_keys_t *)keys)->odd,pk,ecm);
 }
 
 //-----get control words
-
+#if 0
 void get_control_words(void *keys, unsigned char *even, unsigned char *odd){
   memcpy(even,&((struct csa_keys_t *)keys)->even.ck,8);
   memcpy(odd,&((struct csa_keys_t *)keys)->odd.ck,8);
 }
+#endif
 
 //----- decrypt
 
@@ -740,7 +633,7 @@ int decrypt_packets(void *keys, unsigned char **cluster){
   MEMALIGN unsigned char stream_in[GROUP_PARALLELISM*8];
   MEMALIGN unsigned char stream_out[GROUP_PARALLELISM*8];
   MEMALIGN unsigned char ib[GROUP_PARALLELISM*8];
-  MEMALIGN unsigned char block_out[GROUP_PARALLELISM*8];
+  MEMALIGN unsigned char block_out[GROUP_PARALLELISM*8]={0};
 #ifdef COPY_UNALIGNED_PKT
   unsigned char *unaligned[GROUP_PARALLELISM];
   MEMALIGN unsigned char alignedBuff[GROUP_PARALLELISM][188];
@@ -857,9 +750,11 @@ int decrypt_packets(void *keys, unsigned char **cluster){
   //  sort them, longest payload first
   //  we expect many n=23 packets and a few n<23
   DBG(fprintf(stderr,"PRESORTING\n"));
+#ifdef DEBUG
   for(i=0;i<grouped;i++){
     DBG(fprintf(stderr,"%2i of %2i: pkt=%p len=%03i n=%2i residue=%i\n",i,grouped,g_pkt[i],g_len[i],g_n[i],g_residue[i]));
     }
+#endif
   // grouped is always <= GROUP_PARALLELISM
 
 #define g_swap(a,b) \
@@ -909,9 +804,11 @@ DBG(fprintf(stderr,"new t23=%i,tsmall=%i\n\n",t23,tsmall));
   }
   DBG(fprintf(stderr,"packets with n=23, t23=%i   grouped=%i\n",t23,grouped));
   DBG(fprintf(stderr,"MIDSORTING\n"));
+#ifdef DEBUG
   for(i=0;i<grouped;i++){
     DBG(fprintf(stderr,"%2i of %2i: pkt=%p len=%03i n=%2i residue=%i\n",i,grouped,g_pkt[i],g_len[i],g_n[i],g_residue[i]));
     }
+#endif
 
   // step 2: sort small packets in decreasing order of n (bubble sort is enough)
   for(i=t23;i<grouped;i++){
@@ -940,9 +837,11 @@ DBG(fprintf(stderr,"new t23=%i,tsmall=%i\n\n",t23,tsmall));
     alive[i]+=alive[i+1];
   }
   DBG(fprintf(stderr,"ALIVE\n"));
+#ifdef DEBUG
   for(i=0;i<=23;i++){
     DBG(fprintf(stderr,"alive%2i=%i\n",i,alive[i]));
     }
+#endif
 
   // choose key
   if(group_ev_od==0){
@@ -1007,7 +906,7 @@ DBG(dump_mem("BLO_ib ",block_out,8*alive[iter-1],8));
       FFTABLEOUT(ib+8*g,stream_out,g);
 DBG(dump_mem("stream_out_ib ",ib+8*g,8,8));
 // XOREQ8BY gcc bug? 2x4 ok, 8 ko    UPDATE: result ok but speed 1-2% slower (!!!???)
-#if 1
+#ifndef __XOREQ_8_BY__
       XOREQ_4_BY(ib+8*g,encp[g]+8);
       XOREQ_4_BY(ib+8*g+4,encp[g]+8+4);
 #else
@@ -1035,7 +934,7 @@ DBG(dump_mem("jd_after_decrypt_residue ",encp[g]+8,g_residue[g],g_residue[g]));
     }
     // alive packets: pointers++
     for(g=0;g<alive[iter];g++) encp[g]+=8;
-  };
+  }
   // ITER N
 DBG(fprintf(stderr,">>>>>ITER 23\n"));
   iter=23;
