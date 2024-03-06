@@ -1810,7 +1810,6 @@ static int8_t gbox_check_header_recvd(struct s_client *cli, struct s_client *pro
 	cs_log_dump_dbg(D_READER, data, n, "-> decrypted data (%d bytes) from %s:", n, cs_inet_ntoa(cli->ip));
 
 	peer_received_pw = b2i(4, data + 6);
-	peer_recvd_id = gbox_convert_password_to_id(peer_received_pw);
 	my_received_pw = b2i(4, data + 2);
 	rcvd_header_cmd = b2i(2, data);
 
