@@ -51,10 +51,10 @@ ifeq ($(uname_S),FreeBSD)
 endif
 
 ifeq "$(shell ./config.sh --enabled MODULE_STREAMRELAY)" "Y"
-	LIB_DVBCSA = -ldvbcsa
+	override USE_LIBDVBCSA=1
 endif
 
-override STD_LIBS := -lm $(LIB_PTHREAD) $(LIB_DL) $(LIB_RT) $(LIB_DVBCSA)
+override STD_LIBS := -lm $(LIB_PTHREAD) $(LIB_DL) $(LIB_RT)
 override STD_DEFS := -D'CS_SVN_VERSION="$(SVN_REV)"'
 override STD_DEFS += -D'CS_CONFDIR="$(CONF_DIR)"'
 
@@ -117,6 +117,7 @@ DEFAULT_SU980_LIB = -lentropic -lrt
 DEFAULT_AZBOX_LIB = -Lextapi/openxcas -lOpenXCASAPI
 DEFAULT_LIBCRYPTO_LIB = -lcrypto
 DEFAULT_SSL_LIB = -lssl
+DEFAULT_LIBDVBCSA_LIB = -ldvbcsa
 ifeq ($(uname_S),Linux)
 	DEFAULT_LIBUSB_LIB = -lusb-1.0 -lrt
 else
@@ -128,7 +129,11 @@ ifeq ($(uname_S),FreeBSD)
 	DEFAULT_LIBUSB_LIB = -lusb
 endif
 ifeq ($(uname_S),Darwin)
-	DEFAULT_LIBUSB_LIB = -lusb-1.0 -lobjc -framework IOKit -framework CoreFoundation -framework Security
+	DEFAULT_SSL_LIB = -L/usr/local/opt/openssl/lib -lssl
+	DEFAULT_LIBCRYPTO_LIB = -L/usr/local/opt/openssl/lib -lcrypto
+	DEFAULT_LIBDVBCSA_LIB = -L/usr/local/opt/libdvbcsa/lib -ldvbcsa
+	DEFAULT_LIBUSB_FLAGS = -I/usr/local/opt/libusb/include
+	DEFAULT_LIBUSB_LIB = -L/usr/local/opt/libusb/lib -lusb-1.0 -lobjc -framework IOKit -framework CoreFoundation -framework Security
 	DEFAULT_PCSC_FLAGS = -I/usr/local/opt/pcsc-lite/include/PCSC
 	DEFAULT_PCSC_LIB = -L/usr/local/opt/pcsc-lite/lib -lpcsclite -lobjc -framework IOKit -framework CoreFoundation -framework PCSC
 else
@@ -185,6 +190,7 @@ $(eval $(call prepare_use_flags,SSL,ssl))
 $(eval $(call prepare_use_flags,LIBCRYPTO,))
 $(eval $(call prepare_use_flags,LIBUSB,libusb))
 $(eval $(call prepare_use_flags,PCSC,pcsc))
+$(eval $(call prepare_use_flags,LIBDVBCSA,libdvbcsa))
 $(eval $(call prepare_use_flags,UTF8))
 
 # Add PLUS_TARGET and EXTRA_TARGET to TARGET
