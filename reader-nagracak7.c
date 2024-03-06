@@ -403,6 +403,11 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 							{
 								(cta_res + p + 5)[1] -= 0x01;
 							}
+
+							if ((reader->caid == 0x1856) && ((cta_res + p + 5)[0] == 0x87) && ((cta_res + p + 5)[1] == 0x34) && ((cta_res + p + 5)[2] == 0x07))
+							{
+								(cta_res + p + 5)[4] -= 0x21;
+							}
 							addSA(reader, cta_res + p + 5);
 							addemmfilter(reader, cta_res + p + 5);
 						}
