@@ -311,8 +311,25 @@ int32_t nagra_get_emm_type(EMM_PACKET *ep, struct s_reader *rdr)
 				return 0;
 
 			case 0x87:
+				memset(ep->hexserial, 0x00, 0x08);
+				ep->hexserial[0] = ep->emm[5];
+				ep->hexserial[1] = ep->emm[4];
+				ep->hexserial[2] = ep->emm[3];
+				ep->hexserial[3] = ep->emm[6];
 				ep->type = SHARED;
-				return 1;
+
+				for(i = 0; i < rdr->nprov; i++)
+				{
+					if(!memcmp(rdr->sa[i], "\x00\x00\x00", 3))
+					{
+						continue;
+					}
+					if(!memcmp(rdr->sa[i], ep->hexserial, 0x03))
+					{
+						return 1;
+					}
+				}
+				return 0;
 
 			default:
 				ep->type = UNKNOWN;
@@ -548,7 +565,7 @@ int32_t nagra_get_emm_filter(struct s_reader *rdr, struct s_csystem_emm_filter *
 	{
 		if(*emm_filters == NULL)
 		{
-			const unsigned int max_filter_count = 6 + (2 * rdr->nprov);
+			const unsigned int max_filter_count = 5 + (3 * rdr->nprov);
 			if(!cs_malloc(emm_filters, max_filter_count * sizeof(struct s_csystem_emm_filter)))
 			{
 				return ERROR;
@@ -576,12 +593,6 @@ int32_t nagra_get_emm_filter(struct s_reader *rdr, struct s_csystem_emm_filter *
 			filters[idx].filter[4] = rdr->hexserial[5];
 			filters[idx].filter[5] = 0x00;
 			memset(&filters[idx].mask[0], 0xFF, 6);
-			idx++;
-
-			filters[idx].type = EMM_SHARED;
-			filters[idx].enabled = 1;
-			filters[idx].filter[0] = 0x87;
-			filters[idx].mask[0] = 0xFF;
 			idx++;
 
 			filters[idx].type = EMM_GLOBAL;
@@ -628,6 +639,17 @@ int32_t nagra_get_emm_filter(struct s_reader *rdr, struct s_csystem_emm_filter *
 				filters[idx].filter[3] = rdr->sa[prov][0];
 				filters[idx].filter[4] = 0x00;
 				filters[idx].filter[5] = 0x10;
+				memset(&filters[idx].mask[0], 0xFF, 6);
+				idx++;
+
+				filters[idx].type = EMM_SHARED;
+				filters[idx].enabled = 1;
+				filters[idx].filter[0] = 0x87;
+				filters[idx].filter[1] = rdr->sa[prov][2];
+				filters[idx].filter[2] = rdr->sa[prov][1];
+				filters[idx].filter[3] = rdr->sa[prov][0];
+				filters[idx].filter[4] = 0x00;
+				filters[idx].filter[5] = 0x00;
 				memset(&filters[idx].mask[0], 0xFF, 6);
 				idx++;
 			}
