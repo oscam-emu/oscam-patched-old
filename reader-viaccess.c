@@ -95,8 +95,8 @@ void MakeSubKeys(uint* KeySch, char key98Idx)
 {
 	int i,k;
 	char j;
-	uint    w[140];
-	char    Sbox[128];
+	uint w[140] = {0};
+	char Sbox[128];
 	//    uint KeyS[132];
 	// calc SBox , inverse of SBoxInverse
 	for(i = 0; i < 8; i++)   //row
