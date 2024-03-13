@@ -13,12 +13,12 @@ jobs:
 
     steps:
     - name: checkout oscam-patched
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
     - name: checkout oscam-emu
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         repository: oscam-emu/oscam-emu
         token: ${{ secrets.ACTIONS_TOKEN }}
