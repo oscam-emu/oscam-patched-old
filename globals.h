@@ -368,7 +368,7 @@
 /* ===========================
  *			constants
  * =========================== */
-#define CS_VERSION				"1.20_svn"
+#define CS_VERSION				"1.30_svn"
 #ifndef CS_SVN_VERSION
 # define CS_SVN_VERSION			"test"
 #endif

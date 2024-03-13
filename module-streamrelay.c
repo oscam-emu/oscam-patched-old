@@ -144,7 +144,7 @@ void ParseEcmData(stream_client_data *cdata)
 
 static void write_cw(ECM_REQUEST *er, int32_t connid)
 {
-	const uint8_t ecm = (caid_is_videoguard(er->caid) && (er->ecm[4] != 0 && (er->ecm[2] - er->ecm[4]) == 4)) ? er->ecm[21] : 0;
+	const uint8_t ecm = (caid_is_videoguard(er->caid) && (er->ecm[4] != 0 && (er->ecm[2] - er->ecm[4]) == 4)) ? 4 : 0;
 	if (memcmp(er->cw, "\x00\x00\x00\x00\x00\x00\x00\x00", 8) != 0)
 	{
 		dvbcsa_bs_key_set(er->cw, key_data[connid].key[EVEN]);

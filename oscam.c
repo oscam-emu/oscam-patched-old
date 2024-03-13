@@ -143,7 +143,7 @@ static void show_usage(void)
 		   "| |_| |___) | |_| (_| | | | | | |\n"
 		   " \\___/|____/ \\___\\__,_|_| |_| |_|\n\n");
 	printf("OSCam Cardserver v%s, build r%s (%s)\n", CS_VERSION, CS_SVN_VERSION, CS_TARGET);
-	printf("Copyright (C) 2009-2020 OSCam developers.\n");
+	printf("Copyright (C) 2009-2024 OSCam developers.\n");
 	printf("This program is distributed under GPLv3.\n");
 	printf("OSCam is based on Streamboard mp-cardserver v0.9d written by dukat\n");
 	printf("Visit https://board.streamboard.tv/ for more details.\n\n");
@@ -443,8 +443,6 @@ static void write_versionfile(bool use_stdout)
 	write_conf(IPV6SUPPORT, "IPv6 support");
 #if defined(__arm__) || defined(__aarch64__)
 	write_conf(WITH_ARM_NEON, "ARM NEON (SIMD/MPE) support");
-#else
-	fprintf(fp, "%-40s %s\n", "ARM NEON (SIMD/MPE) support:", "not supported!");
 #endif
 
 	fprintf(fp, "\n");
