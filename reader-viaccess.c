@@ -26,7 +26,7 @@ uint getBit(uint number, int bt)
 void SBitslice(uint* Iarray, int offsetin, uint* Oarray, int offsetout, int row, char* box)
 {
 	int bi,input,l,output;
-	uint calcArray[4]  = {0,0,0,0};  
+	uint calcArray[4]  = {0,0,0,0};
 	for (bi = 0; bi < 32; bi++)
 	{
 		input = 0;
@@ -35,15 +35,15 @@ void SBitslice(uint* Iarray, int offsetin, uint* Oarray, int offsetout, int row,
 		output = box[input+16*row];
 		for (l = 0; l < 4; l++)
 			calcArray[l] += getBit(output,l) << bi;
-	}   
-	for (l = 0; l < 4; l++)     	
+	}
+	for (l = 0; l < 4; l++)
 		Oarray[l+offsetout] = calcArray[l];
 }
-void xorBlock(uint* data, int offset)          
+void xorBlock(uint* data, int offset)
 {
 	int i;
 	for (i = 0; i < 4; i++)
-		data[i] ^= KeyS[i + 4*offset];          
+		data[i] ^= KeyS[i + 4*offset];
 }
 uint rotr(uint val, int nbits)
 {
@@ -74,7 +74,7 @@ void N98_decrypt(byte* data)
 {
 	int r;                                               // round
 	int i,j;
-	uint N98[4];                                        // make 32 bits words  
+	uint N98[4];                                        // make 32 bits words
 	for(i = 0; i < 4; i++) 
 		N98[i] = data[4*i] + (data[4*i+1] << 8) + (data[4*i+2] << 16) + (data[4*i+3] << 24);
 	for(r = 31; r >= 0; r--)                             // decrypt, inverse order
@@ -115,7 +115,7 @@ void MakeSubKeys(uint* KeySch, char key98Idx)
 			w[0]=0x6341F22E; w[1]=0x002E2D10; w[2]=0x181D7704; w[3]=0x1D93A0F3; w[4]=1; w[5]=0; w[6]=0; w[7]=0;
 			break;
 	}
-	for(i = 0; i < 132; i++)	
+	for(i = 0; i < 132; i++)
 		w[i+8] = rotr(w[i+0] ^ w[i+3] ^ w[i+5] ^ w[i+7] ^ 0x9E3779B9 ^ i, 21);
 	for(i = 0; i < 33; i++)
 		SBitslice(w,4*i+8,KeySch,4*i, ((35-i) & 7), Sbox);  // SBox , bitslice mode
@@ -270,10 +270,11 @@ static int8_t add_find_class(struct s_reader *reader, uint32_t provid, const uin
 					tm.tm_mon = vd.month_s - 1; // january is 0 in tm_mon
 					tm.tm_mday = vd.day_s;
 					start_t = cs_timegm(&tm);
-					tm.tm_year = vd.year_e + 80; // via year starts in 1980, tm_year starts in 1900
+					tm.tm_year = vd.year_e + 80; //via year starts in 1980, tm_year starts in 1900
 					tm.tm_mon = vd.month_e - 1; // january is 0 in tm_mon
 					tm.tm_mday = vd.day_e;
 					end_t = cs_timegm(&tm);
+
 					if(cs_add_entitlement(reader, reader->caid, provid, cls, cls, start_t, end_t, 5, add) != NULL)
 					{
 						if(!add)
@@ -1406,7 +1407,7 @@ static int32_t viaccess_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, s
 	{
 		if (reader->initCA28)
 		{
-			uint8_t returnedcw[16]; 
+			uint8_t returnedcw[16];
 			memcpy(returnedcw,ea->cw,16);
 			// Processing 3DES
 			// Processing even cw
@@ -1425,11 +1426,11 @@ static int32_t viaccess_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, s
 			snprintf(ea->msglog, MSGLOGSIZE, "Nano E0 detected, no valid boxkey + deskey defined: no decoding");
 		}
 	}
-	if (SubECM == 1)       
-	{                   
+	if (SubECM == 1)
+	{
 		uint8_t rw[16]; 
 		memcpy(rw, ea->cw, 16);
-		memcpy(ea->cw, rw+4, 4);  
+		memcpy(ea->cw, rw+4, 4);
 		memcpy(ea->cw+4, rw, 4);
 		memcpy(ea->cw+8, rw+12, 4);
 		memcpy(ea->cw+12, rw+8, 4);
