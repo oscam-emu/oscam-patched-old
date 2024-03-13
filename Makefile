@@ -685,6 +685,13 @@ OSCam build system documentation\n\
                          SSL_LIB='$(DEFAULT_SSL_LIB)'\n\
                      Using USE_SSL=1 adds to '-ssl' to PLUS_TARGET.\n\
 \n\
+   USE_LIBDVBCSA=1 - Request linking with libdvbcsa. USE_LIBDVBCSA is automatically\n\
+                     The variables that control USE_LIBDVBCSA=1 build are:\n\
+                         LIBDVBCSA_FLAGS='$(DEFAULT_LIBDVBCSA_FLAGS)'\n\
+                         LIBDVBCSA_CFLAGS='$(DEFAULT_LIBDVBCSA_FLAGS)'\n\
+                         LIBDVBCSA_LDFLAGS='$(DEFAULT_LIBDVBCSA_FLAGS)'\n\
+                         LIBDVBCSA_LIB='$(DEFAULT_LIBDVBCSA_LIB)'\n\
+\n\
    USE_UTF8=1       - Request UTF-8 enabled webif by default.\n\
 \n\
  Automatically intialized variables:\n\
@@ -802,6 +809,8 @@ OSCam build system documentation\n\
      make USE_LIBCRYPTO=1 LIBCRYPTO_LIB=\"/usr/lib/libcrypto.a\"\n\n\
    Build OSCam with static libssl and libcrypto:\n\
      make USE_SSL=1 SSL_LIB=\"/usr/lib/libssl.a\" LIBCRYPTO_LIB=\"/usr/lib/libcrypto.a\"\n\n\
+   Build OSCam with static libdvbcsa:\n\
+     make USE_LIBDVBCSA=1 LIBDVBCSA_LIB=\"/usr/lib/libdvbcsa.a\"\n\n\
    Build with verbose messages and size optimizations:\n\
      make V=1 CC_OPTS=-Os\n\n\
    Build and set oscam file name:\n\
