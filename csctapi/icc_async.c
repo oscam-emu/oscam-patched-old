@@ -88,7 +88,9 @@ void do_cak7_cmd(struct s_reader *reader,unsigned char *cta_res, uint16_t *p_cta
 	data[4]=(reader->cak7_seq>>16)&0xFF;
 	data[5]=(reader->cak7_seq>>8)&0xFF;
 	data[6]=(reader->cak7_seq)&0xFF;
+	rdr_log_dump_dbg(reader, D_READER, data, inlen, "preparing data for writing to cardreader");
 	calculate_cak7_cmd(reader,data,inlen,&req[5]);
+	rdr_log_dump_dbg(reader, D_READER, req, sizeof(req), "write to cardreader");
 	if(!ICC_Async_CardWrite(reader, req, sizeof(req), cta_res, p_cta_lr))
 	{
 		if(reader->protocol_type == ATR_PROTOCOL_TYPE_T0)
