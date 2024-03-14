@@ -101,7 +101,6 @@ if (OSCamOperatingSystem MATCHES "Windows/Cygwin")
 		${CMAKE_CURRENT_SOURCE_DIR}/csctapi
 		${CMAKE_CURRENT_SOURCE_DIR}/cscrypt
 		${CMAKE_CURRENT_SOURCE_DIR}/minilzo
-		${CMAKE_CURRENT_SOURCE_DIR}/ffdecsa
 		${CMAKE_CURRENT_SOURCE_DIR}/extapi/cygwin
 		/usr/include/w32api
 		${OPTIONAL_INCLUDE_DIR}
@@ -111,7 +110,6 @@ else (OSCamOperatingSystem MATCHES "Windows/Cygwin")
 		${CMAKE_CURRENT_SOURCE_DIR}/csctapi
 		${CMAKE_CURRENT_SOURCE_DIR}/cscrypt
 		${CMAKE_CURRENT_SOURCE_DIR}/minilzo
-		${CMAKE_CURRENT_SOURCE_DIR}/ffdecsa
 		${OPTIONAL_INCLUDE_DIR}
 		)
 endif (OSCamOperatingSystem MATCHES "Windows/Cygwin")
@@ -500,7 +498,6 @@ execute_process (COMMAND make --no-print-directory --quiet -C ${CMAKE_CURRENT_SO
 add_subdirectory (csctapi)
 add_subdirectory (minilzo)
 add_subdirectory (cscrypt)
-add_subdirectory (ffdecsa)
 
 #----------------------- file groups ------------------------------
 execute_process (COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/config.sh --enabled MODULE_CAMD33 OUTPUT_VARIABLE CAMD33 OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -550,7 +547,7 @@ add_library (${csoscam} STATIC ${csoscam_srcs} ${csoscam_hdrs})
 
 set (exe_name "oscam")
 add_executable (${exe_name} ${exe_srcs} ${exe_hdrs})
-target_link_libraries (${exe_name} ${csoscam} ${csmodules} ${csreaders} csctapi cscrypt minilzo ffdecsa)
+target_link_libraries (${exe_name} ${csoscam} ${csmodules} ${csreaders} csctapi cscrypt minilzo)
 if(HAVE_LIBRT AND HAVE_LIBUSB)
 	if (LIBUSBDIR)
 		set (libusb_link "imp_libusb")

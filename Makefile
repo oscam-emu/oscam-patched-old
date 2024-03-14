@@ -290,16 +290,13 @@ SRC-$(CONFIG_MODULE_CCCSHARE) += module-cccshare.c
 SRC-$(CONFIG_MODULE_CONSTCW) += module-constcw.c
 SRC-$(CONFIG_WITH_EMU) += module-emulator.c
 SRC-$(CONFIG_WITH_EMU) += module-emulator-osemu.c
-SRC-$(CONFIG_WITH_EMU) += module-emulator-streamserver.c
 SRC-$(CONFIG_WITH_EMU) += module-emulator-biss.c
 SRC-$(CONFIG_WITH_EMU) += module-emulator-cryptoworks.c
 SRC-$(CONFIG_WITH_EMU) += module-emulator-director.c
-SRC-$(CONFIG_WITH_EMU) += module-emulator-icam.c
 SRC-$(CONFIG_WITH_EMU) += module-emulator-irdeto.c
 SRC-$(CONFIG_WITH_EMU) += module-emulator-nagravision.c
 SRC-$(CONFIG_WITH_EMU) += module-emulator-powervu.c
 SRC-$(CONFIG_WITH_EMU) += module-emulator-viaccess.c
-SRC-$(CONFIG_WITH_EMU) += ffdecsa/ffdecsa.c
 ifeq "$(CONFIG_WITH_EMU)" "y"
 ifeq "$(CONFIG_WITH_SOFTCAM)" "y"
 UNAME := $(shell uname -s)
@@ -413,7 +410,7 @@ SRC := $(subst config.c,$(OBJDIR)/config.c,$(SRC))
 # starts the compilation.
 all:
 	@./config.sh --use-flags "$(USE_FLAGS)" --objdir "$(OBJDIR)" --make-config.mak
-	@-mkdir -p $(OBJDIR)/cscrypt $(OBJDIR)/csctapi $(OBJDIR)/minilzo $(OBJDIR)/ffdecsa $(OBJDIR)/webif
+	@-mkdir -p $(OBJDIR)/cscrypt $(OBJDIR)/csctapi $(OBJDIR)/minilzo $(OBJDIR)/webif
 	@-printf "\
 +-------------------------------------------------------------------------------\n\
 | OSCam ver: $(VER) rev: $(SVN_REV) target: $(TARGET)\n\
