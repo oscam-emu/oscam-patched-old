@@ -2463,12 +2463,18 @@ struct s_config
 	int8_t			stream_client_source_host;
 #endif
 	int8_t			stream_relay_enabled;
+	uint32_t		stream_relay_buffer_time;
 	CAIDTAB			stream_relay_ctab;			// use the stream server for these caids
 #ifdef WITH_NEUTRINO
 #define DEFAULT_STREAM_SOURCE_PORT 31339 //Neutrino
 #else
 #define DEFAULT_STREAM_SOURCE_PORT 8001 //Enigma2
 #endif
+#endif
+
+#ifdef WITH_EMU
+	uint32_t		emu_stream_ecm_delay;
+	int8_t			emu_stream_emm_enabled;
 #endif
 
 	int32_t			max_cache_time;					// seconds ecms are stored in ecmcwcache
@@ -2662,7 +2668,6 @@ static inline bool caid_is_seca(uint16_t caid) { return caid >> 8 == 0x01; }
 static inline bool caid_is_viaccess(uint16_t caid) { return caid >> 8 == 0x05; }
 static inline bool caid_is_irdeto(uint16_t caid) { return caid >> 8 == 0x06; }
 static inline bool caid_is_videoguard(uint16_t caid) { return caid >> 8 == 0x09; }
-static inline bool caid_is_icam(uint16_t caid) { return caid == 0x098C || caid == 0x098D || caid == 0x09C4; }
 static inline bool caid_is_conax(uint16_t caid) { return caid >> 8 == 0x0B; }
 static inline bool caid_is_cryptoworks(uint16_t caid) { return caid >> 8 == 0x0D; }
 static inline bool caid_is_powervu(uint16_t caid) { return caid >> 8 == 0x0E; }

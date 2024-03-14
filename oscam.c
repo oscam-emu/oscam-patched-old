@@ -43,7 +43,6 @@
 
 #ifdef WITH_EMU
 	void add_emu_reader(void);
-	void stop_stream_server(void);
 #endif
 
 #ifdef WITH_SSL
@@ -427,10 +426,6 @@ static void write_versionfile(bool use_stdout)
 		write_conf(WITH_STAPI5, "DVB API with STAPI5 support");
 		write_conf(WITH_NEUTRINO, "DVB API with NEUTRINO support");
 		write_conf(READ_SDT_CHARSETS, "DVB API read-sdt charsets");
-		if(config_enabled(WITH_EMU))
-		{
-			write_conf(true, "DVB API with ICAM v9 stream relay support");
-		}
 	}
 	write_conf(CS_ANTICASC, "Anti-cascading support");
 	write_conf(WITH_DEBUG, "Debug mode");
@@ -1857,6 +1852,9 @@ int32_t main(int32_t argc, char *argv[])
 	init_readerdb();
 #ifdef MODULE_STREAMRELAY
 	init_stream_server();
+#endif
+#ifdef WITH_EMU
+	add_emu_reader();
 #endif
 	cfg.account = init_userdb();
 	init_signal();

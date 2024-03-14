@@ -11,7 +11,6 @@
 #include "module-dvbapi-coolapi.h"
 #include "module-dvbapi-stapi.h"
 #include "module-dvbapi-chancache.h"
-#include "module-emulator-streamserver.h"
 #include "module-stat.h"
 #include "module-streamrelay.h"
 #include "oscam-chk.h"
