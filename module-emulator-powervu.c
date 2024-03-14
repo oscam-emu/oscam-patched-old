@@ -1865,11 +1865,12 @@ static void calculate_cw(uint8_t seedType, uint8_t *seed, uint8_t csaUsed, uint8
 	}
 }
 
+int8_t powervu_ecm(uint8_t *ecm, uint8_t *dw, EXTENDED_CW *cw_ex, uint16_t srvid, uint16_t caid,
+					uint16_t tsid, uint16_t onid, uint32_t ens
 #ifdef MODULE_STREAMRELAY
-int8_t powervu_ecm(uint8_t *ecm, uint8_t *dw, EXTENDED_CW *cw_ex, uint16_t srvid, uint16_t caid, uint16_t tsid, uint16_t onid, uint32_t ens, emu_stream_client_key_data *cdata)
-#else
-int8_t powervu_ecm(uint8_t *ecm, uint8_t *dw, EXTENDED_CW *cw_ex, uint16_t srvid, uint16_t caid, uint16_t tsid, uint16_t onid, uint32_t ens)
+		, emu_stream_client_key_data *cdata
 #endif
+)
 {
 	uint32_t i, j, k;
 	uint32_t ecmCrc32, keyRef0, keyRef1, keyRef2, channel_hash, group_id = 0;
@@ -1885,7 +1886,6 @@ int8_t powervu_ecm(uint8_t *ecm, uint8_t *dw, EXTENDED_CW *cw_ex, uint16_t srvid
 
 	//char tmpBuffer1[512];
 	char tmpBuffer2[17];
-
 #ifdef MODULE_STREAMRELAY
 	emu_stream_cw_item *cw_item;
 	int8_t update_global_key = 0;
@@ -2012,8 +2012,8 @@ int8_t powervu_ecm(uint8_t *ecm, uint8_t *dw, EXTENDED_CW *cw_ex, uint16_t srvid
 				channelId = b2i(2, ecm + i + 23);
 				ecmSrvid = (channelId >> 4) | ((channelId & 0xF) << 12);
 
-				cs_log_dbg(D_ATR, "csaUsed: %d, xorMode: %d, ecmSrvid: %04X, hashModeCw: %d, modeCW: %d",
-							csaUsed, xorMode, ecmSrvid, hashModeCw, modeCW);
+				cs_log_dbg(D_ATR, "csaUsed: %d, xorMode: %d, ecmSrvid: %04X (%d), hashModeCw: %d, modeCW: %d",
+							csaUsed, xorMode, ecmSrvid, srvid, hashModeCw, modeCW);
 
 				channel_hash = create_channel_hash(caid, tsid, onid, ens);
 				group_id = get_channel_group(channel_hash);
@@ -2159,7 +2159,8 @@ int8_t powervu_ecm(uint8_t *ecm, uint8_t *dw, EXTENDED_CW *cw_ex, uint16_t srvid
 							{
 								if (ecm[0] == 0x80)
 								{
-									dvbcsa_bs_key_set(cw[j], key_data[cdata->connid].key[j][EVEN]);								}
+									dvbcsa_bs_key_set(cw[j], key_data[cdata->connid].key[j][EVEN]);
+								}
 								else
 								{
 									dvbcsa_bs_key_set(cw[j], key_data[cdata->connid].key[j][ODD]);
@@ -2429,6 +2430,10 @@ static void unmask_emm(uint8_t *emm)
 			emm[0x13 + 0x08 + i * 0x1B] ^= mask[0x0E];
 			emm[0x13 + 0x0C + i * 0x1B] ^= mask[0x0F];
 		}
+	}
+	else
+	{
+		cs_log("A new unknown emm mode [%d] is in use.", modeUnmask);
 	}
 
 	// Fix Header

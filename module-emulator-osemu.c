@@ -931,11 +931,11 @@ int8_t emu_process_ecm(struct s_reader *rdr, const ECM_REQUEST *er, uint8_t *cw,
 	else if (caid_is_cryptoworks(er->caid)) result = cryptoworks_ecm(er->caid, ecmCopy, cw);
 	else if (caid_is_powervu(er->caid))
 	{
+		result = powervu_ecm(ecmCopy, cw, cw_ex, er->srvid, er->caid, er->tsid, er->onid, er->ens
 #ifdef MODULE_STREAMRELAY
-		result = powervu_ecm(ecmCopy, cw, cw_ex, er->srvid, er->caid, er->tsid, er->onid, er->ens, NULL);
-#else
-		result = powervu_ecm(ecmCopy, cw, cw_ex, er->srvid, er->caid, er->tsid, er->onid, er->ens);
+				, NULL
 #endif
+		);
 	}
 	else if (caid_is_director(er->caid))    result = director_ecm(ecmCopy, cw);
 	else if (caid_is_nagra(er->caid))       result = nagra2_ecm(ecmCopy, cw);
