@@ -10,11 +10,11 @@
 //#define WITH_SSL 1
 #if defined(__linux__) || defined(__CYGWIN__)
 #define HAVE_DVBAPI 1
+//#define WITH_EXTENDED_CW 1
 #endif
 //#define WITH_NEUTRINO 1
 #define READ_SDT_CHARSETS 1
 //#define CLOCKFIX 1
-#define IRDETO_GUESSING 1
 //#define CS_ANTICASC 1
 #define WITH_DEBUG 1
 #define WITH_LB 1
@@ -24,6 +24,7 @@
 //#define LCDSUPPORT 1
 //#define LEDSUPPORT 1
 //#define IPV6SUPPORT 1
+//#define WITH_ARM_NEON 1
 #define MODULE_MONITOR 1
 
 //#define MODULE_CAMD33 1
@@ -38,7 +39,8 @@
 //#define MODULE_CONSTCW 1
 //#define MODULE_PANDORA 1
 //#define MODULE_GHTTP 1
-#define MODULE_SCAM 1
+//#define MODULE_SCAM 1
+//#define MODULE_STREAMRELAY 1
 
 #define WITH_CARDREADER 1
 
@@ -64,7 +66,7 @@
 //#define CARDREADER_SC8IN1 1
 //#define CARDREADER_SMARGO 1
 //#define CARDREADER_DB2COM 1
-#define CARDREADER_STINGER 1
+//#define CARDREADER_STINGER 1
 //#define CARDREADER_DRECAS 1
 
 #ifdef WITH_PCSC

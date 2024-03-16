@@ -165,7 +165,31 @@ int32_t emm_reader_match(struct s_reader *reader, uint16_t caid, uint32_t provid
 	if(reader->audisabled)
 		{ return 0; }
 
-	if(reader->caid != caid)
+	if(reader->cwpkcaid_length && reader->nuid_length)
+	{
+		uint8_t check[1];
+		check[0] = caid & 0xFF;
+		if(check[0] == reader->cwpkcaid[1])
+		{
+			return 1;
+		}
+	}
+
+	uint16_t emmcaid;
+	if(reader->caid == 0x186D)
+	{
+		emmcaid = reader->caid - 0x03;
+	}
+	else if (reader->caid == 0x1856)
+	{
+		emmcaid = reader->caid + 0x28;
+	}
+	else
+	{
+		emmcaid = reader->caid;
+	}
+
+	if(emmcaid != caid)
 	{
 		int caid_found = 0;
 		if (!reader->csystem)
@@ -173,13 +197,13 @@ int32_t emm_reader_match(struct s_reader *reader, uint16_t caid, uint32_t provid
 		for(i = 0; reader->csystem->caids[i]; i++)
 		{
 			uint16_t cs_caid = reader->csystem->caids[i];
-			if (reader->caid && cs_caid == caid)
+			if (emmcaid && cs_caid == caid)
 			{
 				caid_found = 1;
 				break;
 			}
 
-			if ((reader->caid == 0) && chk_ctab_ex(caid, &reader->ctab))
+			if ((emmcaid == 0) && chk_ctab_ex(caid, &reader->ctab))
 			{
 				caid_found = 1;
 				break;
@@ -188,7 +212,7 @@ int32_t emm_reader_match(struct s_reader *reader, uint16_t caid, uint32_t provid
 		}
 		if(!caid_found)
 		{
-			rdr_log_dbg(reader, D_EMM, "reader_caid %04X != emmpid caid %04X -> SKIP!", reader->caid, caid);
+			rdr_log_dbg(reader, D_EMM, "reader_caid %04X != emmpid caid %04X -> SKIP!", emmcaid, caid);
 			return 0;
 		}
 	}

@@ -59,12 +59,20 @@
 #ifndef HEADER_MDC2_H
 #define HEADER_MDC2_H
 
-/* To everybody who want to fix this external openssl dependency bug
- * read this starting at page 5 https://board.streamboard.tv/forum/thread/47678-oscam-bug-report/?pageNo=5
- * Don't touch this if you have no real fix. Right now resolution is can't fix
- */
-
+#if defined(WITH_SSL) || defined(WITH_LIBCRYPTO)
 #include <openssl/des.h>
+#else
+#define DES_KEY_SZ    (sizeof(DES_cblock))
+typedef unsigned int  DES_LONG;
+typedef unsigned char DES_cblock[8];
+typedef unsigned char const_DES_cblock[8];
+typedef struct DES_ks {
+	union {
+		DES_cblock cblock;
+		DES_LONG deslong[2];
+	} ks[16];
+} DES_key_schedule;
+#endif
 
 #ifdef  __cplusplus
 extern "C" {
