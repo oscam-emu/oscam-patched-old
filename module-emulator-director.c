@@ -480,8 +480,10 @@ static int8_t parse_emm_nano_tags(uint8_t *data, uint32_t length, uint8_t keyInd
 
 						des_set_key(emmKey, ks);
 						des(tagData + 4 + 5, ks, 0);
+						uint8_t ecmKeyChk[1] = { 0 };
+						memcpy(ecmKeyChk, tagData + 4 + 5 + 7, 1);
 
-						if ((tagData + 4 + 5 + 7) != 0x00) // check if key looks valid (last byte 0x00)
+						if (ecmKeyChk[0] != 0x00) // check if key looks valid (last byte 0x00)
 						{
 							cs_log_dbg(D_READER, "Key rejected from EMM (looks invalid)");
 							return EMU_KEY_REJECTED;

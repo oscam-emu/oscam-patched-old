@@ -113,7 +113,7 @@ static void irdeto2_decrypt(uint8_t *data, const uint8_t *seed, const uint8_t *k
 static int8_t calculate_hash(const uint8_t *key, const uint8_t *iv, const uint8_t *data, int32_t len)
 {
 	int32_t l, y;
-	uint8_t cbuff[8];
+	uint8_t cbuff[32];
 	uint32_t ks1[32], ks2[32];
 
 	des_set_key(key, ks1);
