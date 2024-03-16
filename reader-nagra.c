@@ -425,13 +425,13 @@ static int32_t NegotiateSessionKey(struct s_reader *reader)
 
 	if(!csystem_data->is_n3_na)
 	{
-		if (reader->nuid_length == 4) //nuid is set
+		if (reader->cak63nuid_length == 4) //nuid is set
 		{
 			// inject provid
 			cmd2a[26] = reader->prid[0][2];
 			cmd2a[27] = reader->prid[0][3];
 
-			memcpy(&cmd2a[1], reader->nuid, 4); // inject NUID
+			memcpy(&cmd2a[1], reader->cak63nuid, 4); // inject NUID
 
 			if (!do_cmd(reader, 0x2a,0x1E,0xAA,0x42, cmd2a, cta_res, &cta_lr))
 			{
@@ -659,7 +659,7 @@ static void addProvider(struct s_reader *reader, uint8_t *cta_res)
 static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_res, uint16_t cta_lr)
 {
 	struct nagra_data *csystem_data = reader->csystem_data;
-	char ds[36], de[36];
+	char ds[20], de[16];
 	uint16_t chid;
 
 	switch(dt)
@@ -828,7 +828,7 @@ static int32_t nagra2_card_init(struct s_reader *reader, ATR *newatr)
 		}
 		memcpy(reader->rom, cta_res + 2, 15);
 	}
-	else if(reader->detect_seca_nagra_tunneled_card && memcmp(atr + 7, "pp", 2) == 0 && ((atr[9]&0x0F) >= 10))
+	else if(!reader->cak7_mode && reader->detect_seca_nagra_tunneled_card && memcmp(atr + 7, "pp", 2) == 0 && ((atr[9]&0x0F) >= 10))
 	{
 		rdr_log(reader, "detect seca/nagra tunneled card");
 
@@ -1394,14 +1394,14 @@ static int32_t nagra2_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, str
 			{
 				rdr_log_dbg(reader, D_READER, "3DES encryption of CWs detected. Using CWPK index:%02X", (csystem_data->ird_info & 7));
 
-				if(reader->cwekey_length != 16)
+				if(reader->cak63cwekey_length != 16)
 				{
 					rdr_log_dbg(reader, D_READER, "ERROR: Invalid CWPK, can not decrypt CW");
 					return ERROR;
 				}
 
-				des_ecb3_decrypt(_cwe0, reader->cwekey);
-				des_ecb3_decrypt(_cwe1, reader->cwekey);
+				des_ecb3_decrypt(_cwe0, reader->cak63cwekey);
+				des_ecb3_decrypt(_cwe1, reader->cak63cwekey);
 				rdr_log_dbg(reader, D_READER, "CW0 after 3DES decrypt: %s", cs_hexdump(1, _cwe0, 8, tmp_dbg, sizeof(tmp_dbg)));
 				rdr_log_dbg(reader, D_READER, "CW1 after 3DES decrypt: %s", cs_hexdump(1, _cwe1, 8, tmp_dbg, sizeof(tmp_dbg)));
 

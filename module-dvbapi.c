@@ -12,6 +12,7 @@
 #include "module-dvbapi-stapi.h"
 #include "module-dvbapi-chancache.h"
 #include "module-stat.h"
+#include "module-streamrelay.h"
 #include "oscam-chk.h"
 #include "oscam-client.h"
 #include "oscam-config.h"
@@ -1248,6 +1249,14 @@ static int32_t dvbapi_detect_api(void)
 				maxfilter = filtercount;
 				cs_log("Detected %s Api: %d, userconfig boxtype: %d maximum number of filters is %d (oscam limit is %d)",
 					device_path, selected_api, cfg.dvbapi_boxtype, filtercount, MAX_FILTER);
+
+#ifdef MODULE_STREAMRELAY
+				// Log enabled demuxer fix
+				if(cfg.dvbapi_demuxer_fix)
+				{
+					cs_log("Demuxer fix enabled, try fixing stream relay audio/video sync...");
+				}
+#endif
 			}
 
 			// try at least 8 adapters
@@ -6830,10 +6839,24 @@ static void *dvbapi_main_local(void *cli)
 				}
 
 				// count ecm filters to see if demuxing is possible anyway
-				if(demux[i].demux_fd[g].type == TYPE_ECM)
+#ifdef MODULE_STREAMRELAY
+				if(cfg.dvbapi_demuxer_fix)
 				{
-					ecmcounter++;
+					if(demux[i].demux_fd[g].type == TYPE_ECM || demux[i].demux_fd[g].type == 3 || demux[i].demux_fd[g].type == 6)
+					{
+						ecmcounter++;
+					}
 				}
+				else
+				{
+#endif
+					if(demux[i].demux_fd[g].type == TYPE_ECM)
+					{
+						ecmcounter++;
+					}
+#ifdef MODULE_STREAMRELAY
+				}
+#endif
 
 				// count emm filters also
 				if(demux[i].demux_fd[g].type == TYPE_EMM)
@@ -7502,6 +7525,25 @@ void delayer(ECM_REQUEST *er, uint32_t delay)
 	}
 }
 
+#ifdef WITH_EXTENDED_CW
+bool caid_is_csa_alt(uint16_t caid)
+{
+	return caid == 0x09c4 || caid == 0x098c || caid==0x098d;
+}
+
+bool select_csa_alt(ECM_REQUEST *er)
+{
+	if(caid_is_csa_alt(er->caid))
+	{
+		if((er->ecm[2] - er->ecm[4]) == 4)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+#endif
+
 void dvbapi_send_dcw(struct s_client *client, ECM_REQUEST *er)
 {
 	int32_t i, j, k, handled = 0;
@@ -7849,8 +7891,14 @@ void dvbapi_send_dcw(struct s_client *client, ECM_REQUEST *er)
 
 		delayer(er, delay);
 
-#ifdef WITH_EMU
-		if(!chk_ctab_ex(er->caid, &cfg.emu_stream_relay_ctab) || !cfg.emu_stream_relay_enabled)
+#ifdef MODULE_STREAMRELAY
+		bool set_dvbapi_cw = true;
+		if(chk_ctab_ex(er->caid, &cfg.stream_relay_ctab) && cfg.stream_relay_enabled)
+		{
+			// streamserver set cw
+			set_dvbapi_cw = !stream_write_cw(er);
+		}
+		if (set_dvbapi_cw)
 #endif
 		switch(selected_api)
 		{
@@ -7919,6 +7967,14 @@ void dvbapi_send_dcw(struct s_client *client, ECM_REQUEST *er)
 					if(er->cw_ex.algo == CW_ALGO_AES128)
 					{
 						dvbapi_write_cw(i, j, 0, er->cw_ex.session_word, 16, er->cw_ex.data, 16, er->cw_ex.algo, er->cw_ex.algo_mode, er->msgid);
+					}
+					else if(er->cw_ex.algo == CW_ALGO_CSA)
+					{
+						if(select_csa_alt(er))
+						{
+							er->cw_ex.algo = CW_ALGO_CSA_ALT;
+						}
+						dvbapi_write_cw(i, j, 0, er->cw, 8, NULL, 0, er->cw_ex.algo, er->cw_ex.algo_mode, er->msgid);
 					}
 					else
 					{

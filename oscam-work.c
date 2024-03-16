@@ -11,9 +11,6 @@
 #include "oscam-string.h"
 #include "oscam-work.h"
 #include "reader-common.h"
-#ifdef READER_NAGRA_MERLIN
-#include "reader-nagracak7.h"
-#endif
 #include "module-cccam.h"
 #include "module-cccam-data.h"
 #include "module-cccshare.h"
@@ -130,6 +127,7 @@ void *work_thread(void *ptr)
 
 	cl->work_mbuf = mbuf; // Track locally allocated data, because some callback may call cs_exit/cs_disconect_client/pthread_exit and then mbuf would be leaked
 	int32_t n = 0, rc = 0, i, idx, s, dblvl;
+	(void)dblvl;
 	uint8_t dcw[16];
 	int8_t restart_reader = 0;
 
@@ -305,6 +303,7 @@ void *work_thread(void *ptr)
 					break;
 
 				case ACTION_READER_SENDCMD:
+#ifdef WITH_CARDREADER
 					dblvl = cs_dblevel;
 					cs_dblevel = dblvl | D_READER;
 					rc = cardreader_do_rawcmd(reader, data->ptr);
@@ -323,6 +322,7 @@ void *work_thread(void *ptr)
 						}
 					}
 					cs_dblevel = dblvl;
+#endif
 					break;
 
 				case ACTION_READER_CARDINFO:
@@ -330,14 +330,10 @@ void *work_thread(void *ptr)
 					break;
 
 				case ACTION_READER_POLL_STATUS:
+#ifdef READER_VIDEOGUARD
 					cardreader_poll_status(reader);
-					break;
-
-#ifdef READER_NAGRA_MERLIN
-				case ACTION_READER_RENEW_SK:
-					CAK7_getCamKey(reader);
-					break;
 #endif
+					break;
 
 				case ACTION_READER_INIT:
 					if(!cl->init_done)
