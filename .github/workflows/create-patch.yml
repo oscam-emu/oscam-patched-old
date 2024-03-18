@@ -21,7 +21,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         repository: oscam-emu/oscam-emu
-        token: ${{ secrets.ACTIONS_TOKEN }}
+        token: ${{ secrets.GITHUB_TOKEN }}
         path: emu
 
     - name: create patch

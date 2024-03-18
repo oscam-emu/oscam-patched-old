@@ -12,7 +12,7 @@ jobs:
     - uses: actions/checkout@v4
       with:
         ref: oscam-svn
-        token: ${{ secrets.ACTIONS_TOKEN }}
+        token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: install git svn
       run: |
