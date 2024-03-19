@@ -8,9 +8,6 @@ on:
       - '.github/**'
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 jobs:
   create-patch:
     runs-on: ubuntu-latest
