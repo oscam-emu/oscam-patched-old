@@ -9,7 +9,11 @@ on:
   workflow_dispatch:
 
 permissions:
+  deployments: write
   contents: write
+  statuses: write
+  actions: write
+  checks: read
 
 jobs:
   create-patch:
