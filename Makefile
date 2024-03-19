@@ -310,7 +310,10 @@ ifneq ($(UNAME),Darwin)
 ifndef ANDROID_NDK
 ifndef ANDROID_STANDALONE_TOOLCHAIN
 TOUCH_SK := $(shell touch SoftCam.Key)
-override LDFLAGS += -Wl,--format=binary -Wl,SoftCam.Key -Wl,--format=default -Wl,-z,noexecstack
+override LDFLAGS += -Wl,--format=binary -Wl,SoftCam.Key -Wl,--format=default
+ifneq ($(uname_S),Cygwin)
+override LDFLAGS += -Wl,-z,noexecstack
+endif
 endif
 endif
 endif
