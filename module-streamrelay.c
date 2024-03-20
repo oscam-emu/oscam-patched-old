@@ -4,6 +4,7 @@
 
 #ifdef MODULE_STREAMRELAY
 
+#include <dlfcn.h>
 #include "module-streamrelay.h"
 #include "oscam-config.h"
 #include "oscam-net.h"
@@ -28,6 +29,7 @@ typedef struct
 char stream_source_host[256];
 char *stream_source_auth = NULL;
 uint32_t cluster_size = 50;
+bool has_dvbcsa_ecm = 0, is_dvbcsa_static = 0;
 
 static uint8_t stream_server_mutex_init = 0;
 static pthread_mutex_t stream_server_mutex;
@@ -147,12 +149,18 @@ static void write_cw(ECM_REQUEST *er, int32_t connid)
 	const uint8_t ecm = (caid_is_videoguard(er->caid) && (er->ecm[4] != 0 && (er->ecm[2] - er->ecm[4]) == 4)) ? 4 : 0;
 	if (memcmp(er->cw, "\x00\x00\x00\x00\x00\x00\x00\x00", 8) != 0)
 	{
-		dvbcsa_bs_key_set(er->cw, key_data[connid].key[EVEN]);
+		if (has_dvbcsa_ecm)
+		{
+			dvbcsa_bs_key_set(er->cw, key_data[connid].key[EVEN]);
+		}
 	}
 
 	if (memcmp(er->cw + 8, "\x00\x00\x00\x00\x00\x00\x00\x00", 8) != 0)
 	{
-		dvbcsa_bs_key_set(er->cw + 8, key_data[connid].key[ODD]);
+		if (has_dvbcsa_ecm)
+		{
+			dvbcsa_bs_key_set(er->cw + 8, key_data[connid].key[ODD]);
+		}
 	}
 }
 
@@ -1067,18 +1075,29 @@ static void *stream_client_handler(void *arg)
 
 void *stream_server(void *UNUSED(a))
 {
+#ifdef IPV6SUPPORT
+	struct sockaddr_in6 servaddr, cliaddr;
+#else
 	struct sockaddr_in servaddr, cliaddr;
+#endif
 	socklen_t clilen;
 	int32_t connfd, reuse = 1, i;
 	int8_t connaccepted;
 	stream_client_conn_data *conndata;
 
 	cluster_size = dvbcsa_bs_batch_size();
-	cs_log("INFO: "
-#if DVBCSA_KEY_ECM > 0
-		"(ecm) "
-#endif
-		"dvbcsa parallel mode = %d (relay buffer time: %d ms)", cluster_size, cfg.stream_relay_buffer_time);
+
+	if(strcmp(LIBDVBCSA_LIB, "libdvbcsa.a"))
+	{
+		has_dvbcsa_ecm = (dlsym(RTLD_DEFAULT, "dvbcsa_bs_key_set_ecm"));
+	}
+	else
+	{
+		has_dvbcsa_ecm = DVBCSA_ECM_HEADER;
+		is_dvbcsa_static = 1;
+	}
+
+	cs_log("INFO: %s %s dvbcsa parallel mode = %d (relay buffer time: %d ms)", (!has_dvbcsa_ecm) ? "(wrong)" : "(ecm)", (!is_dvbcsa_static) ? "dynamic" : "static", cluster_size, cfg.stream_relay_buffer_time);
 
 	if (!stream_server_mutex_init)
 	{
@@ -1097,7 +1116,19 @@ void *stream_server(void *UNUSED(a))
 	{
 		gconnfd[i] = -1;
 	}
+#ifdef IPV6SUPPORT
+	glistenfd = socket(AF_INET6, SOCK_STREAM, 0);
+	if (glistenfd == -1)
+	{
+		cs_log("ERROR: cannot create stream server socket");
+		return NULL;
+	}
 
+	bzero(&servaddr,sizeof(servaddr));
+	servaddr.sin6_family = AF_INET6;
+	servaddr.sin6_addr = in6addr_any;
+	servaddr.sin6_port = htons(cfg.stream_relay_port);
+#else
 	glistenfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (glistenfd == -1)
 	{
@@ -1109,6 +1140,7 @@ void *stream_server(void *UNUSED(a))
 	servaddr.sin_family = AF_INET;
 	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
 	servaddr.sin_port = htons(cfg.stream_relay_port);
+#endif
 	setsockopt(glistenfd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
 
 	if (bind(glistenfd,(struct sockaddr *)&servaddr, sizeof(servaddr)) == -1)
@@ -1141,12 +1173,21 @@ void *stream_server(void *UNUSED(a))
 #ifdef MODULE_RADEGAST
 		if(cfg.stream_client_source_host)
 		{
+#ifdef IPV6SUPPORT
+			// Read ip of client who wants to play the stream
+			unsigned char *ip = (unsigned char *)&cliaddr.sin6_addr;
+			cs_log("Stream Client ip is: %02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x, will fetch stream there\n", ip[0], ip[1], ip[2], ip[3], ip[4], ip[5], ip[6], ip[7], ip[8], ip[9], ip[10], ip[11], ip[12], ip[13], ip[14], ip[15]);
+
+			// Store ip of client in stream_source_host variable
+			snprintf(stream_source_host, sizeof(stream_source_host), "%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x", ip[0], ip[1], ip[2], ip[3], ip[4], ip[5], ip[6], ip[7], ip[8], ip[9], ip[10], ip[11], ip[12], ip[13], ip[14], ip[15]);
+#else
 			// Read ip of client who wants to play the stream
 			unsigned char *ip = (unsigned char *)&cliaddr.sin_addr.s_addr;
 			cs_log("Stream Client ip is: %d.%d.%d.%d, will fetch stream there\n", ip[0], ip[1], ip[2], ip[3]);
 
 			// Store ip of client in stream_source_host variable
 			snprintf(stream_source_host, sizeof(stream_source_host), "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
+#endif
 		}
 #endif
 
