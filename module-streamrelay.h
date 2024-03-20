@@ -106,6 +106,7 @@ extern pthread_mutex_t fixed_key_srvid_mutex;
 extern uint16_t stream_cur_srvid[STREAM_SERVER_MAX_CONNECTIONS];
 extern int8_t stream_server_has_ecm[STREAM_SERVER_MAX_CONNECTIONS];
 extern uint8_t emu_stream_server_mutex_init;
+extern bool has_dvbcsa_ecm;
 
 typedef struct
 {
