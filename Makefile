@@ -52,6 +52,7 @@ endif
 
 ifeq "$(shell ./config.sh --enabled MODULE_STREAMRELAY)" "Y"
 	override USE_LIBDVBCSA=1
+	override CFLAGS += -DLIBDVBCSA_LIB=\"$(notdir ${LIBDVBCSA_LIB})\"
 endif
 
 override STD_LIBS := -lm $(LIB_PTHREAD) $(LIB_DL) $(LIB_RT)
@@ -131,6 +132,7 @@ endif
 ifeq ($(uname_S),Darwin)
 	DEFAULT_SSL_LIB = -L/usr/local/opt/openssl/lib -lssl
 	DEFAULT_LIBCRYPTO_LIB = -L/usr/local/opt/openssl/lib -lcrypto
+	DEFAULT_LIBDVBCSA_FLAGS = -I/usr/local/opt/libdvbcsa/include
 	DEFAULT_LIBDVBCSA_LIB = -L/usr/local/opt/libdvbcsa/lib -ldvbcsa
 	DEFAULT_LIBUSB_FLAGS = -I/usr/local/opt/libusb/include
 	DEFAULT_LIBUSB_LIB = -L/usr/local/opt/libusb/lib -lusb-1.0 -lobjc -framework IOKit -framework CoreFoundation -framework Security

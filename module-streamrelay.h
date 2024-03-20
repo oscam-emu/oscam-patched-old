@@ -19,6 +19,13 @@
 #include <dvbcsa/dvbcsa.h>
 #if DVBCSA_KEY_ECM > 0
 #define dvbcsa_bs_key_set(a,b) dvbcsa_bs_key_set_ecm(ecm,a,b)
+#define DVBCSA_ECM_HEADER 1
+#endif
+#ifndef DVBCSA_ECM_HEADER
+#define DVBCSA_ECM_HEADER 0
+#endif
+#ifndef LIBDVBCSA_LIB
+#define LIBDVBCSA_LIB
 #endif
 
 #define EVEN 0
