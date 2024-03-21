@@ -25,7 +25,7 @@
 #define DVBCSA_ECM_HEADER 0
 #endif
 #ifndef LIBDVBCSA_LIB
-#define LIBDVBCSA_LIB
+#define LIBDVBCSA_LIB ""
 #endif
 
 #define EVEN 0
