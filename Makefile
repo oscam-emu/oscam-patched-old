@@ -52,7 +52,7 @@ endif
 
 ifeq "$(shell ./config.sh --enabled MODULE_STREAMRELAY)" "Y"
 	override USE_LIBDVBCSA=1
-	override CFLAGS += -DLIBDVBCSA_LIB=\"$(notdir ${LIBDVBCSA_LIB})\"
+	override CFLAGS += -DLIBDVBCSA_LIB=\"$(notdir $(subst $(empty) ,/,${LIBDVBCSA_LIB}))\"
 endif
 
 override STD_LIBS := -lm $(LIB_PTHREAD) $(LIB_DL) $(LIB_RT)

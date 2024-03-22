@@ -1582,13 +1582,86 @@ static int32_t nagra3_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, str
 		}
 		if(cta_res[27] == 0x5C)
 		{
-			if(!reader->cwekey0_length)
+			if(cta_res[144] == 0x00)
 			{
-				rdr_log(reader, "ERROR: CWPK is not set, can not decrypt CW");
-				return ERROR;
+				if(!reader->cwekey0_length)
+				{
+					rdr_log(reader, "ERROR: CWPK0 is not set, can not decrypt CW");
+					return ERROR;
+				}
+				des_ecb3_decrypt(_cwe0, reader->cwekey0);
+				des_ecb3_decrypt(_cwe1, reader->cwekey0);
 			}
-			des_ecb3_decrypt(_cwe0, reader->cwekey0);
-			des_ecb3_decrypt(_cwe1, reader->cwekey0);
+			else if(cta_res[144] == 0x01)
+			{
+				if(!reader->cwekey1_length)
+				{
+					rdr_log(reader, "ERROR: CWPK1 is not set, can not decrypt CW");
+					return ERROR;
+				}
+				des_ecb3_decrypt(_cwe0, reader->cwekey1);
+				des_ecb3_decrypt(_cwe1, reader->cwekey1);
+			}
+			else if(cta_res[144] == 0x02)
+			{
+				if(!reader->cwekey2_length)
+				{
+					rdr_log(reader, "ERROR: CWPK2 is not set, can not decrypt CW");
+					return ERROR;
+				}
+				des_ecb3_decrypt(_cwe0, reader->cwekey2);
+				des_ecb3_decrypt(_cwe1, reader->cwekey2);
+			}
+			else if(cta_res[144] == 0x03)
+			{
+				if(!reader->cwekey3_length)
+				{
+					rdr_log(reader, "ERROR: CWPK3 is not set, can not decrypt CW");
+					return ERROR;
+				}
+				des_ecb3_decrypt(_cwe0, reader->cwekey3);
+				des_ecb3_decrypt(_cwe1, reader->cwekey3);
+			}
+			else if(cta_res[144] == 0x04)
+			{
+				if(!reader->cwekey4_length)
+				{
+					rdr_log(reader, "ERROR: CWPK4 is not set, can not decrypt CW");
+					return ERROR;
+				}
+				des_ecb3_decrypt(_cwe0, reader->cwekey4);
+				des_ecb3_decrypt(_cwe1, reader->cwekey4);
+			}
+			else if(cta_res[144] == 0x05)
+			{
+				if(!reader->cwekey5_length)
+				{
+					rdr_log(reader, "ERROR: CWPK5 is not set, can not decrypt CW");
+					return ERROR;
+				}
+				des_ecb3_decrypt(_cwe0, reader->cwekey5);
+				des_ecb3_decrypt(_cwe1, reader->cwekey5);
+			}
+			else if(cta_res[144] == 0x06)
+			{
+				if(!reader->cwekey6_length)
+				{
+					rdr_log(reader, "ERROR: CWPK6 is not set, can not decrypt CW");
+					return ERROR;
+				}
+				des_ecb3_decrypt(_cwe0, reader->cwekey6);
+				des_ecb3_decrypt(_cwe1, reader->cwekey6);
+			}
+			else if(cta_res[144] == 0x07)
+			{
+				if(!reader->cwekey7_length)
+				{
+					rdr_log(reader, "ERROR: CWP7 is not set, can not decrypt CW");
+					return ERROR;
+				}
+				des_ecb3_decrypt(_cwe0, reader->cwekey7);
+				des_ecb3_decrypt(_cwe1, reader->cwekey7);
+			}
 		}
 		else if(cta_res[27] == 0x58)
 		{
