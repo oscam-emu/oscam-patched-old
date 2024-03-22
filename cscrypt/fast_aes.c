@@ -1,6 +1,19 @@
 #include "stdio.h"
 #include "fast_aes.h"
 
+#ifndef WITH_LIBCRYPTO
+extern const unsigned int Te0[256];
+extern const unsigned int Te1[256];
+extern const unsigned int Te2[256];
+extern const unsigned int Te3[256];
+extern const unsigned int Te4[256];
+extern const unsigned int Td0[256];
+extern const unsigned int Td1[256];
+extern const unsigned int Td2[256];
+extern const unsigned int Td3[256];
+extern const unsigned int Td4[256];
+extern const unsigned int rcon[];
+#else
 static const unsigned int Te0[256] =
 {
 	0xc66363a5UL, 0xf87c7c84UL, 0xee777799UL, 0xf67b7b8dUL,
@@ -677,6 +690,7 @@ static const unsigned int rcon[] =
 	0x10000000UL, 0x20000000UL, 0x40000000UL, 0x80000000UL,
 	0x1B000000UL, 0x36000000UL,
 };
+#endif
 
 #define GETU32(pt) (((unsigned int)(pt)[0] << 24) ^ \
                     ((unsigned int)(pt)[1] << 16) ^ \
