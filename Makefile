@@ -52,25 +52,30 @@ endif
 
 ifeq "$(shell ./config.sh --enabled MODULE_STREAMRELAY)" "Y"
 	override USE_LIBDVBCSA=1
-	override CFLAGS += -DLIBDVBCSA_LIB=\"$(notdir $(subst $(empty) ,/,${LIBDVBCSA_LIB}))\"
+	ifeq "$(notdir ${LIBDVBCSA_LIB})" "libdvbcsa.a"
+		override CFLAGS += -DSTATIC_LIBDVBCSA=1
+	else
+		override CFLAGS += -DSTATIC_LIBDVBCSA=0
+	endif
 endif
 
 override STD_LIBS := -lm $(LIB_PTHREAD) $(LIB_DL) $(LIB_RT)
 override STD_DEFS := -D'CS_SVN_VERSION="$(SVN_REV)"'
 override STD_DEFS += -D'CS_CONFDIR="$(CONF_DIR)"'
 
+CC = $(CROSS_DIR)$(CROSS)gcc
+STRIP = $(CROSS_DIR)$(CROSS)strip
+
 # Compiler warnings
 CC_WARN = -W -Wall -Wshadow -Wredundant-decls -Wstrict-prototypes -Wold-style-definition
 
 # Compiler optimizations
-ifeq ($(HOSTCC),clang)
+CCVERSION := $(shell $(CC) --version 2>/dev/null | head -n 1))
+ifneq (,$(findstring clang,$(CCVERSION)))
 	CC_OPTS = -O2 -ggdb -pipe -ffunction-sections -fdata-sections -fomit-frame-pointer
 else
 	CC_OPTS = -O2 -ggdb -pipe -ffunction-sections -fdata-sections -fomit-frame-pointer -fno-schedule-insns
 endif
-
-CC = $(CROSS_DIR)$(CROSS)gcc
-STRIP = $(CROSS_DIR)$(CROSS)strip
 
 LDFLAGS = -Wl,--gc-sections
 
@@ -416,7 +421,7 @@ all:
 |  Protocols: $(shell ./config.sh --use-flags "$(USE_FLAGS)" --show-enabled protocols | sed -e 's|MODULE_||g')\n\
 |  Readers  : $(shell ./config.sh --use-flags "$(USE_FLAGS)" --show-enabled readers | sed -e 's|READER_||g')\n\
 |  CardRdrs : $(shell ./config.sh --use-flags "$(USE_FLAGS)" --show-enabled card_readers | sed -e 's|CARDREADER_||g')\n\
-|  Compiler : $(shell $(CC) --version 2>/dev/null | head -n 1)\n\
+|  Compiler : $(CCVERSION)\n\
 |  Config   : $(OBJDIR)/config.mak\n\
 |  Binary   : $(OSCAM_BIN)\n\
 +-------------------------------------------------------------------------------\n"

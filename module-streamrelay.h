@@ -17,15 +17,14 @@
 
 #include "cscrypt/md5.h"
 #include <dvbcsa/dvbcsa.h>
-#if DVBCSA_KEY_ECM > 0
+#if DVBCSA_KEY_ECM
+#define DVBCSA_HEADER_ECM 1
 #define dvbcsa_bs_key_set(a,b) dvbcsa_bs_key_set_ecm(ecm,a,b)
-#define DVBCSA_ECM_HEADER 1
+#else
+#define DVBCSA_HEADER_ECM 0
 #endif
-#ifndef DVBCSA_ECM_HEADER
-#define DVBCSA_ECM_HEADER 0
-#endif
-#ifndef LIBDVBCSA_LIB
-#define LIBDVBCSA_LIB ""
+#ifndef STATIC_LIBDVBCSA
+#define STATIC_LIBDVBCSA 0
 #endif
 
 #define EVEN 0

@@ -4,7 +4,9 @@
 
 #ifdef MODULE_STREAMRELAY
 
+#if !STATIC_LIBDVBCSA
 #include <dlfcn.h>
+#endif
 #include "module-streamrelay.h"
 #include "oscam-config.h"
 #include "oscam-net.h"
@@ -29,7 +31,7 @@ typedef struct
 char stream_source_host[256];
 char *stream_source_auth = NULL;
 uint32_t cluster_size = 50;
-bool has_dvbcsa_ecm = 0, is_dvbcsa_static = 0;
+bool has_dvbcsa_ecm = 0, is_dvbcsa_static = 1;
 
 static uint8_t stream_server_mutex_init = 0;
 static pthread_mutex_t stream_server_mutex;
@@ -146,7 +148,9 @@ void ParseEcmData(stream_client_data *cdata)
 
 static void write_cw(ECM_REQUEST *er, int32_t connid)
 {
+#if DVBCSA_KEY_ECM
 	const uint8_t ecm = (caid_is_videoguard(er->caid) && (er->ecm[4] != 0 && (er->ecm[2] - er->ecm[4]) == 4)) ? 4 : 0;
+#endif
 	if (memcmp(er->cw, "\x00\x00\x00\x00\x00\x00\x00\x00", 8) != 0)
 	{
 		if (has_dvbcsa_ecm)
@@ -1086,18 +1090,24 @@ void *stream_server(void *UNUSED(a))
 	stream_client_conn_data *conndata;
 
 	cluster_size = dvbcsa_bs_batch_size();
+	has_dvbcsa_ecm = (DVBCSA_HEADER_ECM);
 
-	if(strcmp(LIBDVBCSA_LIB, "libdvbcsa.a"))
-	{
-		has_dvbcsa_ecm = (dlsym(RTLD_DEFAULT, "dvbcsa_bs_key_set_ecm"));
-	}
-	else
-	{
-		has_dvbcsa_ecm = DVBCSA_ECM_HEADER;
-		is_dvbcsa_static = 1;
-	}
+#if !DVBCSA_KEY_ECM
+#pragma message "WARNING: Streamrelay is compiled without dvbcsa ecm headers! ECM processing via Streamrelay will not work!"
+#endif
+#if !STATIC_LIBDVBCSA
+	has_dvbcsa_ecm = (dlsym(RTLD_DEFAULT, "dvbcsa_bs_key_set_ecm"));
+	is_dvbcsa_static = 0;
+#endif
 
-	cs_log("INFO: %s %s dvbcsa parallel mode = %d (relay buffer time: %d ms)", (!has_dvbcsa_ecm) ? "(wrong)" : "(ecm)", (!is_dvbcsa_static) ? "dynamic" : "static", cluster_size, cfg.stream_relay_buffer_time);
+	cs_log("%s: (%s) %s dvbcsa parallel mode = %d (relay buffer time: %d ms)%s%s",
+		(!DVBCSA_HEADER_ECM || !has_dvbcsa_ecm) ? "WARNING" : "INFO",
+		(!has_dvbcsa_ecm) ? "wrong" : "ecm",
+		(!is_dvbcsa_static) ? "dynamic" : "static",
+		cluster_size, 
+		cfg.stream_relay_buffer_time,
+		(!DVBCSA_HEADER_ECM || !has_dvbcsa_ecm) ? "! ECM processing via Streamrelay does not work!" : "",
+		(!DVBCSA_HEADER_ECM) ? " Missing dvbcsa ecm headers during build!" : "");
 
 	if (!stream_server_mutex_init)
 	{
