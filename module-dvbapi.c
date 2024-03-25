@@ -6661,14 +6661,6 @@ static void *dvbapi_main_local(void *cli)
 	memset(assoc_fd, 0, sizeof(assoc_fd));
 	dvbapi_read_priority();
 	dvbapi_load_channel_cache();
-	dvbapi_detect_api();
-
-	if(selected_box == -1 || selected_api == -1)
-	{
-		cs_log("ERROR: Could not detect DVBAPI version.");
-		free(mbuf);
-		return NULL;
-	}
 
 	// detect box type first and then get descrambler info
 	dvbapi_get_descrambler_info();
@@ -8161,10 +8153,10 @@ void dvbapi_write_ecminfo_file(struct s_client *client, ECM_REQUEST *er, uint8_t
 								reader_name, from_name, from_port, proto_name);
 						}
 						else
-							{
-								fprintf(ecmtxt, "reader: %s\nfrom: %s - %s\nprotocol: %s\n",
-									reader_name, from_name, from_device, proto_name);
-							}
+						{
+							fprintf(ecmtxt, "reader: %s\nfrom: %s - %s\nprotocol: %s\n",
+								reader_name, from_name, from_device, proto_name);
+						}
 					}
 					break;
 
@@ -8185,8 +8177,16 @@ void dvbapi_write_ecminfo_file(struct s_client *client, ECM_REQUEST *er, uint8_t
 				case E_FOUND:
 					if(er->selected_reader)
 					{
-						fprintf(ecmtxt, "reader: %s\nfrom: %s:%d\nprotocol: %s\nhops: %d\n",
-							reader_name, from_name, from_port, proto_name, hops);
+						if(is_network_reader(er->selected_reader))
+						{
+							fprintf(ecmtxt, "reader: %s\nfrom: %s:%d\nprotocol: %s\nhops: %d\n",
+								reader_name, from_name, from_port, proto_name, hops);
+						}
+						else
+						{
+							fprintf(ecmtxt, "reader: %s\nfrom: %s - %s\nprotocol: %s\nhops: %d\n",
+								reader_name, from_name, from_device, proto_name, hops);
+						}
 					}
 					break;
 
@@ -8277,15 +8277,19 @@ void *dvbapi_start_handler(struct s_client *cl, uint8_t *UNUSED(mbuf), int32_t m
 	// cs_log("dvbapi loaded fd=%d", idx);
 	if(cfg.dvbapi_enabled == 1)
 	{
+		dvbapi_detect_api();
+
+		if(selected_box == -1 || selected_api == -1)
+		{
+			cs_log("ERROR: Could not detect DVBAPI version.");
+			return NULL;
+		}
+
 		cl = create_client(get_null_ip());
 		cl->module_idx = module_idx;
 		cl->typ = 'c';
 
-		int32_t ret = start_thread("dvbapi handler", _main_func, (void *)cl, &cl->thread, 1, 0);
-		if(ret)
-		{
-			return NULL;
-		}
+		start_thread("dvbapi handler", _main_func, (void *)cl, &cl->thread, 1, 0);
 	}
 	return NULL;
 }

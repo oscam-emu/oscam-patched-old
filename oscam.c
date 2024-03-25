@@ -89,11 +89,6 @@ char cs_confdir[128];
 uint16_t cs_dblevel = 0; // Debug Level
 int32_t thread_pipe[2] = {0, 0};
 static int8_t cs_restart_mode = 1; // Restartmode: 0=off, no restart fork, 1=(default)restart fork, restart by webif, 2=like=1, but also restart on segfaults
-#ifdef WITH_UTF8
-uint8_t cs_http_use_utf8 = 1;
-#else
-uint8_t cs_http_use_utf8 = 0;
-#endif
 static int8_t cs_capture_SEGV;
 static int8_t cs_dump_stack;
 static uint16_t cs_waittime = 60;
@@ -202,10 +197,6 @@ static void show_usage(void)
 	printf("\n Settings:\n");
 	printf(" -p, --pending-ecm <num> | Set the maximum number of pending ECM packets.\n");
 	printf("                         . Default: 32 Max: 4096\n");
-	if(config_enabled(WEBIF))
-	{
-		printf(" -u, --utf8              | Enable WebIf support for UTF-8 charset.\n");
-	}
 	printf("\n Debug parameters:\n");
 	printf(" -a, --crash-dump        | Write oscam.crash file on segfault. This option\n");
 	printf("                         . needs GDB to be installed and OSCam executable to\n");
@@ -246,7 +237,6 @@ static const struct option long_options[] =
 	{ "show-sensitive",     no_argument,       NULL, 'S' },
 	{ "capture-segfaults",  no_argument,       NULL, 's' },
 	{ "temp-dir",           required_argument, NULL, 't' },
-	{ "utf8",               no_argument,       NULL, 'u' },
 	{ "build-info",         no_argument,       NULL, 'V' },
 	{ "wait",               required_argument, NULL, 'w' },
 	{ 0, 0, 0, 0 }
@@ -331,13 +321,6 @@ static void parse_cmdline_params(int argc, char **argv)
 			}
 			break;
 		}
-		case 'u': // --utf8
-			if(config_enabled(WEBIF))
-			{
-				cs_http_use_utf8 = 1;
-				printf("WARNING: Web interface UTF-8 mode enabled. Carefully read documentation as bugs may arise.\n");
-			}
-			break;
 		case 'V': // --build-info
 			write_versionfile(true);
 			exit(EXIT_SUCCESS);

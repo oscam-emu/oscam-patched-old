@@ -11,8 +11,6 @@
 #include "minilzo/minilzo.h"
 #endif
 
-extern uint8_t cs_http_use_utf8;
-
 /* struct template templates[] that comes from webif/pages.c is recreated as
 	struct tpl tpls[] because we need to add additional fields such as tpl_name_hash
 	and possibly preprocess templates[] struct before using it. */
@@ -360,9 +358,6 @@ char *tpl_getUnparsedTpl(const char *name, int8_t removeHeader, const char *subd
 		char path[255];
 		if((cs_strlen(tpl_getFilePathInSubdir(tpl_path, subdir, name, ".tpl", path, 255)) > 0 && file_exists(path))
 				|| (cs_strlen(subdir) > 0
-#ifdef TOUCH
-					&& strcmp(subdir, TOUCH_SUBDIR)
-#endif
 					&& cs_strlen(tpl_getFilePathInSubdir(tpl_path, ""    , name, ".tpl", path, 255)) > 0 && file_exists(path)))
 		{
 			FILE *fp;
@@ -414,7 +409,6 @@ char *tpl_getUnparsedTpl(const char *name, int8_t removeHeader, const char *subd
 											check_conf(CARDREADER_STAPI5, ptr2);
 											check_conf(WEBIF_LIVELOG, ptr2);
 											check_conf(WEBIF_JQUERY, ptr2);
-											check_conf(TOUCH, ptr2);
 											check_conf(CS_ANTICASC, ptr2);
 											check_conf(CS_CACHEEX, ptr2);
 											check_conf(CS_CACHEEX_AIO, ptr2);
@@ -783,15 +777,15 @@ char *xml_encode(struct templatevars *vars, const char *chartoencode)
 			pos += 6;
 			break;
 		case '\'':
-			memcpy(encoded + pos, "&#39;", 5);
-			pos += 5;
-			break; // &apos; not supported on older IE
+			memcpy(encoded + pos, "&apos;", 5);
+			pos += 6;
+			break;
 		case '\n':
 			memcpy(encoded + pos, "\n", 1);
 			pos += 1;
 			break;
 		default:
-			if(tmp < 32 || (cs_http_use_utf8 != 1 && tmp > 127))
+			if(tmp < 32 || tmp > 127)
 			{
 				snprintf(buffer, 7, "&#%d;", tmp);
 				memcpy(encoded + pos, buffer, cs_strlen(buffer));

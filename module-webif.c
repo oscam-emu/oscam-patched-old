@@ -39,7 +39,6 @@
 extern const struct s_cardreader *cardreaders[];
 extern char cs_confdir[];
 extern uint32_t ecmcwcache_size;
-extern uint8_t cs_http_use_utf8;
 extern uint32_t cfg_sidtab_generation;
 extern int32_t exit_oscam;
 extern uint8_t cacheex_peer_id[8];
@@ -6655,11 +6654,7 @@ static char *send_oscam_status(struct templatevars * vars, struct uriparams * pa
 	cs_readunlock(__func__, &clientlist_lock);
 	cs_readunlock(__func__, &readerlist_lock);
 
-	uint8_t is_touch = 0;
-	if(config_enabled(TOUCH) && streq(tpl_getVar(vars, "SUBDIR"), TOUCH_SUBDIR))
-	{is_touch=1;}
-
-	if(cfg.http_status_log || (apicall == 1 && strcmp(getParam(params, "appendlog"), "1") == 0) || is_touch)
+	if(cfg.http_status_log || (apicall == 1 && strcmp(getParam(params, "appendlog"), "1") == 0))
 	{
 		if(cfg.loghistorylines && log_history)
 		{
@@ -6843,7 +6838,7 @@ static char *send_oscam_status(struct templatevars * vars, struct uriparams * pa
 	}
 
 #ifdef WITH_DEBUG
-	if(cfg.http_status_log || is_touch)
+	if(cfg.http_status_log)
 	{
 		// Debuglevel Selector
 		int32_t lvl;
@@ -6880,7 +6875,7 @@ static char *send_oscam_status(struct templatevars * vars, struct uriparams * pa
 	}
 #endif
 
-	if(cfg.http_status_log || is_touch)
+	if(cfg.http_status_log)
 		tpl_addVar(vars, TPLADDONCE, "LOG_HISTORY", tpl_getTpl(vars, "LOGHISTORYBIT"));
 
 	if(apicall)
@@ -6912,10 +6907,7 @@ static char *send_oscam_status(struct templatevars * vars, struct uriparams * pa
 		}
 	}
 
-	if(is_touch)
-		{ return tpl_getTpl(vars, "TOUCH_STATUS"); }
-	else
-		{ return tpl_getTpl(vars, "STATUS"); }
+	return tpl_getTpl(vars, "STATUS");
 }
 
 static char *send_oscam_services_edit(struct templatevars * vars, struct uriparams * params)
@@ -9478,7 +9470,7 @@ static int32_t process_request(FILE * f, IN_ADDR_T in)
 				tpl_addVar(vars, TPLADD, "LOCALE_DECPOINT", strstr(tpl_getVar(vars, "TMP_DECPOINT"), ",") ? ",": ".");
 			}
 
-			tpl_addVar(vars, TPLADD, "HTTP_CHARSET", cs_http_use_utf8 ? "UTF-8" : "ISO-8859-1");
+			tpl_addVar(vars, TPLADD, "HTTP_CHARSET", "UTF-8");
 			if(cfg.http_picon_size > 0)
 			{
 				tpl_printf(vars, TPLADD, "HTTPPICONSIZEINS", "img.statususericon, img.protoicon, img.usericon, img.readericon {height:%dpx !important;max-height:%dpx !important;}", cfg.http_picon_size, cfg.http_picon_size);
