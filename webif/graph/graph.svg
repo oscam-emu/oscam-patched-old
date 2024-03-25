@@ -14,10 +14,10 @@
 	<path id='graph_grid' class='graph_grid' d='M 2 125 L 798 125 M 2 200 L 798 200 M 2 275 L 798 275 M 2 350 L 798 350'/>
 
 	<rect id='graph_grid_button_back' class='graph_button' cursor='pointer' x='425' y='5' rx='5' ry='5' width='40' height='20'/>
-	<text id='graph_grid_button_text' cursor='pointer' class='graph_top_txt' x='460' y='17'>Change</text>	
-	<text id='graph_grid_interval' class='graph_top_txt' x='420' y='17'>-</text>	
+	<text id='graph_grid_button_text' cursor='pointer' class='graph_top_txt' x='460' y='17'>Change</text>
+	<text id='graph_grid_interval' class='graph_top_txt' x='420' y='17'>-</text>
 	<rect id='graph_grid_button' style='opacity:0;' cursor='pointer' x='340' y='5' rx='5' ry='5' width='130' height='20'/>
-		
+
 	<text id='graph_grid_txt1' class='graph_grid_txt' x='798' y='123'>-</text>
 	<text id='graph_grid_txt2' class='graph_grid_txt' x='798' y='198'>-</text>
 	<text id='graph_grid_txt3' class='graph_grid_txt' x='798' y='273'>-</text>
@@ -38,21 +38,13 @@ if (typeof getURL == 'undefined') {
 		var http_request = null;
 		if (typeof XMLHttpRequest != 'undefined') {
 			http_request = new XMLHttpRequest();
-		} else if (typeof ActiveXObject != 'undefined') {
-			try {
-				http_request = new ActiveXObject('Msxml2.XMLHTTP');
-			} catch (e) {
-				try {
-					http_request = new ActiveXObject('Microsoft.XMLHTTP');
-				} catch (e) {}
-			}
 		}
 		if (!http_request) {
 			throw 'Both getURL and XMLHttpRequest are undefined';
 		}
 		http_request.onreadystatechange = function() {
 			if (http_request.readyState == 4) {
-				callback( 
+				callback(
 					{
 						success : true,
 						content : http_request.responseXML,
@@ -245,7 +237,7 @@ function makeRoundMax(max) {
 			}
 		}
 	return rmax;
-} 
+}
 function handle_error() {
 	SVGDoc.getElementById('graph_error').setAttributeNS(null, 'visibility', 'visible');
 }
