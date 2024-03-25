@@ -306,10 +306,6 @@ SUSERICON                     status/status_usericon.html
 USERINFOBIT                   status/status_userinfo.html
 READERINFOBIT                 status/status_readerinfo.html
 
-TOUCH_CSS                     touch/css.css                                               TOUCH
-TOUCH_JSCRIPT                 touch/jscript.js                                            TOUCH
-TOUCH_STATUS                  touch/status.html                                           TOUCH
-
 USEREDIT                      user_edit/user_edit.html
 USEREDITAIO                   user_edit/user_editaio.html                                 CS_CACHEEX_AIO
 USEREDITANTICASC              user_edit/user_edit_anticasc.html                           CS_ANTICASC

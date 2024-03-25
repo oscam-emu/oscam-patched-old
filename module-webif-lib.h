@@ -28,8 +28,6 @@
 /* The refresh delay (in seconds) when stopping OSCam via http. */
 #define SHUTDOWNREFRESH 30
 
-#define TOUCH_SUBDIR "touch/"
-
 struct s_connection
 {
 	int32_t socket;

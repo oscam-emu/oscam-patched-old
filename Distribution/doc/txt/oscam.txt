@@ -123,9 +123,6 @@ OPTIONS
        -t|--temp-dir <directory>
 	  use <directory> for temporary data, default:temporary directory of OS
 
-       -u|--utf8
-	  enable output of web interface in UTF-8 charset
-
        -V|--build-info
 	  show OSCam version info
 

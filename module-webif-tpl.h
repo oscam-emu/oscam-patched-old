@@ -13,8 +13,6 @@
 /* Templates: Appends a variable or adds it if doesn't exist yet. The variable will be reset to "" after being used once. See TPLADDONCE for details. */
 #define TPLAPPENDONCE 3
 
-#define TOUCH_SUBDIR "touch/"
-
 struct templatevars
 {
 	uint32_t varscnt;
