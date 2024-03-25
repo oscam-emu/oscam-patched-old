@@ -63,10 +63,6 @@
 # define WITH_LIBCRYPTO 1
 #endif
 
-#if defined(WITH_EMU) && !defined(WITH_LIBCRYPTO)
-# define WITH_LIBCRYPTO 1
-#endif
-
 /* For deprecated but still needed cryptography functions:
  * 10002 corresponds to OpenSSL version 1.0.2*/
 
