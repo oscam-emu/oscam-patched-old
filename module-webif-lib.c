@@ -420,8 +420,6 @@ void send_file(FILE *f, char *filename, char *subdir, time_t modifiedheader, uin
 	char *CSS = NULL;
 	char *JSCRIPT = NULL;
 	char *JQUERY = NULL;
-	char *TOUCH_CSS = NULL;
-	char *TOUCH_JSCRIPT = NULL;
 
 	if(!strcmp(filename, "CSS"))
 	{
@@ -468,7 +466,7 @@ void send_file(FILE *f, char *filename, char *subdir, time_t modifiedheader, uin
 		if(filen == 1 && cfg.http_prepend_embedded_css)    // Prepend Embedded CSS
 		{
 			CSS = tpl_getUnparsedTpl("CSS", 1, "");
-			snprintf(separator, sizeof(separator), "\n/* Beginn embedded CSS File: %s */\n", cfg.http_css);
+			snprintf(separator, sizeof(separator), "\n/* Begin embedded CSS File: %s */\n", cfg.http_css);
 		}
 
 		// We need at least size 1 or keepalive gets problems on some browsers...
@@ -512,24 +510,9 @@ void send_file(FILE *f, char *filename, char *subdir, time_t modifiedheader, uin
 		CSS = tpl_getUnparsedTpl("CSS", 1, "");
 		JSCRIPT = tpl_getUnparsedTpl("JSCRIPT", 1, "");
 		JQUERY = tpl_getUnparsedTpl("JQUERY", 1, "");
-#ifdef TOUCH
-		TOUCH_CSS = tpl_getUnparsedTpl("TOUCH_CSS", 1, "");
-		TOUCH_JSCRIPT = tpl_getUnparsedTpl("TOUCH_JSCRIPT", 1, "");
-
-		if(!subdir || strcmp(subdir, TOUCH_SUBDIR)) {
-			if( filen == 1 && cs_strlen(CSS)){ result = CSS; }
-			else if ( filen == 2 && cs_strlen(JSCRIPT)){ result = JSCRIPT; }
-			else if ( filen == 3 && cs_strlen(JQUERY)){ result = JQUERY; }
-		} else {
-			if( filen == 1 && cs_strlen(TOUCH_CSS)){ result = TOUCH_CSS; }
-			else if ( filen == 2 && cs_strlen(TOUCH_JSCRIPT)){ result = TOUCH_JSCRIPT; }
-			else if ( filen == 3 && cs_strlen(JQUERY)){ result = JQUERY; }
-		}
-#else
 		if(filen == 1 && cs_strlen(CSS) > 0){ result = CSS;}
 		else if(filen == 2 && cs_strlen(JSCRIPT) > 0){result = JSCRIPT;}
 		else if(filen == 3 && cs_strlen(JQUERY) > 0){result = JQUERY;}
-#endif
 		moddate = first_client->login;
 	}
 
@@ -548,8 +531,6 @@ void send_file(FILE *f, char *filename, char *subdir, time_t modifiedheader, uin
 	NULLFREE(CSS);
 	NULLFREE(JSCRIPT);
 	NULLFREE(JQUERY);
-	NULLFREE(TOUCH_CSS);
-	NULLFREE(TOUCH_JSCRIPT);
 }
 
 /* Parse url parameters and save them to params array. The pch pointer is increased to the position where parsing stopped. */
