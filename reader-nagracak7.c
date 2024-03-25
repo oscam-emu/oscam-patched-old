@@ -1158,6 +1158,7 @@ static int32_t CAK7_GetCamKey(struct s_reader *reader)
 		}
 	}
 	memcpy(cmd0e + 14, reader->idird, 4);
+	memcpy(reader->irdId, reader->idird, 4);
 	if(reader->cmd0eprov_length)
 	{
 		memcpy(cmd0e + 18, reader->cmd0eprov, 2);
@@ -1656,7 +1657,7 @@ static int32_t nagra3_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, str
 			{
 				if(!reader->cwekey7_length)
 				{
-					rdr_log(reader, "ERROR: CWP7 is not set, can not decrypt CW");
+					rdr_log(reader, "ERROR: CWPK7 is not set, can not decrypt CW");
 					return ERROR;
 				}
 				des_ecb3_decrypt(_cwe0, reader->cwekey7);
