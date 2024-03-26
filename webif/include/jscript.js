@@ -1615,10 +1615,19 @@ var nostorage = 0;
  * General: Start Polling
  */
 $(document).ready(function () {
-
-	nostorage = typeof localStorage == "undefined";
-	$('#regex').remove();
-
+	
+	try {
+		if (!localStorage) {
+			nostorage = 1;
+			// remove whole filter block - makes no sense
+			// without saving
+			$('#regex').remove();
+		}
+	} catch(err){
+		nostorage = 1;
+		$('#regex').remove();
+	}
+	
 	// set default to nothing excluded
 	poll_excluded = '';
 
