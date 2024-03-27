@@ -777,7 +777,7 @@ char *xml_encode(struct templatevars *vars, const char *chartoencode)
 			pos += 6;
 			break;
 		case '\'':
-			memcpy(encoded + pos, "&apos;", 5);
+			memcpy(encoded + pos, "&apos;", 6);
 			pos += 6;
 			break;
 		case '\n':
