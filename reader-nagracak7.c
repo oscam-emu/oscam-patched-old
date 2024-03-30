@@ -451,32 +451,19 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 				uint32_t expire_date;
 				switch(reader->caid)
 				{
+					case 0x1830: // Max TV
 					case 0x1843: // HD02
-						start_date = b2i(0x04, cta_res + 42);
-						expire_date1 = b2i(0x04, cta_res + 28);
-						expire_date2 = b2i(0x04, cta_res + 46);
-						expire_date = expire_date1 <= expire_date2 ? expire_date1 : expire_date2;
-						break;
 					case 0x1860: // HD03
+					case 0x1861: // Polsat, Vodafone D08
 						start_date = b2i(0x04, cta_res + 42);
 						expire_date1 = b2i(0x04, cta_res + 28);
-						expire_date2 = b2i(0x04, cta_res + 46);
+						expire_date2 = (reader->caid != 0x1861) ? b2i(0x04, cta_res + 46) : expire_date1;
 						expire_date = expire_date1 <= expire_date2 ? expire_date1 : expire_date2;
 						break;
 					case 0x186A: // HD04, HD05
 						start_date = b2i(0x04, cta_res + 53);
 						expire_date1 = b2i(0x04, cta_res + 39);
 						expire_date2 = b2i(0x04, cta_res + 57);
-						expire_date = expire_date1 <= expire_date2 ? expire_date1 : expire_date2;
-						break;
-					case 0x1861: // Polsat, Vodafone D08
-						start_date = b2i(0x04, cta_res + 42);
-						expire_date = b2i(0x04, cta_res + 28);
-						break;
-					case 0x1830: // Max TV
-						start_date = b2i(0x04, cta_res + 42);
-						expire_date1 = b2i(0x04, cta_res + 28);
-						expire_date2 = b2i(0x04, cta_res + 46);
 						expire_date = expire_date1 <= expire_date2 ? expire_date1 : expire_date2;
 						break;
 					default: // unknown card
@@ -608,31 +595,21 @@ static void calc_cak7_exponent(uint32_t *dinit, uint8_t *out, uint8_t len)
 }
 static void IdeaDecrypt(unsigned char *data, int len, const unsigned char *key, unsigned char *iv)
 {
-unsigned char v[8];
-if(!iv) { memset(v,0,sizeof(v)); iv=v; }
-IDEA_KEY_SCHEDULE ks;
-idea_set_encrypt_key(key,&ks);
-idea_cbc_encrypt(data,data,len&~7,&ks,iv,IDEA_DECRYPT);
+	unsigned char v[8];
+	if(!iv) { memset(v,0,sizeof(v)); iv=v; }
+	IDEA_KEY_SCHEDULE ks;
+	idea_set_encrypt_key(key,&ks);
+	idea_cbc_encrypt(data,data,len&~7,&ks,iv,IDEA_DECRYPT);
 }
 static inline void xxxor(uint8_t *data, int32_t len, const uint8_t *v1, const uint8_t *v2)
 {
-	uint32_t i;
+	int i;
 	switch(len)
 	{
 	case 16:
-		for(i = 0; i < 16; ++i)
-		{
-			data[i] = v1[i] ^ v2[i];
-		}
-		break;
 	case 8:
-		for(i = 0; i < 8; ++i)
-		{
-			data[i] = v1[i] ^ v2[i];
-		}
-		break;
 	case 4:
-		for(i = 0; i < 4; ++i)
+		for(i = 0; i < len; ++i)
 		{
 			data[i] = v1[i] ^ v2[i];
 		}
@@ -1081,29 +1058,17 @@ static int32_t CAK7_GetCamKey(struct s_reader *reader)
 	}
 	else
 	{
+		int cwekeycount = 0, i;
 		memcpy(cmd0e + 132, reader->nuid, reader->nuid_length); // inject NUID
-				uint8_t cwekeycount = 0;
-				if(reader->cwekey0_length)
-						{ cwekeycount++; }
-				if(reader->cwekey1_length)
-						{ cwekeycount++; }
-				if(reader->cwekey2_length)
-						{ cwekeycount++; }
-				if(reader->cwekey3_length)
-						{ cwekeycount++; }
-				if(reader->cwekey4_length)
-						{ cwekeycount++; }
-				if(reader->cwekey5_length)
-						{ cwekeycount++; }
-				if(reader->cwekey6_length)
-						{ cwekeycount++; }
-				if(reader->cwekey7_length)
-						{ cwekeycount++; }
-				if(cwekeycount == 0)
-				{
-						rdr_log(reader, "only NUID defined - enter at least CWPK0");
-						return ERROR;
-				}
+
+		for (i = 0; i < 8; i++)
+			cwekeycount += !!reader->cwekey_length[i];
+
+		if(cwekeycount == 0)
+		{
+			rdr_log(reader, "only NUID defined - enter at least CWPK0");
+			return ERROR;
+		}
 		else
 		{
 			if(reader->otpcsc_length)
@@ -1112,16 +1077,8 @@ static int32_t CAK7_GetCamKey(struct s_reader *reader)
 			}
 			else
 			{
-				if(!reader->cwpkota)
-				{
-					cmd0e[136] = 0x00;
-					cmd0e[137] = cwekeycount;
-				}
-				else
-				{
-					cmd0e[136] = 0x00;
-					cmd0e[137] = 0x00;
-				}
+				cmd0e[136] = 0x00;
+				cmd0e[137] = !reader->cwpkota ? cwekeycount: 0x00;
 			}
 			if(reader->otacsc_length)
 			{
@@ -1129,16 +1086,8 @@ static int32_t CAK7_GetCamKey(struct s_reader *reader)
 			}
 			else
 			{
-				if(reader->cwpkota)
-				{
-					cmd0e[138] = 0x00;
-					cmd0e[139] = cwekeycount;
-				}
-				else
-				{
-					cmd0e[138] = 0x00;
-					cmd0e[139] = 0x00;
-				}
+				cmd0e[138] = 0x00;
+				cmd0e[139] = reader->cwpkota ? cwekeycount : 0x00;
 			}
 		}
 		char tmp[16];
@@ -1583,85 +1532,16 @@ static int32_t nagra3_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, str
 		}
 		if(cta_res[27] == 0x5C)
 		{
-			if(cta_res[144] == 0x00)
+			uint8_t cta_res144 = cta_res[144];
+			if(cta_res144 < 0x08)
 			{
-				if(!reader->cwekey0_length)
+				if(!reader->cwekey_length[cta_res144])
 				{
-					rdr_log(reader, "ERROR: CWPK0 is not set, can not decrypt CW");
+					rdr_log(reader, "ERROR: CWPK%d is not set, can not decrypt CW", cta_res[144]);
 					return ERROR;
 				}
-				des_ecb3_decrypt(_cwe0, reader->cwekey0);
-				des_ecb3_decrypt(_cwe1, reader->cwekey0);
-			}
-			else if(cta_res[144] == 0x01)
-			{
-				if(!reader->cwekey1_length)
-				{
-					rdr_log(reader, "ERROR: CWPK1 is not set, can not decrypt CW");
-					return ERROR;
-				}
-				des_ecb3_decrypt(_cwe0, reader->cwekey1);
-				des_ecb3_decrypt(_cwe1, reader->cwekey1);
-			}
-			else if(cta_res[144] == 0x02)
-			{
-				if(!reader->cwekey2_length)
-				{
-					rdr_log(reader, "ERROR: CWPK2 is not set, can not decrypt CW");
-					return ERROR;
-				}
-				des_ecb3_decrypt(_cwe0, reader->cwekey2);
-				des_ecb3_decrypt(_cwe1, reader->cwekey2);
-			}
-			else if(cta_res[144] == 0x03)
-			{
-				if(!reader->cwekey3_length)
-				{
-					rdr_log(reader, "ERROR: CWPK3 is not set, can not decrypt CW");
-					return ERROR;
-				}
-				des_ecb3_decrypt(_cwe0, reader->cwekey3);
-				des_ecb3_decrypt(_cwe1, reader->cwekey3);
-			}
-			else if(cta_res[144] == 0x04)
-			{
-				if(!reader->cwekey4_length)
-				{
-					rdr_log(reader, "ERROR: CWPK4 is not set, can not decrypt CW");
-					return ERROR;
-				}
-				des_ecb3_decrypt(_cwe0, reader->cwekey4);
-				des_ecb3_decrypt(_cwe1, reader->cwekey4);
-			}
-			else if(cta_res[144] == 0x05)
-			{
-				if(!reader->cwekey5_length)
-				{
-					rdr_log(reader, "ERROR: CWPK5 is not set, can not decrypt CW");
-					return ERROR;
-				}
-				des_ecb3_decrypt(_cwe0, reader->cwekey5);
-				des_ecb3_decrypt(_cwe1, reader->cwekey5);
-			}
-			else if(cta_res[144] == 0x06)
-			{
-				if(!reader->cwekey6_length)
-				{
-					rdr_log(reader, "ERROR: CWPK6 is not set, can not decrypt CW");
-					return ERROR;
-				}
-				des_ecb3_decrypt(_cwe0, reader->cwekey6);
-				des_ecb3_decrypt(_cwe1, reader->cwekey6);
-			}
-			else if(cta_res[144] == 0x07)
-			{
-				if(!reader->cwekey7_length)
-				{
-					rdr_log(reader, "ERROR: CWPK7 is not set, can not decrypt CW");
-					return ERROR;
-				}
-				des_ecb3_decrypt(_cwe0, reader->cwekey7);
-				des_ecb3_decrypt(_cwe1, reader->cwekey7);
+				des_ecb3_decrypt(_cwe0, reader->cwekey[cta_res144]);
+				des_ecb3_decrypt(_cwe1, reader->cwekey[cta_res144]);
 			}
 		}
 		else if(cta_res[27] == 0x58)
