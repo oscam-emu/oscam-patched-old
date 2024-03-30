@@ -403,13 +403,8 @@
 // Support for multiple CWs per channel and other encryption algos
 //#define WITH_EXTENDED_CW		1
 
-#if defined(READER_DRE) || defined(READER_DRECAS) || defined(READER_VIACCESS) || defined(WITH_EMU)
 #define MAX_ECM_SIZE			1024
 #define MAX_EMM_SIZE			1024
-#else
-#define MAX_ECM_SIZE			596
-#define MAX_EMM_SIZE			512
-#endif
 
 #define MAX_CMD_SIZE 0xff + 5  // maximum value from length byte + command header
 
@@ -1608,22 +1603,8 @@ struct s_reader										// contains device info, reader info and card info
 	uint8_t			key3460_length;
 	uint8_t			key3310[16];
 	uint8_t			key3310_length;
-	uint8_t			cwekey0[16];
-	uint8_t			cwekey0_length;
-	uint8_t			cwekey1[16];
-	uint8_t			cwekey1_length;
-	uint8_t			cwekey2[16];
-	uint8_t			cwekey2_length;
-	uint8_t			cwekey3[16];
-	uint8_t			cwekey3_length;
-	uint8_t			cwekey4[16];
-	uint8_t			cwekey4_length;
-	uint8_t			cwekey5[16];
-	uint8_t			cwekey5_length;
-	uint8_t			cwekey6[16];
-	uint8_t			cwekey6_length;
-	uint8_t			cwekey7[16];
-	uint8_t			cwekey7_length;
+	uint8_t			cwekey[8][16];
+	uint8_t			cwekey_length[8];
 	uint8_t			idird[4];
 	uint8_t			idird_length;
 	uint8_t			kdt05_00[216];
