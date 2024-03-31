@@ -2374,7 +2374,7 @@ static char *send_oscam_reader(struct templatevars *vars, struct uriparams *para
 
 static char *send_oscam_reader_config(struct templatevars *vars, struct uriparams *params)
 {
-	int32_t i, j;
+	int32_t i;
 	int32_t apicall = 0;
 	char *reader_ = getParam(params, "label");
 	char *value;
@@ -2736,6 +2736,8 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 #endif
 
 #ifdef READER_NAGRA_MERLIN
+	int32_t j;
+
 	// idird (CAK7)
 	for(i = 0; i < rdr->idird_length; i++)
 		{ tpl_printf(vars, TPLAPPEND, "IDIRD", "%02X", rdr->idird[i]); }
