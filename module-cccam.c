@@ -1102,7 +1102,7 @@ int32_t cc_get_nxt_ecm(struct s_client *cl)
 		er = &cl->ecmtask[i];
 		if((comp_timeb(&t, &er->tps) >= diff) && (er->rc >= E_NOCARD)) // drop timeouts
 		{
-			write_ecm_answer(cl->reader, er, E_TIMEOUT, 0, NULL, NULL, 0, NULL);
+			write_ecm_answer(cl->reader, er, E_TIMEOUT, 0, NULL, NULL, 0);
 		}
 
 		else if(er->rc >= E_NOCARD && er->rc <= E_UNHANDLED) // stil active and waiting
@@ -1112,7 +1112,7 @@ int32_t cc_get_nxt_ecm(struct s_client *cl)
 			{
 				cs_log_dbg(D_READER, "%s ecm loop detected! client %s (%8lX)",
 							getprefix(), er->client->account->usr, (unsigned long)er->client->thread);
-				write_ecm_answer(cl->reader, er, E_NOTFOUND, E2_CCCAM_LOOP, NULL, NULL, 0, NULL);
+				write_ecm_answer(cl->reader, er, E_NOTFOUND, E2_CCCAM_LOOP, NULL, NULL, 0);
 			}
 			else
 			{
@@ -1720,7 +1720,7 @@ int32_t cc_send_ecm(struct s_client *cl, ECM_REQUEST *er)
 		if(er)
 		{
 			cs_log_dbg(D_READER, "%s server not init! ccinit=%d pfd=%d", rdr->label, cc ? 1 : 0, cl->pfd);
-			write_ecm_answer(rdr, er, E_NOTFOUND, E2_CCCAM_NOCARD, NULL, NULL, 0, NULL);
+			write_ecm_answer(rdr, er, E_NOTFOUND, E2_CCCAM_NOCARD, NULL, NULL, 0);
 		}
 		//cc_cli_close(cl);
 		return 0;
@@ -1806,7 +1806,7 @@ int32_t cc_send_ecm(struct s_client *cl, ECM_REQUEST *er)
 					cc->ecm_busy = 0;
 				}
 
-				write_ecm_answer(rdr, cur_er, E_STOPPED, 0, NULL, NULL, 0, NULL);
+				write_ecm_answer(rdr, cur_er, E_STOPPED, 0, NULL, NULL, 0);
 				return 0;
 			}
 			else
@@ -1948,7 +1948,7 @@ int32_t cc_send_ecm(struct s_client *cl, ECM_REQUEST *er)
 			{
 				cs_log_dbg(D_READER, "%s no suitable card on server", getprefix());
 
-				write_ecm_answer(rdr, cur_er, E_NOTFOUND, E2_CCCAM_NOCARD, NULL, NULL, 0, NULL);
+				write_ecm_answer(rdr, cur_er, E_NOTFOUND, E2_CCCAM_NOCARD, NULL, NULL, 0);
 
 				//cur_er->rc = 1;
 				//cur_er->rcEx = 0;
@@ -3241,7 +3241,7 @@ int32_t cc_parse_msg(struct s_client *cl, uint8_t *buf, int32_t l)
 								ECM_REQUEST *er = &cl->ecmtask[j];
 								cl->pending--;
 
-								write_ecm_answer(rdr, er, E_NOTFOUND, 0, NULL, NULL, 0, NULL);
+								write_ecm_answer(rdr, er, E_NOTFOUND, 0, NULL, NULL, 0);
 								break;
 							}
 						}
@@ -3336,7 +3336,7 @@ int32_t cc_parse_msg(struct s_client *cl, uint8_t *buf, int32_t l)
 							ECM_REQUEST *er = &cl->ecmtask[i];
 							cl->pending--;
 
-							write_ecm_answer(rdr, er, E_NOTFOUND, 0, NULL, NULL, 0, NULL);
+							write_ecm_answer(rdr, er, E_NOTFOUND, 0, NULL, NULL, 0);
 							break;
 						}
 					}

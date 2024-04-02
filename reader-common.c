@@ -532,10 +532,7 @@ void cardreader_process_ecm(struct s_reader *reader, struct s_client *cl, ECM_RE
 	struct s_ecm_answer ea;
 	memset(&ea, 0, sizeof(struct s_ecm_answer));
 
-#ifdef WITH_EXTENDED_CW
-	// Correct CSA mode is CBC - default to that instead
-	ea.cw_ex.algo_mode = CW_ALGO_MODE_CBC;
-#endif
+	ea.cw_algo_mode = CW_ALGO_MODE_CBC; // Correct CSA mode is CBC - default to that instead
 
 	cs_ftime(&tps);
 	int32_t rc = cardreader_do_ecm(reader, er, &ea);
@@ -568,7 +565,7 @@ void cardreader_process_ecm(struct s_reader *reader, struct s_client *cl, ECM_RE
 #ifdef CS_CACHEEX_AIO
 	er->localgenerated = 1;
 #endif
-	write_ecm_answer(reader, er, ea.rc, ea.rcEx, ea.cw, ea.msglog, ea.tier, &ea.cw_ex);
+	write_ecm_answer(reader, er, ea.rc, ea.rcEx, ea.cw, ea.msglog, ea.tier);
 
 	cl->lastecm = time((time_t *)0);
 #ifdef WITH_DEBUG

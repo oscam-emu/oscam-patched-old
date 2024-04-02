@@ -4450,7 +4450,6 @@ static void dvbapi_prepare_descrambling(int32_t demux_id, uint32_t msgid)
 	// stream pid, so we have to check against that. Finally, if the PMT pid is
 	// not included in the CA PMT, we start the PAT filter instead.
 
-#ifdef WITH_EXTENDED_CW
 	uint8_t i;
 	for(i = 0; i < demux[demux_id].ECMpidcount; i++)
 	{
@@ -4460,7 +4459,6 @@ static void dvbapi_prepare_descrambling(int32_t demux_id, uint32_t msgid)
 			break;
 		}
 	}
-#endif
 
 	if(demux[demux_id].pmtpid == 0)
 	{
@@ -7504,7 +7502,6 @@ void delayer(ECM_REQUEST *er, uint32_t delay)
 	}
 }
 
-#ifdef WITH_EXTENDED_CW
 bool caid_is_csa_alt(uint16_t caid)
 {
 	return caid == 0x09c4 || caid == 0x098c || caid==0x098d;
@@ -7521,7 +7518,6 @@ bool select_csa_alt(ECM_REQUEST *er)
 	}
 	return false;
 }
-#endif
 
 void dvbapi_send_dcw(struct s_client *client, ECM_REQUEST *er)
 {
@@ -7888,8 +7884,7 @@ void dvbapi_send_dcw(struct s_client *client, ECM_REQUEST *er)
 #endif
 		default:
 			{
-#ifdef WITH_EXTENDED_CW
-				if(er->cw_ex.mode != demux[i].ECMpids[j].useMultipleIndices)
+				if(er->cw_mode != demux[i].ECMpids[j].useMultipleIndices)
 				{
 					uint32_t idx;
 
@@ -7912,30 +7907,30 @@ void dvbapi_send_dcw(struct s_client *client, ECM_REQUEST *er)
 					}
 				}
 
-				if(er->cw_ex.mode == CW_MODE_MULTIPLE_CW)
+				if(er->cw_mode == CW_MODE_MULTIPLE_CW)
 				{
-					int32_t key_pos_a = 0;
+					int32_t key_pos_a = 16;
 					demux[i].ECMpids[j].useMultipleIndices = 1;
 
 					for(k = 0; k < demux[i].STREAMpidcount; k++)
 					{
 						if(demux[i].STREAMpidsType[k] == STREAM_VIDEO)
 						{
-							dvbapi_write_cw(i, j, k, er->cw, 8, NULL, 0, er->cw_ex.algo, er->cw_ex.algo_mode, er->msgid);
+							dvbapi_write_cw(i, j, k, er->cw, 8, NULL, 0, er->cw_algo, er->cw_algo_mode, er->msgid);
 						}
 						else if(demux[i].STREAMpidsType[k] == STREAM_AUDIO)
 						{
-							if(key_pos_a < 4)
+							if(key_pos_a < 80) // Audio CWs occupy bytes 16 to 80, so 4x 16 CWs total
 							{
-								dvbapi_write_cw(i, j, k, er->cw_ex.audio[key_pos_a], 8, NULL, 0, er->cw_ex.algo, er->cw_ex.algo_mode, er->msgid);
-								key_pos_a++;
+								dvbapi_write_cw(i, j, k, er->cw[key_pos_a], 8, NULL, 0, er->cw_algo, er->cw_algo_mode, er->msgid);
+								key_pos_a += 16;
 							}
 						}
 						// Every channel that uses the extended cw has unencrypted subtitle streams,
 						// so disable CW writing to save indices for audio streams and recordings.
 						//else // Data
 						//{
-						//	dvbapi_write_cw(i, j, k, er->cw_ex.data, 8, NULL, 0, er->cw_ex.algo, er->cw_ex.algo_mode, er->msgid);
+						//	dvbapi_write_cw(i, j, k, er->cw[80], 8, NULL, 0, er->cw_algo, er->cw_algo_mode, er->msgid);
 						//}
 					}
 				}
@@ -7943,27 +7938,19 @@ void dvbapi_send_dcw(struct s_client *client, ECM_REQUEST *er)
 				{
 					demux[i].ECMpids[j].useMultipleIndices = 0;
 
-					if(er->cw_ex.algo == CW_ALGO_AES128)
+					if(er->cw_algo == CW_ALGO_AES128)
 					{
-						dvbapi_write_cw(i, j, 0, er->cw_ex.session_word, 16, er->cw_ex.data, 16, er->cw_ex.algo, er->cw_ex.algo_mode, er->msgid);
-					}
-					else if(er->cw_ex.algo == CW_ALGO_CSA)
-					{
-						if(select_csa_alt(er))
-						{
-							er->cw_ex.algo = CW_ALGO_CSA_ALT;
-						}
-						dvbapi_write_cw(i, j, 0, er->cw, 8, NULL, 0, er->cw_ex.algo, er->cw_ex.algo_mode, er->msgid);
+						dvbapi_write_cw(i, j, 0, er->cw, 16, er->cw[32], 16, er->cw_algo, er->cw_algo_mode, er->msgid);
 					}
 					else
 					{
-						dvbapi_write_cw(i, j, 0, er->cw, 8, NULL, 0, er->cw_ex.algo, er->cw_ex.algo_mode, er->msgid);
+						if(select_csa_alt(er))
+						{
+							er->cw_algo = CW_ALGO_CSA_ALT;
+						}
+						dvbapi_write_cw(i, j, 0, er->cw, 8, NULL, 0, er->cw_algo, er->cw_algo_mode, er->msgid);
 					}
 				}
-#else
-				cfg.dvbapi_extended_cw_api = 0; // in CSA mode extended_cw_api should be always 0 regardless what user selected!
-				dvbapi_write_cw(i, j, 0, er->cw, 8, NULL, 0, CA_ALGO_DVBCSA, CA_MODE_CBC, er->msgid);
-#endif
 				break;
 			}
 		}
@@ -7980,9 +7967,8 @@ void dvbapi_send_dcw(struct s_client *client, ECM_REQUEST *er)
 #endif
 		if(cfg.dvbapi_ecminfo_file != 0 && cfg.dvbapi_boxtype != BOXTYPE_SAMYGO)
 		{
-#ifdef WITH_EXTENDED_CW
 			// Only print CWs for index 0 in ecm.info file
-			if(er->cw_ex.algo == CA_ALGO_AES128)
+			if(er->cw_algo == CA_ALGO_AES128)
 			{
 				dvbapi_write_ecminfo_file(client, er, demux[i].last_cw[0][0], demux[i].last_cw[0][1], 16);
 			}
@@ -7990,9 +7976,6 @@ void dvbapi_send_dcw(struct s_client *client, ECM_REQUEST *er)
 			{
 				dvbapi_write_ecminfo_file(client, er, demux[i].last_cw[0][0], demux[i].last_cw[0][1], 8);
 			}
-#else
-			dvbapi_write_ecminfo_file(client, er, demux[i].last_cw[0][0], demux[i].last_cw[0][1], 8);
-#endif
 		}
 	}
 

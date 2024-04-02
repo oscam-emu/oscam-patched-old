@@ -341,11 +341,8 @@ typedef struct filter_s
 #endif
 } FILTERTYPE;
 
-#ifdef WITH_EXTENDED_CW
 #define MAX_STREAM_INDICES  32 // In practice, 5 is the maximum ever used
-#else
-#define MAX_STREAM_INDICES   1
-#endif
+//#define MAX_STREAM_INDICES   1
 
 #define CA_MAX              32 // Max ca devices supported by oscam - limited by sizeof(ca_mask) of struct demux_s (32 bits)
 #define INDEX_MAX           64 // Max descramblers per ca device - limited by sizeof(activeindexers) of struct s_streampid (64 bits)

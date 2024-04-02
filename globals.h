@@ -400,9 +400,6 @@
 #define CS_DELAY				0
 #define CS_ECM_RINGBUFFER_MAX	0x10	// max size for ECM last responsetimes ringbuffer. Keep this set to power of 2 values!
 
-// Support for multiple CWs per channel and other encryption algos
-//#define WITH_EXTENDED_CW		1
-
 #define MAX_ECM_SIZE			1024
 #define MAX_EMM_SIZE			1024
 
@@ -1016,25 +1013,13 @@ struct s_cardsystem
 	int32_t			(*get_tunemm_filter)(struct s_reader *, struct s_csystem_emm_filter **, uint32_t *);
 };
 
-typedef struct cw_extendted_t
-{
-#ifdef WITH_EXTENDED_CW
-	uint8_t			mode;
-	uint8_t			audio[4][16];					// 4 x odd/even pairs of 8 byte CWs
-	uint8_t			data[16];						// odd/even pair of 8 byte CW or 16 byte IV
-	uint8_t			session_word[32];				// odd/even pair of 16 byte CW
-	uint8_t			algo;							// CSA, DES or AES128
-	uint8_t			algo_mode;						// ECB or CBC
-#else
-	uint8_t			disabled;
-#endif
-} EXTENDED_CW;
-
 typedef struct ecm_request_t
 {
 	uint8_t			ecm[MAX_ECM_SIZE];
-	uint8_t			cw[16];
-	EXTENDED_CW		cw_ex;
+	uint8_t			cw[96];							// extended cw, can be used as 12x 8 byte cw or 6x 16 byte cw or 5x 16 byte cw + 1x 16 byte IV, etc
+	uint8_t			cw_mode;						// cw mode, multiple (powervu) or single (all other CAS)
+	uint8_t			cw_algo;						// CSA, DES or AES128
+	uint8_t			cw_algo_mode;					// ECB or CBC
 	uint8_t			ecmd5[CS_ECMSTORESIZE];
 	int16_t			ecmlen;
 	uint16_t		caid;
@@ -1132,8 +1117,10 @@ struct s_ecm_answer
 	ECM_REQUEST		*er;
 	int8_t			rc;
 	uint8_t			rcEx;
-	uint8_t			cw[16];
-	EXTENDED_CW		cw_ex;
+	uint8_t			cw[96];							// extended cw, can be used as 12x 8 byte cw or 6x 16 byte cw or 5x 16 byte cw + 1x 16 byte IV, etc
+	uint8_t			cw_mode;						// cw mode, multiple (powervu) or single (all other CAS)
+	uint8_t			cw_algo;						// CSA, DES or AES128
+	uint8_t			cw_algo_mode;					// ECB or CBC
 	char			msglog[MSGLOGSIZE];
 	struct timeb	time_request_sent;				// using for evaluate ecm_time
 	int32_t			ecm_time;

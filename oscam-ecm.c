@@ -170,7 +170,7 @@ void ecm_timeout(ECM_REQUEST *er)
 			{
 				if((ea_list->status & (REQUEST_SENT | REQUEST_ANSWERED)) == REQUEST_SENT) // Request sent, but no answer!
 				{
-					write_ecm_answer(ea_list->reader, er, E_TIMEOUT, 0, NULL, NULL, 0, NULL); // set timeout for readers not answered!
+					write_ecm_answer(ea_list->reader, er, E_TIMEOUT, 0, NULL, NULL, 0); // set timeout for readers not answered!
 				}
 			}
 
@@ -782,7 +782,7 @@ void distribute_ea(struct s_ecm_answer *ea)
 			ea_temp->er->localgenerated = 1;
 #endif
 		// e.g. we cannot send timeout, because "ea_temp->er->client" could wait/ask other readers! Simply set not_found if different from E_FOUND!
-		write_ecm_answer(ea_temp->reader, ea_temp->er, (ea->rc==E_FOUND? E_FOUND : E_NOTFOUND), ea->rcEx, ea->cw, NULL, ea->tier, &ea->cw_ex);
+		write_ecm_answer(ea_temp->reader, ea_temp->er, (ea->rc==E_FOUND? E_FOUND : E_NOTFOUND), ea->rcEx, ea->cw, NULL, ea->tier);
 	}
 }
 
@@ -816,10 +816,10 @@ int32_t send_dcw(struct s_client *client, ECM_REQUEST *er)
 	{
 		char buf[ECM_FMT_LEN];
 		char ecmd5[17 * 3];
-		char cwstr[17 * 3];
+		char cwstr[97 * 3];
 		format_ecm(er, buf, ECM_FMT_LEN);
 		cs_hexdump(0, er->ecmd5, 16, ecmd5, sizeof(ecmd5));
-		cs_hexdump(0, er->cw, 16, cwstr, sizeof(cwstr));
+		cs_hexdump(0, er->cw, sizeof(er->cw), cwstr, sizeof(cwstr));
 #ifdef CS_CACHEEX
 		char csphash[5 * 3];
 		cs_hexdump(0, (void *)&er->csp_hash, 4, csphash, sizeof(csphash));
@@ -1295,7 +1295,7 @@ int32_t send_dcw(struct s_client *client, ECM_REQUEST *er)
 		}
 	}
 
-	cs_log_dump_dbg(D_ATR, er->cw, 16, "cw:");
+	cs_log_dump_dbg(D_ATR, er->cw, sizeof(er->cw), "cw:");
 	led_status_cw_not_found(er);
 
 ESC:
@@ -1483,12 +1483,12 @@ void chk_dcw(struct s_ecm_answer *ea)
 #ifdef CS_CACHEEX
 		if(ea && ert->rc < E_NOTFOUND && ea->rc < E_NOTFOUND && memcmp(ea->cw, ert->cw, sizeof(ert->cw)) != 0)
 		{
-			char cw1[16 * 3 + 2], cw2[16 * 3 + 2];
+			char cw1[96 * 3 + 2], cw2[96 * 3 + 2];
 #ifdef WITH_DEBUG
 			if(cs_dblevel & D_TRACE)
 			{
-				cs_hexdump(0, ea->cw, 16, cw1, sizeof(cw1));
-				cs_hexdump(0, ert->cw, 16, cw2, sizeof(cw2));
+				cs_hexdump(0, ea->cw, sizeof(ea->cw), cw1, sizeof(cw1));
+				cs_hexdump(0, ert->cw, sizeof(ert->cw), cw2, sizeof(cw2));
 			}
 #endif
 			char ip1[20] = "", ip2[20] = "";
@@ -1547,8 +1547,10 @@ void chk_dcw(struct s_ecm_answer *ea)
 	switch(ea->rc)
 	{
 	case E_FOUND:
-		memcpy(ert->cw, ea->cw, 16);
-		ert->cw_ex = ea->cw_ex;
+		memcpy(ert->cw, ea->cw, sizeof(ert->cw));
+		ert->cw_mode = ea->cw_mode;
+		ert->cw_algo = ea->cw_algo;
+		ert->cw_algo_mode = ea->cw_algo_mode;
 		ert->rcEx = 0;
 		ert->rc = ea->rc;
 		ert->grp |= eardr->grp;
@@ -1738,6 +1740,7 @@ static void logCWtoFile(ECM_REQUEST *er, uint8_t *cw)
 
 	parity = er->ecm[0] & 1;
 	fprintf(pfCWL, "%d ", parity);
+	//!!!!! fixme!
 	for(i = parity * 8; i < 8 + parity * 8; i++)
 		{ fprintf(pfCWL, "%02X ", cw[i]); }
 	/* better use incoming time er->tps rather than current time? */
@@ -1747,7 +1750,7 @@ static void logCWtoFile(ECM_REQUEST *er, uint8_t *cw)
 	fclose(pfCWL);
 }
 
-int32_t write_ecm_answer(struct s_reader *reader, ECM_REQUEST *er, int8_t rc, uint8_t rcEx, uint8_t *cw, char *msglog, uint16_t used_cardtier, EXTENDED_CW* cw_ex)
+int32_t write_ecm_answer(struct s_reader *reader, ECM_REQUEST *er, int8_t rc, uint8_t rcEx, uint8_t *cw, char *msglog, uint16_t used_cardtier)
 {
 	if(!reader || !er || !er->tps.time) { return 0; }
 
@@ -1979,13 +1982,15 @@ int32_t write_ecm_answer(struct s_reader *reader, ECM_REQUEST *er, int8_t rc, ui
 	ea->ecm_time = comp_timeb(&now, &ea->time_request_sent);
 	if(ea->ecm_time < 1) { ea->ecm_time = 1; } // set ecm_time 1 if answer immediately
 	ea->rcEx = rcEx;
-	if(cw) { memcpy(ea->cw, cw, 16); }
+	if(cw)
+	{
+		memcpy(ea->cw, cw, sizeof(ea->cw));
+		ea->cw_mode = er->cw_mode;
+		ea->cw_algo = er->cw_algo;
+		ea->cw_algo_mode = er->cw_algo_mode;
+	}
 	if(msglog) { memcpy(ea->msglog, msglog, MSGLOGSIZE); }
 	ea->tier = used_cardtier;
-	if(cw_ex)
-	{
-		ea->cw_ex = *cw_ex;
-	}
 
 	cs_writeunlock(__func__, &ea->ecmanswer_lock);
 
@@ -2233,7 +2238,10 @@ void write_ecm_answer_fromcache(struct s_write_from_cache *wfc)
 #endif
 			{ er->rc=E_CACHE1; } // from normal readers
 
-		memcpy(er->cw, ecm->cw, 16);
+		memcpy(er->cw, ecm->cw, sizeof(er->cw));
+		er->cw_mode = ecm->cw_mode;
+		er->cw_algo = ecm->cw_algo;
+		er->cw_algo_mode = ecm->cw_algo_mode;
 		er->selected_reader = ecm->selected_reader;
 		er->cw_count = ecm->cw_count;
 
@@ -2777,10 +2785,7 @@ void get_cw(struct s_client *client, ECM_REQUEST *er)
 			if(!cs_malloc(&ea, sizeof(struct s_ecm_answer)))
 				{ goto OUT; }
 
-#ifdef WITH_EXTENDED_CW
-			// Correct CSA mode is CBC - default to that instead
-			ea->cw_ex.algo_mode = CW_ALGO_MODE_CBC;
-#endif
+			ea->cw_algo_mode = CW_ALGO_MODE_CBC; // Correct CSA mode is CBC - default to that instead
 
 			er->readers++;
 
@@ -3131,7 +3136,7 @@ int32_t format_ecm(ECM_REQUEST *ecm, char *result, size_t size)
 {
 	char ecmd5hex[(16*2)+1];
 	char csphash[(4*2)+1] = { 0 };
-	char cwhex[(16*2)+1];
+	char cwhex[(96*2)+1];
 	char *payload = NULL;
 	char *tier = NULL;
 #ifdef READER_VIDEOGUARD
@@ -3159,7 +3164,7 @@ int32_t format_ecm(ECM_REQUEST *ecm, char *result, size_t size)
 #ifdef CS_CACHEEX
 	cs_hexdump(0, (void *)&ecm->csp_hash, 4, csphash, sizeof(csphash));
 #endif
-	cs_hexdump(0, ecm->cw, 16, cwhex, sizeof(cwhex));
+	cs_hexdump(0, ecm->cw, sizeof(ecm->cw), cwhex, sizeof(cwhex));
 #ifdef MODULE_GBOX
 	if(check_client(ecm->client) && get_module(ecm->client)->num == R_GBOX && ecm->gbox_ecm_dist)
 		{ return ecmfmt(result, size, ecm->caid, ecm->onid, ecm->prid, ecm->chid, ecm->pid, ecm->srvid, ecm->ecmlen, ecmd5hex, csphash, cwhex, ecm->gbox_ecm_src_peer, ecm->gbox_ecm_dist, payload, tier); }
