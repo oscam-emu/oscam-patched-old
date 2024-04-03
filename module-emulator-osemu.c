@@ -12,6 +12,7 @@
 #include "module-emulator-director.h"
 #include "module-emulator-irdeto.h"
 #include "module-emulator-nagravision.h"
+#include "module-emulator-omnicrypt.h"
 #include "module-emulator-powervu.h"
 #include "module-emulator-viaccess.h"
 
@@ -127,6 +128,7 @@ KeyDataContainer NagraKeys = { NULL, 0, 0 };
 KeyDataContainer IrdetoKeys = { NULL, 0, 0 };
 KeyDataContainer BissSWs = { NULL, 0, 0 };
 KeyDataContainer Biss2Keys = { NULL, 0, 0 };
+KeyDataContainer OmnicryptKeys = { NULL, 0, 0 };
 KeyDataContainer PowervuKeys = { NULL, 0, 0 };
 KeyDataContainer TandbergKeys = { NULL, 0, 0 };
 KeyDataContainer StreamKeys = { NULL, 0, 0 };
@@ -147,6 +149,8 @@ KeyDataContainer *emu_get_key_container(char identifier)
 			return &BissSWs;
 		case 'G':
 			return &Biss2Keys;
+		case 'O':
+			return &OmnicryptKeys;
 		case 'P':
 			return &PowervuKeys;
 		case 'T':
@@ -664,15 +668,16 @@ void emu_clear_keydata(void)
 	total += IrdetoKeys.keyCount;
 	total += BissSWs.keyCount;
 	total += Biss2Keys.keyCount;
+	total += OmnicryptKeys.keyCount;
 	total += PowervuKeys.keyCount;
 	total += TandbergKeys.keyCount;
 	total += StreamKeys.keyCount;
 
 	if (total != 0)
 	{
-		cs_log("Freeing keys in memory: W:%d V:%d N:%d I:%d F:%d G:%d P:%d T:%d A:%d",
-				CwKeys.keyCount, ViKeys.keyCount, NagraKeys.keyCount, IrdetoKeys.keyCount,
-				BissSWs.keyCount, Biss2Keys.keyCount, PowervuKeys.keyCount, TandbergKeys.keyCount,
+		cs_log("Freeing keys in memory: W:%d V:%d N:%d I:%d F:%d G:%d O:%d P:%d T:%d A:%d",
+				CwKeys.keyCount, ViKeys.keyCount, NagraKeys.keyCount, IrdetoKeys.keyCount, BissSWs.keyCount,
+				Biss2Keys.keyCount, OmnicryptKeys.keyCount, PowervuKeys.keyCount, TandbergKeys.keyCount,
 				StreamKeys.keyCount);
 
 		delete_keys_in_container('W');
@@ -681,6 +686,7 @@ void emu_clear_keydata(void)
 		delete_keys_in_container('I');
 		delete_keys_in_container('F');
 		delete_keys_in_container('G');
+		delete_keys_in_container('O');
 		delete_keys_in_container('P');
 		delete_keys_in_container('T');
 		delete_keys_in_container('A');
@@ -926,7 +932,7 @@ int8_t emu_process_ecm(struct s_reader *rdr, const ECM_REQUEST *er, uint8_t *cw,
 
 	memcpy(ecmCopy, er->ecm, ecmLen);
 
-	     if (caid_is_viaccess(er->caid))    result = viaccess_ecm(ecmCopy, cw);
+		 if (caid_is_viaccess(er->caid))    result = viaccess_ecm(ecmCopy, cw);
 	else if (caid_is_irdeto(er->caid))      result = irdeto2_ecm(er->caid, ecmCopy, cw);
 	else if (caid_is_cryptoworks(er->caid)) result = cryptoworks_ecm(er->caid, ecmCopy, cw);
 	else if (caid_is_powervu(er->caid))
@@ -940,6 +946,7 @@ int8_t emu_process_ecm(struct s_reader *rdr, const ECM_REQUEST *er, uint8_t *cw,
 	else if (caid_is_director(er->caid))    result = director_ecm(ecmCopy, cw);
 	else if (caid_is_nagra(er->caid))       result = nagra2_ecm(ecmCopy, cw);
 	else if (caid_is_biss(er->caid))        result = biss_ecm(rdr, er->ecm, er->caid, er->pid, cw, cw_ex);
+	else if (er->caid == 0x00FF)			result = omnicrypt_ecm(ecmCopy, cw); // temp caid
 
 	if (result != 0)
 	{
