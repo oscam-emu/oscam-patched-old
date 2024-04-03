@@ -181,6 +181,12 @@ static void refresh_entitlements(struct s_reader *rdr)
 	{
 		emu_add_entitlement(rdr, 0x2610, 0, item->ekid, "RSAPRI", 8, 0);
 	}
+
+	for (i = 0; i < OmnicryptKeys.keyCount; i++)
+	{
+		emu_add_entitlement(rdr, 0x00FF, OmnicryptKeys.EmuKeys[i].provider, OmnicryptKeys.EmuKeys[i].key,
+							OmnicryptKeys.EmuKeys[i].keyName, OmnicryptKeys.EmuKeys[i].keyLength, 0);
+	}
 }
 
 static int32_t emu_do_ecm(struct s_reader *rdr, const ECM_REQUEST *er, struct s_ecm_answer *ea)
@@ -247,9 +253,9 @@ static int32_t emu_card_info(struct s_reader *rdr)
 	// Read BISS2 mode CA RSA keys from PEM files
 	biss_read_pem(rdr, BISS2_MAX_RSA_KEYS);
 
-	cs_log("Total keys in memory: W:%d V:%d N:%d I:%d F:%d G:%d P:%d T:%d A:%d",
-			CwKeys.keyCount, ViKeys.keyCount, NagraKeys.keyCount, IrdetoKeys.keyCount,
-			BissSWs.keyCount, Biss2Keys.keyCount, PowervuKeys.keyCount, TandbergKeys.keyCount,
+	cs_log("Total keys in memory: W:%d V:%d N:%d I:%d F:%d G:%d O:%d P:%d T:%d A:%d",
+			CwKeys.keyCount, ViKeys.keyCount, NagraKeys.keyCount, IrdetoKeys.keyCount, BissSWs.keyCount,
+			Biss2Keys.keyCount, OmnicryptKeys.keyCount, PowervuKeys.keyCount, TandbergKeys.keyCount,
 			StreamKeys.keyCount);
 
 	// Inform OSCam about all available keys.
