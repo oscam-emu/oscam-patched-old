@@ -375,7 +375,7 @@ static void boxkey_fn(const char *token, char *value, void *setting, FILE *f)
 		{ fprintf_conf(f, "boxkey", "\n"); }
 }
 
-#ifdef READER_NAGRA
+#if defined(READER_NAGRA) || defined(READER_NAGRA_MERLIN)
 static void param_fn(const char *token, char *value, void *setting, long data, FILE *f)
 {
 	uint8_t *var = setting, valid_len = data & 0xFF;
